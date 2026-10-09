@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "kind": "chatgpt_project_readback",
+  "observed_at_utc": "2026-10-09 22:51:55 UTC",
+  "project": {
+    "id": "g-p-6ac96f7af5e08191a756dc71cc585571",
+    "label": "📺 AI技術研究室👀",
+    "kind": "chatgpt"
+  },
+  "creation": {
+    "status": "CONFIRMED",
+    "method": "mcp__codex_app__list_projects after user reported creation",
+    "performed_by_assistant": false
+  },
+  "instructions_applied": "UNKNOWN",
+  "project_source_uploaded": "UNKNOWN",
+  "repository": "kamiyusense/ai-video-research",
+  "repository_visibility": "private",
+  "repository_head_before_update": "704911a4e38af7fa42f029ba11febb46e658d2b9",
+  "scope": "Observation of project existence only. No claim of project instructions, sources, sharing or memory configuration readback.",
+  "retry": 0,
+  "fallback": "disabled"
+}

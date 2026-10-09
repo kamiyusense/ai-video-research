@@ -14,10 +14,14 @@
 - 資料のreadbackは evidence/bootstrap-readback.json を参照する。証拠ファイルがなければ未確認。
 - mainへの直接write、Merge、auto-merge、権限変更は初期設定に含めない。
 
-## ChatGPT側: 未完了
-- 最新のlist_projectsに「📺 AI技術研究室」は表示されていない。
-- この接続にはプロジェクト作成・指示変更の操作がない。
-- ChatGPT側の実作成と指示反映はUNKNOWN。今回、作成や設定を行っていない。
+## ChatGPT側: プロジェクトの実在を確認済み
+- ユーザーの作成報告後、list_projectsで「📺 AI技術研究室👀」を確認した。
+- project_id: g-p-6ac96f7af5e08191a756dc71cc585571
+- 観測時刻: 2026-10-10 07:51:55（Asia/Tokyo）。
+- 証拠: evidence/chatgpt-project-created-20261010.json。
+- この接続にはプロジェクトの指示変更・参考資料追加の操作がない。
+- 研究用指示の反映: UNKNOWN。確認していない。
+- PROJECT_SOURCE.mdのプロジェクト資料への追加: UNKNOWN。確認していない。
 - CHATGPT_PROJECT_INSTRUCTIONS.md が設定用の指示文。
 - PROJECT_SOURCE.md が1ファイルにまとめた初期参考資料。
 
