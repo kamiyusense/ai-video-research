@@ -47,3 +47,11 @@ YouTube、公式資料、論文、公開実装、更新情報を対象にする�
 - [動画取得と学習記録の実証計画](proposals/003-youtube-learning-loop.md)
 
 公式資料の確認と実際の動画処理は区別する。本調査では動画URL未提示のため実証はNOT_RUN。
+
+## 契約全体からの再調査（現在の推奨）
+- [ChatGPT Plus / Google AI Proの全体棚卸しと最適構成](research/2026-10-10-subscription-wide-youtube-learning.md)
+- [拡張した技能・Loop案](proposals/004-subscription-wide-learning-loop.md)
+- [最新のChat調査用プロンプト](prompts/chat-youtube-research.md)
+- [47一次資料・機能の矛盾・装備の実在確認](evidence/subscription-wide-research-docs-20261010.json)
+
+資料からの最適候補はAI Studio Playgroundの動画入力、公式一次資料の検証、Work/Codexの技能化・記録の組み合わせ。実測の最適解は未確定。原動画／字幕全文は保存せず、Notebookへは独自ノートだけを入れる。URL投入から自動保存までの連携はNOT_RUN。

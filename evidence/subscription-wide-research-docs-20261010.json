@@ -1,0 +1,607 @@
+{
+  "schema_version": 1,
+  "kind": "subscription_wide_youtube_research",
+  "observed_at_utc": "2026-10-09 23:29:00 UTC",
+  "scope": {
+    "plans": [
+      "ChatGPT Plus",
+      "Google AI Pro"
+    ],
+    "region": "Japan",
+    "os": "Windows",
+    "purpose": "video understanding -> official verification -> reusable skills -> safe automation"
+  },
+  "sources": [
+    {
+      "id": "O01",
+      "title": "ChatGPT Plus overview",
+      "url": "https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus",
+      "scope": "Plus機能・API別枠",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O02",
+      "title": "ChatGPT pricing",
+      "url": "https://chatgpt.com/pricing/",
+      "scope": "Plus全体棚卸し・dotsは上位プラン",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O03",
+      "title": "Work and Codex",
+      "url": "https://help.openai.com/en/articles/20001275-chatgpt-work-and-codex",
+      "scope": "Web/mobile/cloud/localと共有利用枠",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O04",
+      "title": "Deep Research",
+      "url": "https://help.openai.com/en/articles/10500283-deep-research-in-chatgpt",
+      "scope": "公式ドメイン指定・接続アプリは読み取り",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O05",
+      "title": "Cloud browser",
+      "url": "https://help.openai.com/en/articles/20001280-using-cloud-browser-in-chatgpt",
+      "scope": "クラウドブラウザ・ログイン・承認",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O06",
+      "title": "Scheduled tasks",
+      "url": "https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt",
+      "scope": "時刻・接続アプリイベント・Projectファイル制限",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O07",
+      "title": "Codex with plan",
+      "url": "https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan",
+      "scope": "アカウント認証・利用枠・Record ReplayのOS条件",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O08",
+      "title": "Plugins",
+      "url": "https://help.openai.com/en/articles/20001256-plugins-in-chatgpt",
+      "scope": "装備と接続・surface別対応",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O09",
+      "title": "Skills",
+      "url": "https://help.openai.com/en/articles/20001066-skills-in-chatgpt",
+      "scope": "ChatGPTワークスペースとCodexの差",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O10",
+      "title": "ChatGPT Live",
+      "url": "https://help.openai.com/en/articles/20001274-gpt-live-faq",
+      "scope": "新Liveは当初映像・画面共有非対応",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O11",
+      "title": "Study mode",
+      "url": "https://help.openai.com/en/articles/11780217-using-study-mode-in-chatgpt",
+      "scope": "説明・演習・理解確認",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O12",
+      "title": "Library",
+      "url": "https://help.openai.com/en/articles/20001052-using-library-to-manage-files-in-chatgpt",
+      "scope": "ファイル保存とチャット削除の差",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O13",
+      "title": "Agent transition",
+      "url": "https://help.openai.com/en/articles/11752874-chatgpt-agent",
+      "scope": "現行overviewは旧Agent終了・Work案内",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O14",
+      "title": "Atlas retirement",
+      "url": "https://help.openai.com/en/articles/20001371-chatgpt-atlas-retirement",
+      "scope": "旧Atlas終了",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O15",
+      "title": "Sora discontinuation",
+      "url": "https://help.openai.com/en/articles/20001152-what-to-know-about-the-sora-discontinuation",
+      "scope": "Soraサービス終了",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O16",
+      "title": "Release notes",
+      "url": "https://help.openai.com/en/articles/6825453-chatgpt-release-notes",
+      "scope": "GPTs移行方針・Pulse終了・現行更新",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O17",
+      "title": "Plan in other apps",
+      "url": "https://help.openai.com/en/articles/20001542-using-your-chatgpt-plan-in-other-apps-and-sites",
+      "scope": "対応外部ツールへの契約枠共有・別料金",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "O18",
+      "title": "Partner directory",
+      "url": "https://learn.chatgpt.com/docs/sign-in-with-chatgpt",
+      "scope": "利用枠対応・ログインのみ・OSSの区別",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G01",
+      "title": "Google AI Pro benefits",
+      "url": "https://support.google.com/googleone/answer/14534406?hl=en",
+      "scope": "Google AI Pro全体棚卸し",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G02",
+      "title": "Google AI plans in AI Studio",
+      "url": "https://ai.google.dev/gemini-api/docs/google-ai-plans",
+      "scope": "UI契約枠・API別・UI内agents別",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G03",
+      "title": "Video understanding in AI Studio",
+      "url": "https://developers.googleblog.com/en/gemini-2-5-video-understanding/",
+      "scope": "YouTube映像音声入力と学習アプリ実例（2025）",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G04",
+      "title": "Video understanding",
+      "url": "https://ai.google.dev/gemini-api/docs/video-understanding",
+      "scope": "YouTube公開条件・映像サンプリング・API固有制限",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G05",
+      "title": "Agentic video announcement",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-agentic-video-in-gemini/",
+      "scope": "API先行・アプリ提供時期との区別",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G06",
+      "title": "YouTube in Gemini",
+      "url": "https://support.google.com/gemini/answer/16622858?hl=en",
+      "scope": "公開動画内容への質問",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G07",
+      "title": "Gemini file inputs",
+      "url": "https://support.google.com/gemini/answer/14903178?hl=en",
+      "scope": "動画ファイル入力",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G08",
+      "title": "Gemini Chrome availability",
+      "url": "https://support.google.com/gemini/answer/17140089?hl=ja",
+      "scope": "日本・日本語・Windows対応と段階提供",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G09",
+      "title": "Chrome auto browse",
+      "url": "https://support.google.com/chrome/answer/16821166?hl=ja",
+      "scope": "PCの地域・英語・許可条件",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G10",
+      "title": "Gemini Spark",
+      "url": "https://support.google.com/gemini/answer/17094507?hl=en",
+      "scope": "Pro・対象地域・local/remote・承認",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G11",
+      "title": "Spark schedules",
+      "url": "https://support.google.com/gemini/answer/17094710?hl=en",
+      "scope": "持続タスクとクラウドスケジュール",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G12",
+      "title": "Gems to skills",
+      "url": "https://support.google.com/gemini/answer/18560919?hl=en",
+      "scope": "移行時期・Deep Research等との非互換",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G13",
+      "title": "Gemini skills",
+      "url": "https://support.google.com/gemini/answer/17094296?hl=en",
+      "scope": "再利用指示と追加資料",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G14",
+      "title": "Gemini CLI quotas",
+      "url": "https://geminicli.com/docs/resources/quota-and-pricing/",
+      "scope": "GoogleログインPro枠とキー課金の差",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G15",
+      "title": "CLI web_fetch",
+      "url": "https://geminicli.com/docs/tools/web-fetch/",
+      "scope": "URL Context経路",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G16",
+      "title": "URL Context",
+      "url": "https://ai.google.dev/gemini-api/docs/url-context",
+      "scope": "YouTube・動画音声は非対応",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G17",
+      "title": "Notebook source imports",
+      "url": "https://support.google.com/gemininotebook/answer/16215270?hl=en",
+      "scope": "YouTubeは字幕の全文資料取込み",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G18",
+      "title": "Gemini learning tools",
+      "url": "https://support.google.com/gemini/answer/16448384?hl=en",
+      "scope": "Guided Learning・動画教材",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G19",
+      "title": "Ask YouTube",
+      "url": "https://support.google.com/youtube/answer/14110396?hl=ja",
+      "scope": "日本語・一部動画・回答の不確実性",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G20",
+      "title": "Premium Lite benefit",
+      "url": "https://support.google.com/googleone/answer/17101453?hl=ja",
+      "scope": "視聴特典でありAI取得権限ではない",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G21",
+      "title": "Flow / Whisk transition",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/google-labs/flow-updates-february-2026/",
+      "scope": "Whisk/ImageFX機能をFlowへ",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G22",
+      "title": "Flow / Flow Music",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/google-labs/flow-updates/",
+      "scope": "制作・編集用途",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G23",
+      "title": "Opal FAQ",
+      "url": "https://developers.google.com/opal/faq",
+      "scope": "2026-11-17終了予定・新規基盤に不適",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "G24",
+      "title": "Gemini API terms",
+      "url": "https://ai.google.dev/gemini-api/terms",
+      "scope": "Pro契約だけからゼロ保持・業務機密保護を推測しない",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "X01",
+      "title": "vidIQ MCP",
+      "url": "https://support.vidiq.com/en/articles/15082430-vidiq-mcp",
+      "scope": "ネイティブChatGPT装備・字幕とVideo Watch別",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "X02",
+      "title": "vidIQ credits",
+      "url": "https://support.vidiq.com/en/articles/13928456-features-credits-by-plan",
+      "scope": "無料150credits/月",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "X03",
+      "title": "OpenClaw OpenAI provider",
+      "url": "https://docs.openclaw.ai/providers/openai",
+      "scope": "契約認証とAPI認証別経路",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "X04",
+      "title": "OpenClaw browser",
+      "url": "https://docs.openclaw.ai/tools/browser",
+      "scope": "ブラウザ操作と実際の動画認識別",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    },
+    {
+      "id": "X05",
+      "title": "OpenClaw automation",
+      "url": "https://docs.openclaw.ai/automation/cron-jobs",
+      "scope": "永続スケジュールと起動",
+      "status": "CONFIRMED_DOC",
+      "checked_on_jst": "2026-10-10"
+    }
+  ],
+  "native_plugin_discovery": [
+    {
+      "query": "YouTube vidIQ transcript",
+      "plugins": [
+        {
+          "id": "plugin_asdk_app_69dd11f3e50c8191b1ca48d03cf7e2ad",
+          "name": "vidIQ",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69d73fc8aa5c8191bec1583760b130c7",
+          "name": "Metricool",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_6a3d93e966b8819198c93780c2577383",
+          "name": "Pocket AI",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69d88b99c5c481918e8da9225737e1e9",
+          "name": "Fathom",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_695d84e2f06c8191861b9bac9b3fd53b",
+          "name": "Otter.ai",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69f3c30d68288191bbd428a394a78407",
+          "name": "Plaud",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_connector_6912075cb358819187346bcafb601db8",
+          "name": "Fireflies",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69e6af3297d88191b4925772c50df286",
+          "name": "Quo",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69f0dc45f6048191876c14c1016fe778",
+          "name": "Descript",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_6a5ae9736be0819199d06d61ac171080",
+          "name": "Wispr Flow",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        }
+      ],
+      "exhaustive": false
+    },
+    {
+      "query": "Google AI Studio Gemini NotebookLM",
+      "plugins": [
+        {
+          "id": "plugin_asdk_app_694a52cfaa3c819192bea84eaa254968",
+          "name": "Windsor.ai",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_6a3170ea7fc88191be6c0b9ff250a4b4",
+          "name": "HYPD AI - Paid Ads & Analytics",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_695d84e2f06c8191861b9bac9b3fd53b",
+          "name": "Otter.ai",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69af36d580288191a1bfe1e39c4e2ef0",
+          "name": "Read AI",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69f0dc45f6048191876c14c1016fe778",
+          "name": "Descript",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_connector_1p_ab21a553bfbc81919ea8fd1858e3ffa7",
+          "name": "Google Drive",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_connector_1p_f8509de903288191b14a160c6c5d20b0",
+          "name": "Google Calendar",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_connector_1p_c97194162860819190a6f840a61b9889",
+          "name": "Google Contacts",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_connector_1p_95d39881713c8191931482a62d6edff9",
+          "name": "Gmail",
+          "installed": true,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        },
+        {
+          "id": "plugin_asdk_app_69a1247fceb88191a0fde719fd50920d",
+          "name": "Supermetrics Marketing Agent",
+          "installed": false,
+          "status": "ENABLED",
+          "policy": "AVAILABLE"
+        }
+      ],
+      "exhaustive": false
+    }
+  ],
+  "research_conclusions": {
+    "quality_first": "AI Studio Playground -> official Deep Research -> Work/Codex -> non-default GitHub",
+    "interaction_first_candidate": "ChatGPT/Work + vidIQ Free; account/retention/technical-video precision unverified",
+    "empirical_best": "UNKNOWN",
+    "direct_one_url_automatic_loop": "NOT_RUN"
+  },
+  "contradictions": [
+    {
+      "id": "spark_region",
+      "sources": [
+        "G01",
+        "G10"
+      ],
+      "status": "UNKNOWN",
+      "safe_decision": "not baseline for Japan until account readback"
+    },
+    {
+      "id": "chat_skills_plus",
+      "sources": [
+        "O02",
+        "O09"
+      ],
+      "status": "UNKNOWN",
+      "safe_decision": "portable markdown and confirmed Codex skill support; no Plus-chat promise"
+    },
+    {
+      "id": "chrome_auto_browse",
+      "sources": [
+        "G01",
+        "G09"
+      ],
+      "status": "DOC_DIFFERENCE",
+      "safe_decision": "Japan excluded from baseline regardless of US-only vs US/India wording"
+    },
+    {
+      "id": "legacy_agent_body",
+      "sources": [
+        "O13"
+      ],
+      "status": "DOC_DIFFERENCE",
+      "safe_decision": "current overview Work transition; do not reuse legacy quota/body as current"
+    }
+  ],
+  "actions": {
+    "video_download": "NOT_RUN",
+    "video_or_transcript_fulltext_storage": "NOT_RUN",
+    "video_analysis": "NOT_RUN",
+    "external_model_start": "NOT_RUN",
+    "plugin_install_or_connect": "NOT_RUN",
+    "billing_change": "NOT_RUN",
+    "permissions_change": "NOT_RUN",
+    "automation_start": "NOT_RUN",
+    "merge": "NOT_RUN"
+  },
+  "preservation": {
+    "original_repo": "kamiyusense/ai-video-research",
+    "other_repo": "kamiyusense/multi-ai-council-phase0",
+    "other_repo_mutation": false
+  },
+  "retry": 0,
+  "fallback": "disabled"
+}

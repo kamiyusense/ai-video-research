@@ -1,3 +1,5 @@
+> 更新案内: このファイルは初回の4製品中心の調査履歴。現在の推奨・契約内範囲・終了／移行・追加装備の判断は [契約全体の再調査](2026-10-10-subscription-wide-youtube-learning.md) を参照。特にAI StudioのPro UI枠を調査対象へ追加した。
+
 # YouTubeからAI技能を学ぶ方法：Work側の独立調査
 確認日：2026-10-10（Asia/Tokyo）
 対象：ChatGPT Plus / Google AI Pro。通常の契約内利用と、別サービスの無料枠を区別する。

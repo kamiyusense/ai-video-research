@@ -1,3 +1,5 @@
+> 現在の拡張案: [004 契約内の動画研究から再利用技能へ](004-subscription-wide-learning-loop.md)。本ファイルは初回案として保存する。
+
 # 003：YouTube学習を検証してから自動化する
 状態：DESIGN_ONLY。LIVE / 定期起動 / 課金 / 接続変更なし。
 関連：research/2026-10-10-youtube-learning-methods.md
