@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "purpose": "動画IDの重複確認用台帳。自動同期・自動検知は未実装。",
+  "repository": "kamiyusense/ai-video-research",
+  "records": []
+}
