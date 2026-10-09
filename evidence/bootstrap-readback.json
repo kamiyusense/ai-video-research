@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "kind": "research_lab_bootstrap_readback",
+  "recorded_at_utc": "2026-10-09 22:45:32 UTC",
+  "repository": "kamiyusense/ai-video-research",
+  "repository_id": 1412521305,
+  "visibility": "private",
+  "visibility_evidence": "github_get_repo fresh readback before write",
+  "branch": "setup/research-lab",
+  "base_branch": "main",
+  "base_commit": "299375866727c8436730c1714a7fcad130b29692",
+  "content_commit": "f7d4629c568c56bcc309bcaa118c091121205abe",
+  "content_tree": "40dedc63ae03082f6b7e81ba412e153704f6efc9",
+  "pull_request": {
+    "url": "https://github.com/kamiyusense/ai-video-research/pull/1",
+    "number": 1,
+    "draft": true,
+    "head_at_creation": "f7d4629c568c56bcc309bcaa118c091121205abe",
+    "merged": false
+  },
+  "content_validation": {
+    "required_files_present": true,
+    "registry_json_valid": true,
+    "safe_paths": true,
+    "scope_broad": true,
+    "approval_boundaries": true,
+    "video_records_zero": true,
+    "validation_scope": "用意したUTF-8文書・JSONの内容チェック。LIVE・コード実行試験は行わない。"
+  },
+  "content_readback": {
+    "method": "github_fetch_file for all paths at pinned content_commit; exact UTF-8 string equality",
+    "file_count": 17,
+    "all_pass": true,
+    "files": [
+      {
+        "path": "README.md",
+        "blob_sha": "00d1a309870ace7547fa3b89c451ed789d5ab843",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "AGENTS.md",
+        "blob_sha": "3311bd50a0caa8fa27dc8dac69bcbdce377e99c1",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "CLAUDE.md",
+        "blob_sha": "1630008d77c8bce9b6c5d36fb7b94177f87b5598",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "CHATGPT_PROJECT_INSTRUCTIONS.md",
+        "blob_sha": "feb431683c7b4bf6fdb096de21c0138a850dc4d5",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "templates/research-record.md",
+        "blob_sha": "3303ea42ae2b7cc9ec8d293a9959450a0c497227",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "notes/verified-tooling.md",
+        "blob_sha": "402085c3c43d07b67b80f1e27e34bfee9017c751",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "proposals/001-evidence-first.md",
+        "blob_sha": "3f8d169f0082dc7e1d28a491dceb21e7d08da053",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "OPERATIONS.md",
+        "blob_sha": "c596ccab35d9226ced7f8c1004912527d374fd05",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "registry.json",
+        "blob_sha": "9eca9c9677ba36ef4da3f1eb5ba05dd6f05a007a",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": ".gitignore",
+        "blob_sha": "599ed1c09a239feb03e90326706ddf3910534bbb",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "SETUP_STATUS.md",
+        "blob_sha": "7abbbd190aabc62bb50f564df7b54d85c5d96084",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "PROJECT_SOURCE.md",
+        "blob_sha": "2ed7d47506a49f8c5adff092e31e8790dbbb42d5",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "RESEARCH_ROADMAP.md",
+        "blob_sha": "106e51e0070c141cc50b5bd23a2e6a0caec42e58",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "proposals/002-automation-learning-loop.md",
+        "blob_sha": "bcba59349e0d11d4024770ba728bae40d95b9a0b",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "templates/technical-note.md",
+        "blob_sha": "461812bc1e5f0c9b3c39975e9db0e43ace0c7d5d",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "templates/automation-proposal.md",
+        "blob_sha": "a82f63ba7136cd2d95a467787637ac32fb9fe162",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      },
+      {
+        "path": "evidence/README.md",
+        "blob_sha": "be263ceea29b1bdf2f7c14a334c1008a9572ec26",
+        "status": "PASS",
+        "exact_content_match": true,
+        "encoding": "utf-8"
+      }
+    ]
+  },
+  "diff_validation": {
+    "base": "299375866727c8436730c1714a7fcad130b29692",
+    "head": "f7d4629c568c56bcc309bcaa118c091121205abe",
+    "status": "ahead",
+    "ahead_by": 1,
+    "behind_by": 0,
+    "changed_files": 17,
+    "removed_files": 0,
+    "only_existing_file_modified": "README.md"
+  },
+  "boundaries": {
+    "default_branch_write": "NOT_RUN",
+    "merge": "NOT_RUN",
+    "auto_merge": "NOT_RUN",
+    "billing": "NOT_RUN",
+    "live": "NOT_RUN",
+    "external_model_launch": "NOT_RUN",
+    "permission_changes": "NOT_RUN",
+    "multi_ai_council_phase0_write": "NOT_RUN",
+    "retry": 0,
+    "fallback": "disabled"
+  },
+  "remaining": {
+    "chatgpt_project_creation": "UNKNOWN / not performed",
+    "chatgpt_project_instructions_applied": "UNKNOWN / not performed",
+    "local_file_readback": "UNKNOWN",
+    "video_research_count": 0,
+    "scheduled_automation": "NOT_CONFIGURED"
+  },
+  "receipt_scope": "This receipt attests to the pinned content_commit above. Its own subsequent storage/readback and final PR head are checked separately; no self-attestation."
+}
