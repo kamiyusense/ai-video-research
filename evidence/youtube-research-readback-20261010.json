@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "kind": "youtube_research_content_readback",
+  "observed_at_utc": "2026-10-09 23:13:08 UTC",
+  "repository": "kamiyusense/ai-video-research",
+  "branch": "setup/research-lab",
+  "verified_commit_sha": "36f513eb3d7ff8ee4d0c394e2f2b2914edcc4801",
+  "verified_tree_sha": "0d952c943a0690305561fde0be45a425eead48ac",
+  "verified_file_count": 23,
+  "files": [
+    {
+      "path": "README.md",
+      "blob_sha": "e03f892da6f1733d45b83cfd73e2641996d5b8ed",
+      "exact_content_match": true
+    },
+    {
+      "path": "AGENTS.md",
+      "blob_sha": "3311bd50a0caa8fa27dc8dac69bcbdce377e99c1",
+      "exact_content_match": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "blob_sha": "1630008d77c8bce9b6c5d36fb7b94177f87b5598",
+      "exact_content_match": true
+    },
+    {
+      "path": "CHATGPT_PROJECT_INSTRUCTIONS.md",
+      "blob_sha": "feb431683c7b4bf6fdb096de21c0138a850dc4d5",
+      "exact_content_match": true
+    },
+    {
+      "path": "templates/research-record.md",
+      "blob_sha": "3303ea42ae2b7cc9ec8d293a9959450a0c497227",
+      "exact_content_match": true
+    },
+    {
+      "path": "notes/verified-tooling.md",
+      "blob_sha": "402085c3c43d07b67b80f1e27e34bfee9017c751",
+      "exact_content_match": true
+    },
+    {
+      "path": "proposals/001-evidence-first.md",
+      "blob_sha": "3f8d169f0082dc7e1d28a491dceb21e7d08da053",
+      "exact_content_match": true
+    },
+    {
+      "path": "OPERATIONS.md",
+      "blob_sha": "c596ccab35d9226ced7f8c1004912527d374fd05",
+      "exact_content_match": true
+    },
+    {
+      "path": "registry.json",
+      "blob_sha": "9eca9c9677ba36ef4da3f1eb5ba05dd6f05a007a",
+      "exact_content_match": true
+    },
+    {
+      "path": ".gitignore",
+      "blob_sha": "599ed1c09a239feb03e90326706ddf3910534bbb",
+      "exact_content_match": true
+    },
+    {
+      "path": "SETUP_STATUS.md",
+      "blob_sha": "f4d444f3148108d42fffdda44825e0bd7c74e9a9",
+      "exact_content_match": true
+    },
+    {
+      "path": "PROJECT_SOURCE.md",
+      "blob_sha": "768962868d101201d14621f3379444c68a8e2757",
+      "exact_content_match": true
+    },
+    {
+      "path": "RESEARCH_ROADMAP.md",
+      "blob_sha": "106e51e0070c141cc50b5bd23a2e6a0caec42e58",
+      "exact_content_match": true
+    },
+    {
+      "path": "proposals/002-automation-learning-loop.md",
+      "blob_sha": "bcba59349e0d11d4024770ba728bae40d95b9a0b",
+      "exact_content_match": true
+    },
+    {
+      "path": "templates/technical-note.md",
+      "blob_sha": "461812bc1e5f0c9b3c39975e9db0e43ace0c7d5d",
+      "exact_content_match": true
+    },
+    {
+      "path": "templates/automation-proposal.md",
+      "blob_sha": "a82f63ba7136cd2d95a467787637ac32fb9fe162",
+      "exact_content_match": true
+    },
+    {
+      "path": "evidence/README.md",
+      "blob_sha": "be263ceea29b1bdf2f7c14a334c1008a9572ec26",
+      "exact_content_match": true
+    },
+    {
+      "path": "evidence/bootstrap-readback.json",
+      "blob_sha": "2da8b7fcb72b5e1d9f6b56fb8a0461b8e81098d1",
+      "exact_content_match": true
+    },
+    {
+      "path": "evidence/chatgpt-project-created-20261010.json",
+      "blob_sha": "8deec076495b3cedf0cdaf6fee7236d94f97e36e",
+      "exact_content_match": true
+    },
+    {
+      "path": "prompts/chat-youtube-research.md",
+      "blob_sha": "a8ce2aed387ac55c51ab4bdfa9a6722e2d3051e9",
+      "exact_content_match": true
+    },
+    {
+      "path": "research/2026-10-10-youtube-learning-methods.md",
+      "blob_sha": "133a668eca405423a8071fc45423a9b58c0ad711",
+      "exact_content_match": true
+    },
+    {
+      "path": "proposals/003-youtube-learning-loop.md",
+      "blob_sha": "784ed76bc93b082844af84a70023e84439c0e6e9",
+      "exact_content_match": true
+    },
+    {
+      "path": "evidence/youtube-research-docs-20261010.json",
+      "blob_sha": "8661bb0b108ee06bd4a3b7ad195762a17a65e49e",
+      "exact_content_match": true
+    }
+  ],
+  "verification": "PASS: exact generated content equals pinned GitHub readback for all 23 files",
+  "research_execution": "CONFIRMED_DOC; video processing NOT_RUN",
+  "receipt_scope": "Verifies preceding content commit. This receipt itself is read back separately after its commit; no self-verification claim.",
+  "retry": 0,
+  "fallback": "disabled"
+}
