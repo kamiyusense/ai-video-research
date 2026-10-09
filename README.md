@@ -40,3 +40,10 @@ YouTube、公式資料、論文、公開実装、更新情報を対象にする�
 - PROJECT_SOURCE.md: ChatGPTへ1ファイルで追加する初期資料
 
 課金につながる操作、LIVE起動、Merge、権限変更を自動実行しない。文書に禁止事項を書いても、サービス側の権限制御が設定されたことにはならない。
+
+## YouTubeから学ぶ方法の調査
+- [Chatへの調査引き継ぎ](prompts/chat-youtube-research.md)
+- [2026-10-10 Work側の独立調査](research/2026-10-10-youtube-learning-methods.md)
+- [動画取得と学習記録の実証計画](proposals/003-youtube-learning-loop.md)
+
+公式資料の確認と実際の動画処理は区別する。本調査では動画URL未提示のため実証はNOT_RUN。
