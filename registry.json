@@ -29,6 +29,19 @@
       "research_date": "2026-10-10",
       "status": "RESEARCH_RECORDED; STATIC_SPECIALIST_IMPLEMENTED; LIVE_NOT_RUN",
       "evidence": "USER_SUPPLIED_REPORTS"
+    },
+    {
+      "record_id": "youtube:BStkW1HTfmk",
+      "video_id": "BStkW1HTfmk",
+      "canonical_url": "https://www.youtube.com/watch?v=BStkW1HTfmk",
+      "research_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
+      "proposal_paths": [
+        "proposals/008-obsidian-optional-reader.md"
+      ],
+      "source_scope": "METADATA_ONLY; VIDEO_AUDIO_TRANSCRIPT_FRAMES_NOT_ACQUIRED. Independent assessment based on official Obsidian documentation, not this video's claims.",
+      "research_date": "2026-10-10",
+      "status": "VIDEO_CONTENT_PENDING; OFFICIAL_ONLY_RESEARCH; OBSIDIAN_INSTALL_NOT_RUN",
+      "evidence": "VIDEO_TITLE_DATE_PUBLIC_CATALOG_AND_OFFICIAL_OBSIDIAN_DOCS"
     }
   ]
 }
