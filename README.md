@@ -41,6 +41,10 @@ YouTube、公式資料、論文、公開実装、更新情報を対象にする�
 
 課金につながる操作、LIVE起動、Merge、権限変更を自動実行しない。文書に禁止事項を書いても、サービス側の権限制御が設定されたことにはならない。
 
+## 動画研究05｜再利用候補（2026-10-10）
+- [AI仙人の「課題ドリブン・Skill・Computer Use」独自研究記録](research/2026-10-10-lC5jxpYmatE-ai-techniques.md)（出典動画ID: lC5jxpYmatE。字幕報告＋AI Studio選択4区間の映像報告。ChatGPTの独立全編視聴なし）
+- [P006 未解決課題を保管して、新機能で解決できるか提案する](proposals/006-unresolved-task-backlog-revisit.md)（**未採用**。未来の研究で再評価する候補であり、巡回・通知・既存Loop改修は未設定）
+
 ## YouTubeから学ぶ方法の調査
 - [Chatへの調査引き継ぎ](prompts/chat-youtube-research.md)
 - [2026-10-10 Work側の独立調査](research/2026-10-10-youtube-learning-methods.md)
