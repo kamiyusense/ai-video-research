@@ -29,6 +29,17 @@
       "research_date": "2026-10-10",
       "status": "RESEARCH_RECORDED; STATIC_SPECIALIST_IMPLEMENTED; LIVE_NOT_RUN",
       "evidence": "USER_SUPPLIED_REPORTS"
+    },
+    {
+      "record_id": "youtube:3bLrrkA1nlQ",
+      "video_id": "3bLrrkA1nlQ",
+      "canonical_url": "https://www.youtube.com/watch?v=3bLrrkA1nlQ",
+      "research_path": "research/2026-10-10-3bLrrkA1nlQ-html-plan-preliminary.md",
+      "proposal_paths": [],
+      "source_scope": "Creator article + upstream skill/README + third-party timestamps; direct video not acquired",
+      "research_date": "2026-10-10",
+      "status": "PRELIMINARY_RESEARCH_RECORDED; ORIGINAL_VIDEO_UNKNOWN; LIVE_NOT_RUN",
+      "evidence": "CREATOR_ARTICLE_UPSTREAM_DOCS_SECONDARY_TIMESTAMPS"
     }
   ]
 }
