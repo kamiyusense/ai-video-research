@@ -1,5 +1,10 @@
 # 初期運用ガイド
 
+## 新しい担当制（人間の受渡し）
+新しい動画URLを受け取ったら `docs/SPECIALIST_WORKFLOW.md` と `MEMORY.md` を参照する。担当の実装は `agents/README.md`、外部AI用の依頼文は `prompts/specialist-visual.md`・`prompts/specialist-research.md` に置く。新しいチャットは `prompts/specialist-resume.md` で最新状態を読み直す。
+
+**現時点で担当間の自動送受信、GitHubへの自動保存、Workの自動起動は存在しない。** ユーザーの都度の操作に従い、実行・検品・記録の成否を別々に確認する。複数ブランチにある同一ファイルはMerge前に競合確認。
+
 ## 研究を選ぶ
 AI関連全般を対象に、RESEARCH_ROADMAP.mdで優先順位と未調査事項を管理する。
 動画の研究、公式資料だけの研究、論文や公開実装の研究を区別する。
