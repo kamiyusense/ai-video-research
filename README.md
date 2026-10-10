@@ -55,3 +55,6 @@ YouTube、公式資料、論文、公開実装、更新情報を対象にする�
 - [47一次資料・機能の矛盾・装備の実在確認](evidence/subscription-wide-research-docs-20261010.json)
 
 資料からの最適候補はAI Studio Playgroundの動画入力、公式一次資料の検証、Work/Codexの技能化・記録の組み合わせ。実測の最適解は未確定。原動画／字幕全文は保存せず、Notebookへは独自ノートだけを入れる。URL投入から自動保存までの連携はNOT_RUN。
+
+## 将来の新規プロジェクト発足時に検討する候補（未採用）
+- [P005 目的→ボトルネック→次タスク管理を発足時に提案](proposals/005-project-kickoff-goal-bottleneck-next-task.md): 他AIが発見できるように残す設計メモ。AIは新規プロジェクトの初期設計で適している場合だけユーザーに提案する。自動導入・既存Loopの改修・定期通知は **NOT_RUN**。
