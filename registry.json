@@ -15,6 +15,20 @@
       "research_date": "2026-10-10",
       "status": "RESEARCH_RECORDED; LIVE_NOT_RUN",
       "evidence": "USER_SUPPLIED_REPORTS"
+    },
+    {
+      "record_id": "youtube:Vr3JkAT9mo8",
+      "video_id": "Vr3JkAT9mo8",
+      "canonical_url": "https://www.youtube.com/watch?v=Vr3JkAT9mo8",
+      "original_url": "https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=237s",
+      "research_path": "research/2026-10-10-Vr3JkAT9mo8-work-specialists.md",
+      "proposal_paths": [
+        "proposals/007-video-research-specialist-rollout.md"
+      ],
+      "source_scope": "User supplied AI Studio full video audio/video analysis report 00:00-20:21 + Spark transcript and official article report; direct viewing by ChatGPT NOT_RUN",
+      "research_date": "2026-10-10",
+      "status": "RESEARCH_RECORDED; STATIC_SPECIALIST_IMPLEMENTED; LIVE_NOT_RUN",
+      "evidence": "USER_SUPPLIED_REPORTS"
     }
   ]
 }
