@@ -35,6 +35,15 @@ Claude×Julesに限定しない。製品名に依存する知識と、他の環�
 - 調査保留: Jevの実測性能・費用、Dify不要論。公式一次資料と実践条件を別途検証する。
 - 既存の課題台帳、イベント自動監視、定期起動やSkillは新設していない（NOT_RUN）。
 
+## 動画研究06：担当制の実装と実証の区別
+- [動画の独自要約と時刻](research/2026-10-10-Vr3JkAT9mo8-work-specialists.md)
+- [Phase A/B/C ロードマップ P007](proposals/007-video-research-specialist-rollout.md)
+- [担当別5ロール・引継ぎ・静的mock](docs/SPECIALIST_WORKFLOW.md)
+- **Phase A（文書と契約のSTATIC実装）**：保存とreadback後に完了判定する。
+- **Phase B（相棒が操作する実地受渡し試験）**：次動画1件で新チャット再開・検品・記録を試験。NOT_RUN。
+- **Phase C（Workや他AIを連携して自動化）**：実証・承認待ち。NOT_WIRED、費用・権限・サービス対応はUNKNOWN。
+- 既存のDraft PR #2（目的→障害→次タスク）と本PRは並行ブランチ。統合時の競合はfresh確認する。勝手にMergeしない。
+
 ## 最初の研究バックログ
 | ID | 研究する問い | 現在の状態 |
 |---|---|---|
