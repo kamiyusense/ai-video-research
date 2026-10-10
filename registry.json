@@ -40,6 +40,17 @@
       "research_date": "2026-10-10",
       "status": "PRELIMINARY_RESEARCH_RECORDED; ORIGINAL_VIDEO_UNKNOWN; LIVE_NOT_RUN",
       "evidence": "CREATOR_ARTICLE_UPSTREAM_DOCS_SECONDARY_TIMESTAMPS"
+    },
+    {
+      "record_id": "youtube:ZjUJ-35acaU",
+      "video_id": "ZjUJ-35acaU",
+      "canonical_url": "https://www.youtube.com/watch?v=ZjUJ-35acaU",
+      "research_path": "research/2026-10-10-ZjUJ-35acaU-notebooklm-youtube-extension.md",
+      "proposal_paths": [],
+      "source_scope": "USER_SUPPLIED_GEMINI_SPARK_TRANSCRIPT_REPORT; PRIMARY_GOOGLE_HELP_AND_CHROME_STORE; VIDEO_AUDIO_FRAMES_NOT_DIRECTLY_ACQUIRED",
+      "research_date": "2026-10-10",
+      "status": "REVIEWED_PARTIAL; OFFICIAL_CROSSCHECK; VIDEO_VISUAL_UNKNOWN; EXTENSION_NOT_TESTED",
+      "evidence": "SPARK_TRANSCRIPT_REPORT; GOOGLE_OFFICIAL_DOCS; CHROME_WEB_STORE"
     }
   ]
 }
