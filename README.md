@@ -6,6 +6,19 @@ YouTube、公式資料、論文、公開実装、更新情報を対象にする�
 
 研究の順序と未調査事項は RESEARCH_ROADMAP.md に記録する。
 
+## 🟢 担当制｜まずここから（STATIC実装済・外部AI手動受渡し）
+
+- [担当制の運用手順](docs/SPECIALIST_WORKFLOW.md)：動画URL受付 → 独立映像/字幕調査 → 検品 → 知識記録
+- [5担当の一覧・仕事の引き渡し](agents/README.md)（coordinator / visual / research / reviewer / archivist）
+- [共通記憶の目次](MEMORY.md)（自動同期ではなく、必要時に明示して読む）
+- [映像担当へのコピープロンプト](prompts/specialist-visual.md)
+- [字幕・独立調査担当へのコピープロンプト](prompts/specialist-research.md)
+- [新チャット/Workへの担当引継ぎプロンプト](prompts/specialist-resume.md)
+- [静的mock仕様](tests/SPECIALIST_HANDOFF_MOCK.md)
+- [動画06の研究記録](research/2026-10-10-Vr3JkAT9mo8-work-specialists.md) ／ [段階導入案P007](proposals/007-video-research-specialist-rollout.md)
+
+**使い方**: URLと調査目的をcoordinatorに渡す → 必要なら2つのコピープロンプトを人間が外部AIへ貼る → AIの短い報告をreviewerへ → 保存する場合だけarchivistへ。GitHubの資料を保存しただけではChatGPTプロジェクト、AI Studio、Sparkへ自動読込されない。外部モデル実行/WorkのLIVE/自動タスクは未接続。
+
 ## 対象
 - ChatGPTプロジェクト名: 📺 AI技術研究室
 - GitHub: kamiyusense/ai-video-research（非公開）
