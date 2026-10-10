@@ -6,6 +6,12 @@ YouTube、公式資料、論文、公開実装、更新情報を対象にする�
 
 研究の順序と未調査事項は RESEARCH_ROADMAP.md に記録する。
 
+## 🟡 任意のObsidian閲覧画面（提案中・未導入）
+既存の非公開GitHub担当制を**正本のまま**残し、ObsidianをWindowsから閲覧・検索する無料のUI候補として検討。
+- [動画07の調査メモ（メタデータのみ／本編内容UNKNOWN）](research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md)
+- [P008 GitHub＋Obsidianの最小・無課金試験案](proposals/008-obsidian-optional-reader.md)
+- 本体インストール、Git自動同期、API連携、Obsidian Sync/Publish、LIVEは**NOT_RUN**。動画内容の確認ができるまで動画由来の手順を採用済みとしない。
+
 ## 🟢 担当制｜まずここから（STATIC実装済・外部AI手動受渡し）
 
 - [担当制の運用手順](docs/SPECIALIST_WORKFLOW.md)：動画URL受付 → 独立映像/字幕調査 → 検品 → 知識記録
