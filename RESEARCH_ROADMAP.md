@@ -35,6 +35,12 @@ Claude×Julesに限定しない。製品名に依存する知識と、他の環�
 - 調査保留: Jevの実測性能・費用、Dify不要論。公式一次資料と実践条件を別途検証する。
 - 既存の課題台帳、イベント自動監視、定期起動やSkillは新設していない（NOT_RUN）。
 
+## 動画07｜Obsidianを既存担当制の任意の閲覧画面とする検討
+- [P008：既存GitHubを正本のままMarkdownを読む・検索する](proposals/008-obsidian-optional-reader.md)
+- [動画07：本編未取得の暫定研究](research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md)（2026-09-23、video_id=BStkW1HTfmk、動画時刻UNKNOWN）
+- **採否**：任意のローカルUIとしての検証は前向き。新たな正本・自動同期・AIの記憶装置としての採用は見送り。
+- **次の証拠**：動画の映像/字幕を取得して実演・限界を時刻付きで独立検品 → Windowsのローカル閲覧mockをユーザー承認後に実施。
+
 ## 動画研究06：担当制の実装と実証の区別
 - [動画の独自要約と時刻](research/2026-10-10-Vr3JkAT9mo8-work-specialists.md)
 - [Phase A/B/C ロードマップ P007](proposals/007-video-research-specialist-rollout.md)
