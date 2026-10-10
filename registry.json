@@ -2,5 +2,19 @@
   "schema_version": 1,
   "purpose": "動画IDの重複確認用台帳。自動同期・自動検知は未実装。",
   "repository": "kamiyusense/ai-video-research",
-  "records": []
+  "records": [
+    {
+      "record_id": "youtube:lC5jxpYmatE",
+      "video_id": "lC5jxpYmatE",
+      "canonical_url": "https://www.youtube.com/watch?v=lC5jxpYmatE",
+      "research_path": "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+      "proposal_paths": [
+        "proposals/006-unresolved-task-backlog-revisit.md"
+      ],
+      "source_scope": "Gemini Spark transcript report + AI Studio visual report on four selected segments; ChatGPT did not independently view full video",
+      "research_date": "2026-10-10",
+      "status": "RESEARCH_RECORDED; LIVE_NOT_RUN",
+      "evidence": "USER_SUPPLIED_REPORTS"
+    }
+  ]
 }
