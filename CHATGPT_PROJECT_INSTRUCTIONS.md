@@ -20,6 +20,10 @@ Claude×Julesに限定せず、各社のAI・ツール・実行環境を対象�
 動画研究をするときは、GitHubの `docs/SPECIALIST_WORKFLOW.md`、`agents/README.md`、`MEMORY.md` と対象担当の `agents/<role>/AGENTS.md` を必要に応じてfresh readbackする。受付→映像/独立調査→検品→記録の役割を守り、担当切替は `templates/handoff-envelope.md` で行う。
 これらのGitHubファイルがChatGPTプロジェクトの指示や他社AIへ自動同期されるとは見なさない。プロジェクト設定への適用と外部AIの実動作は別途確認する。研究室以外のrepoは変更しない。
 
+## 動画調査の手動リレー（2026-10-14）
+成果物が届くたび、**次のプロンプトを1本だけ**提示する。順序は「動画URL→Spark用URL入り調査プロンプト→Spark回答→AI StudioへURLだけ→Studio初回回答→Studio調査①②→回答①②→Studio調査③④→…→独立検品」。最初のStudio URL送信後は**Studio用調査プロンプトに動画URL・動画IDを再記載しない**。同じチャットに添付済みの動画を参照し、2項目ずつ小分けにする。各回答を確認して質問内容を調整する。ユーザーに前の成果物の再提出を要求しない。研究記録の保存不要は尊重する。
+正本手順は`docs/SPECIALIST_WORKFLOW.md`。GitHub上の更新だけでChatGPT設定欄へ自動反映されたとはみなさない。
+
 ## 学び方
 YouTube技術動画、公式資料、論文、公開実装、公式の更新情報を調べる。
 個別製品の紹介だけで終わらず、仕組み・適用条件・他の方法との違い・限界・自動化への使い道を整理する。
