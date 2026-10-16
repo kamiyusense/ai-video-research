@@ -1,87 +1,88 @@
 {
   "schema_version": 1,
-  "kind": "gemini_notebook_loop_v02_verification",
-  "recorded_at_utc": "2026-10-16T16:35:30Z",
+  "kind": "gemini_notebook_loop_v03_verification",
+  "recorded_at_utc": "2026-10-16T17:02:00Z",
   "repository": "kamiyusense/ai-video-research",
   "visibility": "private",
   "branch": "feature/gemini-notebook-research-loop-20261016",
-  "base_commit_before_changes": "aae3e5538ca18a431919c8e8c36ca8a11260292f",
+  "base_commit_before_v03": "6cbfd0f5a7607383ec43c14216f0097be71e52a9",
   "pull_request": {
     "url": "https://github.com/kamiyusense/ai-video-research/pull/10",
     "number": 10,
     "draft": true,
     "merged": false
   },
+  "operational_completion_criteria": {
+    "1_code_exists": "PASS",
+    "2_mock_tests_succeed": "PASS",
+    "3_actual_github_write_succeeds": "PASS",
+    "4_actual_notebook_update_succeeds": "NOT_TESTED",
+    "5_gemini_to_github_without_manual_copy": "NOT_TESTED",
+    "6_periodic_execution_continues_when_pc_is_off": "UNKNOWN"
+  },
+  "v03_five_fixes_verification": {
+    "1_do_not_trust_stale_local_remote_refs": {
+      "status": "PASS",
+      "mechanism": "refresh_remote_refs() runs `git fetch --prune origin` before scanning `refs/remotes/origin/*`; raises ValueError if fetch fails and allow_stale_remotes is False."
+    },
+    "2_use_research_records_in_addition_to_registry_json": {
+      "status": "PASS",
+      "mechanism": "collect_local_research_videos() and collect_remote_branch_videos() scan `research/*.md` and `notes/*.md` filenames and markdown bodies for video_ids (automatically detecting unregistered IDs such as `MVVpR2Bb0Rk` inside `notes/cognitive-drift-video-series-20261010.md`)."
+    },
+    "3_do_not_silently_reset_corrupted_loop_state_json": {
+      "status": "PASS",
+      "mechanism": "load_loop_state() raises ValueError immediately if `loop_state.json` exists but has unreadable I/O, invalid JSON syntax, or invalid schema; existing file is never overwritten."
+    },
+    "4_distinguish_generated_github_index_from_notebook_master_index": {
+      "status": "PASS",
+      "mechanism": "GitHub export is written to `automation/gemini-notebook/state/github_knowledge_index_export.md` with explicit header warnings prohibiting overwrite of Gemini Notebook's internal `AI技術研究室_知識索引.md`."
+    },
+    "5_do_not_conflate_github_save_with_notebook_sync": {
+      "status": "PASS",
+      "mechanism": "All outputs, loop_state.json, and generated notes explicitly report `notebook_sync_status: NOT_SYNCED_FROM_GITHUB` separately from `github_write_status`."
+    }
+  },
   "automated_tests": {
     "command": "py tests/test_gemini_notebook_loop.py",
-    "test_count": 7,
+    "test_count": 8,
     "all_pass": true,
     "verified_cases": [
       {
         "test_id": "test_01_extract_receipt_from_markdown_and_raw_json",
-        "status": "PASS",
-        "evidence": "Direct JSON and Gemini Markdown response with fenced ```json code block yield identical SHA-256 receipt digest (73333a835bc4538d2c14381008bf5b2ea408900340488cf44191574599124780)."
+        "status": "PASS"
       },
       {
         "test_id": "test_02_youtube_url_normalization_and_mismatch_rejection",
-        "status": "PASS",
-        "evidence": "Normalized watch?v=, youtu.be/, shorts/, and live/ URLs to canonical https://www.youtube.com/watch?v=<ID>; rejected mismatched URL vs video_id."
+        "status": "PASS"
       },
       {
-        "test_id": "test_03_end_to_end_apply_and_duplicate_prevention",
-        "status": "PASS",
-        "evidence": "First run created 1 research note and updated registry.json + loop_state.json + AI技術研究室_知識索引.md. Re-processing identical input resulted in new_records=0, updated_records=0, reason=SKIP_DUPLICATE_RECEIPT."
+        "test_id": "test_03_end_to_end_apply_duplicate_prevention_and_index_separation",
+        "status": "PASS"
       },
       {
-        "test_id": "test_04_cross_branch_deduplication_and_delta_updates",
+        "test_id": "test_04_fresh_remote_fetch_and_deep_markdown_deduplication",
         "status": "PASS",
-        "evidence": "Video ZjUJ-35acaU on remote branch was skipped with SKIP_EXISTING_REMOTE_BRANCH; existing local video lC5jxpYmatE with changes=['UPDATED'] received safe append-only delta section without overwriting original content."
+        "evidence": "Automatically fetched a newly pushed remote branch (`origin/research/new-remote-unfetched`) and deduplicated both local unregistered markdown body ID (`UnregLocal1`) and remote markdown file ID (`FreshRemot9`)."
       },
       {
-        "test_id": "test_05_intentional_failures_and_safety_boundaries",
+        "test_id": "test_05_corrupted_loop_state_json_refuses_reset",
         "status": "PASS",
-        "evidence": "Refused write on default branch 'main'; refused write when origin pointed to kamiyusense/multi-ai-council-phase0; rejected >300 char summary; skipped notebook_readback=UNKNOWN and METADATA_ONLY records."
+        "evidence": "Raised ValueError on both invalid JSON syntax and corrupted schema in `loop_state.json`, preserving the original file bytes untouched."
       },
       {
-        "test_id": "test_06_git_commit_push_readback_and_divergence_stop",
+        "test_id": "test_06_intentional_failures_and_safety_boundaries",
         "status": "PASS",
-        "evidence": "Verified commit, push to bare origin, remote HEAD SHA and 4 file blob SHA readbacks; simulated concurrent remote commit and verified safe stop ('is ahead by 1 commit(s); stopping safely without overwrite')."
+        "evidence": "Refused write on `main`, refused write on `multi-ai-council-phase0` origin, and refused stale remote refs when `git fetch` failed."
       },
       {
-        "test_id": "test_07_inbox_directory_discovery_and_filtering",
+        "test_id": "test_07_git_commit_push_readback_and_divergence_stop",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_08_cloud_payload_env_and_inbox_discovery",
         "status": "PASS",
-        "evidence": "Discovered Markdown and text files in inbox directory and extracted embedded receipt JSON."
+        "evidence": "Ingested receipt directly from `TEST_CLOUD_RECEIPT_PAYLOAD` environment variable via `--payload-env`."
       }
-    ]
-  },
-  "cross_branch_dedup_inventory": {
-    "current_branch_videos": [
-      "Vr3JkAT9mo8",
-      "lC5jxpYmatE"
-    ],
-    "parallel_remote_branch_videos": [
-      {
-        "video_id": "3bLrrkA1nlQ",
-        "branches": [
-          "origin/research/cognitive-drift-series-20261010",
-          "origin/research/video08-notebooklm-youtube-extension-20261010"
-        ]
-      },
-      {
-        "video_id": "BStkW1HTfmk",
-        "branches": [
-          "origin/research/video07-obsidian-github-overlay-20261010"
-        ]
-      },
-      {
-        "video_id": "ZjUJ-35acaU",
-        "branches": [
-          "origin/research/video08-notebooklm-youtube-extension-20261010"
-        ]
-      }
-    ],
-    "excluded_videos": [
-      "MVVpR2Bb0Rk"
     ]
   },
   "boundaries": {
@@ -93,12 +94,8 @@
     "permission_changes": "NOT_RUN",
     "multi_ai_council_phase0_write": "NOT_RUN",
     "force_push": "NOT_RUN",
+    "file_deletions": 0,
     "retry": 0,
     "fallback": "disabled"
-  },
-  "unverified_or_not_wired": {
-    "gemini_web_scheduled_task_unattended_execution": "UNVERIFIED (requires user execution in Gemini web UI)",
-    "gemini_direct_push_to_private_github": "NOT_SUPPORTED_BY_GOOGLE_CONSUMER_UI (bridged via receipt_to_research.py)",
-    "google_drive_source_initial_link_in_notebook": "REQUIRES_ONE_TIME_USER_LINKING"
   }
 }

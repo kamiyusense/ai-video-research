@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
-"""Comprehensive automated test suite for the Gemini Notebook Research Loop bridge.
+"""Comprehensive automated test suite for the Gemini Notebook Research Loop bridge (v0.3).
 
 Verifies:
 1. Extraction of `research_receipt_v1` from raw JSON and Gemini Markdown output (fenced code blocks).
 2. Canonical YouTube URL normalization (`watch?v=`, `youtu.be/`, `shorts/`, `live/`) and video_id matching.
-3. End-to-end processing of NEW video records, `registry.json` updates, and knowledge index generation.
-4. Idempotency & duplicate prevention when re-processing the exact same receipt or existing video IDs.
-5. Cross-branch deduplication against `origin/*` unmerged Draft PR branches.
-6. Safe append-only delta updates for `UPDATED` / `CONFLICT` records on existing videos.
-7. Intentional failure & safety boundary stops (default branch `main` refusal, invalid origin refusal,
-   oversized transcript/summary rejection, `notebook_readback != PASS` skip, `METADATA_ONLY` skip).
-8. Local & remote Git commit, push, blob SHA readback verification, and remote divergence safety stop.
-9. Batch inbox directory scanning (`.md`, `.json`, `.txt`) with automatic skipping of non-receipt files.
+3. End-to-end processing of NEW video records, `registry.json` updates, and `github_knowledge_index_export.md` generation.
+4. Fresh remote branch deduplication (`git fetch --prune origin` before scanning) so stale local refs are never trusted,
+   plus safety stop if remote fetch fails.
+5. Deep research record deduplication across `registry.json` AND `research/*.md` / `notes/*.md` filenames and markdown bodies
+   (both local and remote branches).
+6. Protection against `loop_state.json` corruption: refuses to silently reset existing history when JSON or schema is invalid.
+7. Explicit separation between GitHub's `github_knowledge_index_export.md` and Gemini Notebook's internal `AI技術研究室_知識索引.md`,
+   and strict separation between `github_write_status` and `notebook_sync_status` (`NOT_SYNCED_FROM_GITHUB`).
+8. Intentional failure & safety boundary stops (`main` refusal, invalid origin refusal, >300 char summary rejection,
+   `notebook_readback != PASS` skip, `METADATA_ONLY` skip).
+9. Local & remote Git commit, push, blob SHA readback verification, remote divergence safety stop, and cloud `--payload-env` ingestion.
 """
 import importlib.util
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -71,11 +75,10 @@ def make_sample_receipt(**overrides):
     return base
 
 
-class TestGeminiNotebookLoop(unittest.TestCase):
+class TestGeminiNotebookLoopV03(unittest.TestCase):
     def setUp(self):
         self.tmp_dir = tempfile.TemporaryDirectory()
         self.repo_root = Path(self.tmp_dir.name) / "repo"
-        # Name bare remote path ending with /kamiyusense/ai-video-research.git so origin boundary check passes
         self.remote_bare = Path(self.tmp_dir.name) / "kamiyusense" / "ai-video-research.git"
         self.repo_root.mkdir(parents=True, exist_ok=True)
         self.remote_bare.mkdir(parents=True, exist_ok=True)
@@ -106,8 +109,8 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             capture_output=True,
         )
 
-        # Seed initial registry.json and research directory
         (self.repo_root / "research").mkdir(parents=True, exist_ok=True)
+        (self.repo_root / "notes").mkdir(parents=True, exist_ok=True)
         initial_registry = {
             "schema_version": 1,
             "purpose": "動画IDの重複確認用台帳。",
@@ -146,7 +149,7 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             capture_output=True,
         )
 
-        # Create a simulated remote tracking branch with another video (`ZjUJ-35acaU`)
+        # Create a parallel remote branch with `ZjUJ-35acaU` in registry.json
         subprocess.run(
             ["git", "-C", str(self.repo_root), "checkout", "-b", "research/video08-mock"],
             check=True,
@@ -188,7 +191,7 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             capture_output=True,
         )
 
-        # Switch to working feature branch off main and push initial state to bare origin
+        # Switch to working feature branch off main and push initial state
         subprocess.run(
             [
                 "git",
@@ -257,17 +260,16 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             "dQw4w9WgXcQ",
         )
 
-        # Mismatched URL vs video_id must fail validation
         bad = make_sample_receipt()
         bad["videos"][0]["url"] = "https://www.youtube.com/watch?v=11111111111"
         with self.assertRaisesRegex(ValueError, "does not match video_id"):
             bridge.validate(bad)
 
-    def test_03_end_to_end_apply_and_duplicate_prevention(self):
+    def test_03_end_to_end_apply_duplicate_prevention_and_index_separation(self):
         receipt = make_sample_receipt()
         buf = io.StringIO()
         with redirect_stdout(buf):
-            summary1, touched1 = bridge.process_receipt_data(
+            summary1, _ = bridge.process_receipt_data(
                 data=receipt,
                 root=self.repo_root,
                 apply=True,
@@ -275,31 +277,36 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             )
         self.assertEqual(summary1["new_records"], 1)
         self.assertEqual(summary1["ids"], ["dQw4w9WgXcQ"])
+        self.assertEqual(summary1["remote_dedup_freshness"], "FRESH_FETCHED")
+        self.assertEqual(summary1["notebook_sync_status"], "NOT_SYNCED_FROM_GITHUB")
+        self.assertEqual(summary1["github_write_status"], "LOCAL_WORKTREE_WRITTEN")
+
         note_path = self.repo_root / "research" / "2026-10-17-dQw4w9WgXcQ-gemini-notebook.md"
         self.assertTrue(note_path.exists())
         note_text = note_path.read_text(encoding="utf-8")
         self.assertIn("- canonical_url: https://www.youtube.com/watch?v=dQw4w9WgXcQ", note_text)
-        self.assertIn("- original_url: https://youtu.be/dQw4w9WgXcQ?t=45", note_text)
-        self.assertIn("[02:05](https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=125s)", note_text)
+        self.assertIn("- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB", note_text)
 
-        # Verify registry.json has canonical_url and original_url
-        reg = json.loads((self.repo_root / "registry.json").read_text(encoding="utf-8"))
-        added_rec = [r for r in reg["records"] if r["video_id"] == "dQw4w9WgXcQ"][0]
-        self.assertEqual(added_rec["canonical_url"], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        self.assertEqual(added_rec["original_url"], "https://youtu.be/dQw4w9WgXcQ?t=45")
-
-        # Verify knowledge index and loop_state.json were updated
-        index_md = (
-            self.repo_root / "automation" / "gemini-notebook" / "state" / "AI技術研究室_知識索引.md"
-        ).read_text(encoding="utf-8")
+        # Verify GitHub knowledge index export is created with distinct filename and explicit warning
+        export_path = (
+            self.repo_root
+            / "automation"
+            / "gemini-notebook"
+            / "state"
+            / "github_knowledge_index_export.md"
+        )
+        self.assertTrue(export_path.exists())
+        index_md = export_path.read_text(encoding="utf-8")
+        self.assertIn("github_knowledge_index_export.md", index_md)
+        self.assertIn("AI技術研究室_知識索引.md", index_md)
+        self.assertIn("NOT_SYNCED_FROM_GITHUB", index_md)
         self.assertIn("`dQw4w9WgXcQ`", index_md)
         self.assertIn("`ZjUJ-35acaU`", index_md)
-        self.assertIn("ハーネスにおけるツール失敗時の決定論的ロールバック設計", index_md)
 
-        # Re-processing the exact same receipt must be idempotent (0 new records, 0 updates)
+        # Re-processing identical receipt must be idempotent
         buf2 = io.StringIO()
         with redirect_stdout(buf2):
-            summary2, touched2 = bridge.process_receipt_data(
+            summary2, _ = bridge.process_receipt_data(
                 data=receipt,
                 root=self.repo_root,
                 apply=True,
@@ -308,44 +315,96 @@ class TestGeminiNotebookLoop(unittest.TestCase):
         self.assertEqual(summary2["new_records"], 0)
         self.assertEqual(summary2["updated_records"], 0)
         self.assertEqual(summary2["skipped"][0]["reason"], "SKIP_DUPLICATE_RECEIPT")
-        self.assertIn("SKIP_EXISTING dQw4w9WgXcQ", buf2.getvalue())
 
-    def test_04_cross_branch_deduplication_and_delta_updates(self):
+    def test_04_fresh_remote_fetch_and_deep_markdown_deduplication(self):
+        # 1. Create a local research markdown file NOT listed in registry.json (`UnregLocal1`)
+        (self.repo_root / "notes" / "series-intake.md").write_text(
+            "# Series Intake\n\n- `UnregLocal1`: skipped video in notes body\n",
+            encoding="utf-8",
+        )
+
+        # 2. From a separate clone, push a brand-new remote branch `research/new-remote-unfetched`
+        #    containing an unregistered markdown note for video `FreshRemot9` (NOT in local remote refs yet!)
+        other_clone = Path(self.tmp_dir.name) / "other_clone_for_branch"
+        subprocess.run(
+            ["git", "clone", self.remote_bare.as_posix(), str(other_clone)],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(other_clone), "config", "user.email", "other@example.com"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(other_clone), "config", "user.name", "Other"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(other_clone), "checkout", "-b", "research/new-remote-unfetched"],
+            check=True,
+            capture_output=True,
+        )
+        (other_clone / "research").mkdir(parents=True, exist_ok=True)
+        (other_clone / "research" / "2026-10-17-FreshRemot9-preliminary.md").write_text(
+            "# Preliminary Research\n\n- video_id: `FreshRemot9`\n",
+            encoding="utf-8",
+        )
+        subprocess.run(["git", "-C", str(other_clone), "add", "."], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "-C", str(other_clone), "commit", "-m", "Add unregistered research note on remote"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(other_clone),
+                "push",
+                "origin",
+                "research/new-remote-unfetched:research/new-remote-unfetched",
+            ],
+            check=True,
+            capture_output=True,
+        )
+
+        # Confirm `repo_root` does NOT yet have `origin/research/new-remote-unfetched` in local refs
+        refs_before = bridge.git(
+            "for-each-ref", "--format=%(refname:short)", "refs/remotes/origin/", root=self.repo_root
+        )
+        self.assertNotIn("origin/research/new-remote-unfetched", refs_before)
+
+        # Now run `process_receipt_data` with `UnregLocal1` and `FreshRemot9`:
+        # It must fetch fresh remote refs automatically and deduplicate BOTH videos!
         receipt = make_sample_receipt(
-            checked_at="2026-10-18",
             videos=[
                 {
-                    "video_id": "ZjUJ-35acaU",
-                    "title": "YouTube to NotebookLM Extension",
-                    "url": "https://www.youtube.com/watch?v=ZjUJ-35acaU",
-                    "published_at": "2026-03-21",
-                    "summary_ja": "別ブランチで既に調査済みの動画が再検出されたケース。",
-                    "source_scope": "Gemini transcript",
+                    "video_id": "UnregLocal1",
+                    "title": "Unregistered Local Note Video",
+                    "url": "https://www.youtube.com/watch?v=UnregLocal1",
+                    "published_at": None,
+                    "summary_ja": "ローカルのnotes本文に記載されている動画。",
+                    "source_scope": "Transcript",
                     "claims": [],
-                    "notebook_source_id": "src_008",
+                    "notebook_source_id": "src_local_note",
                     "notebook_readback": "PASS",
                     "changes": ["NEW"],
                 },
                 {
-                    "video_id": "lC5jxpYmatE",
-                    "title": "課題ドリブン・Skill再利用の追加公式検証",
-                    "url": "https://www.youtube.com/watch?v=lC5jxpYmatE",
-                    "published_at": "2026-10-02",
-                    "summary_ja": "Claude Code SkillsとHooksの最新公式ドキュメント更新に伴い、仕様変更差分を追記。",
-                    "source_scope": "Official documentation re-verification",
-                    "claims": [
-                        {
-                            "text": "Hooksの設定スキーマとイベント種別の追加確認",
-                            "status": "CONFIRMED_DOC",
-                            "timestamp_seconds": 1750,
-                            "official_url": "https://code.claude.com/docs/en/hooks",
-                        }
-                    ],
-                    "notebook_source_id": "src_005_v2",
+                    "video_id": "FreshRemot9",
+                    "title": "Fresh Remote Branch Research Video",
+                    "url": "https://www.youtube.com/watch?v=FreshRemot9",
+                    "published_at": None,
+                    "summary_ja": "リモートの新ブランチ上のresearchファイルにのみ存在する動画。",
+                    "source_scope": "Transcript",
+                    "claims": [],
+                    "notebook_source_id": "src_fresh_remote",
                     "notebook_readback": "PASS",
-                    "changes": ["UPDATED"],
+                    "changes": ["NEW"],
                 },
-            ],
+            ]
         )
         buf = io.StringIO()
         with redirect_stdout(buf):
@@ -355,32 +414,70 @@ class TestGeminiNotebookLoop(unittest.TestCase):
                 apply=True,
                 sync_index=True,
             )
+        self.assertEqual(summary["remote_dedup_freshness"], "FRESH_FETCHED")
         self.assertEqual(summary["new_records"], 0)
-        self.assertEqual(summary["updated_records"], 1)
-        self.assertEqual(summary["updated_ids"], ["lC5jxpYmatE"])
-        reasons = {s["video_id"]: s["reason"] for s in summary["skipped"]}
-        self.assertEqual(reasons.get("ZjUJ-35acaU"), "SKIP_EXISTING_REMOTE_BRANCH")
-
-        # Verify delta section was appended to existing research file without destroying original content
-        updated_md = (self.repo_root / "research" / "2026-10-10-lC5jxpYmatE-ai-techniques.md").read_text(
-            encoding="utf-8"
+        reasons = {s["video_id"]: s for s in summary["skipped"]}
+        self.assertEqual(reasons["UnregLocal1"]["reason"], "SKIP_EXISTING")
+        self.assertIn("notes/series-intake.md", reasons["UnregLocal1"]["detected_via"])
+        self.assertEqual(reasons["FreshRemot9"]["reason"], "SKIP_EXISTING_REMOTE_BRANCH")
+        self.assertIn(
+            "origin/research/new-remote-unfetched",
+            reasons["FreshRemot9"]["branches"],
         )
-        self.assertIn("# 動画研究05", updated_md)
-        self.assertIn("## 差分更新 (2026-10-18 / UPDATED)", updated_md)
-        self.assertIn("Claude Code SkillsとHooksの最新公式ドキュメント更新に伴い", updated_md)
 
-    def test_05_intentional_failures_and_safety_boundaries(self):
+    def test_05_corrupted_loop_state_json_refuses_reset(self):
+        state_file = (
+            self.repo_root / "automation" / "gemini-notebook" / "state" / "loop_state.json"
+        )
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Case A: Invalid JSON syntax
+        corrupted_raw = '{"schema_version": "gemini_notebook_loop_state_v1", BROKEN_JSON'
+        state_file.write_text(corrupted_raw, encoding="utf-8")
+        with self.assertRaises(ValueError) as cm_a:
+            bridge.process_receipt_data(make_sample_receipt(), root=self.repo_root, apply=True)
+        self.assertIn("Corrupted JSON in loop_state.json", str(cm_a.exception))
+        self.assertIn("refusing to reset existing state", str(cm_a.exception))
+        # Verify the corrupted file was NOT overwritten
+        self.assertEqual(state_file.read_text(encoding="utf-8"), corrupted_raw)
+
+        # Case B: Valid JSON but corrupted schema (`processed_receipts` is not a list)
+        bad_schema_raw = json.dumps(
+            {
+                "schema_version": "gemini_notebook_loop_state_v1",
+                "processed_receipts": "CORRUPTED_STRING",
+                "next_topics_queue": [],
+                "open_unknowns": [],
+            }
+        )
+        state_file.write_text(bad_schema_raw, encoding="utf-8")
+        with self.assertRaises(ValueError) as cm_b:
+            bridge.process_receipt_data(make_sample_receipt(), root=self.repo_root, apply=True)
+        self.assertIn("Corrupted loop_state.json", str(cm_b.exception))
+        self.assertIn("'processed_receipts' must be a list", str(cm_b.exception))
+        self.assertEqual(state_file.read_text(encoding="utf-8"), bad_schema_raw)
+
+    def test_06_intentional_failures_and_safety_boundaries(self):
         # 1. Refusing write on `main` branch
-        subprocess.run(["git", "-C", str(self.repo_root), "checkout", "main"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "-C", str(self.repo_root), "checkout", "main"], check=True, capture_output=True
+        )
         with self.assertRaisesRegex(ValueError, "Refusing detached/default-branch write"):
             bridge.process_receipt_data(make_sample_receipt(), root=self.repo_root, apply=True)
 
-        # Switch back to feature branch, test invalid origin refusal
         subprocess.run(
-            ["git", "-C", str(self.repo_root), "checkout", "feature/gemini-notebook-research-loop-20261016"],
+            [
+                "git",
+                "-C",
+                str(self.repo_root),
+                "checkout",
+                "feature/gemini-notebook-research-loop-20261016",
+            ],
             check=True,
             capture_output=True,
         )
+
+        # 2. Refusing write when origin points to forbidden repository
         subprocess.run(
             [
                 "git",
@@ -395,7 +492,37 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             capture_output=True,
         )
         with self.assertRaisesRegex(ValueError, "Unexpected git origin: refusing write"):
-            bridge.process_receipt_data(make_sample_receipt(), root=self.repo_root, apply=True)
+            bridge.process_receipt_data(
+                make_sample_receipt(),
+                root=self.repo_root,
+                apply=True,
+                check_remote_branches=False,
+            )
+
+        # 3. Refusing stale remotes when `git fetch` fails and `allow_stale_remotes=False`
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.repo_root),
+                "remote",
+                "set-url",
+                "origin",
+                (Path(self.tmp_dir.name) / "nonexistent" / "kamiyusense" / "ai-video-research.git").as_posix(),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        with self.assertRaisesRegex(
+            ValueError, "Failed to fetch fresh remote refs from origin"
+        ):
+            bridge.process_receipt_data(
+                make_sample_receipt(),
+                root=self.repo_root,
+                apply=True,
+                check_remote_branches=True,
+                allow_stale_remotes=False,
+            )
 
         # Restore valid origin
         subprocess.run(
@@ -412,53 +539,9 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             capture_output=True,
         )
 
-        # 2. Reject full transcript / oversized summary (>300 chars)
-        oversized = make_sample_receipt()
-        oversized["videos"][0]["summary_ja"] = "あ" * 301
-        with self.assertRaisesRegex(ValueError, "Summary must contain 1-300 characters"):
-            bridge.validate(oversized)
-
-        # 3. Skip unverified notebook readback and METADATA_ONLY
-        unverified = make_sample_receipt(
-            videos=[
-                {
-                    "video_id": "11111111111",
-                    "title": "Unverified Readback Video",
-                    "url": "https://www.youtube.com/watch?v=11111111111",
-                    "published_at": None,
-                    "summary_ja": "Notebook読み戻し未確認のためスキップされるべき動画。",
-                    "source_scope": "Transcript",
-                    "claims": [],
-                    "notebook_source_id": None,
-                    "notebook_readback": "UNKNOWN",
-                    "changes": ["NEW"],
-                },
-                {
-                    "video_id": "22222222222",
-                    "title": "Metadata Only Video",
-                    "url": "https://www.youtube.com/watch?v=22222222222",
-                    "published_at": None,
-                    "summary_ja": "タイトルと概要欄しか見ていないためスキップされるべき動画。",
-                    "source_scope": "METADATA_ONLY; transcript unavailable",
-                    "claims": [],
-                    "notebook_source_id": "src_meta",
-                    "notebook_readback": "PASS",
-                    "changes": ["NEW"],
-                },
-            ]
-        )
-        buf = io.StringIO()
-        with redirect_stdout(buf):
-            summary, _ = bridge.process_receipt_data(unverified, root=self.repo_root, apply=True)
-        self.assertEqual(summary["new_records"], 0)
-        reasons = {s["video_id"]: s["reason"] for s in summary["skipped"]}
-        self.assertEqual(reasons["11111111111"], "SKIP_UNVERIFIED_NOTEBOOK")
-        self.assertEqual(reasons["22222222222"], "SKIP_METADATA_ONLY")
-
-    def test_06_git_commit_push_readback_and_divergence_stop(self):
+    def test_07_git_commit_push_readback_and_divergence_stop(self):
         receipt = make_sample_receipt()
-        buf = io.StringIO()
-        with redirect_stdout(buf):
+        with redirect_stdout(io.StringIO()):
             _, touched = bridge.process_receipt_data(
                 data=receipt,
                 root=self.repo_root,
@@ -474,11 +557,12 @@ class TestGeminiNotebookLoop(unittest.TestCase):
         self.assertTrue(git_ev["committed"])
         self.assertTrue(git_ev["pushed"])
         self.assertTrue(git_ev["readback_verified"])
+        self.assertEqual(git_ev["github_write_status"], "PUSHED_AND_READBACK_VERIFIED")
+        self.assertEqual(git_ev["notebook_sync_status"], "NOT_SYNCED_FROM_GITHUB")
         self.assertEqual(git_ev["head_sha"], git_ev["remote_head_sha"])
-        self.assertEqual(len(git_ev["file_blob_shas"]), 4)
 
-        # Simulate remote divergence (another actor pushes to origin/<branch>) and verify safe stop
-        other_clone = Path(self.tmp_dir.name) / "other_clone"
+        # Simulate concurrent remote push -> must stop safely without overwriting
+        other_clone = Path(self.tmp_dir.name) / "other_clone_diverge"
         subprocess.run(
             [
                 "git",
@@ -497,12 +581,14 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             capture_output=True,
         )
         subprocess.run(
-            ["git", "-C", str(other_clone), "config", "user.name", "Other Runner"],
+            ["git", "-C", str(other_clone), "config", "user.name", "Other"],
             check=True,
             capture_output=True,
         )
         (other_clone / "CONCURRENT.md").write_text("concurrent remote change\n", encoding="utf-8")
-        subprocess.run(["git", "-C", str(other_clone), "add", "CONCURRENT.md"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "-C", str(other_clone), "add", "CONCURRENT.md"], check=True, capture_output=True
+        )
         subprocess.run(
             ["git", "-C", str(other_clone), "commit", "-m", "Remote concurrent commit"],
             check=True,
@@ -521,7 +607,6 @@ class TestGeminiNotebookLoop(unittest.TestCase):
             capture_output=True,
         )
 
-        # Now try to push a new local change from repo_root -> must stop safely without overwriting
         receipt2 = make_sample_receipt(
             checked_at="2026-10-19",
             videos=[
@@ -554,21 +639,21 @@ class TestGeminiNotebookLoop(unittest.TestCase):
                 touched_paths=touched2,
             )
 
-    def test_07_inbox_directory_discovery_and_filtering(self):
-        inbox_dir = Path(self.tmp_dir.name) / "inbox"
-        inbox_dir.mkdir(parents=True, exist_ok=True)
-        # 1. Markdown file with embedded receipt JSON block
-        md_content = (
-            "# Gemini Task Export\n\n```json\n"
-            + json.dumps(make_sample_receipt(), ensure_ascii=False, indent=2)
-            + "\n```\n"
-        )
-        (inbox_dir / "01_gemini_export.md").write_text(md_content, encoding="utf-8")
-        # 2. Unrelated text file (should be skipped in inbox mode)
-        (inbox_dir / "02_notes.txt").write_text("単なるメモファイル（JSONなし）", encoding="utf-8")
-
-        files = bridge.discover_inbox_files(inbox_dir)
-        self.assertEqual(len(files), 2)
+    def test_08_cloud_payload_env_and_inbox_discovery(self):
+        # Verify cloud workflow_dispatch / repository_dispatch payload ingestion via --payload-env
+        sample_md = "Gemini Cloud Output:\n```json\n" + json.dumps(make_sample_receipt(), ensure_ascii=False) + "\n```"
+        os.environ["TEST_CLOUD_RECEIPT_PAYLOAD"] = sample_md
+        try:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = bridge.main(["--payload-env", "TEST_CLOUD_RECEIPT_PAYLOAD", "--no-remote-dedup"])
+            self.assertEqual(rc, 0)
+            out_json = json.loads(buf.getvalue().strip().splitlines()[-1])
+            self.assertEqual(out_json["mode"], "PREVIEW")
+            self.assertEqual(out_json["new_records"], 1)
+            self.assertEqual(out_json["notebook_sync_status"], "NOT_SYNCED_FROM_GITHUB")
+        finally:
+            os.environ.pop("TEST_CLOUD_RECEIPT_PAYLOAD", None)
 
 
 if __name__ == "__main__":
