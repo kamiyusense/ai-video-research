@@ -45,3 +45,14 @@ default branch直接write、force push、削除、履歴書換え。
 ## 境界
 このファイルは作業方針であり、技術的な権限強制装置ではない。
 GitHub Actions、外部実行、定期起動は初期設定に含めない。
+
+## 2026-10-16 研究自動化を優先するルーティング（ユーザー最新指示）
+
+ユーザーの「どんどん進めて」は、動画の要約件数・小分け読取テストを増やす意味ではない。**Gemini Notebookを使う先行事例に近い継続研究自動化システムを実装する**のが目的。
+
+- 「自動化システムの構築・改善」が依頼されたら、従来の `docs/SPECIALIST_WORKFLOW.md` 1A（動画ごとの逐次手動リレー）より、この新しい目的を優先する。
+- 再利用する実装は `automation/gemini-notebook/README.md`、実行用の単一Task契約は `automation/gemini-notebook/GEMINI_TASK.md`。既存5担当制・`registry.json`は破棄せず、必要な接続部分だけ拡張する。
+- 過去にGeminiで6動画同時取得、Notebookのソース登録・readbackが成功したという**ユーザー提供報告**がある。1本→2本の反復読取テストを再提案しない。
+- 優先順は (1) 全工程を1タスクに統合する、(2) Notebookの索引・重複・差分更新、(3) 正本GitHubへの安全な受渡し・同期、(4) 安全条件が整ってから定期起動。
+- 個別動画の映像・字幕検証が本当に必要なときだけ、旧逐次リレーを使ってよい。工程ごとの「続けますか」は求めない。
+- Gemini TaskをGitHubから直接起動したことにしない。NotebookとGitHubの直接同期・定期実行は未接続の間はNOT_WIRED。費用・外部モデルLIVE・権限変更・Merge・default branch書込みは従来の承認境界を維持する。
