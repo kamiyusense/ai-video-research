@@ -1,0 +1,29 @@
+{
+  "schema_version": "gemini_notebook_loop_state_v1",
+  "repository": "kamiyusense/ai-video-research",
+  "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "last_updated": "2026-10-17",
+  "processed_receipts": [],
+  "next_topics_queue": [],
+  "open_unknowns": [],
+  "unresolved_backlog_refs": [
+    {
+      "id": "P006-U01",
+      "title": "Google AI Studioの長尺YouTube動画入力でのブラウザUIフリーズ回避・映像フレーム直接検証の省力化",
+      "source": "proposals/006-unresolved-task-backlog-revisit.md",
+      "status": "OPEN"
+    },
+    {
+      "id": "P006-U02",
+      "title": "Gemini Notebookと非公開GitHub間の手動コピーを最小化する安全な公式連携・差分同期",
+      "source": "automation/gemini-notebook/README.md",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "P006-U03",
+      "title": "反復的な画面操作（Computer Use）から公式API・決定的スクリプトへの安全な移行判断",
+      "source": "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+      "status": "OPEN"
+    }
+  ]
+}

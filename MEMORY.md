@@ -35,13 +35,16 @@ YouTube・公式資料・研究成果から価値あるAI技術を学び、ユ�
 ## 安全境界
 研究室以外のGitHub repoは変更しない。課金、外部AIへの自動送信/起動、APIキー、権限変更、LIVE運用、Merge、default branch直書きは別承認。外部の字幕全文・動画本体・個人情報・秘密情報は保存しない。
 
-## 2026-10-16 自動研究Loop（Draft PR #10）
+## 2026-10-17 自動研究Loop v0.2（Draft PR #10）
 
 ユーザーの最優先目的は**Gemini Notebookの継続的な研究自動化システムの構築**。動画の追加要約は目的ではなく手段。Geminiによる6動画同時読込、Notebookの16ソース保持・研究1件追加の成果はユーザー提供の実行報告であり、ChatGPT側の独立実機確認は未実施。
 
 - 自動化の入口: [Gemini Taskのマスター契約](automation/gemini-notebook/GEMINI_TASK.md)
 - コードと未接続境界: [研究Loop README](automation/gemini-notebook/README.md)
-- GitHubへの受渡し変換: [receipt_to_research.py](automation/gemini-notebook/receipt_to_research.py)
+- GitHubへの受渡し・重複防止・差分追記・Git反映ブリッジ: [receipt_to_research.py](automation/gemini-notebook/receipt_to_research.py)
+- GitHub正本×全ブランチ横断のNotebook同期用知識索引: [AI技術研究室_知識索引.md](automation/gemini-notebook/state/AI技術研究室_知識索引.md)
+- 継続研究ステート（Receipt冪等性台帳・次回テーマ・P006課題）: [loop_state.json](automation/gemini-notebook/state/loop_state.json)
+- 自動検証テストスイート: [test_gemini_notebook_loop.py](tests/test_gemini_notebook_loop.py)
 - 旧 `docs/SPECIALIST_WORKFLOW.md` 1A は個別動画を深掘りするときの任意の手動リレー。自動システム実装を依頼された場合には小分け試験を優先しない。
-- Gemini Task側のLIVE、定期スケジュール、NotebookとGitHubの自動双方向同期: 未接続/未実証。GitHub正本は引き続き非公開リポジトリのみ。Notebookは補助知識庫。
+- Gemini Task側のLIVE、定期スケジュール、Notebook側の自動取込トリガー: 未実証。GitHub正本は引き続き非公開リポジトリのみ。Notebookは補助知識庫。
 - この自動化は研究室の既存Draft PR群の上に積む非defaultブランチ作業。Mergeはしていない。

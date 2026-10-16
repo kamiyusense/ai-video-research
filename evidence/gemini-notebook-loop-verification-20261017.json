@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "kind": "gemini_notebook_loop_v02_verification",
+  "recorded_at_utc": "2026-10-16T16:35:30Z",
+  "repository": "kamiyusense/ai-video-research",
+  "visibility": "private",
+  "branch": "feature/gemini-notebook-research-loop-20261016",
+  "base_commit_before_changes": "aae3e5538ca18a431919c8e8c36ca8a11260292f",
+  "pull_request": {
+    "url": "https://github.com/kamiyusense/ai-video-research/pull/10",
+    "number": 10,
+    "draft": true,
+    "merged": false
+  },
+  "automated_tests": {
+    "command": "py tests/test_gemini_notebook_loop.py",
+    "test_count": 7,
+    "all_pass": true,
+    "verified_cases": [
+      {
+        "test_id": "test_01_extract_receipt_from_markdown_and_raw_json",
+        "status": "PASS",
+        "evidence": "Direct JSON and Gemini Markdown response with fenced ```json code block yield identical SHA-256 receipt digest (73333a835bc4538d2c14381008bf5b2ea408900340488cf44191574599124780)."
+      },
+      {
+        "test_id": "test_02_youtube_url_normalization_and_mismatch_rejection",
+        "status": "PASS",
+        "evidence": "Normalized watch?v=, youtu.be/, shorts/, and live/ URLs to canonical https://www.youtube.com/watch?v=<ID>; rejected mismatched URL vs video_id."
+      },
+      {
+        "test_id": "test_03_end_to_end_apply_and_duplicate_prevention",
+        "status": "PASS",
+        "evidence": "First run created 1 research note and updated registry.json + loop_state.json + AI技術研究室_知識索引.md. Re-processing identical input resulted in new_records=0, updated_records=0, reason=SKIP_DUPLICATE_RECEIPT."
+      },
+      {
+        "test_id": "test_04_cross_branch_deduplication_and_delta_updates",
+        "status": "PASS",
+        "evidence": "Video ZjUJ-35acaU on remote branch was skipped with SKIP_EXISTING_REMOTE_BRANCH; existing local video lC5jxpYmatE with changes=['UPDATED'] received safe append-only delta section without overwriting original content."
+      },
+      {
+        "test_id": "test_05_intentional_failures_and_safety_boundaries",
+        "status": "PASS",
+        "evidence": "Refused write on default branch 'main'; refused write when origin pointed to kamiyusense/multi-ai-council-phase0; rejected >300 char summary; skipped notebook_readback=UNKNOWN and METADATA_ONLY records."
+      },
+      {
+        "test_id": "test_06_git_commit_push_readback_and_divergence_stop",
+        "status": "PASS",
+        "evidence": "Verified commit, push to bare origin, remote HEAD SHA and 4 file blob SHA readbacks; simulated concurrent remote commit and verified safe stop ('is ahead by 1 commit(s); stopping safely without overwrite')."
+      },
+      {
+        "test_id": "test_07_inbox_directory_discovery_and_filtering",
+        "status": "PASS",
+        "evidence": "Discovered Markdown and text files in inbox directory and extracted embedded receipt JSON."
+      }
+    ]
+  },
+  "cross_branch_dedup_inventory": {
+    "current_branch_videos": [
+      "Vr3JkAT9mo8",
+      "lC5jxpYmatE"
+    ],
+    "parallel_remote_branch_videos": [
+      {
+        "video_id": "3bLrrkA1nlQ",
+        "branches": [
+          "origin/research/cognitive-drift-series-20261010",
+          "origin/research/video08-notebooklm-youtube-extension-20261010"
+        ]
+      },
+      {
+        "video_id": "BStkW1HTfmk",
+        "branches": [
+          "origin/research/video07-obsidian-github-overlay-20261010"
+        ]
+      },
+      {
+        "video_id": "ZjUJ-35acaU",
+        "branches": [
+          "origin/research/video08-notebooklm-youtube-extension-20261010"
+        ]
+      }
+    ],
+    "excluded_videos": [
+      "MVVpR2Bb0Rk"
+    ]
+  },
+  "boundaries": {
+    "default_branch_write": "NOT_RUN",
+    "merge": "NOT_RUN",
+    "auto_merge": "NOT_RUN",
+    "billing": "NOT_RUN",
+    "live_external_model_launch": "NOT_RUN",
+    "permission_changes": "NOT_RUN",
+    "multi_ai_council_phase0_write": "NOT_RUN",
+    "force_push": "NOT_RUN",
+    "retry": 0,
+    "fallback": "disabled"
+  },
+  "unverified_or_not_wired": {
+    "gemini_web_scheduled_task_unattended_execution": "UNVERIFIED (requires user execution in Gemini web UI)",
+    "gemini_direct_push_to_private_github": "NOT_SUPPORTED_BY_GOOGLE_CONSUMER_UI (bridged via receipt_to_research.py)",
+    "google_drive_source_initial_link_in_notebook": "REQUIRES_ONE_TIME_USER_LINKING"
+  }
+}
