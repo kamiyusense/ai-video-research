@@ -1,50 +1,47 @@
 {
   "schema_version": 1,
-  "kind": "gemini_notebook_loop_v03_verification",
-  "recorded_at_utc": "2026-10-16T17:02:00Z",
+  "kind": "gemini_notebook_loop_v04_verification",
+  "recorded_at_utc": "2026-10-16T23:45:00Z",
   "repository": "kamiyusense/ai-video-research",
   "visibility": "private",
   "branch": "feature/gemini-notebook-research-loop-20261016",
-  "base_commit_before_v03": "6cbfd0f5a7607383ec43c14216f0097be71e52a9",
+  "base_commit_before_v04": "998cf5eefe53fae7c319bae927e5a8a056a48744",
   "pull_request": {
     "url": "https://github.com/kamiyusense/ai-video-research/pull/10",
     "number": 10,
     "draft": true,
     "merged": false
   },
+  "selected_architecture": "GAS_DIRECT_VALIDATION_AND_GIT_DATABASE_API_ATOMIC_COMMIT_V04",
   "operational_completion_criteria": {
     "1_code_exists": "PASS",
-    "2_mock_tests_succeed": "PASS",
+    "2_mock_and_parity_tests_succeed": "PASS",
     "3_actual_github_write_succeeds": "PASS",
     "4_actual_notebook_update_succeeds": "NOT_TESTED",
     "5_gemini_to_github_without_manual_copy": "NOT_TESTED",
     "6_periodic_execution_continues_when_pc_is_off": "UNKNOWN"
   },
-  "v03_five_fixes_verification": {
-    "1_do_not_trust_stale_local_remote_refs": {
+  "v04_concerns_addressed": {
+    "concern_A_python_js_dual_implementation_parity": {
       "status": "PASS",
-      "mechanism": "refresh_remote_refs() runs `git fetch --prune origin` before scanning `refs/remotes/origin/*`; raises ValueError if fetch fails and allow_stale_remotes is False."
+      "mechanism": "Created canonical shared contract `automation/gemini-notebook/contract_spec_v1.json` and automated Node.js <-> Python cross-language test (`test_09`) proving 100% byte-for-byte identity for SHA-256 digests, research markdown, delta markdown, and knowledge index exports."
     },
-    "2_use_research_records_in_addition_to_registry_json": {
+    "concern_B_gas_execution_time_and_scaling": {
       "status": "PASS",
-      "mechanism": "collect_local_research_videos() and collect_remote_branch_videos() scan `research/*.md` and `notes/*.md` filenames and markdown bodies for video_ids (automatically detecting unregistered IDs such as `MVVpR2Bb0Rk` inside `notes/cognitive-drift-video-series-20261010.md`)."
+      "mechanism": "Implemented Git Trees API (`?recursive=1`) filename-first extraction (0 extra HTTP calls for `research/YYYY-MM-DD-<video_id>-*.md`) plus `branchCache` keyed by branch `commit_sha` (0 tree/blob calls for unchanged remote branches) and `max_blob_fetches_per_run = 25`."
     },
-    "3_do_not_silently_reset_corrupted_loop_state_json": {
+    "concern_C_pat_scope_vs_branch_protection": {
       "status": "PASS",
-      "mechanism": "load_loop_state() raises ValueError immediately if `loop_state.json` exists but has unreadable I/O, invalid JSON syntax, or invalid schema; existing file is never overwritten."
+      "mechanism": "Explicitly separated Application-Level Guard (`FORBIDDEN_BRANCHES = ['main', 'master']` in code) from GitHub Server-Level Guard (`branch.protected` checked via GitHub API and reported in `securityPosture.mainBranchServerProtected`)."
     },
-    "4_distinguish_generated_github_index_from_notebook_master_index": {
+    "concern_D_github_drive_split_brain_and_concurrency": {
       "status": "PASS",
-      "mechanism": "GitHub export is written to `automation/gemini-notebook/state/github_knowledge_index_export.md` with explicit header warnings prohibiting overwrite of Gemini Notebook's internal `AI技術研究室_知識索引.md`."
-    },
-    "5_do_not_conflate_github_save_with_notebook_sync": {
-      "status": "PASS",
-      "mechanism": "All outputs, loop_state.json, and generated notes explicitly report `notebook_sync_status: NOT_SYNCED_FROM_GITHUB` separately from `github_write_status`."
+      "mechanism": "Added `LockService.getScriptLock()` concurrency exclusion, `PATCH /git/refs/heads/<branch>` with `force: false` (atomic HTTP 422 stop on branch divergence), and Two-Phase Self-Healing Reconciliation (`lastGitHubCommitSha` vs `lastDriveSyncedCommitSha` + `loop_state.json` SSOT check) so a failed Drive update after GitHub commit heals automatically on the next run without duplicate GitHub commits."
     }
   },
   "automated_tests": {
-    "command": "py tests/test_gemini_notebook_loop.py",
-    "test_count": 8,
+    "command": "py -3 tests/test_gemini_notebook_loop.py",
+    "test_count": 10,
     "all_pass": true,
     "verified_cases": [
       {
@@ -61,18 +58,15 @@
       },
       {
         "test_id": "test_04_fresh_remote_fetch_and_deep_markdown_deduplication",
-        "status": "PASS",
-        "evidence": "Automatically fetched a newly pushed remote branch (`origin/research/new-remote-unfetched`) and deduplicated both local unregistered markdown body ID (`UnregLocal1`) and remote markdown file ID (`FreshRemot9`)."
+        "status": "PASS"
       },
       {
         "test_id": "test_05_corrupted_loop_state_json_refuses_reset",
-        "status": "PASS",
-        "evidence": "Raised ValueError on both invalid JSON syntax and corrupted schema in `loop_state.json`, preserving the original file bytes untouched."
+        "status": "PASS"
       },
       {
         "test_id": "test_06_intentional_failures_and_safety_boundaries",
-        "status": "PASS",
-        "evidence": "Refused write on `main`, refused write on `multi-ai-council-phase0` origin, and refused stale remote refs when `git fetch` failed."
+        "status": "PASS"
       },
       {
         "test_id": "test_07_git_commit_push_readback_and_divergence_stop",
@@ -80,8 +74,17 @@
       },
       {
         "test_id": "test_08_cloud_payload_env_and_inbox_discovery",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_09_python_js_cross_language_contract_and_output_parity",
         "status": "PASS",
-        "evidence": "Ingested receipt directly from `TEST_CLOUD_RECEIPT_PAYLOAD` environment variable via `--payload-env`."
+        "evidence": "Verified 100% byte-for-byte parity between Python `receipt_to_research.py` and Node.js/GAS `cloud_relay_gas.js` across `contract_spec_v1.json`, SHA-256 digest, `render()`, `render_delta_section()`, `render_github_knowledge_index_export_md()`, and forbidden-key rejection."
+      },
+      {
+        "test_id": "test_10_gas_mock_atomic_commit_concurrency_conflict_and_drive_self_healing",
+        "status": "PASS",
+        "evidence": "Verified GAS LockService contention skip, pre-write rejection of forbidden `raw_transcript` key, atomic Git Database API commit + readback, 0 extra remote tree API calls on cached Run 2, automatic self-healing of Google Drive export Doc after simulated Run 1 Drive failure without duplicate GitHub commit, and safe HTTP 422 stop on branch divergence."
       }
     ]
   },

@@ -1,0 +1,98 @@
+{
+  "contract_version": "gemini_notebook_bridge_contract_v1_4",
+  "receipt_schema_version": "research_receipt_v1",
+  "loop_state_schema_version": "gemini_notebook_loop_state_v1",
+  "expected_repo": "kamiyusense/ai-video-research",
+  "expected_repo_owner": "kamiyusense",
+  "expected_repo_name": "ai-video-research",
+  "default_target_branch": "feature/gemini-notebook-research-loop-20261016",
+  "forbidden_branches": [
+    "main",
+    "master"
+  ],
+  "default_notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "notebook_internal_master_index_name": "AI技術研究室_知識索引.md",
+  "github_index_export_file": "automation/gemini-notebook/state/github_knowledge_index_export.md",
+  "loop_state_file": "automation/gemini-notebook/state/loop_state.json",
+  "youtube_hosts": [
+    "www.youtube.com",
+    "youtube.com",
+    "m.youtube.com",
+    "youtu.be"
+  ],
+  "allowed_statuses": [
+    "CONFIRMED_DOC",
+    "REPORTED_BY_AUTHOR",
+    "CONFIRMED_TEST",
+    "UNKNOWN",
+    "CONTRADICTED"
+  ],
+  "allowed_changes": [
+    "KNOWN",
+    "NEW",
+    "UPDATED",
+    "CONFLICT",
+    "UNKNOWN"
+  ],
+  "allowed_readback": [
+    "PASS",
+    "FAIL",
+    "UNKNOWN"
+  ],
+  "allowed_dedup_status": [
+    "PASS",
+    "UNKNOWN"
+  ],
+  "forbidden_payload_keys": [
+    "transcript",
+    "full_transcript",
+    "raw_transcript",
+    "subtitles",
+    "captions",
+    "full_text",
+    "video_binary",
+    "api_key",
+    "apikey",
+    "access_token",
+    "refresh_token",
+    "private_key",
+    "secret",
+    "password",
+    "authorization"
+  ],
+  "limits": {
+    "max_videos_per_receipt": 20,
+    "max_claims_per_video": 12,
+    "max_title_length": 250,
+    "max_summary_ja_length": 300,
+    "max_source_scope_length": 180,
+    "max_claim_text_length": 500,
+    "max_next_topics_count": 10,
+    "max_next_topic_length": 300,
+    "max_unknowns_count": 20,
+    "max_unknown_length": 500,
+    "max_next_topics_queue": 15,
+    "max_open_unknowns_queue": 25,
+    "max_blob_fetches_per_run": 25
+  },
+  "unresolved_backlog_defaults": [
+    {
+      "id": "P006-U01",
+      "title": "Google AI Studioの長尺YouTube動画入力でのブラウザUIフリーズ回避・映像フレーム直接検証の省力化",
+      "source": "proposals/006-unresolved-task-backlog-revisit.md",
+      "status": "OPEN"
+    },
+    {
+      "id": "P006-U02",
+      "title": "Gemini Notebookと非公開GitHub間の手動コピーを最小化する安全な公式連携・差分同期",
+      "source": "automation/gemini-notebook/README.md",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "P006-U03",
+      "title": "反復的な画面操作（Computer Use）から公式API・決定的スクリプトへの安全な移行判断",
+      "source": "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+      "status": "OPEN"
+    }
+  ]
+}

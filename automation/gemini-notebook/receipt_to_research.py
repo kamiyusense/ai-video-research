@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-"""Offline, Cloud-Action & Git-verified bridge: Gemini research receipt -> GitHub notes (v0.3).
+"""Offline, Cloud-Action & Git-verified bridge: Gemini research receipt -> GitHub notes (v0.4).
 
-Key v0.3 guarantees:
-1. Fresh remote branch deduplication: runs `git fetch --prune origin` before scanning `origin/*`
-   so stale local remote-tracking refs are never blindly trusted.
-2. Deep research record deduplication: checks not only `registry.json`, but also file names and
-   markdown bodies in `research/*.md` and `notes/*.md` across local and all remote branches.
-3. State corruption protection: if `loop_state.json` exists but is unreadable, invalid JSON, or
+Key v0.4 guarantees:
+1. Shared Contract & Cross-Language Parity: loads `contract_spec_v1.json` so Python (`receipt_to_research.py`)
+   and Google Apps Script (`cloud_relay_gas.js`) enforce identical schema validation, forbidden-key rejection,
+   SHA-256 canonicalization, deduplication, and Markdown rendering.
+2. Forbidden Key Rejection: recursively scans receipt payloads and immediately rejects raw transcripts,
+   subtitles, or credential keys (`transcript`, `subtitles`, `api_key`, `secret`, etc.).
+3. Fresh & Incremental Remote Branch Deduplication: runs `git fetch --prune origin` before scanning `origin/*`,
+   uses branch commit SHA caching + filename-first extraction to scale cleanly as records grow, and checks
+   both `registry.json` and `research/*.md` / `notes/*.md`.
+4. State Corruption Protection: if `loop_state.json` exists but is unreadable, invalid JSON, or
    violates schema, raises ValueError immediately and NEVER silently resets existing history.
-4. Explicit index distinction: generates `state/github_knowledge_index_export.md` (GitHub-side
-   ledger & delta export) and explicitly distinguishes it from the existing master index inside
-   Gemini Notebook (`AI技術研究室_知識索引.md`) to prevent destructive overwrites.
-5. Honest synchronization status: strictly separates `github_write_status` / `github_index_export_status`
-   from `notebook_sync_status` (`"NOT_SYNCED_FROM_GITHUB"`). GitHub save success is never conflated
-   with Gemini Notebook synchronization success.
-6. Supports cloud/CI ingestion (`--payload-env`, `--payload-string`), folder/Drive inbox (`--inbox`),
-   clipboard (`--from-clipboard`), and direct file inputs.
+5. Explicit Index Distinction & Honest Sync Status: generates `state/github_knowledge_index_export.md`
+   separately from Gemini Notebook's internal `AI技術研究室_知識索引.md`, and strictly separates
+   `github_write_status` from `notebook_sync_status` (`"NOT_SYNCED_FROM_GITHUB"`).
 """
 import argparse
 import hashlib
@@ -28,23 +27,67 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+CONTRACT_PATH = Path(__file__).resolve().parent / "contract_spec_v1.json"
+CONTRACT = (
+    json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
+    if CONTRACT_PATH.exists()
+    else {}
+)
+
 VIDEO_ID = re.compile(r"^[A-Za-z0-9_-]{11}$")
-ALLOWED_STATUSES = {
-    "CONFIRMED_DOC",
-    "REPORTED_BY_AUTHOR",
-    "CONFIRMED_TEST",
-    "UNKNOWN",
-    "CONTRADICTED",
+ALLOWED_STATUSES = set(
+    CONTRACT.get(
+        "allowed_statuses",
+        [
+            "CONFIRMED_DOC",
+            "REPORTED_BY_AUTHOR",
+            "CONFIRMED_TEST",
+            "UNKNOWN",
+            "CONTRADICTED",
+        ],
+    )
+)
+ALLOWED_CHANGES = set(
+    CONTRACT.get("allowed_changes", ["KNOWN", "NEW", "UPDATED", "CONFLICT", "UNKNOWN"])
+)
+FORBIDDEN_PAYLOAD_KEYS = {
+    k.lower()
+    for k in CONTRACT.get(
+        "forbidden_payload_keys",
+        [
+            "transcript",
+            "full_transcript",
+            "raw_transcript",
+            "subtitles",
+            "captions",
+            "full_text",
+            "video_binary",
+            "api_key",
+            "apikey",
+            "access_token",
+            "refresh_token",
+            "private_key",
+            "secret",
+            "password",
+            "authorization",
+        ],
+    )
 }
-ALLOWED_CHANGES = {"KNOWN", "NEW", "UPDATED", "CONFLICT", "UNKNOWN"}
 ROOT = Path(__file__).resolve().parents[2]
-EXPECTED_REPO = "kamiyusense/ai-video-research"
+EXPECTED_REPO = CONTRACT.get("expected_repo", "kamiyusense/ai-video-research")
 DEFAULT_STATE_PATH = Path(__file__).resolve().parent / "state" / "loop_state.json"
 DEFAULT_GITHUB_INDEX_EXPORT_PATH = (
     Path(__file__).resolve().parent / "state" / "github_knowledge_index_export.md"
 )
-NOTEBOOK_INTERNAL_MASTER_INDEX_NAME = "AI技術研究室_知識索引.md"
-YOUTUBE_HOSTS = {"www.youtube.com", "youtube.com", "m.youtube.com", "youtu.be"}
+NOTEBOOK_INTERNAL_MASTER_INDEX_NAME = CONTRACT.get(
+    "notebook_internal_master_index_name", "AI技術研究室_知識索引.md"
+)
+YOUTUBE_HOSTS = set(
+    CONTRACT.get(
+        "youtube_hosts",
+        ["www.youtube.com", "youtube.com", "m.youtube.com", "youtu.be"],
+    )
+)
 
 FENCED_JSON_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL | re.IGNORECASE)
 FILENAME_VID_RE = re.compile(r"(?:^|/)\d{4}-\d{2}-\d{2}-([A-Za-z0-9_-]{11})-[^/]+\.md$")
@@ -180,9 +223,23 @@ def compute_receipt_digest(data):
     return hashlib.sha256(canonical_bytes).hexdigest()
 
 
+def scan_forbidden_keys(val, path="root"):
+    """Recursively scan receipt payload and reject forbidden keys (transcripts, secrets, etc.)."""
+    if isinstance(val, dict):
+        for k, v in val.items():
+            k_str = str(k).strip().lower()
+            if k_str in FORBIDDEN_PAYLOAD_KEYS:
+                raise ValueError(f"Forbidden key in receipt payload: {path}.{k}")
+            scan_forbidden_keys(v, f"{path}.{k}")
+    elif isinstance(val, list):
+        for idx, item in enumerate(val):
+            scan_forbidden_keys(item, f"{path}[{idx}]")
+
+
 def validate(data):
     if not isinstance(data, dict) or data.get("schema_version") != "research_receipt_v1":
         raise ValueError("Invalid receipt schema_version")
+    scan_forbidden_keys(data)
     if not valid_url(data.get("notebook_url")):
         raise ValueError("Missing/invalid notebook_url")
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(data.get("checked_at", ""))):
@@ -418,10 +475,13 @@ def refresh_remote_refs(root=ROOT, allow_stale=False):
     )
 
 
-def collect_remote_branch_videos(root=ROOT, fetch_remote=True, allow_stale_remotes=False):
-    """Scan all `refs/remotes/origin/*` branches after fetching fresh refs.
+def collect_remote_branch_videos(
+    root=ROOT, fetch_remote=True, allow_stale_remotes=False, branch_cache=None
+):
+    """Scan `refs/remotes/origin/*` branches after fetching fresh refs.
 
-    Inspects both `registry.json` AND `research/*.md` / `notes/*.md` filenames and markdown bodies.
+    Uses `branch_cache` (keyed by remote branch commit SHA) so unchanged branches do not
+    need to re-read every markdown body as the repository scales.
     """
     freshness = "UNFETCHED_LOCAL_REFS"
     if fetch_remote:
@@ -429,12 +489,44 @@ def collect_remote_branch_videos(root=ROOT, fetch_remote=True, allow_stale_remot
 
     remote_map = {}
     refs_out = git(
-        "for-each-ref", "--format=%(refname:short)", "refs/remotes/origin/", root=root, check=False
+        "for-each-ref",
+        "--format=%(refname:short) %(objectname)",
+        "refs/remotes/origin/",
+        root=root,
+        check=False,
     )
-    for ref in refs_out.splitlines():
-        ref = ref.strip()
+    for line in refs_out.splitlines():
+        parts = line.strip().split()
+        if not parts:
+            continue
+        ref = parts[0]
+        commit_sha = parts[1] if len(parts) > 1 else ""
         if not ref or ref in {"origin/HEAD", "origin/main", "origin"}:
             continue
+
+        if isinstance(branch_cache, dict) and commit_sha:
+            cached = branch_cache.get(ref)
+            if isinstance(cached, dict) and cached.get("commit_sha") == commit_sha:
+                for entry in cached.get("videos", []):
+                    vid = entry.get("video_id")
+                    if vid and VIDEO_ID.fullmatch(vid):
+                        info = remote_map.setdefault(
+                            vid,
+                            {
+                                "video_id": vid,
+                                "canonical_url": entry.get("canonical_url")
+                                or canonical_youtube_url(vid),
+                                "research_path": entry.get("research_path", ""),
+                                "status": entry.get("status", "UNKNOWN"),
+                                "detected_via": entry.get("detected_via", "cache"),
+                                "branches": [],
+                            },
+                        )
+                        if ref not in info["branches"]:
+                            info["branches"].append(ref)
+                continue
+
+        branch_entries = {}
         # 1. Check registry.json on this remote branch
         reg_raw = git("show", f"{ref}:registry.json", root=root, check=False)
         if reg_raw:
@@ -443,17 +535,17 @@ def collect_remote_branch_videos(root=ROOT, fetch_remote=True, allow_stale_remot
                 for rec in reg.get("records", []):
                     vid = rec.get("video_id")
                     if isinstance(vid, str) and VIDEO_ID.fullmatch(vid):
+                        entry = {
+                            "video_id": vid,
+                            "canonical_url": rec.get("canonical_url")
+                            or canonical_youtube_url(vid),
+                            "research_path": rec.get("research_path", ""),
+                            "status": rec.get("status", "UNKNOWN"),
+                            "detected_via": "registry.json",
+                        }
+                        branch_entries.setdefault(vid, entry)
                         info = remote_map.setdefault(
-                            vid,
-                            {
-                                "video_id": vid,
-                                "canonical_url": rec.get("canonical_url")
-                                or canonical_youtube_url(vid),
-                                "research_path": rec.get("research_path", ""),
-                                "status": rec.get("status", "UNKNOWN"),
-                                "detected_via": "registry.json",
-                                "branches": [],
-                            },
+                            vid, {**entry, "branches": []}
                         )
                         if ref not in info["branches"]:
                             info["branches"].append(ref)
@@ -471,35 +563,37 @@ def collect_remote_branch_videos(root=ROOT, fetch_remote=True, allow_stale_remot
             m_name = FILENAME_VID_RE.search(rel_path)
             if m_name:
                 vid = m_name.group(1)
-                info = remote_map.setdefault(
-                    vid,
-                    {
-                        "video_id": vid,
-                        "canonical_url": canonical_youtube_url(vid),
-                        "research_path": rel_path,
-                        "status": "REMOTE_RESEARCH_FILE",
-                        "detected_via": f"filename:{rel_path}",
-                        "branches": [],
-                    },
-                )
+                entry = {
+                    "video_id": vid,
+                    "canonical_url": canonical_youtube_url(vid),
+                    "research_path": rel_path,
+                    "status": "REMOTE_RESEARCH_FILE",
+                    "detected_via": f"filename:{rel_path}",
+                }
+                branch_entries.setdefault(vid, entry)
+                info = remote_map.setdefault(vid, {**entry, "branches": []})
                 if ref not in info["branches"]:
                     info["branches"].append(ref)
 
             body = git("show", f"{ref}:{rel_path}", root=root, check=False)
             for vid in extract_video_ids_from_markdown_text(body):
-                info = remote_map.setdefault(
-                    vid,
-                    {
-                        "video_id": vid,
-                        "canonical_url": canonical_youtube_url(vid),
-                        "research_path": rel_path,
-                        "status": "REMOTE_MARKDOWN_REFERENCE",
-                        "detected_via": f"body:{rel_path}",
-                        "branches": [],
-                    },
-                )
+                entry = {
+                    "video_id": vid,
+                    "canonical_url": canonical_youtube_url(vid),
+                    "research_path": rel_path,
+                    "status": "REMOTE_MARKDOWN_REFERENCE",
+                    "detected_via": f"body:{rel_path}",
+                }
+                branch_entries.setdefault(vid, entry)
+                info = remote_map.setdefault(vid, {**entry, "branches": []})
                 if ref not in info["branches"]:
                     info["branches"].append(ref)
+
+        if isinstance(branch_cache, dict) and commit_sha:
+            branch_cache[ref] = {
+                "commit_sha": commit_sha,
+                "videos": list(branch_entries.values()),
+            }
 
     return remote_map, freshness
 

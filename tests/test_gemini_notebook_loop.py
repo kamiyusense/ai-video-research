@@ -655,6 +655,380 @@ class TestGeminiNotebookLoopV03(unittest.TestCase):
         finally:
             os.environ.pop("TEST_CLOUD_RECEIPT_PAYLOAD", None)
 
+    def test_09_python_js_cross_language_contract_and_output_parity(self):
+        """Concern A: Verify 100% byte-for-byte parity between Python and GAS (JavaScript) implementations."""
+        gas_path = (ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").as_posix()
+        contract_path = ROOT / "automation" / "gemini-notebook" / "contract_spec_v1.json"
+        contract_json = json.loads(contract_path.read_text(encoding="utf-8"))
+
+        sample_receipt = make_sample_receipt()
+        sample_video = sample_receipt["videos"][0]
+        registry = json.loads((self.repo_root / "registry.json").read_text(encoding="utf-8"))
+        local_map = bridge.collect_local_research_videos(root=self.repo_root)
+        remote_map, freshness = bridge.collect_remote_branch_videos(root=self.repo_root)
+        loop_state = bridge.default_initial_loop_state()
+        loop_state["last_updated"] = "2026-10-17"
+
+        # Verify forbidden key rejection in Python
+        bad_forbidden = make_sample_receipt()
+        bad_forbidden["videos"][0]["transcript"] = "Full verbatim transcript text not allowed"
+        with self.assertRaisesRegex(ValueError, "Forbidden key in receipt payload"):
+            bridge.validate(bad_forbidden)
+
+        node_script = f"""
+const gas = require({json.dumps(gas_path)});
+const sampleReceipt = {json.dumps(sample_receipt, ensure_ascii=False)};
+const sampleVideo = {json.dumps(sample_video, ensure_ascii=False)};
+const registry = {json.dumps(registry, ensure_ascii=False)};
+const localMap = {json.dumps(local_map, ensure_ascii=False)};
+const remoteMap = {json.dumps(remote_map, ensure_ascii=False)};
+const loopState = {json.dumps(loop_state, ensure_ascii=False)};
+const badForbidden = {json.dumps(bad_forbidden, ensure_ascii=False)};
+
+let forbiddenRejected = false;
+try {{
+  gas.validateReceipt(badForbidden);
+}} catch (e) {{
+  if (String(e.message).includes("Forbidden key in receipt payload")) {{
+    forbiddenRejected = true;
+  }}
+}}
+
+const out = {{
+  contract: gas.CONTRACT_SPEC_V1,
+  digest: gas.computeReceiptDigest(sampleReceipt),
+  researchMd: gas.renderResearchMarkdown(sampleVideo, sampleReceipt.checked_at),
+  deltaMd: gas.renderDeltaSection(sampleVideo, sampleReceipt.checked_at),
+  indexMd: gas.renderGitHubKnowledgeIndexExportMd(registry, localMap, remoteMap, loopState, {json.dumps(freshness)}),
+  forbiddenRejected: forbiddenRejected,
+}};
+process.stdout.write(JSON.stringify(out));
+"""
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        js_out = json.loads(res.stdout)
+
+        self.assertEqual(js_out["contract"], contract_json)
+        self.assertTrue(js_out["forbiddenRejected"])
+        self.assertEqual(js_out["digest"], bridge.compute_receipt_digest(sample_receipt))
+        self.assertEqual(
+            js_out["researchMd"],
+            bridge.render(sample_video, sample_receipt["checked_at"]),
+        )
+        self.assertEqual(
+            js_out["deltaMd"],
+            bridge.render_delta_section(sample_video, sample_receipt["checked_at"]),
+        )
+        self.assertEqual(
+            js_out["indexMd"],
+            bridge.render_github_knowledge_index_export_md(
+                registry, local_map, remote_map, loop_state, freshness
+            ),
+        )
+
+    def test_10_gas_mock_atomic_commit_concurrency_conflict_and_drive_self_healing(self):
+        """Concerns B, C, D: Test GAS Direct Atomic Commit, LockService, Branch Cache, 422 Conflict, and Drive Self-Healing."""
+        gas_path = (ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").as_posix()
+        sample_receipt = make_sample_receipt()
+
+        node_test = f"""
+const crypto = require("crypto");
+const gas = require({json.dumps(gas_path)});
+const sampleReceipt = {json.dumps(sample_receipt, ensure_ascii=False)};
+
+// In-memory mock GitHub server + Drive + Docs + Properties + Lock
+function createMockEnvironment() {{
+  const store = {{}};
+  let lockAvailable = true;
+  let simulateDriveFailure = false;
+  let simulate422Conflict = false;
+  let remoteTreeApiCalls = 0;
+  let driveDocContent = "OLD_INDEX_CONTENT";
+  let driveDocTitle = "GitHub_Knowledge_Index_Export_Mirror";
+
+  const blobs = {{}};
+  function putBlob(text) {{
+    const sha = crypto.createHash("sha1").update(text, "utf8").digest("hex");
+    blobs[sha] = Buffer.from(text, "utf8").toString("base64");
+    return sha;
+  }}
+
+  const initialRegistry = {{
+    schema_version: 1,
+    repository: "kamiyusense/ai-video-research",
+    records: [{{
+      record_id: "youtube:lC5jxpYmatE",
+      video_id: "lC5jxpYmatE",
+      canonical_url: "https://www.youtube.com/watch?v=lC5jxpYmatE",
+      research_path: "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+      status: "RESEARCH_RECORDED"
+    }}]
+  }};
+  const regSha = putBlob(JSON.stringify(initialRegistry, null, 2) + "\\n");
+
+  const parallelRegistry = JSON.parse(JSON.stringify(initialRegistry));
+  parallelRegistry.records.push({{
+    record_id: "youtube:ZjUJ-35acaU",
+    video_id: "ZjUJ-35acaU",
+    canonical_url: "https://www.youtube.com/watch?v=ZjUJ-35acaU",
+    research_path: "research/2026-10-10-ZjUJ-35acaU-notebooklm.md",
+    status: "REVIEWED_PARTIAL"
+  }});
+  const parallelRegSha = putBlob(JSON.stringify(parallelRegistry, null, 2) + "\\n");
+
+  const trees = {{
+    "tree_initial": [{{ path: "registry.json", type: "blob", sha: regSha }}],
+    "tree_parallel": [{{ path: "registry.json", type: "blob", sha: parallelRegSha }}]
+  }};
+  const commits = {{
+    "commit_initial": {{ sha: "commit_initial", tree: {{ sha: "tree_initial" }} }},
+    "commit_parallel": {{ sha: "commit_parallel", tree: {{ sha: "tree_parallel" }} }}
+  }};
+  let targetHeadSha = "commit_initial";
+
+  const inboxFiles = [];
+
+  const scriptProperties = {{
+    getProperty: (k) => store[k] || null,
+    setProperty: (k, v) => {{ store[k] = String(v); }}
+  }};
+
+  const lockService = {{
+    getScriptLock: () => ({{
+      tryLock: () => lockAvailable,
+      releaseLock: () => {{}}
+    }})
+  }};
+
+  const driveApp = {{
+    getFolderById: () => ({{
+      getFiles: () => {{
+        let idx = 0;
+        return {{
+          hasNext: () => idx < inboxFiles.length,
+          next: () => inboxFiles[idx++]
+        }};
+      }}
+    }})
+  }};
+
+  const documentApp = {{
+    openById: (id) => {{
+      if (id === "EXPORT_DOC_123" && simulateDriveFailure) {{
+        throw new Error("Simulated transient Google Docs API outage");
+      }}
+      const inboxDoc = inboxFiles.find((f) => f.id === id);
+      if (inboxDoc) {{
+        return {{ getName: () => inboxDoc.name, getBody: () => ({{ getText: () => inboxDoc.text }}) }};
+      }}
+      return {{
+        getName: () => driveDocTitle,
+        getBody: () => ({{
+          setText: (t) => {{ driveDocContent = t; }}
+        }}),
+        saveAndClose: () => {{}}
+      }};
+    }}
+  }};
+
+  const urlFetchApp = {{
+    fetch: (url, opts) => {{
+      const method = (opts.method || "get").toLowerCase();
+      const body = opts.payload ? JSON.parse(opts.payload) : null;
+      const makeRes = (code, obj) => ({{
+        getResponseCode: () => code,
+        getContentText: () => (typeof obj === "string" ? obj : JSON.stringify(obj))
+      }});
+
+      if (url.endsWith("/branches?per_page=100")) {{
+        return makeRes(200, [
+          {{ name: "main", protected: true, commit: {{ sha: "commit_main" }} }},
+          {{ name: "feature/gemini-notebook-research-loop-20261016", protected: false, commit: {{ sha: targetHeadSha }} }},
+          {{ name: "research/video08-mock", protected: false, commit: {{ sha: "commit_parallel" }} }}
+        ]);
+      }}
+      if (url.includes("/git/commits/") && method === "get") {{
+        const cSha = url.split("/git/commits/")[1];
+        return makeRes(200, commits[cSha]);
+      }}
+      if (url.includes("/git/trees/") && method === "get") {{
+        const tSha = url.split("/git/trees/")[1].split("?")[0];
+        if (tSha === "commit_parallel") {{
+          remoteTreeApiCalls += 1;
+          return makeRes(200, {{ sha: "tree_parallel", tree: trees["tree_parallel"] }});
+        }}
+        return makeRes(200, {{ sha: tSha, tree: trees[tSha] || [] }});
+      }}
+      if (url.includes("/git/blobs/") && method === "get") {{
+        const bSha = url.split("/git/blobs/")[1];
+        return makeRes(200, {{ sha: bSha, content: blobs[bSha], encoding: "base64" }});
+      }}
+      if (url.endsWith("/git/blobs") && method === "post") {{
+        const newSha = putBlob(body.content);
+        return makeRes(201, {{ sha: newSha }});
+      }}
+      if (url.endsWith("/git/trees") && method === "post") {{
+        const baseItems = JSON.parse(JSON.stringify(trees[body.base_tree] || []));
+        const byPath = {{}};
+        baseItems.forEach((it) => {{ byPath[it.path] = it; }});
+        body.tree.forEach((it) => {{ byPath[it.path] = {{ path: it.path, type: "blob", sha: it.sha }}; }});
+        const newTreeSha = "tree_" + Object.keys(trees).length;
+        trees[newTreeSha] = Object.values(byPath);
+        return makeRes(201, {{ sha: newTreeSha }});
+      }}
+      if (url.endsWith("/git/commits") && method === "post") {{
+        const newCommitSha = "commit_" + Object.keys(commits).length;
+        commits[newCommitSha] = {{ sha: newCommitSha, tree: {{ sha: body.tree }}, parents: body.parents }};
+        return makeRes(201, {{ sha: newCommitSha }});
+      }}
+      if (url.includes("/git/refs/heads/") && method === "patch") {{
+        if (simulate422Conflict) {{
+          return makeRes(422, {{ message: "Update is not a fast forward" }});
+        }}
+        targetHeadSha = body.sha;
+        return makeRes(200, {{ object: {{ sha: targetHeadSha }} }});
+      }}
+      if (url.includes("/git/refs/heads/") && method === "get") {{
+        return makeRes(200, {{ object: {{ sha: targetHeadSha }} }});
+      }}
+      return makeRes(404, {{ message: "Not found: " + url }});
+    }}
+  }};
+
+  store["GITHUB_FINE_GRAINED_PAT"] = "ghp_mock_token";
+  store["DRIVE_INBOX_FOLDER_ID"] = "FOLDER_123";
+  store["DRIVE_EXPORT_DOC_ID"] = "EXPORT_DOC_123";
+  store["TARGET_GITHUB_BRANCH"] = "feature/gemini-notebook-research-loop-20261016";
+
+  return {{
+    store,
+    inboxFiles,
+    setLock: (v) => {{ lockAvailable = v; }},
+    setSimulateDriveFailure: (v) => {{ simulateDriveFailure = v; }},
+    setSimulate422Conflict: (v) => {{ simulate422Conflict = v; }},
+    getRemoteTreeApiCalls: () => remoteTreeApiCalls,
+    getDriveDocContent: () => driveDocContent,
+    getTargetHeadSha: () => targetHeadSha,
+    overrides: {{ scriptProperties, lockService, driveApp, documentApp, urlFetchApp }}
+  }};
+}}
+
+const env = createMockEnvironment();
+
+// 1. Test LockService contention
+env.setLock(false);
+const lockRes = gas.relayDriveReceiptsToGitHub(env.overrides);
+if (lockRes.status !== "SKIPPED_CONCURRENT_LOCK_HELD") {{
+  throw new Error("Expected SKIPPED_CONCURRENT_LOCK_HELD, got " + JSON.stringify(lockRes));
+}}
+env.setLock(true);
+
+// 2. Test forbidden key rejection + partial Drive failure on valid receipt (Run 1)
+const badReceipt = JSON.parse(JSON.stringify(sampleReceipt));
+badReceipt.videos[0].raw_transcript = "Forbidden full transcript";
+env.inboxFiles.push({{
+  id: "DOC_BAD",
+  name: "bad_receipt.json",
+  getMimeType: () => "text/plain",
+  getName: () => "bad_receipt.json",
+  getBlob: () => ({{ getDataAsString: () => JSON.stringify(badReceipt) }})
+}});
+env.inboxFiles.push({{
+  id: "DOC_GOOD",
+  name: "good_receipt.md",
+  getMimeType: () => "application/vnd.google-apps.document",
+  getName: () => "good_receipt.md",
+  getId: () => "DOC_GOOD",
+  text: "```json\\n" + JSON.stringify(sampleReceipt) + "\\n```"
+}});
+
+env.setSimulateDriveFailure(true);
+const run1 = gas.relayDriveReceiptsToGitHub(env.overrides);
+const callsAfterRun1 = env.getRemoteTreeApiCalls();
+
+// 3. Run 2: Drive is now healthy -> must NOT create a duplicate GitHub commit, must reuse branchCache (0 extra remote tree calls), and MUST self-heal Drive export Doc!
+env.setSimulateDriveFailure(false);
+const headAfterRun1 = env.getTargetHeadSha();
+const run2 = gas.relayDriveReceiptsToGitHub(env.overrides);
+const callsAfterRun2 = env.getRemoteTreeApiCalls();
+const headAfterRun2 = env.getTargetHeadSha();
+
+// 4. Run 3: Simulate 422 branch conflict on a new receipt
+const receiptConflict = JSON.parse(JSON.stringify(sampleReceipt));
+receiptConflict.checked_at = "2026-10-19";
+receiptConflict.videos[0].video_id = "9bZkp7q19f0";
+receiptConflict.videos[0].url = "https://www.youtube.com/watch?v=9bZkp7q19f0";
+env.inboxFiles.length = 0;
+env.inboxFiles.push({{
+  id: "DOC_CONFLICT",
+  name: "conflict_receipt.json",
+  getMimeType: () => "text/plain",
+  getName: () => "conflict_receipt.json",
+  getBlob: () => ({{ getDataAsString: () => JSON.stringify(receiptConflict) }})
+}});
+env.setSimulate422Conflict(true);
+const run3 = gas.relayDriveReceiptsToGitHub(env.overrides);
+
+process.stdout.write(JSON.stringify({{
+  run1,
+  run2,
+  run3,
+  callsAfterRun1,
+  callsAfterRun2,
+  headAfterRun1,
+  headAfterRun2,
+  driveContentHealed: env.getDriveDocContent().includes("dQw4w9WgXcQ")
+}}));
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        out = json.loads(res.stdout)
+
+        # Verify Run 1 results: bad receipt rejected in memory; good receipt committed atomically; Drive failure recorded as pending
+        r1_reports = out["run1"]["relayReport"]
+        self.assertEqual(r1_reports[0]["status"], "REJECTED_VALIDATION_BEFORE_GITHUB_WRITE")
+        self.assertIn("Forbidden key", r1_reports[0]["error"])
+        self.assertEqual(r1_reports[1]["status"], "COMMITTED_AND_READBACK_VERIFIED")
+        self.assertEqual(r1_reports[1]["githubWriteStatus"], "PUSHED_AND_READBACK_VERIFIED")
+        self.assertEqual(
+            r1_reports[1]["driveSyncStatus"],
+            "DRIVE_UPDATE_FAILED_WILL_RECONCILE_NEXT_RUN",
+        )
+        self.assertTrue(r1_reports[1]["securityPosture"]["mainBranchServerProtected"])
+
+        # Verify Run 2 results: no duplicate GitHub commit, branchCache reused (0 extra remote tree calls), and Drive Doc self-healed!
+        self.assertEqual(out["headAfterRun1"], out["headAfterRun2"])
+        self.assertEqual(out["callsAfterRun1"], 1)
+        self.assertEqual(out["callsAfterRun2"], 1)
+        r2_reports = out["run2"]["relayReport"]
+        self.assertEqual(
+            r2_reports[1]["status"], "SKIP_DUPLICATE_ALREADY_COMMITTED_ON_GITHUB"
+        )
+        self.assertEqual(
+            out["run2"]["driveReconciliation"]["status"],
+            "RECONCILED_FROM_GITHUB_SSOT",
+        )
+        self.assertTrue(out["driveContentHealed"])
+
+        # Verify Run 3 results: 422 branch conflict halts safely without overwrite or retry
+        r3_reports = out["run3"]["relayReport"]
+        self.assertEqual(
+            r3_reports[0]["status"],
+            "STOPPED_ON_BRANCH_CONFLICT_422_NO_OVERWRITE",
+        )
+        self.assertEqual(r3_reports[0]["httpCode"], 422)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
