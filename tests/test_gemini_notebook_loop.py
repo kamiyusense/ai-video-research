@@ -29,10 +29,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "automation" / "gemini-notebook" / "receipt_to_research.py"
+QUERY_MODULE_PATH = ROOT / "automation" / "gemini-notebook" / "query_research.py"
 
 spec = importlib.util.spec_from_file_location("receipt_to_research", MODULE_PATH)
 bridge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bridge)
+
+q_spec = importlib.util.spec_from_file_location("query_research", QUERY_MODULE_PATH)
+query_mod = importlib.util.module_from_spec(q_spec)
+q_spec.loader.exec_module(query_mod)
 
 
 def make_sample_receipt(**overrides):
@@ -1657,19 +1662,34 @@ process.stdout.write(JSON.stringify({{
             ensure_ascii=False,
         )
 
-        normalized = bridge.extract_receipt_payload(part2_sample_raw)
+        # Missing notebook_source_id without explicit override must fail safely (never guess source name)
+        with self.assertRaisesRegex(ValueError, "Missing notebook_source_id"):
+            bridge.extract_receipt_payload(part2_sample_raw)
+
+        normalized = bridge.extract_receipt_payload(
+            part2_sample_raw,
+            default_notebook_source_id="AI技術研究室_過去調査14本_完全総合辞書_20261017",
+        )
         bridge.validate(normalized)
+        self.assertEqual(
+            normalized["notebook_url"],
+            "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        )
+        self.assertEqual(normalized["notebook_readback"], "UNKNOWN")
         v13 = normalized["videos"][0]
         v25 = normalized["videos"][1]
         self.assertLessEqual(len(v13["summary_ja"]), 300)
         self.assertIn("A" * 315, v13["detailed_findings_ja"])
+        # Without official_url, VERIFIED is downgraded to REPORTED_BY_AUTHOR (never CONFIRMED_DOC)
+        self.assertEqual(v13["claims"][0]["status"], "REPORTED_BY_AUTHOR")
+        self.assertEqual(v13["notebook_readback"], "UNKNOWN")
         # v13 timestamp must be downgraded to UNKNOWN (no guessed playback link)
         self.assertEqual(v13["chapters"][0]["timestamp_source"], "UNKNOWN")
         self.assertIsNone(v13["chapters"][0]["start_seconds"])
-        # v25 12:07 (727s) is corroborated by YT chapter 12:06 & GitHub record 727s -> verified!
-        # v25 19:30 (1170s) is uncorroborated -> UNKNOWN!
+        # v25 12:07 (727s) is corroborated by YT chapter 12:06 (DESC_MATCH) -> YOUTUBE_CHAPTER_METADATA!
+        # v25 19:30 (1170s) failed caption check (CAPTION_FAIL) -> UNKNOWN!
         self.assertEqual(v25["chapters"][0]["start_seconds"], 727)
-        self.assertNotEqual(v25["chapters"][0]["timestamp_source"], "UNKNOWN")
+        self.assertEqual(v25["chapters"][0]["timestamp_source"], "YOUTUBE_CHAPTER_METADATA")
         self.assertEqual(v25["chapters"][1]["timestamp_source"], "UNKNOWN")
         self.assertIsNone(v25["chapters"][1]["start_seconds"])
 
@@ -1692,9 +1712,278 @@ process.stdout.write(JSON.stringify({{
         self.assertIn("https://www.youtube.com/watch?v=ZjUJ-35acaU&t=727s", consolidated_md)
         self.assertNotIn("https://www.youtube.com/watch?v=ZjUJ-35acaU&t=1170s", consolidated_md)
 
+    def test_14_search_precision_and_no_unverified_timestamp_links(self):
+        """Verify 28-video catalog integrity, strict per-chapter timestamp links, and natural-language Q&A search accuracy."""
+        real_root = Path(__file__).resolve().parents[1]
+        catalog, _ = query_mod.build_video_knowledge_catalog(root=real_root)
+        self.assertEqual(catalog["total_video_records"], 28)
+        self.assertEqual(
+            catalog["notebook_url"],
+            "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        )
+
+        evidence_map = bridge.load_timestamp_evidence()
+        vid_records = {r["video_id"]: r for r in catalog["records"] if r.get("video_id")}
+        self.assertEqual(len(vid_records), 28)
+
+        # 1. Verify t22FELAl-BM has 0 verified chapters (no 24:18 / 1458s special-case hack)
+        t22_rec = vid_records["t22FELAl-BM"]
+        self.assertEqual(len(t22_rec["chapters"]), 7)
+        for ch in t22_rec["chapters"]:
+            self.assertEqual(ch["timestamp_source"], "UNKNOWN")
+            self.assertIsNone(ch["playback_url"])
+            self.assertIsNone(ch["start_seconds"])
+
+        # 2. Verify every chapter across all 28 videos strictly obeys timestamp_evidence.json
+        for vid, rec in vid_records.items():
+            for ch in rec["chapters"]:
+                if ch["timestamp_source"] == "UNKNOWN":
+                    self.assertIsNone(ch["playback_url"])
+                    self.assertIsNone(ch["start_seconds"])
+                else:
+                    self.assertIsNotNone(ch["playback_url"])
+                    self.assertIn(f"watch?v={vid}&t=", ch["playback_url"])
+                    if vid not in {"lC5jxpYmatE", "Vr3JkAT9mo8"}:
+                        ev = evidence_map.get(vid, {})
+                        ch_ev = (ev.get("chapters") or {}).get(str(ch["start_seconds"]))
+                        self.assertIsNotNone(
+                            ch_ev, f"Unexpected verified chapter {vid} @ {ch['start_seconds']}s"
+                        )
+                        self.assertIn(ch_ev["verdict"], {"DESC_MATCH", "CAPTION_PASS"})
+            # Verify no CONFIRMED_DOC claim lacks an official_url
+            for cl in rec.get("claims", []):
+                if cl["status"] == "CONFIRMED_DOC":
+                    self.assertTrue(
+                        bridge.valid_url(cl.get("official_url")),
+                        f"CONFIRMED_DOC without valid official_url in {vid}: {cl}",
+                    )
+
+        # 3. Benchmark 6 natural-language Q&A queries against the 28-video catalog
+        # Query 1: Prompt Caching (t22FELAl-BM -> UNKNOWN timestamps -> normal URL + Notebook source guidance)
+        q1 = query_mod.answer_question(
+            "プロンプトキャッシュでChatGPTやClaudeの利用枠を節約する仕組みと注意点は？",
+            root=real_root,
+        )
+        self.assertEqual(q1["step2_matched_records"][0]["video_id"], "t22FELAl-BM")
+        q1_md = query_mod.format_qa_response_markdown(q1)
+        self.assertIn("https://www.youtube.com/watch?v=t22FELAl-BM", q1_md)
+        self.assertNotIn("watch?v=t22FELAl-BM&t=", q1_md)
+        self.assertIn("AI技術研究室_直近調査12本_完全総合辞書_20261017", q1_md)
+
+        # Query 2: Claude Code 10 setups / Skill Creator / Discord MCP (JXmk7hmbS3c -> verified &t= links)
+        q2 = query_mod.answer_question(
+            "Claude Codeをインストールしたら準備したいSkill CreatorやDiscord MCP連携の動画と再生位置を教えて",
+            root=real_root,
+        )
+        self.assertEqual(q2["step2_matched_records"][0]["video_id"], "JXmk7hmbS3c")
+        q2_urls = [
+            s["playback_url"]
+            for s in q2["step5_and_6_recommended_video_segments"]
+            if s.get("playback_url")
+        ]
+        self.assertTrue(
+            any("watch?v=JXmk7hmbS3c&t=27s" in u or "watch?v=JXmk7hmbS3c&t=297s" in u for u in q2_urls)
+        )
+
+        # Query 3: YouTube to NotebookLM Chrome extension (ZjUJ-35acaU -> verified &t= links)
+        q3 = query_mod.answer_question(
+            "YouTube to NotebookLMのChrome拡張機能で動画を一括インポートする手順とプロンプトはどこ？",
+            root=real_root,
+        )
+        self.assertEqual(q3["step2_matched_records"][0]["video_id"], "ZjUJ-35acaU")
+        q3_urls = [
+            s["playback_url"]
+            for s in q3["step5_and_6_recommended_video_segments"]
+            if s.get("playback_url")
+        ]
+        self.assertTrue(any("watch?v=ZjUJ-35acaU&t=" in u for u in q3_urls))
+
+        # Query 4: ChatGPT Work Specialists / AGENTS.md / MEMORY.md (Vr3JkAT9mo8)
+        q4 = query_mod.answer_question(
+            "ChatGPT Workの右腕AI・担当制でAGENTS.mdとMEMORY.mdを分ける方法はどの動画のどこ？",
+            root=real_root,
+        )
+        self.assertEqual(q4["step2_matched_records"][0]["video_id"], "Vr3JkAT9mo8")
+        q4_urls = [
+            s["playback_url"]
+            for s in q4["step5_and_6_recommended_video_segments"]
+            if s.get("playback_url")
+        ]
+        self.assertIn("https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=180s", q4_urls)
+
+        # Query 5: Skill design failures & Computer Use (lC5jxpYmatE)
+        q5 = query_mod.answer_question(
+            "スキルを増やしすぎる失敗例や課題ドリブンの学習法を解説していた動画と箇所は？",
+            root=real_root,
+        )
+        q5_vids = [r["video_id"] for r in q5["step2_matched_records"][:2]]
+        self.assertIn("lC5jxpYmatE", q5_vids)
+
+        # Query 6: Completely unrelated topic -> 0 matched records
+        q6 = query_mod.answer_question(
+            "超伝導トカマク型核融合炉のプラズマ閉じ込め磁場コイル設計手順は？",
+            root=real_root,
+        )
+        self.assertEqual(len(q6["step2_matched_records"]), 0)
+        self.assertEqual(
+            q6["step4_gap_analysis"]["coverage_status"],
+            "INSUFFICIENT_NEEDS_NEW_RESEARCH",
+        )
+
+    def test_15_priority1_to_5_negative_cases_and_scale_generalization(self):
+        """Verify negative/chaos cases (missing evidence, dur_match-only, CONFIRMED_DOC without URL, omitted readback) and 100-video scale generalization."""
+        # 1. Video without primary verification data & duration-match-only chapter (CAPTION_FAIL) -> both must be UNKNOWN
+        custom_evidence = {
+            "DurOnly1234": {
+                "yt_len_sec": 600,
+                "yt_title": "Duration Match Only Video",
+                "yt_author": "Test Channel",
+                "yt_pub": "2026-10-01",
+                "desc_starts": [],
+                "desc_summary": "",
+                "dur_match": True,
+                "contradicts_desc": False,
+                "chapters": {
+                    "60": {"verdict": "CAPTION_FAIL", "evidence": "no matching tokens"},
+                    "180": {"verdict": "CAPTION_PASS", "evidence": "181.0s: matched tokens"},
+                },
+            }
+        }
+        handoff_payload = {
+            "receipt_version": "research_receipt_v1",
+            "batch_part": "1/1",
+            "notebook_source_id": "汎用テストソース_20261017",
+            "generated_at": "2026-10-17T12:00:00+09:00",
+            "videos": [
+                {
+                    "number": "01",
+                    "id": "NoEvid12345",
+                    "title": "未検証動画テスト",
+                    "url": "https://www.youtube.com/watch?v=NoEvid12345",
+                    "publish_date": "2026-10-10",
+                    "duration": "10:00",
+                    "summary": "一次検証データが存在しない動画。",
+                    "timeline": [
+                        {
+                            "start": "01:00",
+                            "end": "05:00",
+                            "seconds": 60,
+                            "title": "未検証チャプター",
+                            "link": "https://www.youtube.com/watch?v=NoEvid12345&t=60s",
+                        }
+                    ],
+                    "official_verification": {
+                        "status": "VERIFIED",
+                        "details": "一次URLなしの自己申告照合。",
+                    },
+                },
+                {
+                    "number": "02",
+                    "id": "DurOnly1234",
+                    "title": "Duration Match Only Video",
+                    "url": "https://www.youtube.com/watch?v=DurOnly1234",
+                    "publish_date": "2026-10-01",
+                    "duration": "10:00",
+                    "summary": "動画尺だけ一致し、1章は字幕不一致、2章は字幕一致の動画。",
+                    "timeline": [
+                        {
+                            "start": "01:00",
+                            "end": "03:00",
+                            "seconds": 60,
+                            "title": "字幕不一致の章",
+                            "link": "https://www.youtube.com/watch?v=DurOnly1234&t=60s",
+                        },
+                        {
+                            "start": "03:00",
+                            "end": "06:00",
+                            "seconds": 180,
+                            "title": "字幕一致の章",
+                            "link": "https://www.youtube.com/watch?v=DurOnly1234&t=180s",
+                        },
+                    ],
+                    "official_verification": {
+                        "status": "VERIFIED",
+                        "details": "一次URLありの照合。",
+                        "official_url": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching",
+                    },
+                },
+            ],
+        }
+        norm = bridge.normalize_gemini_handoff_receipt(
+            handoff_payload, evidence_map=custom_evidence
+        )
+        bridge.validate(norm)
+        # Video 1 (no primary evidence) -> chapter is UNKNOWN, claim without URL is REPORTED_BY_AUTHOR, readback is UNKNOWN
+        v_no_ev = norm["videos"][0]
+        self.assertEqual(v_no_ev["chapters"][0]["timestamp_source"], "UNKNOWN")
+        self.assertIsNone(v_no_ev["chapters"][0]["start_seconds"])
+        self.assertEqual(v_no_ev["claims"][0]["status"], "REPORTED_BY_AUTHOR")
+        self.assertEqual(v_no_ev["notebook_readback"], "UNKNOWN")
+
+        # Video 2 (dur_match=True) -> CAPTION_FAIL chapter is UNKNOWN, CAPTION_PASS chapter is TIMESTAMPED_CAPTIONS, claim with URL is CONFIRMED_DOC
+        v_dur = norm["videos"][1]
+        self.assertEqual(v_dur["chapters"][0]["timestamp_source"], "UNKNOWN")
+        self.assertIsNone(v_dur["chapters"][0]["start_seconds"])
+        self.assertEqual(v_dur["chapters"][1]["timestamp_source"], "TIMESTAMPED_CAPTIONS")
+        self.assertEqual(v_dur["chapters"][1]["start_seconds"], 180)
+        self.assertEqual(v_dur["claims"][0]["status"], "CONFIRMED_DOC")
+        self.assertEqual(
+            v_dur["claims"][0]["official_url"],
+            "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching",
+        )
+
+        # 2. Direct schema validation must reject CONFIRMED_DOC when official_url is None
+        bad_confirmed = json.loads(json.dumps(norm))
+        bad_confirmed["videos"][0]["claims"][0]["status"] = "CONFIRMED_DOC"
+        bad_confirmed["videos"][0]["claims"][0]["official_url"] = None
+        with self.assertRaisesRegex(ValueError, "CONFIRMED_DOC status requires a valid official_url"):
+            bridge.validate(bad_confirmed)
+
+        # 3. Scale generalization test: 100 videos across 5 batches of 20 videos each
+        total_normalized = 0
+        for batch_idx in range(5):
+            batch_videos = []
+            for i in range(20):
+                seq = batch_idx * 20 + i
+                vid = f"ScaleV{seq:05d}"  # 11 chars
+                batch_videos.append(
+                    {
+                        "number": str(seq + 1),
+                        "id": vid,
+                        "title": f"スケール検証動画 #{seq + 1}: Claude Code & MCP Agent",
+                        "url": f"https://www.youtube.com/watch?v={vid}",
+                        "publish_date": "2026-10-17",
+                        "duration": "15:00",
+                        "summary": f"100本〜1000本規模の汎用パイプライン検証用動画 #{seq + 1}。",
+                        "key_technologies": ["Claude Code", "MCP", "Subagents"],
+                        "timeline": [
+                            {
+                                "start": "00:00",
+                                "end": "05:00",
+                                "seconds": 0,
+                                "title": "イントロダクション",
+                                "link": f"https://www.youtube.com/watch?v={vid}&t=0s",
+                            }
+                        ],
+                    }
+                )
+            batch_raw = {
+                "receipt_version": "research_receipt_v1",
+                "batch_part": f"{batch_idx + 1}/5",
+                "notebook_source_id": f"大規模検証ソース_Batch{batch_idx + 1}",
+                "generated_at": "2026-10-17T15:00:00+09:00",
+                "videos": batch_videos,
+            }
+            norm_batch = bridge.normalize_gemini_handoff_receipt(batch_raw, evidence_map={})
+            validated_videos = bridge.validate(norm_batch)
+            self.assertEqual(len(validated_videos), 20)
+            total_normalized += len(validated_videos)
+        self.assertEqual(total_normalized, 100)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
 
 
 

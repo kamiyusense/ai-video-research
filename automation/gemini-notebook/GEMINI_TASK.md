@@ -28,15 +28,16 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
    - GitHub側のブリッジ（`cloud_relay_gas.js` / `receipt_to_research.py`）は、300文字の概要要約（`summary_ja`）だけでなく、**最大2,500文字の詳細技術知識・再利用ノート（`detailed_findings_ja`）**、**確認済みタイムライン・目次（`chapters`）**、**一次資料検証結果（`claims`）**、**関連研究（`related_records`）**を構造化して保存する。
    - **GitHub への保存成功は、Gemini Notebook への同期完了を意味しない** (`notebook_sync_status: NOT_SYNCED_FROM_GITHUB`)。
 
-## 時刻の信頼性ルール（推測による時刻リンク生成の禁止）
+## 時刻の信頼性ルール（推測による時刻リンク生成の禁止・章単位の厳格照合）
 
-- 動画の再生位置リンク（`&t=XXs`）や開始秒・終了秒（`start_seconds`, `end_seconds`, `timestamp_seconds`）は、**時刻の根拠（`timestamp_source`）が確認できた場合のみ**記録する。
+- 動画の再生位置リンク（`&t=XXs`）や開始秒・終了秒（`start_seconds`, `end_seconds`, `timestamp_seconds`）は、**章単位・主張単位で時刻の根拠（`timestamp_source`）が一次検証できた場合のみ**記録する。
+- **動画全体の尺（duration）が一致しているだけでは `TIMESTAMPED_CAPTIONS` 等を付与してはならない**。また、一次検証データ（字幕・概要欄チャプター）が未取得の動画や、概要欄チャプターの時刻体系と矛盾する動画の章はすべて `"UNKNOWN"` とする。
 - 許可される `timestamp_source` の値：
-  - `"YOUTUBE_CHAPTER_METADATA"`: YouTube動画概要欄・公式チャプターメタデータで確認
-  - `"TIMESTAMPED_CAPTIONS"`: 時刻付き字幕・トランスクリプトのタイムスタンプで確認
-  - `"VISUAL_FRAME_CHECK"`: 映像フレーム・画面表示時刻で確認
-  - `"OFFICIAL_TIME_RANGE"`: 投稿者の公式解説記事等で明示された時刻区間で確認
-  - `"UNKNOWN"`: 時刻未確認（**この場合、`start_seconds` / `end_seconds` / `timestamp_seconds` は必ず `null` にし、推測で秒数を埋めてはならない**）
+  - `"YOUTUBE_CHAPTER_METADATA"`: YouTube動画概要欄・公式チャプターメタデータで当該章の開始時刻が一致確認できた場合のみ
+  - `"TIMESTAMPED_CAPTIONS"`: 時刻付き字幕・トランスクリプトの該当秒数付近の発話内容で当該章の話題開始が直接確認できた場合のみ
+  - `"VISUAL_FRAME_CHECK"`: 映像フレーム・画面表示時刻で直接確認できた場合のみ
+  - `"OFFICIAL_TIME_RANGE"`: 投稿者の公式解説記事等で明示された時刻区間で確認できた場合のみ
+  - `"UNKNOWN"`: 時刻未確認・尺不一致・字幕未照合（**この場合、`start_seconds` / `end_seconds` / `timestamp_seconds` は必ず `null` にし、推測で秒数を埋めてはならない**）
 
 ## 毎回の自律実行（全工程を1タスクで連続実行する）
 
@@ -44,9 +45,9 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
 2. **DISCOVER（有用なAI情報の自動発見）**: 日英のYouTube、Google/各開発元の公式発表、公開実装を横断して有用な最新候補を発見する。候補を6～15件内部で評価。直近の更新、優先研究テーマ（`next_topics`）や未解決課題（P006）との適合度、一次資料の信頼性、費用・自動化への有用性で優先順位を付ける。
 3. **SELECT（重複確認と対象選定）**: 既存 `video_id`（`lC5jxpYmatE`, `Vr3JkAT9mo8`, `3bLrrkA1nlQ`, `ZjUJ-35acaU`, `BStkW1HTfmk`, 対象外 `MVVpR2Bb0Rk` およびNotebook内既存ソース・GitHubエクスポート記載ID）と重複する候補を除き、1回の実行で**意味のある新規研究を原則2～5件まで**処理する。新情報がないなら0件で正常終了してよい。既存動画に対する重要な公式仕様更新や章立てタイムラインの補足がある場合は、既存研究への版付き補足（`changes: ["UPDATED"]` または `["CONFLICT"]`）を優先する。
 4. **ACQUIRE（動画・章立てタイムライン・公式資料の調査）**: 選んだ動画の字幕・時刻付き文字起こし・概要欄チャプターを取得し、動画全体の章立て目次（`chapters`）と各章の開始・終了秒、時刻の確認根拠（`timestamp_source`）を整理する。映像フレームを直接取得していなければ、実演を見たと書かない。
-5. **VERIFY（事実検証）**: 各重要主張を公式一次資料、公開実装、利用条件と照合。動画公開日・製品の対象バージョン・今回の公式照合日を区別。発言、公式資料の事実、開発者の自己申告、AI解釈、実機検証を混同しない。
+5. **VERIFY（事実検証）**: 各重要主張を公式一次資料、公開実装、利用条件と照合。動画公開日・製品の対象バージョン・今回の公式照合日を区別。発言、公式資料の事実、開発者の自己申告、AI解釈、実機検証を混同しない。**一次資料の公式URL（`official_url`）を提示できない主張を `CONFIRMED_DOC` にしてはならない（一次URL未添付の場合は `REPORTED_BY_AUTHOR` または `UNKNOWN` とする）**。
 6. **DIFF（既存知識との差分抽出・関連研究/P006接続）**: Notebookの関連チャンクおよび既存GitHub記録と比較し、`KNOWN` / `NEW` / `UPDATED` / `CONFLICT` / `UNKNOWN` に分ける。関連する既存研究やP006課題を `related_records`（`EXTENDS`, `UPDATES`, `COMPLEMENTS`, `CONTRADICTS`, `RESOLVES_BACKLOG`）として明記する。
-7. **INGEST（Notebook図書館へのソース登録）**: 可能な限り対象YouTube動画のURLをNotebookソースに登録し、あわせて章立て・時刻リンク・検証結果・既存研究との関連を整理した独自研究カードをNotebookへ登録する（字幕全文のテキスト貼り付けはしない）。登録前に重複を再確認し、読み戻して存在確認できた場合のみ `notebook_readback: "PASS"` とする。
+7. **INGEST（Notebook図書館へのソース登録）**: 可能な限り対象YouTube動画のURLをNotebookソースに登録し、あわせて章立て・時刻リンク・検証結果・既存研究との関連を整理した独自研究カードをNotebookへ登録する（字幕全文のテキスト貼り付けはしない）。登録前に重複を再確認し、読み戻して存在確認できた場合のみ `notebook_readback: "PASS"` とする（未確認・省略時は `"UNKNOWN"` とし、自動PASS扱いにしない）。
 8. **INDEX（Notebook内総合索引の差分保全）**: 保存後にNotebook内の既存総合索引 `AI技術研究室_知識索引.md` を、可能なら**既存内容を維持して**差分追記。危険な上書きしかできないなら索引更新を停止し、登録したソースのIDとともに説明する。
 9. **LINT / NEXT（次の研究テーマの自動選定）**: 分野別の古い主張、公式資料との不一致、情報の空白を見つけ、価値が高い次の研究テーマを最大3件選び、`next_topics` に出力する。
 10. **HANDOFF（GitHub正式保存用の受渡し出力）**: 下記の `research_receipt_v1`（v1.6拡張対応）JSONコードブロック（````json ... ````）を**最終回答に1つだけ**含める。
@@ -54,9 +55,9 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
 ## GitHub引継ぎのJSON契約（`research_receipt_v1` / 共通契約 `v1.6` 後方互換拡張）
 
 - `schema_version`: `"research_receipt_v1"`
-- `notebook_url`: `"https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7"`
+- `notebook_url`: `"https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7"`（架空のNotebook URLを生成しないこと）
 - `checked_at`: ISO日付 `"YYYY-MM-DD"`
-- `notebook_readback`: `"PASS"` / `"FAIL"` / `"UNKNOWN"`
+- `notebook_readback`: `"PASS"` / `"FAIL"` / `"UNKNOWN"`（省略時はGitHub側で `"UNKNOWN"` として扱われ、自己申告PASSもGitHub側では `NOTEBOOK_READBACK_SELF_REPORTED_ONLY` として区別記録される）
 - `github_dedup_status`: `"PASS"` / `"UNKNOWN"`
 - `videos`: 配列（最大20件）。各要素は以下のフィールドを持つ：
   - 必須フィールド：
@@ -66,8 +67,8 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
     - `published_at`: 公開日または `null`
     - `summary_ja`: 動画全体の簡潔な独自要約（1〜300文字、改行最大3回）
     - `source_scope`: 調査範囲と取得方法（180文字以内）
-    - `claims`: 重要主張と一次資料検証の配列（最大12件）。各要素は `text`（500字以内）、`status`（`CONFIRMED_DOC` / `REPORTED_BY_AUTHOR` / `CONFIRMED_TEST` / `UNKNOWN` / `CONTRADICTED`）、`timestamp_seconds`（整数秒または `null`）、`timestamp_source`（任意：時刻の確認根拠）、`official_url`（HTTPS URLまたは `null`）
-    - `notebook_source_id`: Notebook内の登録ソース識別子
+    - `claims`: 重要主張と一次資料検証の配列（最大12件）。各要素は `text`（500字以内）、`status`（`CONFIRMED_DOC` / `REPORTED_BY_AUTHOR` / `CONFIRMED_TEST` / `UNKNOWN` / `CONTRADICTED`）、`timestamp_seconds`（整数秒または `null`）、`timestamp_source`（任意：時刻の確認根拠）、`official_url`（HTTPS URLまたは `null`）。**注意: `status: "CONFIRMED_DOC"` の場合は YouTube 以外の一次資料 `official_url` が必須（未指定はバリデーションエラーで拒否される）**
+    - `notebook_source_id`: Notebook内の登録ソース識別子（**必須：省略時は推測補完せずエラー停止する**）
     - `notebook_readback`: `"PASS"` / `"FAIL"` / `"UNKNOWN"`
     - `changes`: `["NEW"]`, `["UPDATED"]`, `["CONFLICT"]`, `["KNOWN"]`, `["UNKNOWN"]` のいずれかを含む配列
   - **v0.6 拡張フィールド（詳しい研究記録と時刻付き案内のために積極活用すること）**：

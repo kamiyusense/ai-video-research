@@ -4,11 +4,11 @@
 - video_id: `gD6UZ4wG8OM`
 - canonical_url: https://www.youtube.com/watch?v=gD6UZ4wG8OM
 - original_url: https://www.youtube.com/watch?v=gD6UZ4wG8OM
-- publication_date: 2026-10-15
+- publication_date: 2026-10-16 (YouTube一次確認 / Gemini記載値: 2026-10-15)
 - checked_at: 2026-10-17
 - source_scope: YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017
 - Gemini Notebook source: AI技術研究室_直近調査12本_完全総合辞書_20261017
-- Gemini readback (self-reported): PASS
+- Gemini readback (self-reported): UNKNOWN
 - GitHub independent verification: NOT_RUN
 - GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB
 - changes: NEW
@@ -24,19 +24,21 @@ AnthropicのClaudeエンジニアFelix氏が公開した技術エッセイ『Pro
 - UNKNOWN | **まとめ・AIを共同創業者として扱うマインドセット** | Gemini報告区間(11:50〜14:15 / 一次時刻未確認のため再生リンク非生成): まとめ・AIを共同創業者として扱うマインドセット | time_source: UNKNOWN | topics: Prompting with Ambition, 野心的プロンプティング, 3次元探索（高さ・深さ・広さ）
 
 ## 詳細技術知識・再利用ノート
-- 整理番号・区分: No.06 (Part 1: 直近調査12本 (No.01〜12)) / 投稿者: AI時短ラボ / 調査日: 2026-10-16
-- 動画長・公開日照合: Gemini記載長=14:15, 記載公開日=2026-10-15 | YouTube一次実測長=15:21 (921s), 一次公開日=2026-10-16
-- 証拠強度区分: PART1（Notebook内のYouTubeソース由来）
-- 全体要約（原文完全保持）: AnthropicのClaudeエンジニアFelix氏が公開した技術エッセイ『Prompting with Ambition（野心的なプロンプティング手引き）』を解説。多くのユーザーがAIを単なる『賢い検索』や『下請け作業者』と低く見積もっている現状を批判し、AIに与えるべき『高さ（野心度）・深さ（思考の段数）・広さ（コンテキスト量）』の3次元プロンプト設計論を提示。
+- 整理番号・区分: No.06 (Part 1: 直近調査12本 (No.01〜12)) / 投稿者(Gemini記載): AI時短ラボ / 調査日: 2026-10-16
+- YouTube一次メタデータ照合: タイトル=一致 / 投稿者=一致
+- 動画長・公開日一次照合: YouTube一次実測長=15:21 (921s) vs Gemini記載長=14:15 (不一致) | YouTube一次公開日=2026-10-16 vs Gemini記載公開日=2026-10-15 (不一致)
+- チャプター時刻一次検証内訳: 全5章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)=0章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)=0章, 一次根拠未確認(UNKNOWN)=5章
+- 証拠強度区分: PART1（Notebook内のYouTubeソース由来・章別一次照合適用）
+- 全体要約（原文保持）: AnthropicのClaudeエンジニアFelix氏が公開した技術エッセイ『Prompting with Ambition（野心的なプロンプティング手引き）』を解説。多くのユーザーがAIを単なる『賢い検索』や『下請け作業者』と低く見積もっている現状を批判し、AIに与えるべき『高さ（野心度）・深さ（思考の段数）・広さ（コンテキスト量）』の3次元プロンプト設計論を提示。
 - 主要技術キーワード: Prompting with Ambition, 野心的プロンプティング, 3次元探索（高さ・深さ・広さ）, トップダウン目標設定, 思考の壁打ち, メタ認知
-- 公式仕様・一次資料照合詳細: Anthropicエンジニア公式ブログエッセイの内容と合致。
+- 公式仕様・一次資料照合報告（一次URL未添付時はREPORTED_BY_AUTHOR扱い）: Anthropicエンジニア公式ブログエッセイの内容と合致。
 - 制約・注意点: 目標を抽象的に高くしすぎるとハルシネーションを招くため制約条件とのバランスが必須。
 - 今後の応用・自動化案: エージェントへの最高峰ゴール設定と自律分解指示によるハイレベル業務設計。
 - 未確認事項（UNKNOWN）: Felix氏の社内実験における未公開プロンプト例の完全な原文。
-- YouTube概要欄の公式チャプター（一次照合参照用）: 0:00 手引き概要 / 1:05 第1章 翼はあるのに歩いている / 2:03 第2章 高さ / 5:19 第3章 深さ / 8:41 第4章 広さ / 11:05 第5章 なぜできると思う範囲でしか頼まないのか / 14:14 第6章 まとめ
+- YouTube概要欄の公式チャプター（一次照合参照用）: 0:00 Claudeの開発者が書いた、AIへの頼み方の手引き / 1:05 第1章 翼はあるのに、歩いている / 2:03 第2章 高さ　作業の先に、何が起きてほしい？ / 5:19 第3章 深さ　一流なら、どこから始める？ / 8:41 第4章 広さ　ほかに、誰を呼ぶ？ / 11:05 第5章 なぜ人は、できると思う範囲でしか頼まないのか / 14:14 第6章 惑星と、フランスの首都
 
 ## 主張・一次資料・時刻
-- [PART1直近調査の公式照合] Anthropicエンジニア公式ブログエッセイの内容と合致。 | CONFIRMED_DOC | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+- [Gemini公式照合報告(一次URL未添付・要独立確認)] Anthropicエンジニア公式ブログエッセイの内容と合致。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 - 制約・注意点: 目標を抽象的に高くしすぎるとハルシネーションを招くため制約条件とのバランスが必須。 / 今後の応用: エージェントへの最高峰ゴール設定と自律分解指示によるハイレベル業務設計。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 - 未確認事項(UNKNOWN): Felix氏の社内実験における未公開プロンプト例の完全な原文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 

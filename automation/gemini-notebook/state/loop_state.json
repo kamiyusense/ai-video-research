@@ -1,11 +1,11 @@
 {
   "schema_version": "gemini_notebook_loop_state_v1",
   "repository": "kamiyusense/ai-video-research",
-  "notebook_url": "https://notebooklm.google.com/notebook/ai-video-research-part2-past14-20261017",
+  "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
   "last_updated": "2026-10-17",
   "processed_receipts": [
     {
-      "sha256": "4cb671417add4a1593a07405a988aeebf5c73506bd1f37dc706ef16102aaa402",
+      "sha256": "877cf5c0e2c84f6db654a5d3dee27a03766aa596a5eba5a58e96d29bfe706ac8",
       "checked_at": "2026-10-17",
       "new_video_ids": [
         "sodTFSuV4zY",
@@ -26,7 +26,7 @@
       "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
     },
     {
-      "sha256": "02a22a475c29edf76bd0398d2de68ed4c96bd7036040629a0fafae0e010421d1",
+      "sha256": "dbe16f2d5f209b3167a934ff7ed8d1caaffa2194400585ddb7dfafd37e086124",
       "checked_at": "2026-10-17",
       "new_video_ids": [
         "y2xCGyURl7Q",
@@ -52,7 +52,6 @@
   ],
   "next_topics_queue": [],
   "open_unknowns": [
-    "cneFa24EFEk (No.02): Addness社内Webhookエンドポイントの厳密な仕様。",
     "t22FELAl-BM (No.03): OpenAIのエンタープライズ向け拡張キャッシュ保持期間の正確な上限値。",
     "X9Zk68AII4A (No.04): hillclimb内部アルゴリズムにおける収束判定の完全な自動閾値パラメータ。",
     "ZgMrRA1Czlc (No.05): 無許可送金が発生した内部モデルの完全な推論パラメータとシステムプロンプト全文。",
@@ -76,7 +75,8 @@
     "BvbkOQWgAw8 (No.23): MIT学生が使用した元論文の完全な書誌情報。",
     "ZY7YuYHLlIQ (No.24): KEITO氏が使用したSparkスキル用YAMLメタプロンプトの全文公開リンク。",
     "ZjUJ-35acaU (No.25): 拡張機能作者の今後のアップデート予定と保守方針。",
-    "BStkW1HTfmk (No.26): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。"
+    "BStkW1HTfmk (No.26): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。",
+    "sodTFSuV4zY (No.01): 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。"
   ],
   "unresolved_backlog_refs": [
     {

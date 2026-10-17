@@ -351,10 +351,153 @@ function truncateCleanSummary_(text, maxChars) {
   return cut + "…";
 }
 
-function normalizeGeminiHandoffReceipt_(data) {
+function inferRelatedRecordsFromContent_(
+  vid,
+  title,
+  summaryJa,
+  keyTechList,
+  isExistingTarget
+) {
+  const relations = [];
+  const seen = {};
+  const maxRel = CONTRACT_SPEC_V1.limits.max_related_records_per_video || 10;
+  const maxNote = CONTRACT_SPEC_V1.limits.max_related_note_length || 240;
+
+  function addRel(targetId, relType, note) {
+    const key = targetId + "::" + relType;
+    if (!seen[key] && relations.length < maxRel) {
+      seen[key] = true;
+      relations.push({
+        target_id: targetId,
+        relation: relType,
+        note: String(note).slice(0, maxNote),
+      });
+    }
+  }
+
+  if (isExistingTarget) {
+    addRel(
+      "youtube:" + vid,
+      "UPDATES",
+      "既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合"
+    );
+  }
+
+  const corpus = (
+    String(title || "") +
+    " " +
+    String(summaryJa || "") +
+    " " +
+    (Array.isArray(keyTechList) ? keyTechList.join(" ") : "")
+  ).toLowerCase();
+
+  if (
+    ["eval", "hillclimb", "computer use", "rsi", "自己改善", "判断軸"].some(
+      function (kw) {
+        return corpus.indexOf(kw) !== -1;
+      }
+    )
+  ) {
+    if (vid !== "lC5jxpYmatE") {
+      addRel(
+        "youtube:lC5jxpYmatE",
+        "EXTENDS",
+        "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張"
+      );
+    }
+    addRel(
+      "proposal:P006",
+      "COMPLEMENTS",
+      "未解決課題ストック(P006)の再評価・検証ループ設計を補完"
+    );
+  } else if (
+    [
+      "playwright",
+      "1password",
+      "prompt caching",
+      "キャッシュ",
+      "ウォレット",
+      "秘密鍵",
+      "hooks",
+      "skill",
+      "スキル",
+    ].some(function (kw) {
+      return corpus.indexOf(kw) !== -1;
+    })
+  ) {
+    if (vid !== "lC5jxpYmatE") {
+      addRel(
+        "youtube:lC5jxpYmatE",
+        "COMPLEMENTS",
+        "Skill・ハーネス・権限分離・トークン節約の実務構成を補完"
+      );
+    }
+  }
+
+  if (
+    [
+      "サブエージェント",
+      "マルチエージェント",
+      "agents.md",
+      "memory.md",
+      "コーディネーター",
+      "右腕",
+      "スペシャリスト",
+      "サブスレッド",
+    ].some(function (kw) {
+      return corpus.indexOf(kw) !== -1;
+    })
+  ) {
+    if (vid !== "Vr3JkAT9mo8") {
+      addRel(
+        "youtube:Vr3JkAT9mo8",
+        "COMPLEMENTS",
+        "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完"
+      );
+    }
+  }
+
+  if (
+    ["obsidian", "vault", "llm wiki"].some(function (kw) {
+      return corpus.indexOf(kw) !== -1;
+    })
+  ) {
+    if (vid !== "BStkW1HTfmk") {
+      addRel(
+        "youtube:BStkW1HTfmk",
+        "COMPLEMENTS",
+        "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完"
+      );
+    }
+  }
+
+  if (
+    ["notebooklm", "gemini notebook", "studio"].some(function (kw) {
+      return corpus.indexOf(kw) !== -1;
+    })
+  ) {
+    if (vid !== "ZjUJ-35acaU") {
+      addRel(
+        "youtube:ZjUJ-35acaU",
+        "COMPLEMENTS",
+        "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完"
+      );
+    }
+  }
+
+  return relations;
+}
+
+function normalizeGeminiHandoffReceipt_(data, options) {
   if (!data || typeof data !== "object" || Array.isArray(data)) return data;
   if (data.schema_version === CONTRACT_SPEC_V1.receipt_schema_version) return data;
   if (data.receipt_version !== CONTRACT_SPEC_V1.receipt_schema_version) return data;
+
+  const opts = options || {};
+  const evidenceMap =
+    opts.evidenceMap && typeof opts.evidenceMap === "object"
+      ? opts.evidenceMap
+      : {};
 
   scanForbiddenKeys_(data, "root");
 
@@ -376,18 +519,27 @@ function normalizeGeminiHandoffReceipt_(data) {
   const genAt = String(data.checked_at || data.generated_at || "");
   const checkedAt = genAt.length >= 10 ? genAt.slice(0, 10) : "2026-10-17";
 
-  const notebookSourceId = isPart2
-    ? "AI技術研究室_過去調査14本_完全総合辞書_20261017"
-    : "AI技術研究室_直近調査12本_完全総合辞書_20261017";
-  const sourceScope =
-    (isPart2
-      ? "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:"
-      : "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:") + notebookSourceId;
-  const notebookUrl =
+  const notebookUrl = String(
     data.notebook_url ||
-    (isPart2
-      ? "https://notebooklm.google.com/notebook/ai-video-research-part2-past14-20261017"
-      : "https://notebooklm.google.com/notebook/ai-video-research-part1-recent12-20261017");
+      opts.defaultNotebookUrl ||
+      CONTRACT_SPEC_V1.default_notebook_url
+  ).trim();
+
+  const rootSourceId = String(
+    data.notebook_source_id ||
+      data.source_title ||
+      data.notebook_source ||
+      opts.defaultNotebookSourceId ||
+      ""
+  ).trim();
+
+  const topRbRaw = String(data.notebook_readback || "UNKNOWN")
+    .trim()
+    .toUpperCase();
+  const topReadback =
+    CONTRACT_SPEC_V1.allowed_readback.indexOf(topRbRaw) !== -1
+      ? topRbRaw
+      : "UNKNOWN";
 
   const convertedVideos = [];
   const topUnknowns = [];
@@ -407,7 +559,31 @@ function normalizeGeminiHandoffReceipt_(data) {
     const rawSummary = String(rv.summary_ja || rv.summary || "").trim();
     const summaryJa = truncateCleanSummary_(rawSummary, 295);
 
+    const evRec =
+      evidenceMap[vid] && typeof evidenceMap[vid] === "object"
+        ? evidenceMap[vid]
+        : null;
+    const durStr = String(rv.duration || "UNKNOWN").trim();
+    const durSec = parseMmssSec_(durStr);
+    const ytLen =
+      evRec && typeof evRec.yt_len_sec === "number" ? evRec.yt_len_sec : null;
+    const ytPub = evRec && evRec.yt_pub ? String(evRec.yt_pub) : null;
+    const ytTitle = evRec && evRec.yt_title ? String(evRec.yt_title) : null;
+    const ytAuthor = evRec && evRec.yt_author ? String(evRec.yt_author) : null;
+    const contradictsDesc = Boolean(evRec && evRec.contradicts_desc);
+    const evChapters =
+      evRec && evRec.chapters && typeof evRec.chapters === "object"
+        ? evRec.chapters
+        : {};
+    const durMatch = Boolean(
+      ytLen !== null &&
+        durSec !== null &&
+        Math.abs(durSec - ytLen) <= 2 &&
+        evRec.dur_match !== false
+    );
+
     const chapters = [];
+    const longChapterTitles = [];
     if (Array.isArray(rv.timeline)) {
       for (let j = 0; j < rv.timeline.length; j++) {
         const tl = rv.timeline[j];
@@ -428,16 +604,49 @@ function normalizeGeminiHandoffReceipt_(data) {
         ) {
           throw new Error("Timeline timestamp/seconds/link mismatch in " + vid);
         }
-        const tsSource = isPart2 ? "UNKNOWN" : "TIMESTAMPED_CAPTIONS";
-        const keyTechs = Array.isArray(rv.key_technologies) ? rv.key_technologies.slice(0, 3) : [];
+        if (tlTitle.length > 150) {
+          longChapterTitles.push(sStr + "〜" + eStr + ": " + tlTitle);
+        }
+
+        const chEv = evChapters[String(sCalc)];
+        const verdict = chEv && chEv.verdict ? String(chEv.verdict) : null;
+        const inRange = ytLen !== null && eCalc <= ytLen + 2;
+
+        let tsSource = "UNKNOWN";
+        let eFinal = null;
+        if (evRec !== null && durMatch && !contradictsDesc && inRange) {
+          if (verdict === "DESC_MATCH") {
+            tsSource = "YOUTUBE_CHAPTER_METADATA";
+            eFinal = Math.min(eCalc, ytLen);
+          } else if (verdict === "CAPTION_PASS") {
+            tsSource = "TIMESTAMPED_CAPTIONS";
+            eFinal = Math.min(eCalc, ytLen);
+          }
+        }
+
+        const keyTechs = (Array.isArray(rv.key_technologies) ? rv.key_technologies : [])
+          .map(function (k) {
+            return String(k || "").trim();
+          })
+          .filter(Boolean);
+        let matchedTopics = keyTechs.filter(function (kt) {
+          return tlTitle.toLowerCase().indexOf(kt.toLowerCase()) !== -1;
+        });
+        if (matchedTopics.length === 0) {
+          matchedTopics = keyTechs.slice(0, 3);
+        }
+        matchedTopics = matchedTopics.slice(0, 8).map(function (kt) {
+          return kt.slice(0, 60);
+        });
+
         if (tsSource !== "UNKNOWN") {
           chapters.push({
             title: tlTitle.slice(0, 150),
             start_seconds: sCalc,
-            end_seconds: eCalc,
+            end_seconds: eFinal,
             summary_ja: ("区間 " + sStr + "〜" + eStr + " の解説: " + tlTitle).slice(0, 300),
             timestamp_source: tsSource,
-            key_topics: keyTechs,
+            key_topics: matchedTopics,
           });
         } else {
           chapters.push({
@@ -448,25 +657,93 @@ function normalizeGeminiHandoffReceipt_(data) {
               "Gemini報告区間(" + sStr + "〜" + eStr + " / 一次時刻未確認のため再生リンク非生成): " + tlTitle
             ).slice(0, 300),
             timestamp_source: "UNKNOWN",
-            key_topics: keyTechs,
+            key_topics: matchedTopics,
           });
         }
       }
     }
 
+    const videoSourceId = String(
+      rv.notebook_source_id ||
+        rv.source_title ||
+        rv.notebook_source ||
+        rootSourceId
+    ).trim();
+    if (!videoSourceId) {
+      throw new Error(
+        "Missing notebook_source_id/source_title for video " +
+          vid +
+          " in Gemini handoff receipt; refusing to guess source name"
+      );
+    }
+
+    const rawScope = String(rv.source_scope || data.source_scope || "").trim();
+    let sourceScope = "";
+    if (rawScope) {
+      sourceScope =
+        rawScope.indexOf("NOTEBOOK_SOURCE:") !== -1
+          ? rawScope
+          : rawScope + " | NOTEBOOK_SOURCE:" + videoSourceId;
+    } else {
+      sourceScope =
+        (isPart2
+          ? "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS"
+          : "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS") +
+        " | NOTEBOOK_SOURCE:" +
+        videoSourceId;
+    }
+
+    const vidRbRaw = String(
+      rv.notebook_readback || data.notebook_readback || "UNKNOWN"
+    )
+      .trim()
+      .toUpperCase();
+    const vidReadback =
+      CONTRACT_SPEC_V1.allowed_readback.indexOf(vidRbRaw) !== -1
+        ? vidRbRaw
+        : "UNKNOWN";
+
     const ov = rv.official_verification || {};
     const ovDetails = String(ov.details || "").trim();
+    const ovUrl = String(ov.official_url || ov.url || "").trim() || null;
+    const ovStatusRaw = String(ov.status || "").trim().toUpperCase();
     const constraints = String(rv.constraints_and_notes || "").trim();
     const futureApps = String(rv.future_applications || "").trim();
     const unkStr = String(rv.unknowns || "").trim();
+    const channelStr = String(rv.channel || "UNKNOWN").trim();
+    const numStr = String(rv.number || "").trim();
+    const resDate = String(rv.research_date || checkedAt).trim();
+    const keyTechList = (Array.isArray(rv.key_technologies) ? rv.key_technologies : [])
+      .map(function (k) {
+        return String(k || "").trim();
+      })
+      .filter(Boolean);
+
     const claims = [];
     if (ovDetails) {
+      let claimStatus = "REPORTED_BY_AUTHOR";
+      let claimUrl = null;
+      let prefix = "[Gemini公式照合報告(一次URL未添付・要独立確認)] ";
+      if (
+        ovUrl &&
+        validUrl_(ovUrl) &&
+        (ovStatusRaw === "VERIFIED" || ovStatusRaw === "CONFIRMED_DOC")
+      ) {
+        claimStatus = "CONFIRMED_DOC";
+        claimUrl = ovUrl;
+        prefix = isPart2
+          ? "[PART2研究ノート経由・一次公式URL照合済] "
+          : "[PART1直近調査・一次公式URL照合済] ";
+      } else if (ovStatusRaw === "UNKNOWN") {
+        claimStatus = "UNKNOWN";
+        claimUrl = ovUrl && validUrl_(ovUrl) ? ovUrl : null;
+      }
       claims.push({
-        text: ((isPart2 ? "[PART2研究ノート経由の公式照合] " : "[PART1直近調査の公式照合] ") + ovDetails).slice(0, 500),
-        status: "CONFIRMED_DOC",
+        text: (prefix + ovDetails).slice(0, 500),
+        status: claimStatus,
         timestamp_seconds: null,
         timestamp_source: "UNKNOWN",
-        official_url: null,
+        official_url: claimUrl,
       });
     }
     if (constraints || futureApps) {
@@ -486,33 +763,156 @@ function normalizeGeminiHandoffReceipt_(data) {
         timestamp_source: "UNKNOWN",
         official_url: null,
       });
-      topUnknowns.push((vid + " (No." + String(rv.number || "") + "): " + unkStr).slice(0, 500));
+      topUnknowns.push((vid + " (No." + numStr + "): " + unkStr).slice(0, 500));
     }
 
+    let nDesc = 0;
+    let nCap = 0;
+    let nUnk = 0;
+    for (let cIdx = 0; cIdx < chapters.length; cIdx++) {
+      if (chapters[cIdx].timestamp_source === "YOUTUBE_CHAPTER_METADATA") nDesc += 1;
+      else if (chapters[cIdx].timestamp_source === "TIMESTAMPED_CAPTIONS") nCap += 1;
+      else nUnk += 1;
+    }
+
+    const finalPubDate = ytPub
+      ? pubDate === ytPub
+        ? ytPub + " (YouTube一次確認一致)"
+        : ytPub + " (YouTube一次確認 / Gemini記載値: " + (pubDate || "UNKNOWN") + ")"
+      : pubDate;
+
     const dfLines = [
-      "- 整理番号・区分: No." + String(rv.number || "") + " (" + (batchDesc || batchPart) + ") / 投稿者: " + String(rv.channel || "UNKNOWN") + " / 調査日: " + String(rv.research_date || checkedAt),
-      "- 全体要約（原文完全保持）: " + rawSummary,
-      "- 主要技術キーワード: " + (Array.isArray(rv.key_technologies) && rv.key_technologies.length ? rv.key_technologies.join(", ") : "NONE"),
-      "- 公式仕様・一次資料照合詳細: " + (ovDetails || "UNKNOWN"),
-      "- 制約・注意点: " + (constraints || "UNKNOWN"),
-      "- 今後の応用・自動化案: " + (futureApps || "UNKNOWN"),
-      "- 未確認事項（UNKNOWN）: " + (unkStr || "UNKNOWN"),
+      "- 整理番号・区分: No." +
+        numStr +
+        " (" +
+        (batchDesc || batchPart) +
+        ") / 投稿者(Gemini記載): " +
+        channelStr +
+        " / 調査日: " +
+        resDate,
     ];
+    if (evRec !== null && ytLen !== null) {
+      const titleCmp =
+        ytTitle && title === ytTitle
+          ? "一致"
+          : "不一致(YouTube一次=「" +
+            (ytTitle || "UNKNOWN") +
+            "」 vs Gemini記載=「" +
+            title +
+            "」)";
+      const authorCmp =
+        ytAuthor && channelStr === ytAuthor
+          ? "一致"
+          : "不一致(YouTube一次=「" +
+            (ytAuthor || "UNKNOWN") +
+            "」 vs Gemini記載=「" +
+            channelStr +
+            "」)";
+      const durCmp = durMatch ? "一致(±2s以内)" : "不一致";
+      const pubCmp = ytPub && pubDate === ytPub ? "一致" : "不一致";
+      const ytMm = String(Math.floor(ytLen / 60)).padStart(2, "0");
+      const ytSs = String(ytLen % 60).padStart(2, "0");
+      dfLines.push(
+        "- YouTube一次メタデータ照合: タイトル=" +
+          titleCmp +
+          " / 投稿者=" +
+          authorCmp
+      );
+      dfLines.push(
+        "- 動画長・公開日一次照合: YouTube一次実測長=" +
+          ytMm +
+          ":" +
+          ytSs +
+          " (" +
+          ytLen +
+          "s) vs Gemini記載長=" +
+          durStr +
+          " (" +
+          durCmp +
+          ") | YouTube一次公開日=" +
+          (ytPub || "UNKNOWN") +
+          " vs Gemini記載公開日=" +
+          (pubDate || "UNKNOWN") +
+          " (" +
+          pubCmp +
+          ")"
+      );
+    } else {
+      dfLines.push(
+        "- 動画長・公開日照合: Gemini記載長=" +
+          durStr +
+          ", 記載公開日=" +
+          (pubDate || "UNKNOWN") +
+          " (YouTube一次検証データ未登録のため全チャプター時刻をUNKNOWN扱い)"
+      );
+    }
+
+    dfLines.push(
+      "- チャプター時刻一次検証内訳: 全" +
+        chapters.length +
+        "章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)=" +
+        nDesc +
+        "章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)=" +
+        nCap +
+        "章, 一次根拠未確認(UNKNOWN)=" +
+        nUnk +
+        "章"
+    );
+    dfLines.push(
+      "- 証拠強度区分: " +
+        (!isPart2
+          ? "PART1（Notebook内のYouTubeソース由来・章別一次照合適用）"
+          : "PART2（Gemini過去研究ノート由来・章別一次照合適用）")
+    );
+    dfLines.push("- 全体要約（原文保持）: " + rawSummary);
+    dfLines.push(
+      "- 主要技術キーワード: " +
+        (keyTechList.length ? keyTechList.join(", ") : "NONE")
+    );
+    dfLines.push(
+      "- 公式仕様・一次資料照合報告（一次URL未添付時はREPORTED_BY_AUTHOR扱い）: " +
+        (ovDetails || "UNKNOWN")
+    );
+    dfLines.push("- 制約・注意点: " + (constraints || "UNKNOWN"));
+    dfLines.push("- 今後の応用・自動化案: " + (futureApps || "UNKNOWN"));
+    dfLines.push("- 未確認事項（UNKNOWN）: " + (unkStr || "UNKNOWN"));
+    if (longChapterTitles.length > 0) {
+      dfLines.push(
+        "- 長文チャプタータイトル原文保持: " + longChapterTitles.join(" / ")
+      );
+    }
+    if (evRec && evRec.desc_summary) {
+      dfLines.push(
+        "- YouTube概要欄の公式チャプター（一次照合参照用）: " +
+          evRec.desc_summary
+      );
+    }
+
+    const isExistingTarget = vid === "ZjUJ-35acaU" || vid === "BStkW1HTfmk";
+    const relatedRecords =
+      rv.related_records ||
+      inferRelatedRecordsFromContent_(
+        vid,
+        title,
+        rawSummary,
+        keyTechList,
+        isExistingTarget
+      );
 
     convertedVideos.push({
       video_id: vid,
       title: title.slice(0, 250),
       url: url,
-      published_at: pubDate,
+      published_at: finalPubDate,
       summary_ja: summaryJa,
       detailed_findings_ja: dfLines.join("\n").slice(0, 2500),
       chapters: chapters,
       source_scope: sourceScope.slice(0, 180),
       claims: claims,
-      related_records: rv.related_records || [],
-      notebook_source_id: notebookSourceId,
-      notebook_readback: "PASS",
-      changes: rv.changes || (vid === "ZjUJ-35acaU" || vid === "BStkW1HTfmk" ? ["UPDATED"] : ["NEW"]),
+      related_records: relatedRecords,
+      notebook_source_id: videoSourceId,
+      notebook_readback: vidReadback,
+      changes: rv.changes || (isExistingTarget ? ["UPDATED"] : ["NEW"]),
     });
   }
 
@@ -520,7 +920,7 @@ function normalizeGeminiHandoffReceipt_(data) {
     schema_version: CONTRACT_SPEC_V1.receipt_schema_version,
     notebook_url: notebookUrl,
     checked_at: checkedAt,
-    notebook_readback: "PASS",
+    notebook_readback: topReadback,
     github_dedup_status: "UNKNOWN",
     next_topics: data.next_topics || [],
     unknowns: topUnknowns.slice(0, 20),
@@ -528,7 +928,21 @@ function normalizeGeminiHandoffReceipt_(data) {
   };
 }
 
-function extractReceiptFromText_(rawText) {
+function isHandoffValidationError_(e) {
+  if (!e || !e.message) return false;
+  const msg = String(e.message);
+  return (
+    msg.indexOf("Master index file") !== -1 ||
+    msg.indexOf("Timeline timestamp") !== -1 ||
+    msg.indexOf("Forbidden") !== -1 ||
+    msg.indexOf("Missing notebook_source_id") !== -1 ||
+    msg.indexOf("Missing videos array") !== -1 ||
+    msg.indexOf("videos must be a list") !== -1 ||
+    msg.indexOf("Invalid video_id") !== -1
+  );
+}
+
+function extractReceiptFromText_(rawText, options) {
   if (typeof rawText !== "string" || !rawText.trim()) {
     throw new Error("Empty receipt input");
   }
@@ -543,12 +957,10 @@ function extractReceiptFromText_(rawText) {
         (data.schema_version === CONTRACT_SPEC_V1.receipt_schema_version ||
           data.receipt_version === CONTRACT_SPEC_V1.receipt_schema_version)
       ) {
-        return normalizeGeminiHandoffReceipt_(data);
+        return normalizeGeminiHandoffReceipt_(data, options);
       }
     } catch (e) {
-      if (e && String(e.message).indexOf("Master index file") !== -1) throw e;
-      if (e && String(e.message).indexOf("Timeline timestamp") !== -1) throw e;
-      if (e && String(e.message).indexOf("Forbidden") !== -1) throw e;
+      if (isHandoffValidationError_(e)) throw e;
     }
   }
   const fenceRegex = /```(?:json)?\s*(\{[\s\S]*?\})\s*```/gi;
@@ -563,12 +975,10 @@ function extractReceiptFromText_(rawText) {
         (data.schema_version === CONTRACT_SPEC_V1.receipt_schema_version ||
           data.receipt_version === CONTRACT_SPEC_V1.receipt_schema_version)
       ) {
-        return normalizeGeminiHandoffReceipt_(data);
+        return normalizeGeminiHandoffReceipt_(data, options);
       }
     } catch (e) {
-      if (e && String(e.message).indexOf("Master index file") !== -1) throw e;
-      if (e && String(e.message).indexOf("Timeline timestamp") !== -1) throw e;
-      if (e && String(e.message).indexOf("Forbidden") !== -1) throw e;
+      if (isHandoffValidationError_(e)) throw e;
     }
   }
   const idx = rawText.indexOf('"research_receipt_v1"');
@@ -606,12 +1016,10 @@ function extractReceiptFromText_(rawText) {
                   (data.schema_version === CONTRACT_SPEC_V1.receipt_schema_version ||
                     data.receipt_version === CONTRACT_SPEC_V1.receipt_schema_version)
                 ) {
-                  return normalizeGeminiHandoffReceipt_(data);
+                  return normalizeGeminiHandoffReceipt_(data, options);
                 }
               } catch (e) {
-                if (e && String(e.message).indexOf("Master index file") !== -1) throw e;
-                if (e && String(e.message).indexOf("Timeline timestamp") !== -1) throw e;
-                if (e && String(e.message).indexOf("Forbidden") !== -1) throw e;
+                if (isHandoffValidationError_(e)) throw e;
               }
               break;
             }
@@ -621,7 +1029,7 @@ function extractReceiptFromText_(rawText) {
       start = start > 0 ? rawText.lastIndexOf("{", start - 1) : -1;
     }
   }
-  return normalizeGeminiHandoffReceipt_(JSON.parse(stripped));
+  return normalizeGeminiHandoffReceipt_(JSON.parse(stripped), options);
 }
 
 function canonicalizeJson_(val) {
@@ -880,6 +1288,11 @@ function validateReceipt_(data) {
       const u = c.official_url;
       if (u !== undefined && u !== null && !validUrl_(u)) {
         throw new Error("Invalid official_url");
+      }
+      if (c.status === "CONFIRMED_DOC" && !validUrl_(u)) {
+        throw new Error(
+          "Claim with CONFIRMED_DOC status requires a valid official_url"
+        );
       }
     }
 
@@ -1981,6 +2394,23 @@ function collectGitHubRepositoryState_(
   const dedupScanComplete = remainingUnscannedFiles === 0;
   loopState.remote_branch_cache = githubBranchCache;
 
+  let timestampEvidence = {};
+  const tsEvPath = "automation/gemini-notebook/state/timestamp_evidence.json";
+  if (targetFilesByPath[tsEvPath]) {
+    try {
+      const tsEvRaw = fetchBlobTextBySha(targetFilesByPath[tsEvPath]);
+      const tsEvParsed = JSON.parse(tsEvRaw);
+      if (
+        tsEvParsed &&
+        tsEvParsed.schema_version === "timestamp_evidence_v1" &&
+        tsEvParsed.videos &&
+        typeof tsEvParsed.videos === "object"
+      ) {
+        timestampEvidence = tsEvParsed.videos;
+      }
+    } catch (e) {}
+  }
+
   return {
     targetBranchCommitSha: targetBranchCommitSha,
     baseTreeSha: baseTreeSha,
@@ -1990,6 +2420,7 @@ function collectGitHubRepositoryState_(
     localMap: localMap,
     existingResearchMdByVid: existingResearchMdByVid,
     remoteMap: remoteMap,
+    timestampEvidence: timestampEvidence,
     freshness: dedupScanComplete ? "FRESH_FETCHED" : "INCOMPLETE_PARTIAL_SCAN",
     dedupScanComplete: dedupScanComplete,
     remainingUnscannedFiles: remainingUnscannedFiles,
@@ -2047,7 +2478,7 @@ function planReceiptApplication_(data, repoState) {
       const hasUpdateFlag =
         v.changes.indexOf("UPDATED") !== -1 || v.changes.indexOf("CONFLICT") !== -1;
 
-      if (v.notebook_readback !== "PASS") {
+      if (v.notebook_readback === "FAIL") {
         skipped.push({ video_id: vid, reason: "SKIP_UNVERIFIED_NOTEBOOK" });
         continue;
       }
@@ -2120,6 +2551,10 @@ function planReceiptApplication_(data, repoState) {
     const item = plannedNew[i];
     const v = item.video;
     filesToCommit[item.path] = item.content;
+    const rbStatusTag =
+      v.notebook_readback === "PASS"
+        ? "NOTEBOOK_READBACK_SELF_REPORTED_ONLY"
+        : "NOTEBOOK_READBACK_UNKNOWN";
     const recEntry = {
       record_id: "youtube:" + v.video_id,
       video_id: v.video_id,
@@ -2128,7 +2563,9 @@ function planReceiptApplication_(data, repoState) {
       source_scope: v.source_scope,
       research_date: data.checked_at,
       status:
-        "GEMINI_REPORTED; NOTEBOOK_READBACK_REPORTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+        "GEMINI_REPORTED; " +
+        rbStatusTag +
+        "; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
       evidence: "GEMINI_RESEARCH_RECEIPT",
     };
     if (v.url !== recEntry.canonical_url) {
@@ -2604,9 +3041,22 @@ function relayDriveReceiptsToGitHub(envOverrides) {
 
       let receiptObj = null;
       try {
-        receiptObj = extractReceiptFromText_(rawText);
+        receiptObj = extractReceiptFromText_(rawText, {
+          evidenceMap: repoState.timestampEvidence || {},
+          defaultNotebookUrl:
+            (repoState.loopState && repoState.loopState.notebook_url) ||
+            DEFAULT_CANONICAL_NOTEBOOK_URL,
+        });
       } catch (extractErr) {
-        report.push({ file: name, status: "SKIPPED_NO_RECEIPT" });
+        if (isHandoffValidationError_(extractErr)) {
+          report.push({
+            file: name,
+            status: "REJECTED_VALIDATION_BEFORE_GITHUB_WRITE",
+            error: extractErr.message || String(extractErr),
+          });
+        } else {
+          report.push({ file: name, status: "SKIPPED_NO_RECEIPT" });
+        }
         continue;
       }
       if (
@@ -2880,6 +3330,7 @@ if (typeof module !== "undefined" && module.exports) {
     saveBoundedRelayState: saveBoundedRelayState_,
     extractYoutubeId: extractYoutubeId_,
     canonicalYoutubeUrl: canonicalYoutubeUrl_,
+    normalizeGeminiHandoffReceipt: normalizeGeminiHandoffReceipt_,
     extractReceiptPayload: extractReceiptFromText_,
     computeReceiptDigest: computeCanonicalSha256_,
     scanForbiddenKeys: scanForbiddenKeys_,

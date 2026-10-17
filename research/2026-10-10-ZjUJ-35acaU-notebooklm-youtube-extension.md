@@ -61,7 +61,7 @@
 - checked_at: 2026-10-17
 - source_scope: GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017
 - Gemini Notebook source: AI技術研究室_過去調査14本_完全総合辞書_20261017
-- Gemini readback (self-reported): PASS
+- Gemini readback (self-reported): UNKNOWN
 - GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB
 - changes: UPDATED
 
@@ -70,31 +70,33 @@ Chrome拡張機能「YouTube to NotebookLM」によるYouTube動画の高速イ�
 
 ### 追加・更新された動画目次・タイムライン
 - [00:00〜01:12](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=0s) | **概要・YouTube動画の学習効率化** | 区間 00:00〜01:12 の解説: 概要・YouTube動画の学習効率化 | time_source: YOUTUBE_CHAPTER_METADATA | topics: YouTube to NotebookLM, Chrome拡張, 一括インポート
-- UNKNOWN | **Chrome拡張機能「YouTube to NotebookLM」の概要と単一動画の追加手順** | Gemini報告区間(01:12〜03:06 / 一次時刻未確認のため再生リンク非生成): Chrome拡張機能「YouTube to NotebookLM」の概要と単一動画の追加手順 | time_source: UNKNOWN | topics: YouTube to NotebookLM, Chrome拡張
+- [01:12〜03:06](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=72s) | **Chrome拡張機能「YouTube to NotebookLM」の概要と単一動画の追加手順** | 区間 01:12〜03:06 の解説: Chrome拡張機能「YouTube to NotebookLM」の概要と単一動画の追加手順 | time_source: TIMESTAMPED_CAPTIONS | topics: YouTube to NotebookLM, Chrome拡張
 - [03:06〜04:42](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=186s) | **YouTube検索結果一覧（例：SEO strategy 19本）を一括で追加する手順** | 区間 03:06〜04:42 の解説: YouTube検索結果一覧（例：SEO strategy 19本）を一括で追加する手順 | time_source: TIMESTAMPED_CAPTIONS | topics: YouTube to NotebookLM, Chrome拡張, 一括インポート
 - [04:42〜06:15](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=282s) | **YouTubeチャンネル丸ごと一括追加手順とプラン別上限（Pro 300 / Ultra 500）** | 区間 04:42〜06:15 の解説: YouTubeチャンネル丸ごと一括追加手順とプラン別上限（Pro 300 / Ultra 500） | time_source: TIMESTAMPED_CAPTIONS | topics: YouTube to NotebookLM, Chrome拡張, 一括インポート
-- UNKNOWN | **ハンズオン①〜③（単一動画からの自分ごと化・FAQ 10問・90分セミナー構成案）** | Gemini報告区間(06:15〜12:07 / 一次時刻未確認のため再生リンク非生成): ハンズオン①〜③（単一動画からの自分ごと化・FAQ 10問・90分セミナー構成案） | time_source: UNKNOWN | topics: セミナー構成案
+- [06:15〜12:07](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=375s) | **ハンズオン①〜③（単一動画からの自分ごと化・FAQ 10問・90分セミナー構成案）** | 区間 06:15〜12:07 の解説: ハンズオン①〜③（単一動画からの自分ごと化・FAQ 10問・90分セミナー構成案） | time_source: TIMESTAMPED_CAPTIONS | topics: セミナー構成案
 - [12:07〜14:43](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=727s) | **ハンズオン④：複数動画（19本）を横断分析して「共通する法則・コアメッセージ」抽出** | 区間 12:07〜14:43 の解説: ハンズオン④：複数動画（19本）を横断分析して「共通する法則・コアメッセージ」抽出 | time_source: YOUTUBE_CHAPTER_METADATA | topics: YouTube to NotebookLM, Chrome拡張, 一括インポート
 - [14:43〜16:15](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=883s) | **ハンズオン⑤：複数動画から「企画書・提案書の素材」を抽出するプロンプト** | 区間 14:43〜16:15 の解説: ハンズオン⑤：複数動画から「企画書・提案書の素材」を抽出するプロンプト | time_source: YOUTUBE_CHAPTER_METADATA | topics: YouTube to NotebookLM, Chrome拡張, 一括インポート
 - [16:15〜19:30](https://www.youtube.com/watch?v=ZjUJ-35acaU&t=975s) | **ハンズオン⑥：大量の動画を類似性に基づきグループ分類しノートブック目次を作る** | 区間 16:15〜19:30 の解説: ハンズオン⑥：大量の動画を類似性に基づきグループ分類しノートブック目次を作る | time_source: YOUTUBE_CHAPTER_METADATA | topics: YouTube to NotebookLM, Chrome拡張, 一括インポート
 - UNKNOWN | **まとめ・動画ナレッジの資産化** | Gemini報告区間(19:30〜21:23 / 一次時刻未確認のため再生リンク非生成): まとめ・動画ナレッジの資産化 | time_source: UNKNOWN | topics: YouTube to NotebookLM, Chrome拡張, 一括インポート
 
 ### 追加・更新された詳細技術知識
-- 整理番号・区分: No.25 (Part 2: 過去調査14本 (No.13〜26)) / 投稿者: mikimiki web スクール / 調査日: 2026-10-16
-- 動画長・公開日照合: Gemini記載長=21:23, 記載公開日=2026-03-21 | YouTube一次実測長=21:23 (1283s), 一次公開日=2026-03-21
-- 証拠強度区分: PART2（Gemini過去研究ノート由来・一次根拠がある時刻のみリンク化）
-- 全体要約（原文完全保持）: Chrome拡張機能「YouTube to NotebookLM」によるYouTube動画の高速インポート手順（単一動画、検索結果19本一括、チャンネル丸ごと最大300〜500件）と6つの実践プロンプト（自分ごと化、FAQ10問、セミナー構成案、複数動画横断の共通法則抽出、企画書素材抽出、目次グループ分類）を実演解説。
+- 整理番号・区分: No.25 (Part 2: 過去調査14本 (No.13〜26)) / 投稿者(Gemini記載): mikimiki web スクール / 調査日: 2026-10-16
+- YouTube一次メタデータ照合: タイトル=一致 / 投稿者=一致
+- 動画長・公開日一次照合: YouTube一次実測長=21:23 (1283s) vs Gemini記載長=21:23 (一致(±2s以内)) | YouTube一次公開日=2026-03-21 vs Gemini記載公開日=2026-03-21 (一致)
+- チャプター時刻一次検証内訳: 全9章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)=4章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)=4章, 一次根拠未確認(UNKNOWN)=1章
+- 証拠強度区分: PART2（Gemini過去研究ノート由来・章別一次照合適用）
+- 全体要約（原文保持）: Chrome拡張機能「YouTube to NotebookLM」によるYouTube動画の高速インポート手順（単一動画、検索結果19本一括、チャンネル丸ごと最大300〜500件）と6つの実践プロンプト（自分ごと化、FAQ10問、セミナー構成案、複数動画横断の共通法則抽出、企画書素材抽出、目次グループ分類）を実演解説。
 - 主要技術キーワード: YouTube to NotebookLM, Chrome拡張, 一括インポート, 横断法則抽出, 企画書素材抽出, 類似性目次分類, セミナー構成案
-- 公式仕様・一次資料照合詳細: Chrome拡張の動作仕様およびプラン別ソース上限（Pro 300件、Ultra 500件）と一致。
+- 公式仕様・一次資料照合報告（一次URL未添付時はREPORTED_BY_AUTHOR扱い）: Chrome拡張の動作仕様およびプラン別ソース上限（Pro 300件、Ultra 500件）と一致。
 - 制約・注意点: 2026年9月2日の5時間リセット制限導入以降は、大量ソース投入時に質問ごとのクォータ消費が増大するため10〜20本への絞り込み推奨。
 - 今後の応用・自動化案: Chrome拡張を活用した特定ジャンル動画の大量一括登録と、横断法則抽出プロンプトによる知見体系化。
 - 未確認事項（UNKNOWN）: 拡張機能作者の今後のアップデート予定と保守方針。
-- YouTube概要欄の公式チャプター（一次照合参照用）: 00:00 拡張機能概要 / 02:00 導入・追加手順 / 05:59 1本ユースケース1 / 08:49 ユースケース2 FAQ / 10:44 ユースケース3 / 12:06 複数本ユースケース1 横断法則 / 14:42 複数本ユースケース2 企画書素材 / 16:13 大量インポート目次分類
+- YouTube概要欄の公式チャプター（一次照合参照用）: 00:00 ①-1 NotebookLM × YouTube拡張機能の概要 / 02:00 ①-2 NotebookLM × YouTube拡張機能使い方 / 05:59 ②-1-1【1本だけ】ソース1つのユースケース1 / 08:49 ②-1-2【1本だけ】ソース1つのユースケース2 / 10:44 ②-1-3【1本だけ】ソース1つのユースケース3 / 12:06 ②-2-1【複数本】ソース複数のユースケース1 / 14:42 ②-2-2【複数本】ソース複数のユースケース2 / 16:13 ②-3-1【大量インポート】ソース複数のユースケース1
 
 ### 追加・更新された主張と検証
-- [PART2研究ノート経由の公式照合] Chrome拡張の動作仕様およびプラン別ソース上限（Pro 300件、Ultra 500件）と一致。 | CONFIRMED_DOC | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+- [Gemini公式照合報告(一次URL未添付・要独立確認)] Chrome拡張の動作仕様およびプラン別ソース上限（Pro 300件、Ultra 500件）と一致。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 - 制約・注意点: 2026年9月2日の5時間リセット制限導入以降は、大量ソース投入時に質問ごとのクォータ消費が増大するため10〜20本への絞り込み推奨。 / 今後の応用: Chrome拡張を活用した特定ジャンル動画の大量一括登録と、横断法則抽出プロンプトによる知見体系化。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 - 未確認事項(UNKNOWN): 拡張機能作者の今後のアップデート予定と保守方針。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ### 追加・更新された関連研究・課題接続
-- `youtube:ZjUJ-35acaU` (UPDATES): 既存の動画08暫定研究記録に対し、Gemini過去調査総合辞書からの6つの実践プロンプトと章構成を統合
+- `youtube:ZjUJ-35acaU` (UPDATES): 既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合

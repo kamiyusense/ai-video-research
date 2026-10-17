@@ -777,6 +777,14 @@ def analyze_query_intent(query):
 
     # 質問文から助詞・疑問詞を除いた主要キーワードも抽出
     stop_phrases = [
+        "インストールしたら",
+        "インストール",
+        "準備しときたい",
+        "準備したい",
+        "準備すべき",
+        "準備",
+        "再生位置を",
+        "再生位置",
         "について",
         "に関して",
         "って何",
@@ -786,6 +794,7 @@ def analyze_query_intent(query):
         "どこを見れば",
         "どこをみれば",
         "解説している",
+        "解説していた",
         "する動画",
         "動画はどこ",
         "動画と時刻",
@@ -806,6 +815,8 @@ def analyze_query_intent(query):
         "箇所",
         "の動画で",
         "の動画",
+        "連携の",
+        "連携",
         "を",
         "の",
         "で",
@@ -819,10 +830,17 @@ def analyze_query_intent(query):
         "、",
         "。",
     ]
-    cleaned_q = q_lower
+    cleaned_q = re.sub(r"([a-z0-9./_-]+)([^\x00-\x7f]+)", r"\1 \2", q_lower)
+    cleaned_q = re.sub(r"([^\x00-\x7f]+)([a-z0-9./_-]+)", r"\1 \2", cleaned_q)
     compound_map = {
         "claude code": "claude__code",
         "gemini notebook": "gemini__notebook",
+        "skill creator": "skill__creator",
+        "discord mcp": "discord__mcp",
+        "playwright mcp": "playwright__mcp",
+        "prompt caching": "prompt__caching",
+        "youtube to notebooklm": "youtube__to__notebooklm",
+        "chatgpt work": "chatgpt__work",
     }
     for k, v in compound_map.items():
         cleaned_q = cleaned_q.replace(k, v)
@@ -948,19 +966,20 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
         if "VIDEO_LOCATOR" in intents and rec.get("video_id"):
             rec_total += 20
 
-        # チャプター / 区間の個別スコアリング
+        # チャプター / 区間の個別スコアリング（章タイトル・要約の直接一致をトピックタグより優先）
         best_seg_score_for_rec = 0
         for ch in rec.get("chapters", []):
-            ch_text = " ".join(
-                [
-                    ch.get("title", ""),
-                    ch.get("summary_ja", ""),
-                    " ".join(ch.get("key_topics", [])),
-                ]
+            ch_title_sum = " ".join([ch.get("title", ""), ch.get("summary_ja", "")])
+            ch_topics_str = " ".join(ch.get("key_topics", []))
+            ch_text = f"{ch_title_sum} {ch_topics_str}"
+            title_seg_score, m_ts = score_text_against_terms(
+                ch_title_sum, terms, raw_tokens
             )
-            seg_score, seg_matches = score_text_against_terms(
-                ch_text, terms, raw_tokens
+            topic_seg_score, m_tp = score_text_against_terms(
+                ch_topics_str, terms, raw_tokens
             )
+            seg_score = (title_seg_score * 1.5) + (topic_seg_score * 0.4)
+            seg_matches = sorted(set(m_ts + m_tp))
             # チャプター自身がトピック語に一致している場合のみ意図・時刻ボーナスを付与
             if seg_score > 0:
                 if "FAILURE_AND_LIMITS" in intents and any(
@@ -991,6 +1010,7 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
                             "score": round(seg_score + (title_score * 0.15), 1),
                             "video_id": rec["video_id"],
                             "video_title": rec["title"],
+                            "canonical_url": rec["canonical_url"],
                             "record_path": rec["record_path"],
                             "notebook_source_id": rec["notebook_source_id"],
                             "segment_type": "CHAPTER_SEGMENT",
@@ -1034,6 +1054,7 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
                         "score": round(cl_score + (title_score * 0.15), 1),
                         "video_id": rec["video_id"],
                         "video_title": rec["title"],
+                        "canonical_url": rec["canonical_url"],
                         "record_path": rec["record_path"],
                         "notebook_source_id": rec["notebook_source_id"],
                         "segment_type": "VERIFIED_CLAIM",
@@ -1080,6 +1101,10 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
             )
 
     scored_records.sort(key=lambda x: (-x["score"], x["record_path"]))
+    if scored_records and scored_records[0]["score"] >= 80:
+        min_rec_score = scored_records[0]["score"] * 0.22
+        scored_records = [r for r in scored_records if r["score"] >= min_rec_score]
+
     scored_segments.sort(
         key=lambda x: (
             -x["score"],
@@ -1087,6 +1112,9 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
             x.get("start_seconds") if x.get("start_seconds") is not None else 999999,
         )
     )
+    if scored_segments and scored_segments[0]["score"] >= 45:
+        min_seg_score = scored_segments[0]["score"] * 0.30
+        scored_segments = [s for s in scored_segments if s["score"] >= min_seg_score]
 
     max_segs = max(top_k * 2, 6)
     diversified_segments = []
@@ -1313,7 +1341,17 @@ def format_qa_response_markdown(qa_res):
             if seg.get("playback_url") and seg.get("timestamp_source") != "UNKNOWN":
                 time_cell = f"[▶ {time_range}]({seg['playback_url']})"
             else:
-                time_cell = "UNKNOWN (時刻未確認のためリンク生成なし)"
+                normal_url = seg.get("canonical_url") or (
+                    f"https://www.youtube.com/watch?v={vid}" if vid != "N/A" else None
+                )
+                nb_src = seg.get("notebook_source_id") or "UNKNOWN"
+                if normal_url:
+                    time_cell = (
+                        f"UNKNOWN (時刻未確認のため&t=リンク非生成 / "
+                        f"[通常動画URL]({normal_url}) + Notebook `{nb_src}` 参照)"
+                    )
+                else:
+                    time_cell = "UNKNOWN (時刻未確認のためリンク生成なし)"
             ts_src = seg.get("timestamp_source") or "UNKNOWN"
             v_status = seg.get("verification_status") or "UNKNOWN"
             summary = seg.get("summary_ja", "").replace("|", "｜")

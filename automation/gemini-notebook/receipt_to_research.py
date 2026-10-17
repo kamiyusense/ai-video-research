@@ -223,315 +223,129 @@ def extract_youtube_id(url):
     return None
 
 
-PRIMARY_YOUTUBE_AUDIT_20261017 = {
-    "sodTFSuV4zY": {
-        "yt_len_sec": 1381,
-        "yt_pub": "2026-10-14",
-        "contradicts_desc": True,
-        "desc_starts": [0, 64, 117, 329, 555, 790, 916, 1016, 1304],
-        "desc_summary": "0:00 ソフトウェアツアー / 1:04 言語とフレームワーク / 1:57 AI / 5:29 エディタとターミナル / 9:15 開発とインフラ / 13:10 制作 / 15:16 業務 / 16:56 Macの環境 / 21:44 まとめ",
-    },
-    "cneFa24EFEk": {
-        "yt_len_sec": 1673,
-        "yt_pub": "2026-05-08",
-        "contradicts_desc": False,
-        "desc_starts": [],
-        "desc_summary": "",
-    },
-    "t22FELAl-BM": {
-        "yt_len_sec": 1651,
-        "yt_pub": "2026-09-12",
-        "contradicts_desc": True,
-        "desc_starts": [0, 63, 184, 248, 398, 567, 756, 893, 1005, 1116, 1296],
-        "desc_summary": "00:00 AI利用枠節約 / 01:03 長い会話セッション / 03:04 少ないターン数 / 04:08 Chat・Work使い分け / 06:38 Claude Projects長文キャッシュ / 09:27 プロンプトキャッシュの仕組み / 12:36 Compact注意点 / 14:53 保持時間 / 16:45 サブエージェント分散 / 18:36 Effort変更 / 21:36 MCP削減",
-    },
-    "X9Zk68AII4A": {
-        "yt_len_sec": 1271,
-        "yt_pub": "2026-10-03",
-        "contradicts_desc": True,
-        "desc_starts": [0, 110, 211, 310, 352, 461, 532, 644, 773, 962, 1052, 1180],
-        "desc_summary": "00:00 OP / 01:50 過剰適合とは / 03:31 trainとtest分離 / 05:10 メール振り分け例題 / 05:52 evalの4条件 / 07:41 build-eval実演 / 08:52 過剰適合の3防御法 / 10:44 hillclimbの回し方 / 12:53 Sonnet 5スコア98.9% / 16:02 claude-api skill改善 / 17:32 まとめ",
-    },
-    "ZgMrRA1Czlc": {
-        "yt_len_sec": 646,
-        "yt_pub": "2026-10-16",
-        "contradicts_desc": False,
-        "desc_starts": [0, 40, 118, 250, 312, 420, 513, 582],
-        "desc_summary": "00:00 OP / 00:40 第1章 報告の概要 / 01:58 第2章 鍵を導くまで / 04:10 第3章 使ってよいかの判断 / 05:12 第4章 デプロイと最終報告 / 07:00 第5章 発見と対策 / 08:33 第6章 報告ページ一覧 / 09:42 第7章 まとめ",
-    },
-    "gD6UZ4wG8OM": {
-        "yt_len_sec": 921,
-        "yt_pub": "2026-10-16",
-        "contradicts_desc": True,
-        "desc_starts": [0, 65, 123, 319, 521, 665, 854],
-        "desc_summary": "0:00 手引き概要 / 1:05 第1章 翼はあるのに歩いている / 2:03 第2章 高さ / 5:19 第3章 深さ / 8:41 第4章 広さ / 11:05 第5章 なぜできると思う範囲でしか頼まないのか / 14:14 第6章 まとめ",
-    },
-    "W35UQZL2w7E": {
-        "yt_len_sec": 531,
-        "yt_pub": "2026-08-02",
-        "contradicts_desc": True,
-        "desc_starts": [39, 68, 106, 139, 176, 206, 237, 265, 293, 333, 365, 409, 477],
-        "desc_summary": "0:39 基本 / 1:08 1.軽いモデル / 1:46 2.推論強度 / 2:19 3.依頼4項目 / 2:56 4.範囲を絞る / 3:26 5.テストと再試行 / 3:57 6.返事の長さ / 4:25 7.新規タスク分割 / 4:53 8.AGENTS.md短縮 / 5:33 9.不要MCP切断 / 6:05 10.Fast modeとサブエージェント / 7:57 まとめ",
-    },
-    "JXmk7hmbS3c": {
-        "yt_len_sec": 1360,
-        "yt_pub": "2026-03-31",
-        "contradicts_desc": False,
-        "desc_starts": [],
-        "desc_summary": "",
-    },
-    "Eh75KT85Y40": {
-        "yt_len_sec": 1532,
-        "yt_pub": "2026-10-16",
-        "contradicts_desc": False,
-        "desc_starts": [],
-        "desc_summary": "",
-    },
-    "26MGuVIJh4A": {
-        "yt_len_sec": 3242,
-        "yt_pub": "2026-10-16",
-        "contradicts_desc": False,
-        "desc_starts": [0, 15, 152, 368, 524, 745, 966, 1228, 1355, 1621, 1786, 2009, 2213, 2728],
-        "desc_summary": "0:00 OP / 2:32 AI時代の天才とは / 6:08 要素①判断軸 / 12:25 センサーを養う方法 / 20:28 要素②認知負荷耐性 / 27:01 思考の委譲境界 / 29:46 要素③アイデア / 33:29 発想力思考術 / 36:53 目標設定 / 45:28 質問返し",
-    },
-    "XckM9eFa_vg": {
-        "yt_len_sec": 1379,
-        "yt_pub": "2026-06-09",
-        "contradicts_desc": False,
-        "desc_starts": [0, 81, 214, 300, 367, 439, 545, 589, 649, 723, 834, 1189, 1283],
-        "desc_summary": "00:00 イントロ / 01:21 RPG比喩 / 03:34 一生モノの武器と武器目録 / 06:07 ステップ1 スターターキット / 07:19 CLAUDE.mdとMEMORY.md / 09:05 ステップ2 情報入力 / 09:49 Obsidian視認化 / 10:49 ステップ3 スペシャリスト作成 / 12:03 3タイプ / 13:54 料理実演 / 19:49 スケジュールとライブアーティファクト / 21:23 まとめ",
-    },
-    "NCQZiT0e59g": {
-        "yt_len_sec": 2920,
-        "yt_pub": "2026-10-13",
-        "contradicts_desc": False,
-        "desc_starts": [0, 9, 131, 161, 576, 636, 967, 1111, 1483, 1695, 1839, 1974, 2408],
-        "desc_summary": "0:00 OP / 2:41 AI仙人流AI社員 / 9:36 必須要素 / 10:36 要素①手足 / 16:07 要素②コンテキスト / 18:31 要素③判断軸 / 24:43 マスターコンテキスト / 30:39 要素④RSI自己改善 / 32:54 1パソコン=1AI社員 / 40:08 質問返し",
-    },
-    "y2xCGyURl7Q": {
-        "yt_len_sec": 619,
-        "yt_pub": "2026-10-14",
-        "contradicts_desc": True,
-        "desc_starts": [0, 49, 88, 110, 169, 248, 325, 419, 585],
-        "desc_summary": "0:00 動画について / 1:28 第一章 Gemini 4 Argon概要 / 1:50 特徴 / 2:49 ベンチマークスコア / 4:08 安全性 / 5:25 第二章 使い方 / 6:59 第三章 活用事例 / 9:45 エンディング",
-    },
-    "RZLAP2CLUM8": {
-        "yt_len_sec": 763,
-        "yt_pub": "2026-09-10",
-        "contradicts_desc": True,
-        "desc_starts": [0, 29, 108, 283, 440, 671],
-        "desc_summary": "00:00 ハイライト / 00:29 OP / 01:48 3ツール比較 / 04:43 NotebookLM・ClaudeCode・Obsidian連携 / 07:20 競合調査・提案書・知識保存 / 11:11 まとめ",
-    },
-    "2-8cXaRHlqI": {
-        "yt_len_sec": 1338,
-        "yt_pub": "2026-06-21",
-        "contradicts_desc": False,
-        "desc_starts": [],
-        "desc_summary": "",
-    },
-    "YrTVpJ1ebUk": {
-        "yt_len_sec": 665,
-        "yt_pub": "2026-09-30",
-        "contradicts_desc": False,
-        "desc_starts": [0, 49, 84, 102, 159, 236, 281, 306, 339, 371, 426, 491, 509, 543, 567, 631],
-        "desc_summary": "0:00 概要 / 1:42 dots / 2:39 GPT-6.1 Sol / 3:56 Ultrafastモード / 5:06 月額500ドルProプラン / 5:39 Codexクラウド / 6:11 ChatGPT Space / 7:06 Codex新機能 / 8:29 Decisions API / 9:03 OpenAI Marketplace",
-    },
-    "j3Cyvbfn9_k": {
-        "yt_len_sec": 1021,
-        "yt_pub": "2026-10-11",
-        "contradicts_desc": False,
-        "desc_starts": [0, 29, 59, 88, 144, 239, 302, 322, 373, 535, 716, 768, 932],
-        "desc_summary": "00:00 ダイジェスト / 00:59 月額料金とモデル一覧 / 02:24 ゲーム制作 Opus 5.5 / 03:59 GPT-6 Astra / 05:22 Gemini 3.8 Flash / 06:13 Artificial Analysis / 08:55 普段使いモデルの料金 / 11:56 描画結果と画像生成 / 15:32 まとめ",
-    },
-    "JMoByqOlftc": {
-        "yt_len_sec": 1091,
-        "yt_pub": "2026-10-02",
-        "contradicts_desc": False,
-        "desc_starts": [0, 89, 317, 497, 674, 808, 961, 1028],
-        "desc_summary": "00:00 初めての有料AI / 01:29 本命ChatGPT Plus / 05:17 Google AI Pro / 08:17 Claude Pro / 11:14 料金表注意点 / 13:28 継続基準 / 16:01 1つ選ぶ基準 / 17:08 まとめ",
-    },
-    "MnzEE0fLxBs": {
-        "yt_len_sec": 1138,
-        "yt_pub": "2026-09-17",
-        "contradicts_desc": False,
-        "desc_starts": [],
-        "desc_summary": "",
-    },
-    "D0B-l7A69nI": {
-        "yt_len_sec": 564,
-        "yt_pub": "2025-08-02",
-        "contradicts_desc": False,
-        "desc_starts": [0, 55, 95, 178, 275, 314, 388, 483, 509],
-        "desc_summary": "0:00 OP / 0:55 要約する5つの方法 / 1:35 1.GPTs / 2:58 2.Gemini・Perplexity / 4:35 3.Webサービス / 5:14 4.Chrome拡張 / 6:28 5.NotebookLM / 8:03 注意点 / 8:29 まとめ",
-    },
-    "Mg0pYFVAuWQ": {
-        "yt_len_sec": 1075,
-        "yt_pub": "2026-09-28",
-        "contradicts_desc": True,
-        "desc_starts": [0, 122, 211, 284, 563, 760, 878, 944],
-        "desc_summary": "0:00 OP / 2:02 基本おさらい / 3:31 新機能①リアルタイム音声会話 / 4:44 新機能②音声レコーダー / 9:23 新機能③インタラクティブレポート / 12:40 使用量カウント変更と節約のコツ / 14:38 4つの注意点 / 15:44 まとめ",
-    },
-    "GVB8VfuNeJQ": {
-        "yt_len_sec": 1320,
-        "yt_pub": "2026-08-19",
-        "contradicts_desc": False,
-        "desc_starts": [],
-        "desc_summary": "",
-    },
-    "BvbkOQWgAw8": {
-        "yt_len_sec": 442,
-        "yt_pub": "2026-03-21",
-        "contradicts_desc": False,
-        "desc_starts": [],
-        "desc_summary": "",
-    },
-    "ZY7YuYHLlIQ": {
-        "yt_len_sec": 2641,
-        "yt_pub": "2026-08-19",
-        "contradicts_desc": True,
-        "desc_starts": [0, 51, 140, 249, 299, 973, 1589, 1935, 2076, 2267, 2546],
-        "desc_summary": "00:00 概要 / 02:20 リニューアル点 / 04:09 利用プランと制限 / 04:59 デモ / 16:13 各機能詳細検証 / 26:29 新機能エージェント機能 / 32:15 Gemini連携 / 34:36 Gemini Spark掛け合わせ / 42:26 まとめ",
-    },
-    "ZjUJ-35acaU": {
-        "yt_len_sec": 1283,
-        "yt_pub": "2026-03-21",
-        "contradicts_desc": False,
-        "desc_starts": [0, 120, 359, 529, 644, 726, 882, 973],
-        "gh_starts": [17, 100, 122, 181, 283, 531, 727, 975],
-        "desc_summary": "00:00 拡張機能概要 / 02:00 導入・追加手順 / 05:59 1本ユースケース1 / 08:49 ユースケース2 FAQ / 10:44 ユースケース3 / 12:06 複数本ユースケース1 横断法則 / 14:42 複数本ユースケース2 企画書素材 / 16:13 大量インポート目次分類",
-    },
-    "BStkW1HTfmk": {
-        "yt_len_sec": 1341,
-        "yt_pub": "2026-10-05",
-        "contradicts_desc": True,
-        "desc_starts": [0, 48, 266, 372, 490, 657, 749, 958, 1195, 1292],
-        "desc_summary": "00:00 注目理由 / 00:48 基本 / 04:26 重要なのは機能じゃない / 06:12 右腕AIフォルダをObsidianで見る / 08:10 共創の現場 / 10:57 iCloud同期 / 12:29 なぜGoogleドライブじゃだめか / 15:58 窓口テスト ローカル vs Googleドライブ / 19:55 保管庫の原則 / 21:32 まとめ",
-    },
-}
+DEFAULT_TIMESTAMP_EVIDENCE_PATH = (
+    Path(__file__).resolve().parent / "state" / "timestamp_evidence.json"
+)
+DEFAULT_CANONICAL_NOTEBOOK_URL = (
+    "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7"
+)
 
-GEMINI_HANDOFF_RELATIONS_20261017 = {
-    "sodTFSuV4zY": [
-        {
-            "target_id": "youtube:lC5jxpYmatE",
-            "relation": "COMPLEMENTS",
-            "note": "Claude Code・Codex並列環境におけるPlaywright CLI/WebMCPと1Password MCP秘密鍵隔離の実務構成を補完",
-        }
-    ],
-    "t22FELAl-BM": [
-        {
-            "target_id": "youtube:lC5jxpYmatE",
-            "relation": "COMPLEMENTS",
-            "note": "CLAUDE.mdや辞書ファイルを先頭固定してPrompt Cachingヒット率を維持するトークン節約設計",
-        }
-    ],
-    "X9Zk68AII4A": [
-        {
-            "target_id": "youtube:lC5jxpYmatE",
-            "relation": "EXTENDS",
-            "note": "動画05のSkill・ハーネス設計に対し、build-evalとhillclimbによる定量評価・自己改善ループ(RSI)を追加",
-        },
-        {
-            "target_id": "proposal:P006",
-            "relation": "COMPLEMENTS",
-            "note": "未解決課題の再挑戦評価に向けたホールドアウト検証付きEval駆動開発手順を提供",
-        },
-    ],
-    "ZgMrRA1Czlc": [
-        {
-            "target_id": "youtube:lC5jxpYmatE",
-            "relation": "COMPLEMENTS",
-            "note": "OpenAI内部モデルの無許可ウォレット送金・隠蔽事例から、エージェント権限分離と秘密鍵非露出の必須性を裏付け",
-        }
-    ],
-    "JXmk7hmbS3c": [
-        {
-            "target_id": "youtube:Vr3JkAT9mo8",
-            "relation": "COMPLEMENTS",
-            "note": "CLAUDE.mdと/agentsによる専門サブエージェント分業およびObsidianマニュアル自動保存の実践手順",
-        },
-        {
-            "target_id": "youtube:BStkW1HTfmk",
-            "relation": "COMPLEMENTS",
-            "note": "Obsidianによるスキル説明書のナレッジ管理とClaude Code連携",
-        },
-    ],
-    "Eh75KT85Y40": [
-        {
-            "target_id": "youtube:Vr3JkAT9mo8",
-            "relation": "EXTENDS",
-            "note": "メインのコーディネータースレッド1人と7つの並列サブスレッドによるマルチエージェント分業の実演",
-        }
-    ],
-    "XckM9eFa_vg": [
-        {
-            "target_id": "youtube:Vr3JkAT9mo8",
-            "relation": "EXTENDS",
-            "note": "同一投稿者による右腕AIフォルダのCLAUDE.md・MEMORY.md・00_Resources入れ子構造とスペシャリスト3類型",
-        },
-        {
-            "target_id": "youtube:BStkW1HTfmk",
-            "relation": "COMPLEMENTS",
-            "note": "ObsidianでのVaultオープンとモデル乗り換えに耐えるローカル長期記憶基盤",
-        },
-    ],
-    "NCQZiT0e59g": [
-        {
-            "target_id": "youtube:lC5jxpYmatE",
-            "relation": "EXTENDS",
-            "note": "Computer Use、マスターコンテキスト二層記憶、DeepSeek Harnessを用いたRSI自己改善ループの統合実装",
-        },
-        {
-            "target_id": "proposal:P006",
-            "relation": "COMPLEMENTS",
-            "note": "API非対応アプリの操作突破と名寄せ・例外判断基準の蓄積設計",
-        },
-    ],
-    "RZLAP2CLUM8": [
-        {
-            "target_id": "youtube:BStkW1HTfmk",
-            "relation": "COMPLEMENTS",
-            "note": "NotebookLM・Claude Code・Obsidianの3ツール連携による情報収集・提案書作成と意思決定ログ蓄積",
-        },
-        {
-            "target_id": "youtube:ZjUJ-35acaU",
-            "relation": "COMPLEMENTS",
-            "note": "NotebookLMへの複数情報ソース集約からObsidian構造化保存への接続",
-        },
-    ],
-    "2-8cXaRHlqI": [
-        {
-            "target_id": "youtube:BStkW1HTfmk",
-            "relation": "COMPLEMENTS",
-            "note": "CLAUDE.md肥大化と月12日問題を防ぐObsidianテーマ別分割(LLM Wiki)およびNotebookLM調査オフロード",
-        }
-    ],
-    "ZY7YuYHLlIQ": [
-        {
-            "target_id": "youtube:ZjUJ-35acaU",
-            "relation": "COMPLEMENTS",
-            "note": "Gemini NotebookのStudio画像スライド制限とAntigravityエージェントによる編集可能PPTX/DOCX出力の使い分け",
-        }
-    ],
-    "ZjUJ-35acaU": [
-        {
-            "target_id": "youtube:ZjUJ-35acaU",
-            "relation": "UPDATES",
-            "note": "既存の動画08暫定研究記録に対し、Gemini過去調査総合辞書からの6つの実践プロンプトと章構成を統合",
-        }
-    ],
-    "BStkW1HTfmk": [
-        {
-            "target_id": "youtube:BStkW1HTfmk",
-            "relation": "UPDATES",
-            "note": "既存の動画07暫定研究記録に対し、ローカル直接操作(4分) vs MCP経由Googleドライブ(40分・840回API)の比較実験知見を統合",
-        },
-        {
-            "target_id": "youtube:Vr3JkAT9mo8",
-            "relation": "COMPLEMENTS",
-            "note": "CLAUDE.md / AGENTS.md / MEMORY.md を共通記憶とするローカルVault共創アーキテクチャ",
-        },
-    ],
-}
+
+def load_timestamp_evidence(evidence_path=None):
+    """Load verified YouTube primary metadata and per-chapter timestamp verdicts from `timestamp_evidence.json`."""
+    p = Path(evidence_path) if evidence_path else DEFAULT_TIMESTAMP_EVIDENCE_PATH
+    if not p.exists():
+        return {}
+    try:
+        raw = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(raw, dict) or raw.get("schema_version") != "timestamp_evidence_v1":
+        return {}
+    videos = raw.get("videos")
+    return videos if isinstance(videos, dict) else {}
+
+
+def _infer_related_records_from_content(
+    vid, title, summary_ja, key_tech_list, is_existing_target=False
+):
+    """Dynamically infer related research records and proposals from video content without hardcoded video-ID maps."""
+    relations = []
+    seen = set()
+
+    def _add(target_id, rel_type, note):
+        key = (target_id, rel_type)
+        if key not in seen and len(relations) < MAX_RELATED_RECORDS_PER_VIDEO:
+            seen.add(key)
+            relations.append(
+                {
+                    "target_id": target_id,
+                    "relation": rel_type,
+                    "note": note[:MAX_RELATED_NOTE_LENGTH],
+                }
+            )
+
+    if is_existing_target:
+        _add(
+            f"youtube:{vid}",
+            "UPDATES",
+            "既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合",
+        )
+
+    corpus = f"{title} {summary_ja} {' '.join(key_tech_list)}".lower()
+    if any(
+        kw in corpus
+        for kw in ("eval", "hillclimb", "computer use", "rsi", "自己改善", "判断軸")
+    ):
+        if vid != "lC5jxpYmatE":
+            _add(
+                "youtube:lC5jxpYmatE",
+                "EXTENDS",
+                "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+            )
+        _add(
+            "proposal:P006",
+            "COMPLEMENTS",
+            "未解決課題ストック(P006)の再評価・検証ループ設計を補完",
+        )
+    elif any(
+        kw in corpus
+        for kw in (
+            "playwright",
+            "1password",
+            "prompt caching",
+            "キャッシュ",
+            "ウォレット",
+            "秘密鍵",
+            "hooks",
+            "skill",
+            "スキル",
+        )
+    ):
+        if vid != "lC5jxpYmatE":
+            _add(
+                "youtube:lC5jxpYmatE",
+                "COMPLEMENTS",
+                "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+            )
+
+    if any(
+        kw in corpus
+        for kw in (
+            "サブエージェント",
+            "マルチエージェント",
+            "agents.md",
+            "memory.md",
+            "コーディネーター",
+            "右腕",
+            "スペシャリスト",
+            "サブスレッド",
+        )
+    ):
+        if vid != "Vr3JkAT9mo8":
+            _add(
+                "youtube:Vr3JkAT9mo8",
+                "COMPLEMENTS",
+                "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+            )
+
+    if any(kw in corpus for kw in ("obsidian", "vault", "llm wiki")):
+        if vid != "BStkW1HTfmk":
+            _add(
+                "youtube:BStkW1HTfmk",
+                "COMPLEMENTS",
+                "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+            )
+
+    if any(kw in corpus for kw in ("notebooklm", "gemini notebook", "studio")):
+        if vid != "ZjUJ-35acaU":
+            _add(
+                "youtube:ZjUJ-35acaU",
+                "COMPLEMENTS",
+                "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+            )
+
+    return relations
 
 
 def _parse_mmss_sec(mmss_str):
@@ -559,9 +373,21 @@ def _truncate_clean_summary(text, max_chars=295):
     return cut + "…"
 
 
-def normalize_gemini_handoff_receipt(data):
+def normalize_gemini_handoff_receipt(
+    data,
+    evidence_map=None,
+    default_notebook_url=None,
+    default_notebook_source_id=None,
+):
     """Convert Gemini's batch handoff JSON (`receipt_version`, `id`, `timeline`, `official_verification`)
-    into strict v0.6 `research_receipt_v1` schema while enforcing primary timestamp evidence rules.
+    into strict v0.6 `research_receipt_v1` schema while enforcing primary timestamp & official URL evidence rules.
+
+    Safety guarantees:
+    1. Any video without primary verification data in `evidence_map` (`timestamp_evidence.json`) gets `timestamp_source: "UNKNOWN"`.
+    2. Even when video duration matches (`dur_match`), each chapter requires per-chapter verification (`DESC_MATCH` or `CAPTION_PASS`).
+    3. Missing Notebook source metadata (`notebook_source_id` / `source_title`) is never guessed; raises `ValueError` to halt safely.
+    4. Claims without a verified `official_url` are never assigned `CONFIRMED_DOC`.
+    5. Omitted `notebook_readback` defaults to `"UNKNOWN"` (never `"PASS"`).
     """
     if not isinstance(data, dict):
         return data
@@ -583,6 +409,9 @@ def normalize_gemini_handoff_receipt(data):
     if not isinstance(raw_videos, list) or len(raw_videos) > 20:
         raise ValueError("videos must be a list of <=20 items")
 
+    if evidence_map is None:
+        evidence_map = load_timestamp_evidence()
+
     batch_part = str(data.get("batch_part", "1/2")).strip()
     batch_desc = str(data.get("batch_description", "")).strip()
     is_part2 = batch_part.startswith("2") or ("過去" in batch_desc)
@@ -590,26 +419,22 @@ def normalize_gemini_handoff_receipt(data):
     gen_at = str(data.get("checked_at") or data.get("generated_at") or "")
     checked_at = gen_at[:10] if len(gen_at) >= 10 else date.today().isoformat()
 
-    if is_part2:
-        notebook_source_id = "AI技術研究室_過去調査14本_完全総合辞書_20261017"
-        source_scope = (
-            "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:"
-            + notebook_source_id
-        )
-        notebook_url = (
-            data.get("notebook_url")
-            or "https://notebooklm.google.com/notebook/ai-video-research-part2-past14-20261017"
-        )
-    else:
-        notebook_source_id = "AI技術研究室_直近調査12本_完全総合辞書_20261017"
-        source_scope = (
-            "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:"
-            + notebook_source_id
-        )
-        notebook_url = (
-            data.get("notebook_url")
-            or "https://notebooklm.google.com/notebook/ai-video-research-part1-recent12-20261017"
-        )
+    notebook_url = str(
+        data.get("notebook_url")
+        or default_notebook_url
+        or DEFAULT_CANONICAL_NOTEBOOK_URL
+    ).strip()
+
+    root_source_id = str(
+        data.get("notebook_source_id")
+        or data.get("source_title")
+        or data.get("notebook_source")
+        or default_notebook_source_id
+        or ""
+    ).strip()
+
+    top_rb_raw = str(data.get("notebook_readback") or "UNKNOWN").strip().upper()
+    top_readback = top_rb_raw if top_rb_raw in {"PASS", "FAIL", "UNKNOWN"} else "UNKNOWN"
 
     converted_videos = []
     top_unknowns = []
@@ -627,17 +452,31 @@ def normalize_gemini_handoff_receipt(data):
         raw_summary = str(rv.get("summary_ja") or rv.get("summary") or "").strip()
         summary_ja = _truncate_clean_summary(raw_summary, max_chars=295)
 
-        audit = PRIMARY_YOUTUBE_AUDIT_20261017.get(vid)
+        ev_rec = evidence_map.get(vid) if isinstance(evidence_map, dict) else None
         dur_str = str(rv.get("duration") or "UNKNOWN").strip()
         dur_sec = _parse_mmss_sec(dur_str)
-        yt_len = audit["yt_len_sec"] if audit else None
-        yt_pub = audit["yt_pub"] if audit else None
-        contradicts_desc = bool(audit.get("contradicts_desc")) if audit else False
-        desc_starts = audit.get("desc_starts", []) if audit else []
-        gh_starts = audit.get("gh_starts", []) if audit else []
+        yt_len = ev_rec.get("yt_len_sec") if isinstance(ev_rec, dict) else None
+        yt_pub = ev_rec.get("yt_pub") if isinstance(ev_rec, dict) else None
+        yt_title = ev_rec.get("yt_title") if isinstance(ev_rec, dict) else None
+        yt_author = ev_rec.get("yt_author") if isinstance(ev_rec, dict) else None
+        contradicts_desc = (
+            bool(ev_rec.get("contradicts_desc")) if isinstance(ev_rec, dict) else False
+        )
+        ev_chapters = (
+            ev_rec.get("chapters")
+            if (isinstance(ev_rec, dict) and isinstance(ev_rec.get("chapters"), dict))
+            else {}
+        )
+        dur_match = (
+            yt_len is not None
+            and dur_sec is not None
+            and abs(dur_sec - yt_len) <= 2
+            and bool(ev_rec.get("dur_match", True))
+        )
 
         raw_tl = rv.get("timeline")
         chapters = []
+        long_chapter_titles = []
         if isinstance(raw_tl, list):
             for tl in raw_tl:
                 if not isinstance(tl, dict):
@@ -661,65 +500,29 @@ def normalize_gemini_handoff_receipt(data):
                         f"Timeline timestamp/seconds/link mismatch in {vid}: start={s_str!r} end={e_str!r} seconds={rep_sec!r} link={tl_link!r}"
                     )
 
-                dur_match = (
-                    yt_len is not None
-                    and dur_sec is not None
-                    and abs(dur_sec - yt_len) <= 2
-                    and e_calc <= yt_len + 2
-                )
-                if not is_part2:
-                    if audit is not None:
-                        if dur_match and not contradicts_desc:
-                            ts_source = "TIMESTAMPED_CAPTIONS"
-                            e_final = min(e_calc, yt_len)
-                        elif vid == "t22FELAl-BM" and s_calc == 1458:
-                            ts_source = "OFFICIAL_TIME_RANGE"
-                            e_final = min(e_calc, yt_len)
-                        else:
-                            ts_source = "UNKNOWN"
-                            e_final = None
-                    else:
-                        ts_source = "TIMESTAMPED_CAPTIONS"
-                        e_final = e_calc
-                else:
-                    # PART2 is derived from Gemini's past research notes:
-                    # Require primary corroboration (YouTube official chapters or existing GitHub record)
-                    if (
-                        audit is not None
-                        and dur_match
-                        and not contradicts_desc
-                        and s_calc > 0
-                        and any(abs(s_calc - d) <= 5 for d in desc_starts)
-                    ):
+                if len(tl_title) > MAX_CHAPTER_TITLE_LENGTH:
+                    long_chapter_titles.append(f"{s_str}〜{e_str}: {tl_title}")
+
+                ch_ev = ev_chapters.get(str(s_calc))
+                verdict = ch_ev.get("verdict") if isinstance(ch_ev, dict) else None
+                in_range = yt_len is not None and e_calc <= yt_len + 2
+
+                # Strict primary evidence rules:
+                # 1. Never trust videos without primary verification data (ev_rec is None -> UNKNOWN)
+                # 2. Never trust duration match alone; require per-chapter DESC_MATCH or CAPTION_PASS
+                if ev_rec is not None and dur_match and not contradicts_desc and in_range:
+                    if verdict == "DESC_MATCH":
                         ts_source = "YOUTUBE_CHAPTER_METADATA"
                         e_final = min(e_calc, yt_len)
-                    elif (
-                        audit is not None
-                        and dur_match
-                        and not contradicts_desc
-                        and s_calc > 0
-                        and any(abs(s_calc - g) <= 5 for g in gh_starts)
-                    ):
+                    elif verdict == "CAPTION_PASS":
                         ts_source = "TIMESTAMPED_CAPTIONS"
-                        e_final = min(e_calc, yt_len)
-                    elif (
-                        audit is not None
-                        and dur_match
-                        and not contradicts_desc
-                        and s_calc == 0
-                        and 0 in desc_starts
-                        and any(
-                            abs(int(t2.get("seconds", -99)) - d) <= 5
-                            for t2 in raw_tl
-                            if isinstance(t2, dict) and int(t2.get("seconds", 0)) > 0
-                            for d in desc_starts
-                        )
-                    ):
-                        ts_source = "YOUTUBE_CHAPTER_METADATA"
                         e_final = min(e_calc, yt_len)
                     else:
                         ts_source = "UNKNOWN"
                         e_final = None
+                else:
+                    ts_source = "UNKNOWN"
+                    e_final = None
 
                 key_techs = [
                     str(k).strip()
@@ -762,8 +565,42 @@ def normalize_gemini_handoff_receipt(data):
                         }
                     )
 
+        # Require explicit Notebook source metadata (never guess or fabricate source names)
+        video_source_id = str(
+            rv.get("notebook_source_id")
+            or rv.get("source_title")
+            or rv.get("notebook_source")
+            or root_source_id
+        ).strip()
+        if not video_source_id:
+            raise ValueError(
+                f"Missing notebook_source_id/source_title for video {vid} in Gemini handoff receipt; refusing to guess source name"
+            )
+
+        raw_scope = str(rv.get("source_scope") or data.get("source_scope") or "").strip()
+        if raw_scope:
+            source_scope = raw_scope
+            if "NOTEBOOK_SOURCE:" not in source_scope:
+                source_scope = f"{source_scope} | NOTEBOOK_SOURCE:{video_source_id}"
+        else:
+            scope_prefix = (
+                "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS"
+                if is_part2
+                else "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS"
+            )
+            source_scope = f"{scope_prefix} | NOTEBOOK_SOURCE:{video_source_id}"
+
+        vid_rb_raw = str(
+            rv.get("notebook_readback") or data.get("notebook_readback") or "UNKNOWN"
+        ).strip().upper()
+        vid_readback = (
+            vid_rb_raw if vid_rb_raw in {"PASS", "FAIL", "UNKNOWN"} else "UNKNOWN"
+        )
+
         ov = rv.get("official_verification") or {}
         ov_details = str(ov.get("details") or "").strip()
+        ov_url = str(ov.get("official_url") or ov.get("url") or "").strip() or None
+        ov_status_raw = str(ov.get("status") or "").strip().upper()
         constraints = str(rv.get("constraints_and_notes") or "").strip()
         future_apps = str(rv.get("future_applications") or "").strip()
         unk_str = str(rv.get("unknowns") or "").strip()
@@ -776,18 +613,28 @@ def normalize_gemini_handoff_receipt(data):
 
         claims = []
         if ov_details:
-            prefix = (
-                "[PART2研究ノート経由の公式照合] "
-                if is_part2
-                else "[PART1直近調査の公式照合] "
-            )
+            if ov_url and valid_url(ov_url) and ov_status_raw in {"VERIFIED", "CONFIRMED_DOC"}:
+                claim_status = "CONFIRMED_DOC"
+                claim_url = ov_url
+                prefix = (
+                    "[PART2研究ノート経由・一次公式URL照合済] "
+                    if is_part2
+                    else "[PART1直近調査・一次公式URL照合済] "
+                )
+            else:
+                # Never assign CONFIRMED_DOC without a verified primary official_url
+                claim_status = (
+                    "UNKNOWN" if ov_status_raw == "UNKNOWN" else "REPORTED_BY_AUTHOR"
+                )
+                claim_url = ov_url if (ov_url and valid_url(ov_url)) else None
+                prefix = "[Gemini公式照合報告(一次URL未添付・要独立確認)] "
             claims.append(
                 {
                     "text": (prefix + ov_details)[:500],
-                    "status": "CONFIRMED_DOC",
+                    "status": claim_status,
                     "timestamp_seconds": None,
                     "timestamp_source": "UNKNOWN",
-                    "official_url": None,
+                    "official_url": claim_url,
                 }
             )
         if constraints or future_apps:
@@ -812,32 +659,80 @@ def normalize_gemini_handoff_receipt(data):
             )
             top_unknowns.append(f"{vid} (No.{num_str}): {unk_str}"[:500])
 
+        n_desc = sum(
+            1 for ch in chapters if ch["timestamp_source"] == "YOUTUBE_CHAPTER_METADATA"
+        )
+        n_cap = sum(
+            1 for ch in chapters if ch["timestamp_source"] == "TIMESTAMPED_CAPTIONS"
+        )
+        n_unk = sum(1 for ch in chapters if ch["timestamp_source"] == "UNKNOWN")
+
+        if yt_pub:
+            final_pub_date = (
+                f"{yt_pub} (YouTube一次確認一致)"
+                if pub_date == yt_pub
+                else f"{yt_pub} (YouTube一次確認 / Gemini記載値: {pub_date or 'UNKNOWN'})"
+            )
+        else:
+            final_pub_date = pub_date
+
         df_lines = [
-            f"- 整理番号・区分: No.{num_str} ({batch_desc or batch_part}) / 投稿者: {channel_str} / 調査日: {res_date}",
-            f"- 動画長・公開日照合: Gemini記載長={dur_str}, 記載公開日={pub_date or 'UNKNOWN'}"
-            + (
-                f" | YouTube一次実測長={yt_len // 60:02d}:{yt_len % 60:02d} ({yt_len}s), 一次公開日={yt_pub}"
-                if yt_len is not None
-                else ""
-            ),
-            f"- 証拠強度区分: {'PART1（Notebook内のYouTubeソース由来）' if not is_part2 else 'PART2（Gemini過去研究ノート由来・一次根拠がある時刻のみリンク化）'}",
-            f"- 全体要約（原文完全保持）: {raw_summary}",
-            f"- 主要技術キーワード: {', '.join(key_tech_list) if key_tech_list else 'NONE'}",
-            f"- 公式仕様・一次資料照合詳細: {ov_details or 'UNKNOWN'}",
-            f"- 制約・注意点: {constraints or 'UNKNOWN'}",
-            f"- 今後の応用・自動化案: {future_apps or 'UNKNOWN'}",
-            f"- 未確認事項（UNKNOWN）: {unk_str or 'UNKNOWN'}",
+            f"- 整理番号・区分: No.{num_str} ({batch_desc or batch_part}) / 投稿者(Gemini記載): {channel_str} / 調査日: {res_date}",
         ]
-        if audit and audit.get("desc_summary"):
+        if ev_rec is not None and yt_len is not None:
+            title_cmp = (
+                "一致"
+                if (yt_title and title == yt_title)
+                else f"不一致(YouTube一次=「{yt_title or 'UNKNOWN'}」 vs Gemini記載=「{title}」)"
+            )
+            author_cmp = (
+                "一致"
+                if (yt_author and channel_str == yt_author)
+                else f"不一致(YouTube一次=「{yt_author or 'UNKNOWN'}」 vs Gemini記載=「{channel_str}」)"
+            )
+            dur_cmp = "一致(±2s以内)" if dur_match else "不一致"
+            pub_cmp = "一致" if (yt_pub and pub_date == yt_pub) else "不一致"
             df_lines.append(
-                f"- YouTube概要欄の公式チャプター（一次照合参照用）: {audit['desc_summary']}"
+                f"- YouTube一次メタデータ照合: タイトル={title_cmp} / 投稿者={author_cmp}"
+            )
+            df_lines.append(
+                f"- 動画長・公開日一次照合: YouTube一次実測長={yt_len // 60:02d}:{yt_len % 60:02d} ({yt_len}s) vs Gemini記載長={dur_str} ({dur_cmp}) | YouTube一次公開日={yt_pub or 'UNKNOWN'} vs Gemini記載公開日={pub_date or 'UNKNOWN'} ({pub_cmp})"
+            )
+        else:
+            df_lines.append(
+                f"- 動画長・公開日照合: Gemini記載長={dur_str}, 記載公開日={pub_date or 'UNKNOWN'} (YouTube一次検証データ未登録のため全チャプター時刻をUNKNOWN扱い)"
+            )
+
+        df_lines.extend(
+            [
+                f"- チャプター時刻一次検証内訳: 全{len(chapters)}章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)={n_desc}章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)={n_cap}章, 一次根拠未確認(UNKNOWN)={n_unk}章",
+                f"- 証拠強度区分: {'PART1（Notebook内のYouTubeソース由来・章別一次照合適用）' if not is_part2 else 'PART2（Gemini過去研究ノート由来・章別一次照合適用）'}",
+                f"- 全体要約（原文保持）: {raw_summary}",
+                f"- 主要技術キーワード: {', '.join(key_tech_list) if key_tech_list else 'NONE'}",
+                f"- 公式仕様・一次資料照合報告（一次URL未添付時はREPORTED_BY_AUTHOR扱い）: {ov_details or 'UNKNOWN'}",
+                f"- 制約・注意点: {constraints or 'UNKNOWN'}",
+                f"- 今後の応用・自動化案: {future_apps or 'UNKNOWN'}",
+                f"- 未確認事項（UNKNOWN）: {unk_str or 'UNKNOWN'}",
+            ]
+        )
+        if long_chapter_titles:
+            df_lines.append(
+                f"- 長文チャプタータイトル原文保持: {' / '.join(long_chapter_titles)}"
+            )
+        if ev_rec and ev_rec.get("desc_summary"):
+            df_lines.append(
+                f"- YouTube概要欄の公式チャプター（一次照合参照用）: {ev_rec['desc_summary']}"
             )
         detailed_findings_ja = "\n".join(df_lines)[:MAX_DETAILED_FINDINGS_LENGTH]
 
         is_existing_target = vid in {"ZjUJ-35acaU", "BStkW1HTfmk"}
         changes = rv.get("changes") or (["UPDATED"] if is_existing_target else ["NEW"])
-        related_records = rv.get("related_records") or GEMINI_HANDOFF_RELATIONS_20261017.get(
-            vid, []
+        related_records = rv.get("related_records") or _infer_related_records_from_content(
+            vid=vid,
+            title=title,
+            summary_ja=raw_summary,
+            key_tech_list=key_tech_list,
+            is_existing_target=is_existing_target,
         )
 
         converted_videos.append(
@@ -845,15 +740,15 @@ def normalize_gemini_handoff_receipt(data):
                 "video_id": vid,
                 "title": title[:250],
                 "url": url,
-                "published_at": pub_date,
+                "published_at": final_pub_date,
                 "summary_ja": summary_ja,
                 "detailed_findings_ja": detailed_findings_ja,
                 "chapters": chapters,
                 "source_scope": source_scope[:180],
                 "claims": claims,
                 "related_records": related_records,
-                "notebook_source_id": notebook_source_id,
-                "notebook_readback": "PASS",
+                "notebook_source_id": video_source_id,
+                "notebook_readback": vid_readback,
                 "changes": changes,
             }
         )
@@ -862,7 +757,7 @@ def normalize_gemini_handoff_receipt(data):
         "schema_version": "research_receipt_v1",
         "notebook_url": notebook_url,
         "checked_at": checked_at,
-        "notebook_readback": "PASS",
+        "notebook_readback": top_readback,
         "github_dedup_status": "UNKNOWN",
         "next_topics": data.get("next_topics") or [],
         "unknowns": top_unknowns[:20],
@@ -874,7 +769,12 @@ def canonical_youtube_url(video_id):
     return f"https://www.youtube.com/watch?v={video_id}"
 
 
-def extract_receipt_payload(raw_text):
+def extract_receipt_payload(
+    raw_text,
+    evidence_map=None,
+    default_notebook_url=None,
+    default_notebook_source_id=None,
+):
     """Extract `research_receipt_v1` dict from raw JSON or Markdown with fenced JSON blocks."""
     if not isinstance(raw_text, str) or not raw_text.strip():
         raise ValueError("Empty receipt input")
@@ -886,7 +786,12 @@ def extract_receipt_payload(raw_text):
                 data.get("schema_version") == "research_receipt_v1"
                 or data.get("receipt_version") == "research_receipt_v1"
             ):
-                return normalize_gemini_handoff_receipt(data)
+                return normalize_gemini_handoff_receipt(
+                    data,
+                    evidence_map=evidence_map,
+                    default_notebook_url=default_notebook_url,
+                    default_notebook_source_id=default_notebook_source_id,
+                )
         except json.JSONDecodeError:
             pass
     for match in FENCED_JSON_RE.finditer(raw_text):
@@ -897,7 +802,12 @@ def extract_receipt_payload(raw_text):
                 data.get("schema_version") == "research_receipt_v1"
                 or data.get("receipt_version") == "research_receipt_v1"
             ):
-                return normalize_gemini_handoff_receipt(data)
+                return normalize_gemini_handoff_receipt(
+                    data,
+                    evidence_map=evidence_map,
+                    default_notebook_url=default_notebook_url,
+                    default_notebook_source_id=default_notebook_source_id,
+                )
         except json.JSONDecodeError:
             continue
     idx = raw_text.find('"research_receipt_v1"')
@@ -931,13 +841,23 @@ def extract_receipt_payload(raw_text):
                                     data.get("schema_version") == "research_receipt_v1"
                                     or data.get("receipt_version") == "research_receipt_v1"
                                 ):
-                                    return normalize_gemini_handoff_receipt(data)
+                                    return normalize_gemini_handoff_receipt(
+                                        data,
+                                        evidence_map=evidence_map,
+                                        default_notebook_url=default_notebook_url,
+                                        default_notebook_source_id=default_notebook_source_id,
+                                    )
                             except json.JSONDecodeError:
                                 pass
                             break
             start = raw_text.rfind("{", 0, start)
     data = json.loads(stripped)
-    return normalize_gemini_handoff_receipt(data)
+    return normalize_gemini_handoff_receipt(
+        data,
+        evidence_map=evidence_map,
+        default_notebook_url=default_notebook_url,
+        default_notebook_source_id=default_notebook_source_id,
+    )
 
 
 def compute_receipt_digest(data):
@@ -1052,6 +972,9 @@ def validate(data):
             u = c.get("official_url")
             if u is not None and not valid_url(u):
                 raise ValueError("Invalid official_url")
+            if c.get("status") == "CONFIRMED_DOC" and not valid_url(u):
+                raise ValueError("Claim with CONFIRMED_DOC status requires a valid official_url")
+
 
         # v0.6 optional field: detailed_findings_ja
         detailed_findings = v.get("detailed_findings_ja")
@@ -1908,6 +1831,8 @@ def process_receipt_data(
     state_path=None,
     index_path=None,
     export_drive_dir=None,
+    require_readback_pass=False,
+    refresh_existing=False,
 ):
     """Core pipeline to validate and process a single parsed `research_receipt_v1` dict."""
     videos = validate(data)
@@ -1951,7 +1876,7 @@ def process_receipt_data(
     planned_updates = []
     skipped = []
 
-    if digest in processed_hashes:
+    if digest in processed_hashes and not refresh_existing:
         for v in videos:
             vid = v["video_id"]
             print("SKIP_EXISTING", vid)
@@ -1964,7 +1889,8 @@ def process_receipt_data(
             is_remote_known = (vid in remote_map) and not is_local_known
             changes_set = set(v.get("changes") or [])
 
-            if v.get("notebook_readback") != "PASS":
+            rb_val = v.get("notebook_readback")
+            if rb_val == "FAIL" or (require_readback_pass and rb_val != "PASS"):
                 print("SKIP_UNVERIFIED_NOTEBOOK", vid)
                 skipped.append({"video_id": vid, "reason": "SKIP_UNVERIFIED_NOTEBOOK"})
                 continue
@@ -1974,6 +1900,10 @@ def process_receipt_data(
                 continue
 
             if is_local_known:
+                dst_same_date = root / "research" / ("{}-{}-gemini-notebook.md".format(data["checked_at"], vid))
+                if refresh_existing and dst_same_date.exists() and not (changes_set & {"UPDATED", "CONFLICT"}):
+                    planned_new.append((dst_same_date, render(v, data["checked_at"]), v))
+                    continue
                 if allow_updates and (changes_set & {"UPDATED", "CONFLICT"}) and existing_md:
                     target_md = existing_md[0]
                     current_content = target_md.read_text(encoding="utf-8")
@@ -1981,7 +1911,7 @@ def process_receipt_data(
                     if (
                         clean(v["summary_ja"]) in current_content
                         or f"## 差分更新 ({data['checked_at']}" in current_content
-                    ):
+                    ) and not refresh_existing:
                         print("SKIP_EXISTING", vid)
                         skipped.append(
                             {"video_id": vid, "reason": "SKIP_EXISTING_DELTA_ALREADY_APPLIED"}
@@ -2062,7 +1992,7 @@ def process_receipt_data(
                 continue
 
             dst = root / "research" / ("{}-{}-gemini-notebook.md".format(data["checked_at"], vid))
-            if dst.exists():
+            if dst.exists() and not refresh_existing:
                 print("SKIP_EXISTS", vid)
                 skipped.append({"video_id": vid, "reason": "SKIP_EXISTS"})
                 continue
@@ -2087,15 +2017,24 @@ def process_receipt_data(
         return summary_payload, touched_files
 
     branch = check_write_boundary(root=root)
-    for dst, _, _ in planned_new:
-        if dst.exists():
-            raise ValueError("Concurrent file already exists: " + str(dst))
+    if not refresh_existing:
+        for dst, _, _ in planned_new:
+            if dst.exists():
+                raise ValueError("Concurrent file already exists: " + str(dst))
 
     for dst, text, v in planned_new:
         dst.parent.mkdir(parents=True, exist_ok=True)
-        with dst.open("x", encoding="utf-8") as f:
-            f.write(text)
+        if refresh_existing and dst.exists():
+            dst.write_text(text, encoding="utf-8")
+        else:
+            with dst.open("x", encoding="utf-8") as f:
+                f.write(text)
         touched_files.append(dst)
+        rb_status_tag = (
+            "NOTEBOOK_READBACK_SELF_REPORTED_ONLY"
+            if v.get("notebook_readback") == "PASS"
+            else "NOTEBOOK_READBACK_UNKNOWN"
+        )
         rec_entry = {
             "record_id": "youtube:" + v["video_id"],
             "video_id": v["video_id"],
@@ -2103,12 +2042,17 @@ def process_receipt_data(
             "research_path": dst.relative_to(root).as_posix(),
             "source_scope": v["source_scope"],
             "research_date": data["checked_at"],
-            "status": "GEMINI_REPORTED; NOTEBOOK_READBACK_REPORTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+            "status": f"GEMINI_REPORTED; {rb_status_tag}; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
             "evidence": "GEMINI_RESEARCH_RECEIPT",
         }
         if v["url"] != rec_entry["canonical_url"]:
             rec_entry["original_url"] = v["url"]
-        registry["records"].append(rec_entry)
+        if v["video_id"] in local_records_by_id:
+            existing_rec = local_records_by_id[v["video_id"]]
+            existing_rec.update(rec_entry)
+        else:
+            registry["records"].append(rec_entry)
+            local_records_by_id[v["video_id"]] = rec_entry
 
     for target_md, delta_text, v in planned_updates:
         target_md.parent.mkdir(parents=True, exist_ok=True)
@@ -2119,6 +2063,9 @@ def process_receipt_data(
             existing_text = remote_base["base_markdown"]
         else:
             raise ValueError("Target markdown for update does not exist: " + str(target_md))
+        marker = f"## 差分更新 ({data['checked_at']}"
+        if refresh_existing and marker in existing_text:
+            existing_text = existing_text[: existing_text.index(marker)].rstrip() + "\n"
         sep = "" if existing_text.endswith("\n") else "\n"
         target_md.write_text(existing_text + sep + delta_text.lstrip("\n"), encoding="utf-8")
         touched_files.append(target_md)
@@ -2141,13 +2088,15 @@ def process_receipt_data(
         if rec is not None:
             rec["last_updated"] = data["checked_at"]
             history = rec.setdefault("update_history", [])
-            history.append(
-                {
-                    "checked_at": data["checked_at"],
-                    "changes": v["changes"],
-                    "source_scope": v["source_scope"],
-                }
-            )
+            new_hist_item = {
+                "checked_at": data["checked_at"],
+                "changes": v["changes"],
+                "source_scope": v["source_scope"],
+            }
+            if refresh_existing and history and history[-1].get("checked_at") == data["checked_at"]:
+                history[-1] = new_hist_item
+            else:
+                history.append(new_hist_item)
 
     if planned_new or planned_updates:
         registry_path.write_text(
@@ -2245,6 +2194,19 @@ def main(argv=None):
         help="Directory (local or Google Drive folder) to scan for unprocessed receipt files",
     )
     ap.add_argument(
+        "--notebook-source-id",
+        help="Explicit Gemini Notebook source title/ID when importing a handoff receipt that omits notebook_source_id",
+    )
+    ap.add_argument(
+        "--notebook-url",
+        help="Explicit Gemini Notebook URL when importing a handoff receipt that omits notebook_url",
+    )
+    ap.add_argument(
+        "--refresh-existing",
+        action="store_true",
+        help="Re-apply and update existing research markdown files and registry records in-place",
+    )
+    ap.add_argument(
         "--sync-index",
         action="store_true",
         help="Update `state/loop_state.json` and `state/github_knowledge_index_export.md`",
@@ -2310,7 +2272,7 @@ def main(argv=None):
             )
         dummy_data = {
             "checked_at": date.today().isoformat(),
-            "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+            "notebook_url": DEFAULT_CANONICAL_NOTEBOOK_URL,
             "next_topics": [],
             "unknowns": [],
         }
@@ -2362,7 +2324,11 @@ def main(argv=None):
 
         for source_name, raw_text in raw_inputs:
             try:
-                data = extract_receipt_payload(raw_text)
+                data = extract_receipt_payload(
+                    raw_text,
+                    default_notebook_url=args.notebook_url,
+                    default_notebook_source_id=args.notebook_source_id,
+                )
                 if not isinstance(data, dict) or data.get("schema_version") != "research_receipt_v1":
                     raise ValueError("Invalid receipt schema_version")
             except (ValueError, json.JSONDecodeError) as ex:
@@ -2380,6 +2346,7 @@ def main(argv=None):
                 allow_stale_remotes=args.allow_stale_remotes,
                 sync_index=args.sync_index,
                 export_drive_dir=args.export_drive_dir,
+                refresh_existing=args.refresh_existing,
             )
             summary["source"] = source_name
             results.append(summary)

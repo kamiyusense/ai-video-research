@@ -45,7 +45,7 @@
 - checked_at: 2026-10-17
 - source_scope: GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017
 - Gemini Notebook source: AI技術研究室_過去調査14本_完全総合辞書_20261017
-- Gemini readback (self-reported): PASS
+- Gemini readback (self-reported): UNKNOWN
 - GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB
 - changes: UPDATED
 
@@ -62,22 +62,24 @@ AIへの毎回の説明し直しを解消するため、ローカルMarkdown（O
 - UNKNOWN | **まとめ・一生モノのローカルナレッジベース構築法** | Gemini報告区間(21:00〜22:45 / 一次時刻未確認のため再生リンク非生成): まとめ・一生モノのローカルナレッジベース構築法 | time_source: UNKNOWN | topics: Obsidian, ローカル共創, CLAUDE.md
 
 ### 追加・更新された詳細技術知識
-- 整理番号・区分: No.26 (Part 2: 過去調査14本 (No.13〜26)) / 投稿者: Leo Tohyama / AIコーチ / 調査日: 2026-10-16
-- 動画長・公開日照合: Gemini記載長=22:45, 記載公開日=2026-09-15 | YouTube一次実測長=22:21 (1341s), 一次公開日=2026-10-05
-- 証拠強度区分: PART2（Gemini過去研究ノート由来・一次根拠がある時刻のみリンク化）
-- 全体要約（原文完全保持）: AIへの毎回の説明し直しを解消するため、ローカルMarkdown（Obsidian）を全エージェントの共通記憶とするアーキテクチャを提唱。CLAUDE.md / AGENTS.md / MEMORY.md を土台とし、Googleドライブ操作（MCP経由：API 840回呼出・40分消費）とローカル直接操作（5回・4分完了）の定量速度・クォータ消費を比較実験。知識のローカル保管によるベンダーロックイン回避を実証。
+- 整理番号・区分: No.26 (Part 2: 過去調査14本 (No.13〜26)) / 投稿者(Gemini記載): Leo Tohyama / AIコーチ / 調査日: 2026-10-16
+- YouTube一次メタデータ照合: タイトル=不一致(YouTube一次=「【22分で完全解説】今日からはじめる AIエージェント×Obsidian。AIへの説明し直しを卒業して、ClaudeもChatGPTも「右腕」にする方法。」 vs Gemini記載=「AIエージェントの最適解は「Obsidian×ローカル共創」だ。MCPによるクラウド連携との比較実験」) / 投稿者=一致
+- 動画長・公開日一次照合: YouTube一次実測長=22:21 (1341s) vs Gemini記載長=22:45 (不一致) | YouTube一次公開日=2026-10-05 vs Gemini記載公開日=2026-09-15 (不一致)
+- チャプター時刻一次検証内訳: 全7章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)=0章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)=0章, 一次根拠未確認(UNKNOWN)=7章
+- 証拠強度区分: PART2（Gemini過去研究ノート由来・章別一次照合適用）
+- 全体要約（原文保持）: AIへの毎回の説明し直しを解消するため、ローカルMarkdown（Obsidian）を全エージェントの共通記憶とするアーキテクチャを提唱。CLAUDE.md / AGENTS.md / MEMORY.md を土台とし、Googleドライブ操作（MCP経由：API 840回呼出・40分消費）とローカル直接操作（5回・4分完了）の定量速度・クォータ消費を比較実験。知識のローカル保管によるベンダーロックイン回避を実証。
 - 主要技術キーワード: Obsidian, ローカル共創, CLAUDE.md, AGENTS.md, MEMORY.md, MCP比較実験, ベンダーロックイン回避, クォータ消費削減
-- 公式仕様・一次資料照合詳細: Model Context Protocol (MCP) の通信オーバーヘッド仕様およびローカルファイルI/O速度特性と完全一致。
+- 公式仕様・一次資料照合報告（一次URL未添付時はREPORTED_BY_AUTHOR扱い）: Model Context Protocol (MCP) の通信オーバーヘッド仕様およびローカルファイルI/O速度特性と完全一致。
 - 制約・注意点: 複数PCやスマホとの同期にはObsidian SyncまたはGit同期の設定が必要。
 - 今後の応用・自動化案: すべてのエージェントが共通参照するローカルVaultの構築と、クラウドMCPの最小限化。
 - 未確認事項（UNKNOWN）: Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。
-- YouTube概要欄の公式チャプター（一次照合参照用）: 00:00 注目理由 / 00:48 基本 / 04:26 重要なのは機能じゃない / 06:12 右腕AIフォルダをObsidianで見る / 08:10 共創の現場 / 10:57 iCloud同期 / 12:29 なぜGoogleドライブじゃだめか / 15:58 窓口テスト ローカル vs Googleドライブ / 19:55 保管庫の原則 / 21:32 まとめ
+- YouTube概要欄の公式チャプター（一次照合参照用）: 00:00 Obsidianに注目している理由 / 00:48 Obsidianの基本 / 04:26 重要なのは機能じゃない / 06:12 右腕AIのフォルダをObsidianで見る / 08:10 共創の現場 / 10:57 右腕AIのフォルダをiCloudで同期するベストプラクティス / 12:29 なぜGoogleドライブじゃだめなのか / 15:58 窓口テスト ローカル vs Googleドライブ / 19:55 保管庫に何でも置かない / 21:32 まとめ
 
 ### 追加・更新された主張と検証
-- [PART2研究ノート経由の公式照合] Model Context Protocol (MCP) の通信オーバーヘッド仕様およびローカルファイルI/O速度特性と完全一致。 | CONFIRMED_DOC | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+- [Gemini公式照合報告(一次URL未添付・要独立確認)] Model Context Protocol (MCP) の通信オーバーヘッド仕様およびローカルファイルI/O速度特性と完全一致。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 - 制約・注意点: 複数PCやスマホとの同期にはObsidian SyncまたはGit同期の設定が必要。 / 今後の応用: すべてのエージェントが共通参照するローカルVaultの構築と、クラウドMCPの最小限化。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 - 未確認事項(UNKNOWN): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ### 追加・更新された関連研究・課題接続
-- `youtube:BStkW1HTfmk` (UPDATES): 既存の動画07暫定研究記録に対し、ローカル直接操作(4分) vs MCP経由Googleドライブ(40分・840回API)の比較実験知見を統合
-- `youtube:Vr3JkAT9mo8` (COMPLEMENTS): CLAUDE.md / AGENTS.md / MEMORY.md を共通記憶とするローカルVault共創アーキテクチャ
+- `youtube:BStkW1HTfmk` (UPDATES): 既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合
+- `youtube:Vr3JkAT9mo8` (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完
