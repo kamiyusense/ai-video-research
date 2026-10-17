@@ -73,6 +73,46 @@ FORBIDDEN_PAYLOAD_KEYS = {
         ],
     )
 }
+FORBIDDEN_VALUE_PATTERNS = [
+    (
+        item["id"],
+        re.compile(item["pattern"], re.MULTILINE),
+    )
+    for item in CONTRACT.get(
+        "forbidden_value_patterns",
+        [
+            {
+                "id": "GITHUB_TOKEN",
+                "pattern": r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b|\bgithub_pat_[A-Za-z0-9_]{20,}\b",
+            },
+            {
+                "id": "GOOGLE_API_OR_OAUTH_TOKEN",
+                "pattern": r"\bAIza[0-9A-Za-z_-]{30,}\b|\bya29\.[0-9A-Za-z_-]{20,}\b",
+            },
+            {
+                "id": "LLM_OR_SAAS_SECRET_KEY",
+                "pattern": r"\bsk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}\b|\bxox[baprs]-[0-9A-Za-z-]{10,}\b",
+            },
+            {
+                "id": "PRIVATE_KEY_BLOCK",
+                "pattern": r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
+            },
+            {
+                "id": "BEARER_AUTH_HEADER",
+                "pattern": r"\bBearer\s+[A-Za-z0-9._~+/=-]{20,}\b",
+            },
+            {
+                "id": "SUBTITLE_TIMECODE_BLOCK",
+                "pattern": r"\bWEBVTT\b|\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s*\d{1,2}:\d{2}:\d{2}",
+            },
+            {
+                "id": "MULTILINE_TIMESTAMP_TRANSCRIPT",
+                "pattern": r"(?:^|\n)\s*\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s+[^\n]+\n\s*\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s+[^\n]+\n\s*\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s+",
+            },
+        ],
+    )
+]
+MAX_NEWLINES_PER_TEXT_FIELD = CONTRACT.get("limits", {}).get("max_newlines_per_text_field", 3)
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_REPO = CONTRACT.get("expected_repo", "kamiyusense/ai-video-research")
 DEFAULT_STATE_PATH = Path(__file__).resolve().parent / "state" / "loop_state.json"
@@ -224,7 +264,7 @@ def compute_receipt_digest(data):
 
 
 def scan_forbidden_keys(val, path="root"):
-    """Recursively scan receipt payload and reject forbidden keys (transcripts, secrets, etc.)."""
+    """Recursively scan receipt payload and reject forbidden keys or secret/transcript value patterns."""
     if isinstance(val, dict):
         for k, v in val.items():
             k_str = str(k).strip().lower()
@@ -234,6 +274,12 @@ def scan_forbidden_keys(val, path="root"):
     elif isinstance(val, list):
         for idx, item in enumerate(val):
             scan_forbidden_keys(item, f"{path}[{idx}]")
+    elif isinstance(val, str):
+        for rule_id, pat in FORBIDDEN_VALUE_PATTERNS:
+            if pat.search(val):
+                raise ValueError(
+                    f"Forbidden content pattern ({rule_id}) in receipt payload at {path}"
+                )
 
 
 def validate(data):
@@ -281,6 +327,8 @@ def validate(data):
             raise ValueError("Invalid title")
         if not isinstance(v.get("summary_ja"), str) or not (1 <= len(v["summary_ja"]) <= 300):
             raise ValueError("Summary must contain 1-300 characters")
+        if v["summary_ja"].count("\n") > MAX_NEWLINES_PER_TEXT_FIELD:
+            raise ValueError("Summary contains too many line breaks (possible transcript dump)")
         if not isinstance(v.get("source_scope"), str) or len(v["source_scope"]) > 180:
             raise ValueError("Invalid source_scope")
         if v.get("notebook_readback") not in {"PASS", "FAIL", "UNKNOWN"}:
@@ -297,6 +345,8 @@ def validate(data):
         for c in claims:
             if not isinstance(c, dict) or not isinstance(c.get("text"), str) or len(c["text"]) > 500:
                 raise ValueError("Invalid claim")
+            if c["text"].count("\n") > MAX_NEWLINES_PER_TEXT_FIELD:
+                raise ValueError("Claim text contains too many line breaks (possible transcript dump)")
             if c.get("status") not in ALLOWED_STATUSES:
                 raise ValueError("Invalid claim status")
             t = c.get("timestamp_seconds")
@@ -506,7 +556,11 @@ def collect_remote_branch_videos(
 
         if isinstance(branch_cache, dict) and commit_sha:
             cached = branch_cache.get(ref)
-            if isinstance(cached, dict) and cached.get("commit_sha") == commit_sha:
+            if (
+                isinstance(cached, dict)
+                and cached.get("commit_sha") == commit_sha
+                and cached.get("scan_complete") is True
+            ):
                 for entry in cached.get("videos", []):
                     vid = entry.get("video_id")
                     if vid and VIDEO_ID.fullmatch(vid):
@@ -592,6 +646,7 @@ def collect_remote_branch_videos(
         if isinstance(branch_cache, dict) and commit_sha:
             branch_cache[ref] = {
                 "commit_sha": commit_sha,
+                "scan_complete": True,
                 "videos": list(branch_entries.values()),
             }
 

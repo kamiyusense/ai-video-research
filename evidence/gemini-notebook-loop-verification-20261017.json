@@ -1,47 +1,52 @@
 {
   "schema_version": 1,
-  "kind": "gemini_notebook_loop_v04_verification",
-  "recorded_at_utc": "2026-10-16T23:45:00Z",
+  "kind": "gemini_notebook_loop_v05_verification",
+  "recorded_at_utc": "2026-10-17T00:53:00Z",
   "repository": "kamiyusense/ai-video-research",
   "visibility": "private",
   "branch": "feature/gemini-notebook-research-loop-20261016",
-  "base_commit_before_v04": "998cf5eefe53fae7c319bae927e5a8a056a48744",
+  "base_commit_before_v05": "4bdebc6a8b86187e0d0fd93d5c3a0ed5599a3b43",
   "pull_request": {
     "url": "https://github.com/kamiyusense/ai-video-research/pull/10",
     "number": 10,
     "draft": true,
     "merged": false
   },
-  "selected_architecture": "GAS_DIRECT_VALIDATION_AND_GIT_DATABASE_API_ATOMIC_COMMIT_V04",
+  "selected_architecture": "GAS_DIRECT_VALIDATION_AND_GIT_DATABASE_API_ATOMIC_COMMIT_V05",
   "operational_completion_criteria": {
     "1_code_exists": "PASS",
-    "2_mock_and_parity_tests_succeed": "PASS",
-    "3_actual_github_write_succeeds": "PASS",
-    "4_actual_notebook_update_succeeds": "NOT_TESTED",
-    "5_gemini_to_github_without_manual_copy": "NOT_TESTED",
-    "6_periodic_execution_continues_when_pc_is_off": "UNKNOWN"
+    "2_mock_parity_and_anomaly_tests_succeed": "PASS",
+    "3_actual_github_write_from_local_git_succeeds": "PASS",
+    "4_actual_github_write_from_production_gas_runtime": "NOT_TESTED",
+    "5_actual_notebook_update_succeeds": "NOT_TESTED",
+    "6_gemini_to_github_without_manual_copy": "NOT_TESTED",
+    "7_periodic_execution_continues_when_pc_is_off": "UNKNOWN"
   },
-  "v04_concerns_addressed": {
-    "concern_A_python_js_dual_implementation_parity": {
-      "status": "PASS",
-      "mechanism": "Created canonical shared contract `automation/gemini-notebook/contract_spec_v1.json` and automated Node.js <-> Python cross-language test (`test_09`) proving 100% byte-for-byte identity for SHA-256 digests, research markdown, delta markdown, and knowledge index exports."
+  "v05_five_review_fixes_verification": {
+    "1_gas_script_properties_9kb_limit_protection": {
+      "status": "PASS (MOCK_VERIFIED)",
+      "mechanism": "Moved persistent `processed_receipts` and completed `remote_branch_cache` to GitHub SSOT (`automation/gemini-notebook/state/loop_state.json`). Restricted GAS `RELAY_STATE_V1` (`gas_relay_compact_state_v2`) to compact transient fields and enforced `saveBoundedRelayState_()` trimming at <= 7,500 UTF-8 bytes (well under Google's 9KB limit)."
     },
-    "concern_B_gas_execution_time_and_scaling": {
-      "status": "PASS",
-      "mechanism": "Implemented Git Trees API (`?recursive=1`) filename-first extraction (0 extra HTTP calls for `research/YYYY-MM-DD-<video_id>-*.md`) plus `branchCache` keyed by branch `commit_sha` (0 tree/blob calls for unchanged remote branches) and `max_blob_fetches_per_run = 25`."
+    "2_duplicate_detection_completeness": {
+      "status": "PASS (MOCK_VERIFIED)",
+      "mechanism": "Added full `/branches?per_page=100&page=N` pagination, explicit `tree.truncated === true` error stop, and multi-run `partialScanProgress` continuation when markdown body scans exceed `max_blob_fetches_per_run = 25` (`PAUSED_INCOMPLETE_DEDUP_SCAN_CONTINUES_NEXT_RUN`). Never marks a branch `scan_complete: true` or treats deduplication as PASS while unscanned files remain."
     },
-    "concern_C_pat_scope_vs_branch_protection": {
-      "status": "PASS",
-      "mechanism": "Explicitly separated Application-Level Guard (`FORBIDDEN_BRANCHES = ['main', 'master']` in code) from GitHub Server-Level Guard (`branch.protected` checked via GitHub API and reported in `securityPosture.mainBranchServerProtected`)."
+    "3_github_rest_api_commit_to_tree_sha_alignment": {
+      "status": "PASS (MOCK_VERIFIED)",
+      "mechanism": "Every remote branch now resolves `commit_sha -> tree_sha` via `GET /repos/{owner}/{repo}/git/commits/{commit_sha}` before calling `GET /repos/{owner}/{repo}/git/trees/{tree_sha}?recursive=1`. Mock server in `test_10` and `test_11` strictly rejects any `commit_sha` passed to `/git/trees/` with HTTP 404. Removed silent `continue` on remote branch API errors."
     },
-    "concern_D_github_drive_split_brain_and_concurrency": {
+    "4_gemini_task_md_instruction_alignment": {
       "status": "PASS",
-      "mechanism": "Added `LockService.getScriptLock()` concurrency exclusion, `PATCH /git/refs/heads/<branch>` with `force: false` (atomic HTTP 422 stop on branch divergence), and Two-Phase Self-Healing Reconciliation (`lastGitHubCommitSha` vs `lastDriveSyncedCommitSha` + `loop_state.json` SSOT check) so a failed Drive update after GitHub commit heals automatically on the next run without duplicate GitHub commits."
+      "mechanism": "Updated `automation/gemini-notebook/GEMINI_TASK.md` to remove outdated v0.3 GitHub Actions references and align with the v0.5 GAS direct atomic commit architecture, while explicitly maintaining that unattended Gemini Scheduled Actions -> Google Drive export and autonomous Notebook source registration remain `NOT_TESTED` / `UNKNOWN`."
+    },
+    "5_value_level_validation_and_residual_risk_disclosure": {
+      "status": "PASS (MOCK_VERIFIED)",
+      "mechanism": "Added recursive string value scanning (`forbidden_value_patterns` in `contract_spec_v1.json`) blocking GitHub/Google/OpenAI/Anthropic/Slack tokens, PEM private keys, Bearer headers, SRT/WebVTT subtitle timecodes, 3+ line timestamped transcripts, and >3 newlines in summaries/claims. Explicitly documented residual limits (short untimestamped quotes or unprefixed custom secrets cannot be 100% eliminated heuristically, hence isolation to non-default Draft PR branch)."
     }
   },
   "automated_tests": {
     "command": "py -3 tests/test_gemini_notebook_loop.py",
-    "test_count": 10,
+    "test_count": 11,
     "all_pass": true,
     "verified_cases": [
       {
@@ -78,13 +83,17 @@
       },
       {
         "test_id": "test_09_python_js_cross_language_contract_and_output_parity",
-        "status": "PASS",
-        "evidence": "Verified 100% byte-for-byte parity between Python `receipt_to_research.py` and Node.js/GAS `cloud_relay_gas.js` across `contract_spec_v1.json`, SHA-256 digest, `render()`, `render_delta_section()`, `render_github_knowledge_index_export_md()`, and forbidden-key rejection."
+        "status": "PASS"
       },
       {
         "test_id": "test_10_gas_mock_atomic_commit_concurrency_conflict_and_drive_self_healing",
         "status": "PASS",
-        "evidence": "Verified GAS LockService contention skip, pre-write rejection of forbidden `raw_transcript` key, atomic Git Database API commit + readback, 0 extra remote tree API calls on cached Run 2, automatic self-healing of Google Drive export Doc after simulated Run 1 Drive failure without duplicate GitHub commit, and safe HTTP 422 stop on branch divergence."
+        "evidence": "Mock server rejects commit_sha on `/git/trees/`; verifies Commit->Tree SHA resolution, GitHub SSOT `remote_branch_cache` reuse, Drive self-healing, and compact ScriptProperties (<1KB)."
+      },
+      {
+        "test_id": "test_11_pagination_truncated_tree_partial_scan_continuation_and_value_patterns",
+        "status": "PASS",
+        "evidence": "Verified 2-page `/branches` pagination, 30-file multi-run partial scan pause (Run 1: 5 remaining) and continuation (Run 2: detects `dQw4w9WgXcQ` in `notes/note_28.md` on page-2 branch), `truncated: true` tree immediate error stop, `saveBoundedRelayState` <= 7,500 byte trimming, and value-level secret/SRT/newline rejection in both Python and JS."
       }
     ]
   },

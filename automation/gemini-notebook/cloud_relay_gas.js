@@ -1,33 +1,33 @@
 /**
- * AI技術研究室 | Gemini Notebook -> Private GitHub Direct Cloud Bridge (Google Apps Script v0.4)
+ * AI技術研究室 | Gemini Notebook -> Private GitHub Direct Cloud Bridge (Google Apps Script v0.5)
  *
- * アーキテクチャ (v0.4 GASダイレクト検証・Git Database API単一アトミック保存方式):
- *   GitHub Actions (`repository_dispatch` / `on: push`) を介さず、Google Apps Script (GAS) 単体で:
- *     1. Google Drive Inbox フォルダ内の未処理 Receipt (Google Docs / .json / .md / .txt) を検知
- *     2. `receipt_to_research.py` (v0.4) と100%同一の共通契約 (`contract_spec_v1.json`) に基づき、
- *        スキーマ検証・禁止キー拒否（字幕全文・機密情報の混入防止）・正規化SHA-256計算を実行
- *     3. GitHub REST API (Branches + Git Trees API) とブランチCommit SHAキャッシュを用い、
- *        実行時間制限（6分）に余裕をもって全ブランチ横断の重複検査（registry.json + ファイル名 + 未走査本文）を実行
- *     4. Git Database API (`POST /git/blobs` -> `POST /git/trees` -> `POST /git/commits` ->
- *        `PATCH /git/refs/heads/<branch>` with `force: false`) により、検証合格データのみを
- *        非defaultブランチへ **1回の単一アトミックコミット** で直接保存（`main` は一切変更しない）
- *     5. 直後に Remote Readback（Commit SHA および全ファイルの Git Blob SHA 一致確認）を実施
- *     6. GitHub保存成功後に Google Drive 側の知識索引ドキュメント更新が失敗しても、
- *        `pendingDriveSync` / `lastGitHubCommitSha` vs `lastDriveSyncedCommitSha` の2フェーズ状態管理と
- *        GitHub正本 (`loop_state.json`) からの自己修復 (Self-Healing Reconciliation) により、
- *        次回実行時に重複コミットなしで Drive 側のみを安全に復旧する。
- *
- * 認証キー (Fine-grained PAT) の権限境界に関する重要な区別 (懸念C対策):
- *   - GitHub の Fine-grained PAT (`Contents: Read and Write`) はリポジトリ単位で付与されるため、
- *     トークン自体の仕様だけでは特定のブランチのみに書込みを制限できない場合がある。
- *   - 本スクリプトは【アプリケーション層ガード】として `FORBIDDEN_BRANCHES = ["main", "master"]` と
- *     Ref プレフィックス検査を強制し、`main` へのリクエスト生成自体を拒否する。
- *   - これとは別に【GitHubサーバー層ガード】として、GitHub 側の Branch Protection / Ruleset の状態を
- *     API で確認し、`main_branch_server_protected` として証拠レポートに明記する。
+ * v0.5 における5つの重要改善（別AI独立コードレビュー指摘への完全対応）:
+ *   1. GAS ScriptProperties 9KB上限の厳格保護（GitHub正本SSOT化）:
+ *      - 処理済みReceipt履歴 (`processed_receipts`) と完了済みリモートブランチキャッシュ (`remote_branch_cache`) は
+ *        GitHub正本の `automation/gemini-notebook/state/loop_state.json` 側に保存・参照する。
+ *      - GAS の `ScriptProperties` (`RELAY_STATE_V1`) には最小限の揮発制御情報（`lastGitHubCommitSha`,
+ *        `lastDriveSyncedCommitSha`, `pendingDriveSync`, 直近のNo-Opダイジェスト最大20件、停止記録最大10件、
+ *        未完走スキャンの再開カーソル）のみを保持し、`saveBoundedRelayState_()` で7.5KB以下に強制制限する。
+ *   2. 重複検出の完全性保証（ページネーション・Tree truncated検知・分割継続スキャン）:
+ *      - `/branches?per_page=100&page=N` を最終ページまで全件ページネーション取得する。
+ *      - Git Trees API の `truncated === true` を検知した場合は不完全な照合を拒否して即座に安全停止する。
+ *      - 1実行あたりのMarkdown本文Blob読取上限 (`max_blob_fetches_per_run = 25`) に達して未調査ファイルが残った場合、
+ *        そのブランチを完了扱い (`scan_complete: true`) にせず、`partialScanProgress` に調査済みパスを記録して
+ *        当該実行ではGitHubコミットを保留 (`PAUSED_INCOMPLETE_DEDUP_SCAN_CONTINUES_NEXT_RUN`) し、次回実行で残りを継続走査する。
+ *   3. GitHub REST API 公式仕様との完全一致（Commit SHA -> Tree SHA 解決）:
+ *      - 対象ブランチだけでなく、すべての他ブランチでも必ず `GET /git/commits/{commit_sha}` から
+ *        `tree.sha` を取得したうえで `GET /git/trees/{tree_sha}?recursive=1` を呼び出す。
+ *      - 他ブランチのCommit/Tree取得失敗時に無言で `continue` せず、即座にエラー停止する。
+ *   4. 文字列値に対する秘密情報・字幕転載パターン検査と限界の明示:
+ *      - 禁止キー名だけでなく、すべての文字列フィールドに対してトークン文字列（`ghp_`, `github_pat_`, `AIza`, `sk-`,
+ *        `PRIVATE KEY`, `Bearer` 等）、SRT/WebVTT字幕タイムコード、3行連続タイムスタンプ文字起こし、
+ *        および過剰な改行（4改行以上）を検査してブロックする。
+ *      - ※ただし、タイムスタンプを持たない300字以内の短い丸写しや未知形式の秘匿文字列は機械検査だけでは100%防げないため、
+ *        必ず非defaultブランチ（Draft PR）へ隔離保存し、人間の最終レビューを経る設計とする。
  */
 
 const CONTRACT_SPEC_V1 = {
-  contract_version: "gemini_notebook_bridge_contract_v1_4",
+  contract_version: "gemini_notebook_bridge_contract_v1_5",
   receipt_schema_version: "research_receipt_v1",
   loop_state_schema_version: "gemini_notebook_loop_state_v1",
   expected_repo: "kamiyusense/ai-video-research",
@@ -67,6 +67,43 @@ const CONTRACT_SPEC_V1 = {
     "password",
     "authorization",
   ],
+  forbidden_value_patterns: [
+    {
+      id: "GITHUB_TOKEN",
+      pattern: "\\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\\b|\\bgithub_pat_[A-Za-z0-9_]{20,}\\b",
+      description: "GitHub Personal Access Token or OAuth token",
+    },
+    {
+      id: "GOOGLE_API_OR_OAUTH_TOKEN",
+      pattern: "\\bAIza[0-9A-Za-z_-]{30,}\\b|\\bya29\\.[0-9A-Za-z_-]{20,}\\b",
+      description: "Google API key or OAuth access token",
+    },
+    {
+      id: "LLM_OR_SAAS_SECRET_KEY",
+      pattern: "\\bsk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}\\b|\\bxox[baprs]-[0-9A-Za-z-]{10,}\\b",
+      description: "OpenAI, Anthropic, or Slack secret token",
+    },
+    {
+      id: "PRIVATE_KEY_BLOCK",
+      pattern: "-----BEGIN [A-Z ]*PRIVATE KEY-----",
+      description: "PEM private key block",
+    },
+    {
+      id: "BEARER_AUTH_HEADER",
+      pattern: "\\bBearer\\s+[A-Za-z0-9._~+/=-]{20,}\\b",
+      description: "Bearer authorization token string",
+    },
+    {
+      id: "SUBTITLE_TIMECODE_BLOCK",
+      pattern: "\\bWEBVTT\\b|\\d{1,2}:\\d{2}:\\d{2}[.,]\\d{3}\\s*-->\\s*\\d{1,2}:\\d{2}:\\d{2}",
+      description: "WebVTT or SRT subtitle timecode dump",
+    },
+    {
+      id: "MULTILINE_TIMESTAMP_TRANSCRIPT",
+      pattern: "(?:^|\\n)\\s*\\[?\\d{1,2}:\\d{2}(?::\\d{2})?\\]?\\s+[^\\n]+\\n\\s*\\[?\\d{1,2}:\\d{2}(?::\\d{2})?\\]?\\s+[^\\n]+\\n\\s*\\[?\\d{1,2}:\\d{2}(?::\\d{2})?\\]?\\s+",
+      description: "3+ consecutive timestamped transcript lines",
+    },
+  ],
   limits: {
     max_videos_per_receipt: 20,
     max_claims_per_video: 12,
@@ -74,6 +111,7 @@ const CONTRACT_SPEC_V1 = {
     max_summary_ja_length: 300,
     max_source_scope_length: 180,
     max_claim_text_length: 500,
+    max_newlines_per_text_field: 3,
     max_next_topics_count: 10,
     max_next_topic_length: 300,
     max_unknowns_count: 20,
@@ -81,6 +119,9 @@ const CONTRACT_SPEC_V1 = {
     max_next_topics_queue: 15,
     max_open_unknowns_queue: 25,
     max_blob_fetches_per_run: 25,
+    max_script_property_bytes: 7500,
+    max_recent_noop_digests: 20,
+    max_halted_receipts: 10,
   },
   unresolved_backlog_defaults: [
     {
@@ -112,12 +153,95 @@ const BODY_VID_PATTERNS = [
   /^###\s+\d+[｜|]([A-Za-z0-9_-]{11})\s*$/gm,
   /^\s*-\s*`([A-Za-z0-9_-]{11})`:\s+/gm,
 ];
+const COMPILED_FORBIDDEN_VALUE_PATTERNS = CONTRACT_SPEC_V1.forbidden_value_patterns.map(
+  function (item) {
+    return {
+      id: item.id,
+      regex: new RegExp(item.pattern, "m"),
+    };
+  }
+);
 
 function clean_(s) {
   return String(s == null ? "" : s)
     .replace(/\n/g, " ")
     .replace(/\r/g, " ")
     .trim();
+}
+
+function utf8ByteLength_(str) {
+  const s = String(str || "");
+  if (typeof Utilities !== "undefined" && Utilities.newBlob) {
+    return Utilities.newBlob(s, "text/plain").getBytes().length;
+  }
+  if (typeof Buffer !== "undefined") {
+    return Buffer.byteLength(s, "utf8");
+  }
+  return unescape(encodeURIComponent(s)).length;
+}
+
+/**
+ * 問題1対策: GAS ScriptProperties の1値9KB制限を絶対に超えないよう、サイズを検査・トリムして保存する
+ */
+function saveBoundedRelayState_(props, relayState) {
+  const lim = CONTRACT_SPEC_V1.limits;
+  if (!Array.isArray(relayState.recentNoOpDigests)) {
+    relayState.recentNoOpDigests = [];
+  }
+  if (relayState.recentNoOpDigests.length > lim.max_recent_noop_digests) {
+    relayState.recentNoOpDigests = relayState.recentNoOpDigests.slice(
+      -lim.max_recent_noop_digests
+    );
+  }
+  if (!relayState.haltedReceipts || typeof relayState.haltedReceipts !== "object") {
+    relayState.haltedReceipts = {};
+  }
+  const haltedKeys = Object.keys(relayState.haltedReceipts);
+  if (haltedKeys.length > lim.max_halted_receipts) {
+    const keepKeys = haltedKeys.slice(-lim.max_halted_receipts);
+    const trimmedHalted = {};
+    for (let i = 0; i < keepKeys.length; i++) {
+      trimmedHalted[keepKeys[i]] = relayState.haltedReceipts[keepKeys[i]];
+    }
+    relayState.haltedReceipts = trimmedHalted;
+  }
+
+  let serialized = JSON.stringify(relayState);
+  let byteLen = utf8ByteLength_(serialized);
+
+  // 万が一 7,500 bytes (9KB上限に対して安全マージン確保) を超える場合は古い一時キャッシュから順に削減
+  while (byteLen > lim.max_script_property_bytes) {
+    if (relayState.recentNoOpDigests.length > 0) {
+      relayState.recentNoOpDigests.shift();
+    } else if (Object.keys(relayState.haltedReceipts).length > 1) {
+      const firstKey = Object.keys(relayState.haltedReceipts)[0];
+      delete relayState.haltedReceipts[firstKey];
+    } else if (
+      relayState.partialScanProgress &&
+      Object.keys(relayState.partialScanProgress).length > 0
+    ) {
+      const pKeys = Object.keys(relayState.partialScanProgress);
+      const targetPKey = pKeys[0];
+      const pEntry = relayState.partialScanProgress[targetPKey];
+      if (pEntry && Array.isArray(pEntry.videos) && pEntry.videos.length > 10) {
+        pEntry.videos = pEntry.videos.slice(-10);
+      } else {
+        delete relayState.partialScanProgress[targetPKey];
+      }
+    } else {
+      break;
+    }
+    serialized = JSON.stringify(relayState);
+    byteLen = utf8ByteLength_(serialized);
+  }
+
+  if (byteLen > 8800) {
+    throw new Error(
+      "RELAY_STATE_V1 exceeds safe ScriptProperties byte limit (" + byteLen + " bytes)"
+    );
+  }
+  props.setProperty("RELAY_STATE_V1", serialized);
+  return byteLen;
 }
 
 function validUrl_(value) {
@@ -282,14 +406,31 @@ function computeCanonicalSha256_(obj) {
       })
       .join("");
   }
-  // Node.js fallback for automated cross-language parity verification
   const crypto = require("crypto");
   return crypto.createHash("sha256").update(canonicalJson, "utf8").digest("hex");
 }
 
+/**
+ * 問題5対策: 禁止キー名だけでなく、すべての文字列値に対して秘密情報パターン・字幕タイムコード・文字起こし塊を検査する
+ */
 function scanForbiddenKeys_(val, path) {
   const curPath = path || "root";
-  if (!val || typeof val !== "object") return;
+  if (val === null || val === undefined) return;
+  if (typeof val === "string") {
+    for (let i = 0; i < COMPILED_FORBIDDEN_VALUE_PATTERNS.length; i++) {
+      const rule = COMPILED_FORBIDDEN_VALUE_PATTERNS[i];
+      if (rule.regex.test(val)) {
+        throw new Error(
+          "Forbidden content pattern (" +
+            rule.id +
+            ") in receipt payload at " +
+            curPath
+        );
+      }
+    }
+    return;
+  }
+  if (typeof val !== "object") return;
   if (Array.isArray(val)) {
     for (let i = 0; i < val.length; i++) {
       scanForbiddenKeys_(val[i], curPath + "[" + i + "]");
@@ -319,6 +460,10 @@ function isValidIsoDate_(dateStr) {
     dt.getUTCMonth() === parts[1] - 1 &&
     dt.getUTCDate() === parts[2]
   );
+}
+
+function countNewlines_(s) {
+  return (String(s || "").match(/\n/g) || []).length;
 }
 
 function validateReceipt_(data) {
@@ -417,6 +562,11 @@ function validateReceipt_(data) {
     ) {
       throw new Error("Summary must contain 1-300 characters");
     }
+    if (countNewlines_(v.summary_ja) > lim.max_newlines_per_text_field) {
+      throw new Error(
+        "Summary contains too many line breaks (possible transcript dump)"
+      );
+    }
     if (
       typeof v.source_scope !== "string" ||
       v.source_scope.length > lim.max_source_scope_length
@@ -448,6 +598,11 @@ function validateReceipt_(data) {
         c.text.length > lim.max_claim_text_length
       ) {
         throw new Error("Invalid claim");
+      }
+      if (countNewlines_(c.text) > lim.max_newlines_per_text_field) {
+        throw new Error(
+          "Claim text contains too many line breaks (possible transcript dump)"
+        );
       }
       if (CONTRACT_SPEC_V1.allowed_statuses.indexOf(c.status) === -1) {
         throw new Error("Invalid claim status");
@@ -779,9 +934,6 @@ function renderGitHubKnowledgeIndexExportMd_(
   return lines.join("\n");
 }
 
-/**
- * GitHub API ヘルパー (retry=0 / muteHttpExceptions=true)
- */
 function githubApiRequest_(token, method, endpointPath, payloadObj, acceptHeader, customFetcher) {
   const fetcher = customFetcher || (typeof UrlFetchApp !== "undefined" ? UrlFetchApp : null);
   if (!fetcher) {
@@ -839,36 +991,62 @@ function verifyTargetBranchBoundary_(targetBranch) {
 }
 
 /**
- * 懸念B対策: Git Trees API とブランチCommit SHAキャッシュを用いた省通信・高速な全ブランチ横断重複照合
+ * 問題1・問題2・問題3への完全対応:
+ *   - `/branches` の全ページ取得 (per_page=100 & page=1,2,...)
+ *   - 全ブランチで公式仕様通り `GET /git/commits/{commit_sha}` から `tree.sha` を解決して `GET /git/trees/{tree_sha}?recursive=1` を呼ぶ
+ *   - `tree.truncated === true` 時は不完全照合を拒否して即座に例外停止
+ *   - GitHub正本の `loop_state.json.remote_branch_cache` (SSOT) と GASの一時再開カーソル `partialScanProgress` を組み合わせ、
+ *     `max_blob_fetches_per_run` (25件) で打ち切った場合は `dedupScanComplete = false` として次回実行へ進捗を引き継ぐ（未完走のままPASSにしない）
  */
-function collectGitHubRepositoryState_(token, targetBranch, branchCache, customFetcher) {
+function collectGitHubRepositoryState_(
+  token,
+  targetBranch,
+  partialScanProgress,
+  customFetcher
+) {
   const owner = CONTRACT_SPEC_V1.expected_repo_owner;
   const repo = CONTRACT_SPEC_V1.expected_repo_name;
   const baseRepoPath = "/repos/" + owner + "/" + repo;
 
-  // 1. 全ブランチ一覧と最新Commit SHAを1回のAPI呼出しで取得
-  const branchesRes = githubApiRequest_(
-    token,
-    "get",
-    baseRepoPath + "/branches?per_page=100",
-    null,
-    null,
-    customFetcher
-  );
-  if (branchesRes.code !== 200 || !Array.isArray(branchesRes.json)) {
-    throw new Error(
-      "Failed to fetch fresh remote branches from GitHub API (HTTP " +
-        branchesRes.code +
-        "): refusing to trust stale state"
+  // 1. 全ブランチ一覧を最終ページまでページネーション取得 (問題2対策)
+  const allBranchesRaw = [];
+  let page = 1;
+  while (true) {
+    const branchesRes = githubApiRequest_(
+      token,
+      "get",
+      baseRepoPath + "/branches?per_page=100&page=" + page,
+      null,
+      null,
+      customFetcher
     );
+    if (branchesRes.code !== 200 || !Array.isArray(branchesRes.json)) {
+      throw new Error(
+        "Failed to fetch fresh remote branches (page " +
+          page +
+          ", HTTP " +
+          branchesRes.code +
+          "): refusing to trust stale state"
+      );
+    }
+    for (let i = 0; i < branchesRes.json.length; i++) {
+      allBranchesRaw.push(branchesRes.json[i]);
+    }
+    if (branchesRes.json.length < 100) {
+      break;
+    }
+    page += 1;
+    if (page > 50) {
+      throw new Error("Exceeded safe branch pagination limit (>5000 branches)");
+    }
   }
 
   let mainBranchServerProtected = false;
   let targetBranchCommitSha = null;
   const remoteBranches = [];
 
-  for (let i = 0; i < branchesRes.json.length; i++) {
-    const b = branchesRes.json[i];
+  for (let i = 0; i < allBranchesRaw.length; i++) {
+    const b = allBranchesRaw[i];
     if (b.name === "main") {
       mainBranchServerProtected = Boolean(b.protected);
     }
@@ -887,38 +1065,57 @@ function collectGitHubRepositoryState_(token, targetBranch, branchCache, customF
     throw new Error("Target branch not found on GitHub: " + targetBranch);
   }
 
-  // 2. TargetブランチのCommit情報（baseTreeSha）とRecursive Treeを1回で取得
-  const commitRes = githubApiRequest_(
-    token,
-    "get",
-    baseRepoPath + "/git/commits/" + targetBranchCommitSha,
-    null,
-    null,
-    customFetcher
-  );
-  if (commitRes.code !== 200 || !commitRes.json || !commitRes.json.tree) {
-    throw new Error("Failed to read target branch commit: HTTP " + commitRes.code);
-  }
-  const baseTreeSha = commitRes.json.tree.sha;
-
-  const targetTreeRes = githubApiRequest_(
-    token,
-    "get",
-    baseRepoPath + "/git/trees/" + baseTreeSha + "?recursive=1",
-    null,
-    null,
-    customFetcher
-  );
-  if (targetTreeRes.code !== 200 || !targetTreeRes.json || !Array.isArray(targetTreeRes.json.tree)) {
-    throw new Error("Failed to read target branch git tree: HTTP " + targetTreeRes.code);
-  }
-
-  const targetFilesByPath = {};
-  for (let i = 0; i < targetTreeRes.json.tree.length; i++) {
-    const item = targetTreeRes.json.tree[i];
-    if (item.type === "blob") {
-      targetFilesByPath[item.path] = item.sha;
+  function resolveCommitTreeSha(commitSha, branchLabel) {
+    const cRes = githubApiRequest_(
+      token,
+      "get",
+      baseRepoPath + "/git/commits/" + commitSha,
+      null,
+      null,
+      customFetcher
+    );
+    if (cRes.code !== 200 || !cRes.json || !cRes.json.tree || !cRes.json.tree.sha) {
+      throw new Error(
+        "Failed to resolve git commit tree SHA for " +
+          branchLabel +
+          " (" +
+          commitSha +
+          "): HTTP " +
+          cRes.code
+      );
     }
+    return cRes.json.tree.sha;
+  }
+
+  function fetchRecursiveTreeByTreeSha(treeSha, branchLabel) {
+    const tRes = githubApiRequest_(
+      token,
+      "get",
+      baseRepoPath + "/git/trees/" + treeSha + "?recursive=1",
+      null,
+      null,
+      customFetcher
+    );
+    if (tRes.code !== 200 || !tRes.json || !Array.isArray(tRes.json.tree)) {
+      throw new Error(
+        "Failed to read git tree for " +
+          branchLabel +
+          " (" +
+          treeSha +
+          "): HTTP " +
+          tRes.code
+      );
+    }
+    if (tRes.json.truncated === true) {
+      throw new Error(
+        "Git tree for " +
+          branchLabel +
+          " (" +
+          treeSha +
+          ") is truncated (exceeds GitHub recursive tree limit); refusing incomplete duplicate detection"
+      );
+    }
+    return tRes.json.tree;
   }
 
   function fetchBlobTextBySha(blobSha) {
@@ -936,7 +1133,19 @@ function collectGitHubRepositoryState_(token, targetBranch, branchCache, customF
     return decodeGitBlobText_(bRes.json);
   }
 
-  // 3. Targetブランチの registry.json と loop_state.json を取得・検証
+  // 2. TargetブランチのCommit -> Tree SHA解決とRecursive Tree取得 (truncated検査付き)
+  const baseTreeSha = resolveCommitTreeSha(targetBranchCommitSha, targetBranch);
+  const targetTreeItems = fetchRecursiveTreeByTreeSha(baseTreeSha, targetBranch);
+
+  const targetFilesByPath = {};
+  for (let i = 0; i < targetTreeItems.length; i++) {
+    const item = targetTreeItems[i];
+    if (item.type === "blob") {
+      targetFilesByPath[item.path] = item.sha;
+    }
+  }
+
+  // 3. Targetブランチの registry.json と loop_state.json (GitHub正本SSOT) を取得・検証
   if (!targetFilesByPath["registry.json"]) {
     throw new Error("registry.json missing on target branch " + targetBranch);
   }
@@ -969,7 +1178,20 @@ function collectGitHubRepositoryState_(token, targetBranch, branchCache, customF
     loopState = defaultInitialLoopState_();
   }
 
-  // 4. Targetブランチ内の localMap と既存 research/*.md 一覧を構築（ファイル名優先＋必要時のみBlob読取）
+  const githubBranchCache =
+    loopState.remote_branch_cache && typeof loopState.remote_branch_cache === "object"
+      ? JSON.parse(JSON.stringify(loopState.remote_branch_cache))
+      : {};
+  const nextPartialProgress =
+    partialScanProgress && typeof partialScanProgress === "object"
+      ? JSON.parse(JSON.stringify(partialScanProgress))
+      : {};
+
+  let blobFetchesUsed = 0;
+  const maxBlobFetches = CONTRACT_SPEC_V1.limits.max_blob_fetches_per_run;
+  let remainingUnscannedFiles = 0;
+
+  // 4. Targetブランチ内の localMap 構築（未走査本文があれば分割継続カーソルを利用）
   const localMap = {};
   const existingResearchMdByVid = {};
   for (let i = 0; i < registry.records.length; i++) {
@@ -984,9 +1206,24 @@ function collectGitHubRepositoryState_(token, targetBranch, branchCache, customF
     }
   }
 
-  let blobFetchesUsed = 0;
-  const maxBlobFetches = CONTRACT_SPEC_V1.limits.max_blob_fetches_per_run;
+  const targetProgressKey = "target:" + targetBranch;
+  let targetPartial = nextPartialProgress[targetProgressKey];
+  if (!targetPartial || targetPartial.commit_sha !== targetBranchCommitSha) {
+    targetPartial = {
+      commit_sha: targetBranchCommitSha,
+      scanned_paths: {},
+      videos: [],
+    };
+  }
+  for (let i = 0; i < targetPartial.videos.length; i++) {
+    const pv = targetPartial.videos[i];
+    if (pv && pv.video_id && !localMap[pv.video_id]) {
+      localMap[pv.video_id] = pv;
+    }
+  }
+
   const targetPaths = Object.keys(targetFilesByPath).sort();
+  let targetAllBodiesScanned = true;
   for (let i = 0; i < targetPaths.length; i++) {
     const relPath = targetPaths[i];
     if (
@@ -1010,113 +1247,135 @@ function collectGitHubRepositoryState_(token, targetBranch, branchCache, customF
         };
       }
     }
-    // notes/*.md またはファイル名からIDが取れない research/*.md のみ本文を走査
     if (relPath.startsWith("notes/") || !mName) {
+      if (targetPartial.scanned_paths[relPath]) {
+        continue;
+      }
       if (blobFetchesUsed < maxBlobFetches) {
         blobFetchesUsed += 1;
         const body = fetchBlobTextBySha(targetFilesByPath[relPath]);
         const bodyVids = extractVideoIdsFromMarkdownText_(body);
         for (let k = 0; k < bodyVids.length; k++) {
           const bVid = bodyVids[k];
+          const vEntry = {
+            video_id: bVid,
+            source: "body:" + relPath,
+            research_path: relPath,
+            status: "REFERENCED_IN_RESEARCH_OR_NOTE_BODY",
+          };
+          targetPartial.videos.push(vEntry);
           if (!localMap[bVid]) {
-            localMap[bVid] = {
-              video_id: bVid,
-              source: "body:" + relPath,
-              research_path: relPath,
-              status: "REFERENCED_IN_RESEARCH_OR_NOTE_BODY",
-            };
+            localMap[bVid] = vEntry;
           }
         }
+        targetPartial.scanned_paths[relPath] = true;
+      } else {
+        targetAllBodiesScanned = false;
+        remainingUnscannedFiles += 1;
       }
     }
   }
+  if (targetAllBodiesScanned) {
+    delete nextPartialProgress[targetProgressKey];
+  } else {
+    nextPartialProgress[targetProgressKey] = targetPartial;
+  }
 
-  // 5. 他ブランチ (origin/*) の増分キャッシュ照合
+  // 5. 他ブランチ (origin/*) の完全性保証付き照合（問題2・問題3対策）
   const remoteMap = {};
-  const cacheObj = branchCache || {};
   remoteBranches.sort(function (a, b) {
     return a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0;
   });
 
+  function mergeRemoteEntry(ref, entry) {
+    const vid = entry.video_id;
+    if (!vid || !VIDEO_ID_RE.test(vid)) return;
+    if (!remoteMap[vid]) {
+      remoteMap[vid] = {
+        video_id: vid,
+        canonical_url: entry.canonical_url || canonicalYoutubeUrl_(vid),
+        research_path: entry.research_path || "",
+        status: entry.status || "UNKNOWN",
+        detected_via: entry.detected_via || "remote",
+        branches: [],
+      };
+    }
+    if (remoteMap[vid].branches.indexOf(ref) === -1) {
+      remoteMap[vid].branches.push(ref);
+    }
+  }
+
   for (let i = 0; i < remoteBranches.length; i++) {
     const rb = remoteBranches[i];
-    const cached = cacheObj[rb.ref];
-    if (cached && cached.commit_sha === rb.commitSha && Array.isArray(cached.videos)) {
+    const cached = githubBranchCache[rb.ref];
+    // 完全走査済み (scan_complete === true) かつ同一 Commit SHA の場合のみキャッシュヒットとする
+    if (
+      cached &&
+      cached.commit_sha === rb.commitSha &&
+      cached.scan_complete === true &&
+      Array.isArray(cached.videos)
+    ) {
       for (let j = 0; j < cached.videos.length; j++) {
-        const entry = cached.videos[j];
-        if (!remoteMap[entry.video_id]) {
-          remoteMap[entry.video_id] = {
-            video_id: entry.video_id,
-            canonical_url: entry.canonical_url || canonicalYoutubeUrl_(entry.video_id),
-            research_path: entry.research_path || "",
-            status: entry.status || "UNKNOWN",
-            detected_via: entry.detected_via || "cache",
-            branches: [],
-          };
-        }
-        if (remoteMap[rb.ref] === undefined && remoteMap[entry.video_id].branches.indexOf(rb.ref) === -1) {
-          remoteMap[entry.video_id].branches.push(rb.ref);
-        }
+        mergeRemoteEntry(rb.ref, cached.videos[j]);
       }
+      delete nextPartialProgress[rb.ref];
       continue;
     }
 
-    // キャッシュ未ヒット時: そのブランチのGit Treeを1回のAPIで取得
-    const rbTreeRes = githubApiRequest_(
-      token,
-      "get",
-      baseRepoPath + "/git/trees/" + rb.commitSha + "?recursive=1",
-      null,
-      null,
-      customFetcher
-    );
-    if (rbTreeRes.code !== 200 || !rbTreeRes.json || !Array.isArray(rbTreeRes.json.tree)) {
-      continue;
-    }
-    const rbEntries = {};
+    // 問題3対策: 必ず Commit SHA から公式の Tree SHA を解決してから Git Tree を取得する
+    const rbTreeSha = resolveCommitTreeSha(rb.commitSha, rb.ref);
+    const rbTreeItems = fetchRecursiveTreeByTreeSha(rbTreeSha, rb.ref);
+
     const rbBlobs = {};
-    for (let j = 0; j < rbTreeRes.json.tree.length; j++) {
-      const tItem = rbTreeRes.json.tree[j];
+    for (let j = 0; j < rbTreeItems.length; j++) {
+      const tItem = rbTreeItems[j];
       if (tItem.type === "blob") {
         rbBlobs[tItem.path] = tItem.sha;
       }
     }
 
-    if (rbBlobs["registry.json"]) {
+    let rbPartial = nextPartialProgress[rb.ref];
+    if (!rbPartial || rbPartial.commit_sha !== rb.commitSha) {
+      rbPartial = {
+        commit_sha: rb.commitSha,
+        tree_sha: rbTreeSha,
+        registry_scanned: false,
+        scanned_paths: {},
+        videos_by_id: {},
+      };
+    }
+
+    if (rbBlobs["registry.json"] && !rbPartial.registry_scanned) {
+      const rbRegRaw = fetchBlobTextBySha(rbBlobs["registry.json"]);
+      let rbReg;
       try {
-        const rbReg = JSON.parse(fetchBlobTextBySha(rbBlobs["registry.json"]));
-        const recs = rbReg.records || [];
-        for (let j = 0; j < recs.length; j++) {
-          const rec = recs[j];
-          if (rec && VIDEO_ID_RE.test(String(rec.video_id || ""))) {
-            const vid = rec.video_id;
-            const entry = {
+        rbReg = JSON.parse(rbRegRaw);
+      } catch (e) {
+        throw new Error(
+          "Corrupted registry.json on remote branch " + rb.ref + ": " + e.message
+        );
+      }
+      const recs = rbReg.records || [];
+      for (let j = 0; j < recs.length; j++) {
+        const rec = recs[j];
+        if (rec && VIDEO_ID_RE.test(String(rec.video_id || ""))) {
+          const vid = rec.video_id;
+          if (!rbPartial.videos_by_id[vid]) {
+            rbPartial.videos_by_id[vid] = {
               video_id: vid,
               canonical_url: rec.canonical_url || canonicalYoutubeUrl_(vid),
               research_path: rec.research_path || "",
               status: rec.status || "UNKNOWN",
               detected_via: "registry.json",
             };
-            if (!rbEntries[vid]) rbEntries[vid] = entry;
-            if (!remoteMap[vid]) {
-              remoteMap[vid] = {
-                video_id: vid,
-                canonical_url: entry.canonical_url,
-                research_path: entry.research_path,
-                status: entry.status,
-                detected_via: entry.detected_via,
-                branches: [],
-              };
-            }
-            if (remoteMap[vid].branches.indexOf(rb.ref) === -1) {
-              remoteMap[vid].branches.push(rb.ref);
-            }
           }
         }
-      } catch (e) {}
+      }
+      rbPartial.registry_scanned = true;
     }
 
     const rbPaths = Object.keys(rbBlobs).sort();
+    let rbAllScanned = true;
     for (let j = 0; j < rbPaths.length; j++) {
       const relPath = rbPaths[j];
       if (
@@ -1128,66 +1387,68 @@ function collectGitHubRepositoryState_(token, targetBranch, branchCache, customF
       const mName = relPath.match(FILENAME_VID_RE);
       if (mName) {
         const vid = mName[1];
-        const entry = {
-          video_id: vid,
-          canonical_url: canonicalYoutubeUrl_(vid),
-          research_path: relPath,
-          status: "REMOTE_RESEARCH_FILE",
-          detected_via: "filename:" + relPath,
-        };
-        if (!rbEntries[vid]) rbEntries[vid] = entry;
-        if (!remoteMap[vid]) {
-          remoteMap[vid] = {
+        if (!rbPartial.videos_by_id[vid]) {
+          rbPartial.videos_by_id[vid] = {
             video_id: vid,
-            canonical_url: entry.canonical_url,
-            research_path: entry.research_path,
-            status: entry.status,
-            detected_via: entry.detected_via,
-            branches: [],
+            canonical_url: canonicalYoutubeUrl_(vid),
+            research_path: relPath,
+            status: "REMOTE_RESEARCH_FILE",
+            detected_via: "filename:" + relPath,
           };
-        }
-        if (remoteMap[vid].branches.indexOf(rb.ref) === -1) {
-          remoteMap[vid].branches.push(rb.ref);
         }
       }
-      if ((relPath.startsWith("notes/") || !mName) && blobFetchesUsed < maxBlobFetches) {
-        blobFetchesUsed += 1;
-        const body = fetchBlobTextBySha(rbBlobs[relPath]);
-        const bodyVids = extractVideoIdsFromMarkdownText_(body);
-        for (let k = 0; k < bodyVids.length; k++) {
-          const bVid = bodyVids[k];
-          const entry = {
-            video_id: bVid,
-            canonical_url: canonicalYoutubeUrl_(bVid),
-            research_path: relPath,
-            status: "REMOTE_MARKDOWN_REFERENCE",
-            detected_via: "body:" + relPath,
-          };
-          if (!rbEntries[bVid]) rbEntries[bVid] = entry;
-          if (!remoteMap[bVid]) {
-            remoteMap[bVid] = {
-              video_id: bVid,
-              canonical_url: entry.canonical_url,
-              research_path: entry.research_path,
-              status: entry.status,
-              detected_via: entry.detected_via,
-              branches: [],
-            };
+      if (relPath.startsWith("notes/") || !mName) {
+        if (rbPartial.scanned_paths[relPath]) {
+          continue;
+        }
+        if (blobFetchesUsed < maxBlobFetches) {
+          blobFetchesUsed += 1;
+          const body = fetchBlobTextBySha(rbBlobs[relPath]);
+          const bodyVids = extractVideoIdsFromMarkdownText_(body);
+          for (let k = 0; k < bodyVids.length; k++) {
+            const bVid = bodyVids[k];
+            if (!rbPartial.videos_by_id[bVid]) {
+              rbPartial.videos_by_id[bVid] = {
+                video_id: bVid,
+                canonical_url: canonicalYoutubeUrl_(bVid),
+                research_path: relPath,
+                status: "REMOTE_MARKDOWN_REFERENCE",
+                detected_via: "body:" + relPath,
+              };
+            }
           }
-          if (remoteMap[bVid].branches.indexOf(rb.ref) === -1) {
-            remoteMap[bVid].branches.push(rb.ref);
-          }
+          rbPartial.scanned_paths[relPath] = true;
+        } else {
+          rbAllScanned = false;
+          remainingUnscannedFiles += 1;
         }
       }
     }
 
-    cacheObj[rb.ref] = {
-      commit_sha: rb.commitSha,
-      videos: Object.keys(rbEntries).map(function (k) {
-        return rbEntries[k];
-      }),
-    };
+    const rbVideoList = Object.keys(rbPartial.videos_by_id).map(function (k) {
+      return rbPartial.videos_by_id[k];
+    });
+    for (let j = 0; j < rbVideoList.length; j++) {
+      mergeRemoteEntry(rb.ref, rbVideoList[j]);
+    }
+
+    if (rbAllScanned) {
+      // 全対象ファイルの走査が完了した場合のみ scan_complete: true としてキャッシュ昇格する
+      githubBranchCache[rb.ref] = {
+        commit_sha: rb.commitSha,
+        tree_sha: rbTreeSha,
+        scan_complete: true,
+        videos: rbVideoList,
+      };
+      delete nextPartialProgress[rb.ref];
+    } else {
+      // 未調査ファイルが残っている場合は絶対に scan_complete: true にせず、次回へ進捗を引き継ぐ
+      nextPartialProgress[rb.ref] = rbPartial;
+    }
   }
+
+  const dedupScanComplete = remainingUnscannedFiles === 0;
+  loopState.remote_branch_cache = githubBranchCache;
 
   return {
     targetBranchCommitSha: targetBranchCommitSha,
@@ -1198,19 +1459,26 @@ function collectGitHubRepositoryState_(token, targetBranch, branchCache, customF
     localMap: localMap,
     existingResearchMdByVid: existingResearchMdByVid,
     remoteMap: remoteMap,
-    freshness: "FRESH_FETCHED",
+    freshness: dedupScanComplete ? "FRESH_FETCHED" : "INCOMPLETE_PARTIAL_SCAN",
+    dedupScanComplete: dedupScanComplete,
+    remainingUnscannedFiles: remainingUnscannedFiles,
+    partialScanProgress: nextPartialProgress,
     mainBranchServerProtected: mainBranchServerProtected,
     fetchBlobTextBySha: fetchBlobTextBySha,
-    branchCache: cacheObj,
   };
 }
 
-/**
- * Receipt 1件を検証し、更新対象ファイル群（インメモリ）を計算する純粋パイプライン
- */
 function planReceiptApplication_(data, repoState) {
   const videos = validateReceipt_(data);
   const digest = computeCanonicalSha256_(data);
+
+  if (repoState.dedupScanComplete === false) {
+    throw new Error(
+      "Duplicate detection scan is incomplete (" +
+        repoState.remainingUnscannedFiles +
+        " unscanned markdown files remaining); refusing to treat deduplication as PASS"
+    );
+  }
 
   const registry = JSON.parse(JSON.stringify(repoState.registry));
   const loopState = JSON.parse(JSON.stringify(repoState.loopState));
@@ -1364,7 +1632,6 @@ function planReceiptApplication_(data, repoState) {
     filesToCommit["registry.json"] = JSON.stringify(registry, null, 2) + "\n";
   }
 
-  // loop_state.json と github_knowledge_index_export.md の更新
   loopState.last_updated = data.checked_at;
   loopState.notebook_internal_master_index_name =
     CONTRACT_SPEC_V1.notebook_internal_master_index_name;
@@ -1450,9 +1717,6 @@ function planReceiptApplication_(data, repoState) {
   };
 }
 
-/**
- * Git Database API により複数ファイルを1回の単一コミットで非defaultブランチに保存し、Readback検証を行う
- */
 function commitFilesAtomicallyToGitHub_(
   token,
   targetBranch,
@@ -1480,7 +1744,6 @@ function commitFilesAtomicallyToGitHub_(
   const expectedBlobShas = {};
   const treeEntries = [];
 
-  // 1. 各ファイルの UTF-8 Blob を作成
   for (let i = 0; i < filePaths.length; i++) {
     const path = filePaths[i];
     const blobRes = githubApiRequest_(
@@ -1505,7 +1768,6 @@ function commitFilesAtomicallyToGitHub_(
     });
   }
 
-  // 2. 新しい Git Tree を作成
   const treeRes = githubApiRequest_(
     token,
     "post",
@@ -1519,7 +1781,6 @@ function commitFilesAtomicallyToGitHub_(
   }
   const newTreeSha = treeRes.json.sha;
 
-  // 3. 単一の Git Commit を作成 (parents: [baseCommitSha])
   const newCommitRes = githubApiRequest_(
     token,
     "post",
@@ -1537,7 +1798,6 @@ function commitFilesAtomicallyToGitHub_(
   }
   const newCommitSha = newCommitRes.json.sha;
 
-  // 4. 非defaultブランチの Ref を force: false で更新 (競合時は HTTP 422 で安全停止、retry=0)
   const refEndpoint =
     baseRepoPath + "/git/refs/heads/" + encodeURI(cleanBranch);
   const patchRes = githubApiRequest_(
@@ -1567,7 +1827,6 @@ function commitFilesAtomicallyToGitHub_(
     };
   }
 
-  // 5. 即時 Remote Readback 検証 (ブランチHEAD SHA と 全ファイル Blob SHA の一致を確認)
   const readbackRefRes = githubApiRequest_(
     token,
     "get",
@@ -1634,9 +1893,6 @@ function commitFilesAtomicallyToGitHub_(
   };
 }
 
-/**
- * 懸念D対策: Google Drive 上の知識索引エクスポート用ドキュメントを更新し、失敗時は次回実行で自己修復する
- */
 function updateDriveExportDocSafely_(exportDocId, indexMarkdownText, customDocApp) {
   if (!exportDocId) {
     return {
@@ -1668,7 +1924,7 @@ function updateDriveExportDocSafely_(exportDocId, indexMarkdownText, customDocAp
 }
 
 /**
- * メインエントリ1: Google Drive の Inbox フォルダを走査し、GAS内で検証・重複照合・
+ * メインエントリ1: Google Drive の Inbox フォルダを走査し、GAS内で検証・完全重複照合・
  * GitHub非defaultブランチへの単一アトミック保存・Readback検証・Drive索引Doc自己修復同期までを完結させる。
  */
 function relayDriveReceiptsToGitHub(envOverrides) {
@@ -1710,27 +1966,38 @@ function relayDriveReceiptsToGitHub(envOverrides) {
       );
     }
 
+    // 問題1対策: RELAY_STATE_V1 は軽量な揮発状態のみを保持し、過去全履歴はGitHub正本の loop_state.json を参照する
     const stateJson = props.getProperty("RELAY_STATE_V1");
     let relayState = {
-      processedDigests: {},
-      haltedReceipts: {},
-      branchCache: {},
+      schemaVersion: "gas_relay_compact_state_v2",
       lastGitHubCommitSha: null,
       lastDriveSyncedCommitSha: null,
       pendingDriveSync: false,
+      recentNoOpDigests: [],
+      haltedReceipts: {},
+      partialScanProgress: {},
     };
     if (stateJson) {
       try {
-        relayState = JSON.parse(stateJson);
-        if (
-          !relayState ||
-          typeof relayState !== "object" ||
-          !relayState.processedDigests
-        ) {
+        const parsed = JSON.parse(stateJson);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
           throw new Error("Invalid RELAY_STATE_V1 structure");
         }
-        relayState.haltedReceipts = relayState.haltedReceipts || {};
-        relayState.branchCache = relayState.branchCache || {};
+        relayState.lastGitHubCommitSha = parsed.lastGitHubCommitSha || null;
+        relayState.lastDriveSyncedCommitSha = parsed.lastDriveSyncedCommitSha || null;
+        relayState.pendingDriveSync = Boolean(parsed.pendingDriveSync);
+        relayState.recentNoOpDigests = Array.isArray(parsed.recentNoOpDigests)
+          ? parsed.recentNoOpDigests
+          : [];
+        relayState.haltedReceipts =
+          parsed.haltedReceipts && typeof parsed.haltedReceipts === "object"
+            ? parsed.haltedReceipts
+            : {};
+        relayState.partialScanProgress =
+          parsed.partialScanProgress &&
+          typeof parsed.partialScanProgress === "object"
+            ? parsed.partialScanProgress
+            : {};
       } catch (e) {
         throw new Error(
           "Corrupted RELAY_STATE_V1 in ScriptProperties; refusing to reset state: " +
@@ -1750,15 +2017,27 @@ function relayDriveReceiptsToGitHub(envOverrides) {
     const files = folder.getFiles();
     const report = [];
 
-    // GitHubの現在状態と他ブランチ増分キャッシュを最初に1回取得
     let repoState = collectGitHubRepositoryState_(
       token,
       targetBranch,
-      relayState.branchCache,
+      relayState.partialScanProgress,
       customFetcher
     );
-    relayState.branchCache = repoState.branchCache;
+    relayState.partialScanProgress = repoState.partialScanProgress;
     relayState.lastGitHubCommitSha = repoState.targetBranchCommitSha;
+    const stateBytesAfterScan = saveBoundedRelayState_(props, relayState);
+
+    // 問題2対策: 未走査のMarkdown本文が残っている場合は、重複確認PASSとみなさず次回実行へ進捗を引き継いで安全一時停止する
+    if (!repoState.dedupScanComplete) {
+      return {
+        status: "PAUSED_INCOMPLETE_DEDUP_SCAN_CONTINUES_NEXT_RUN",
+        targetBranch: targetBranch,
+        dedupScanComplete: false,
+        remainingUnscannedFiles: repoState.remainingUnscannedFiles,
+        scriptPropertyBytesUsed: stateBytesAfterScan,
+        notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
+      };
+    }
 
     while (files.hasNext()) {
       const file = files.next();
@@ -1817,7 +2096,6 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         continue;
       }
 
-      // 検証と差分計画の作成（禁止キーや不正スキーマはここで拒否され、GitHubには一切送信されない）
       let plan = null;
       try {
         plan = planReceiptApplication_(receiptObj, repoState);
@@ -1831,18 +2109,14 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         continue;
       }
 
-      // 懸念D対策: 前回GitHubコミット成功後にGASが停止していた場合、GitHub正本の loop_state.json から自己修復
+      // GitHub正本の loop_state.json に既に記録されている場合は重複コミットせず、Drive同期が未完なら自己修復へ進む
       if (plan.alreadyRecordedInGitHubState) {
-        if (!relayState.processedDigests[digest]) {
-          relayState.processedDigests[digest] = {
-            healedAt: new Date().toISOString(),
-            sourceFile: name,
-            targetBranch: targetBranch,
-            githubWriteStatus: "HEALED_FROM_GITHUB_SSOT_ALREADY_COMMITTED",
-            notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
-          };
-          relayState.pendingDriveSync = Boolean(exportDocId);
-          props.setProperty("RELAY_STATE_V1", JSON.stringify(relayState));
+        if (
+          exportDocId &&
+          relayState.lastDriveSyncedCommitSha !== repoState.targetBranchCommitSha
+        ) {
+          relayState.pendingDriveSync = true;
+          saveBoundedRelayState_(props, relayState);
         }
         report.push({
           file: name,
@@ -1853,25 +2127,18 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         continue;
       }
 
-      if (relayState.processedDigests[digest]) {
+      if (relayState.recentNoOpDigests.indexOf(digest) !== -1) {
         report.push({
           file: name,
           digest: digest,
-          status: "SKIP_DUPLICATE_ALREADY_PROCESSED",
+          status: "SKIP_DUPLICATE_NOOP_RECEIPT",
         });
         continue;
       }
 
       if (plan.newRecordsCount === 0 && plan.updatedRecordsCount === 0) {
-        relayState.processedDigests[digest] = {
-          processedAt: new Date().toISOString(),
-          sourceFile: name,
-          targetBranch: targetBranch,
-          githubWriteStatus: "NO_NEW_OR_UPDATED_VIDEOS",
-          skipped: plan.skipped,
-          notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
-        };
-        props.setProperty("RELAY_STATE_V1", JSON.stringify(relayState));
+        relayState.recentNoOpDigests.push(digest);
+        saveBoundedRelayState_(props, relayState);
         report.push({
           file: name,
           digest: digest,
@@ -1898,10 +2165,9 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         relayState.haltedReceipts[digest] = {
           haltedAt: new Date().toISOString(),
           httpCode: commitRes.httpCode,
-          githubWriteStatus: commitRes.githubWriteStatus,
-          detail: commitRes.detail,
+          status: commitRes.githubWriteStatus,
         };
-        props.setProperty("RELAY_STATE_V1", JSON.stringify(relayState));
+        saveBoundedRelayState_(props, relayState);
         report.push({
           file: name,
           digest: digest,
@@ -1911,23 +2177,10 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         break;
       }
 
-      // GitHub保存とReadbackが成功した時点で即座にチェックポイントを保存 (2フェーズ状態管理のPhase 1完了)
       relayState.lastGitHubCommitSha = commitRes.headSha;
       relayState.pendingDriveSync = Boolean(exportDocId);
-      relayState.processedDigests[digest] = {
-        committedAt: new Date().toISOString(),
-        sourceFile: name,
-        targetBranch: targetBranch,
-        commitSha: commitRes.headSha,
-        newVideoIds: plan.newIds,
-        updatedVideoIds: plan.updatedIds,
-        githubWriteStatus: "PUSHED_AND_READBACK_VERIFIED",
-        driveSyncStatus: exportDocId ? "PENDING_DRIVE_UPDATE" : "NOT_CONFIGURED",
-        notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
-      };
-      props.setProperty("RELAY_STATE_V1", JSON.stringify(relayState));
+      saveBoundedRelayState_(props, relayState);
 
-      // Phase 2: Google Drive 上の知識索引ドキュメントを更新 (失敗してもGitHubコミットは維持され次回自動復旧)
       let driveStatus = "SKIPPED_NO_DRIVE_EXPORT_DOC_ID_CONFIGURED";
       if (exportDocId) {
         try {
@@ -1939,16 +2192,11 @@ function relayDriveReceiptsToGitHub(envOverrides) {
           driveStatus = driveRes.driveSyncStatus;
           relayState.lastDriveSyncedCommitSha = commitRes.headSha;
           relayState.pendingDriveSync = false;
-          relayState.processedDigests[digest].driveSyncStatus = driveStatus;
-          props.setProperty("RELAY_STATE_V1", JSON.stringify(relayState));
+          saveBoundedRelayState_(props, relayState);
         } catch (driveErr) {
           driveStatus = "DRIVE_UPDATE_FAILED_WILL_RECONCILE_NEXT_RUN";
           relayState.pendingDriveSync = true;
-          relayState.processedDigests[digest].driveSyncStatus = driveStatus;
-          relayState.processedDigests[digest].driveError = String(
-            driveErr.message || driveErr
-          );
-          props.setProperty("RELAY_STATE_V1", JSON.stringify(relayState));
+          saveBoundedRelayState_(props, relayState);
         }
       }
 
@@ -1969,16 +2217,15 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         },
       });
 
-      // 次のファイル処理のために最新リポジトリ状態を再取得
       repoState = collectGitHubRepositoryState_(
         token,
         targetBranch,
-        relayState.branchCache,
+        relayState.partialScanProgress,
         customFetcher
       );
+      relayState.partialScanProgress = repoState.partialScanProgress;
     }
 
-    // 懸念D対策: 新規Receiptが無い実行でも、前回のDrive更新が未完了(pendingDriveSync)または遅延していれば自動修復する
     let driveReconciliation = null;
     if (
       exportDocId &&
@@ -1997,7 +2244,7 @@ function relayDriveReceiptsToGitHub(envOverrides) {
           );
           relayState.lastDriveSyncedCommitSha = repoState.targetBranchCommitSha;
           relayState.pendingDriveSync = false;
-          props.setProperty("RELAY_STATE_V1", JSON.stringify(relayState));
+          saveBoundedRelayState_(props, relayState);
           driveReconciliation = {
             status: "RECONCILED_FROM_GITHUB_SSOT",
             syncedCommitSha: repoState.targetBranchCommitSha,
@@ -2013,11 +2260,14 @@ function relayDriveReceiptsToGitHub(envOverrides) {
       }
     }
 
+    const finalBytes = saveBoundedRelayState_(props, relayState);
     const finalOutput = {
       status: "COMPLETED",
       targetBranch: targetBranch,
       applicationBranchGuard: "ENFORCED_NON_DEFAULT_ONLY",
       mainBranchServerProtected: repoState.mainBranchServerProtected,
+      dedupScanComplete: repoState.dedupScanComplete,
+      scriptPropertyBytesUsed: finalBytes,
       relayReport: report,
       driveReconciliation: driveReconciliation,
       notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
@@ -2035,10 +2285,6 @@ function relayDriveReceiptsToGitHub(envOverrides) {
   }
 }
 
-/**
- * メインエントリ2: GitHub非defaultブランチ上の `github_knowledge_index_export.md` を強制取得し、
- * Google Drive上の専用Googleドキュメントを自己修復更新する独立関数。
- */
 function pullGitHubIndexExportToDriveDoc(envOverrides) {
   const overrides = envOverrides || {};
   const props =
@@ -2096,10 +2342,11 @@ function pullGitHubIndexExportToDriveDoc(envOverrides) {
   };
 }
 
-// Node.js 自動テスト環境からのインポート対応 (Python <-> JS 100%互換性検証用)
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     CONTRACT_SPEC_V1: CONTRACT_SPEC_V1,
+    utf8ByteLength: utf8ByteLength_,
+    saveBoundedRelayState: saveBoundedRelayState_,
     extractYoutubeId: extractYoutubeId_,
     canonicalYoutubeUrl: canonicalYoutubeUrl_,
     extractReceiptPayload: extractReceiptFromText_,

@@ -845,7 +845,7 @@ function createMockEnvironment() {{
         getContentText: () => (typeof obj === "string" ? obj : JSON.stringify(obj))
       }});
 
-      if (url.endsWith("/branches?per_page=100")) {{
+      if (url.includes("/branches?per_page=100")) {{
         return makeRes(200, [
           {{ name: "main", protected: true, commit: {{ sha: "commit_main" }} }},
           {{ name: "feature/gemini-notebook-research-loop-20261016", protected: false, commit: {{ sha: targetHeadSha }} }},
@@ -858,11 +858,14 @@ function createMockEnvironment() {{
       }}
       if (url.includes("/git/trees/") && method === "get") {{
         const tSha = url.split("/git/trees/")[1].split("?")[0];
-        if (tSha === "commit_parallel") {{
-          remoteTreeApiCalls += 1;
-          return makeRes(200, {{ sha: "tree_parallel", tree: trees["tree_parallel"] }});
+        // Issue 3 verification: strictly reject commit SHAs passed to /git/trees/
+        if (tSha.startsWith("commit_")) {{
+          return makeRes(404, {{ message: "GitHub /git/trees/ requires tree_sha, not commit_sha: " + tSha }});
         }}
-        return makeRes(200, {{ sha: tSha, tree: trees[tSha] || [] }});
+        if (tSha === "tree_parallel") {{
+          remoteTreeApiCalls += 1;
+        }}
+        return makeRes(200, {{ sha: tSha, truncated: false, tree: trees[tSha] || [] }});
       }}
       if (url.includes("/git/blobs/") && method === "get") {{
         const bSha = url.split("/git/blobs/")[1];
@@ -951,7 +954,7 @@ env.setSimulateDriveFailure(true);
 const run1 = gas.relayDriveReceiptsToGitHub(env.overrides);
 const callsAfterRun1 = env.getRemoteTreeApiCalls();
 
-// 3. Run 2: Drive is now healthy -> must NOT create a duplicate GitHub commit, must reuse branchCache (0 extra remote tree calls), and MUST self-heal Drive export Doc!
+// 3. Run 2: Drive is now healthy -> must NOT create a duplicate GitHub commit, must reuse GitHub SSOT remote_branch_cache (0 extra remote tree calls), and MUST self-heal Drive export Doc!
 env.setSimulateDriveFailure(false);
 const headAfterRun1 = env.getTargetHeadSha();
 const run2 = gas.relayDriveReceiptsToGitHub(env.overrides);
@@ -1005,8 +1008,9 @@ process.stdout.write(JSON.stringify({{
             "DRIVE_UPDATE_FAILED_WILL_RECONCILE_NEXT_RUN",
         )
         self.assertTrue(r1_reports[1]["securityPosture"]["mainBranchServerProtected"])
+        self.assertLess(out["run1"]["scriptPropertyBytesUsed"], 1000)
 
-        # Verify Run 2 results: no duplicate GitHub commit, branchCache reused (0 extra remote tree calls), and Drive Doc self-healed!
+        # Verify Run 2 results: no duplicate GitHub commit, remote_branch_cache reused from GitHub loop_state.json (0 extra remote tree calls), and Drive Doc self-healed!
         self.assertEqual(out["headAfterRun1"], out["headAfterRun2"])
         self.assertEqual(out["callsAfterRun1"], 1)
         self.assertEqual(out["callsAfterRun2"], 1)
@@ -1028,7 +1032,262 @@ process.stdout.write(JSON.stringify({{
         )
         self.assertEqual(r3_reports[0]["httpCode"], 422)
 
+    def test_11_pagination_truncated_tree_partial_scan_continuation_and_value_patterns(self):
+        """Issues 1-5: Verify 9KB ScriptProperties bound, /branches pagination, tree.truncated stop, multi-run >25 blob scan continuation, and secret/transcript value pattern rejection."""
+        gas_path = (ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").as_posix()
+        sample_receipt = make_sample_receipt()
+
+        # 1. Verify value-level secret and transcript pattern rejection in Python
+        bad_secret = make_sample_receipt()
+        bad_secret["videos"][0]["summary_ja"] = "漏洩トークン ghp_1234567890abcdefghijklmnopqrstuv の混入テスト"
+        with self.assertRaisesRegex(ValueError, "Forbidden content pattern \\(GITHUB_TOKEN\\)"):
+            bridge.validate(bad_secret)
+
+        bad_srt = make_sample_receipt()
+        bad_srt["videos"][0]["claims"][0]["text"] = "00:01:20,000 --> 00:01:25,000 字幕タイムコードの直接転載"
+        with self.assertRaisesRegex(ValueError, "Forbidden content pattern \\(SUBTITLE_TIMECODE_BLOCK\\)"):
+            bridge.validate(bad_srt)
+
+        bad_newlines = make_sample_receipt()
+        bad_newlines["videos"][0]["summary_ja"] = "行1\n行2\n行3\n行4\n行5"
+        with self.assertRaisesRegex(ValueError, "Summary contains too many line breaks"):
+            bridge.validate(bad_newlines)
+
+        node_test = f"""
+const crypto = require("crypto");
+const gas = require({json.dumps(gas_path)});
+const sampleReceipt = {json.dumps(sample_receipt, ensure_ascii=False)};
+
+// A. Verify value-level pattern rejection in JS
+const badSecret = JSON.parse(JSON.stringify(sampleReceipt));
+badSecret.videos[0].summary_ja = "漏洩トークン ghp_1234567890abcdefghijklmnopqrstuv の混入テスト";
+let jsSecretRejected = false;
+try {{ gas.validateReceipt(badSecret); }} catch (e) {{
+  if (String(e.message).includes("GITHUB_TOKEN")) jsSecretRejected = true;
+}}
+
+const badSrt = JSON.parse(JSON.stringify(sampleReceipt));
+badSrt.videos[0].claims[0].text = "00:01:20,000 --> 00:01:25,000 字幕タイムコード";
+let jsSrtRejected = false;
+try {{ gas.validateReceipt(badSrt); }} catch (e) {{
+  if (String(e.message).includes("SUBTITLE_TIMECODE_BLOCK")) jsSrtRejected = true;
+}}
+
+const badNewlines = JSON.parse(JSON.stringify(sampleReceipt));
+badNewlines.videos[0].summary_ja = "1\\n2\\n3\\n4\\n5";
+let jsNewlinesRejected = false;
+try {{ gas.validateReceipt(badNewlines); }} catch (e) {{
+  if (String(e.message).includes("too many line breaks")) jsNewlinesRejected = true;
+}}
+
+// B. Verify saveBoundedRelayState trims oversized state to <= 7500 bytes (well under 9KB)
+const propStore = {{}};
+const mockProps = {{
+  getProperty: (k) => propStore[k] || null,
+  setProperty: (k, v) => {{ propStore[k] = String(v); }}
+}};
+const hugeState = {{
+  schemaVersion: "gas_relay_compact_state_v2",
+  lastGitHubCommitSha: "a".repeat(40),
+  lastDriveSyncedCommitSha: "b".repeat(40),
+  pendingDriveSync: false,
+  recentNoOpDigests: Array.from({{ length: 120 }}, (_, i) => crypto.createHash("sha256").update("noop_" + i).digest("hex")),
+  haltedReceipts: {{}},
+  partialScanProgress: {{}}
+}};
+for (let i = 0; i < 60; i++) {{
+  hugeState.haltedReceipts["halted_" + i + "_" + "x".repeat(40)] = {{ haltedAt: "2026-10-17T00:00:00Z", httpCode: 500, status: "ERR_" + "y".repeat(80) }};
+}}
+const boundedBytes = gas.saveBoundedRelayState(mockProps, hugeState);
+
+// C. Build mock environment for:
+//    - 2-page /branches pagination (100 branches on page 1, 1 branch on page 2 containing 30 notes/*.md files)
+//    - Multi-run partial scan continuation (Run 1 scans 25 blobs and pauses; Run 2 scans remaining 5 blobs, finds dQw4w9WgXcQ in note_28.md, and deduplicates it!)
+//    - Truncated tree error stop when simulateTruncatedTree = true
+let simulateTruncatedTree = false;
+const blobs = {{}};
+function putBlob(text) {{
+  const sha = crypto.createHash("sha1").update(text, "utf8").digest("hex");
+  blobs[sha] = Buffer.from(text, "utf8").toString("base64");
+  return sha;
+}}
+
+const initialRegistry = {{
+  schema_version: 1,
+  repository: "kamiyusense/ai-video-research",
+  records: []
+}};
+const regSha = putBlob(JSON.stringify(initialRegistry, null, 2) + "\\n");
+
+// Create 30 notes/*.md on the page-2 remote branch; note_28.md references dQw4w9WgXcQ
+const page2TreeItems = [{{ path: "registry.json", type: "blob", sha: regSha }}];
+for (let i = 1; i <= 30; i++) {{
+  const num = String(i).padStart(2, "0");
+  const vidInNote = i === 28 ? "dQw4w9WgXcQ" : ("DummyVid0" + num);
+  const bSha = putBlob("# Note " + num + "\\n\\n- video_id: `" + vidInNote + "`\\n");
+  page2TreeItems.push({{ path: "notes/note_" + num + ".md", type: "blob", sha: bSha }});
+}}
+
+const trees = {{
+  "tree_target": [{{ path: "registry.json", type: "blob", sha: regSha }}],
+  "tree_empty_branch": [{{ path: "registry.json", type: "blob", sha: regSha }}],
+  "tree_page2": page2TreeItems
+}};
+const commits = {{
+  "commit_target": {{ sha: "commit_target", tree: {{ sha: "tree_target" }} }},
+  "commit_empty": {{ sha: "commit_empty", tree: {{ sha: "tree_empty_branch" }} }},
+  "commit_page2": {{ sha: "commit_page2", tree: {{ sha: "tree_page2" }} }}
+}};
+
+const page1Branches = [
+  {{ name: "main", protected: true, commit: {{ sha: "commit_main" }} }},
+  {{ name: "feature/gemini-notebook-research-loop-20261016", protected: false, commit: {{ sha: "commit_target" }} }}
+];
+// Fill page 1 to exactly 100 items using main (forbidden/ignored) so pagination triggers page 2 cleanly
+while (page1Branches.length < 100) {{
+  page1Branches.push({{ name: "main", protected: true, commit: {{ sha: "commit_main" }} }});
+}}
+const page2Branches = [
+  {{ name: "research/page2-deep-notes", protected: false, commit: {{ sha: "commit_page2" }} }}
+];
+
+const store2 = {{
+  GITHUB_FINE_GRAINED_PAT: "ghp_mock_token",
+  DRIVE_INBOX_FOLDER_ID: "FOLDER_123",
+  TARGET_GITHUB_BRANCH: "feature/gemini-notebook-research-loop-20261016"
+}};
+const props2 = {{
+  getProperty: (k) => store2[k] || null,
+  setProperty: (k, v) => {{ store2[k] = String(v); }}
+}};
+const inboxFiles2 = [{{
+  id: "DOC_1",
+  name: "receipt.json",
+  getMimeType: () => "text/plain",
+  getName: () => "receipt.json",
+  getBlob: () => ({{ getDataAsString: () => JSON.stringify(sampleReceipt) }})
+}}];
+const driveApp2 = {{
+  getFolderById: () => ({{
+    getFiles: () => {{
+      let idx = 0;
+      return {{ hasNext: () => idx < inboxFiles2.length, next: () => inboxFiles2[idx++] }};
+    }}
+  }})
+}};
+const lockService2 = {{ getScriptLock: () => ({{ tryLock: () => true, releaseLock: () => {{}} }}) }};
+
+let pagesFetched = [];
+const urlFetchApp2 = {{
+  fetch: (url, opts) => {{
+    const method = (opts.method || "get").toLowerCase();
+    const makeRes = (code, obj) => ({{
+      getResponseCode: () => code,
+      getContentText: () => JSON.stringify(obj)
+    }});
+    if (url.includes("/branches?per_page=100&page=1")) {{
+      pagesFetched.push(1);
+      return makeRes(200, page1Branches);
+    }}
+    if (url.includes("/branches?per_page=100&page=2")) {{
+      pagesFetched.push(2);
+      return makeRes(200, page2Branches);
+    }}
+    if (url.includes("/git/commits/") && method === "get") {{
+      const cSha = url.split("/git/commits/")[1];
+      return makeRes(200, commits[cSha]);
+    }}
+    if (url.includes("/git/trees/") && method === "get") {{
+      const tSha = url.split("/git/trees/")[1].split("?")[0];
+      if (tSha.startsWith("commit_")) {{
+        return makeRes(404, {{ message: "Expected tree_sha, got commit_sha" }});
+      }}
+      return makeRes(200, {{ sha: tSha, truncated: simulateTruncatedTree, tree: trees[tSha] || [] }});
+    }}
+    if (url.includes("/git/blobs/") && method === "get") {{
+      const bSha = url.split("/git/blobs/")[1];
+      return makeRes(200, {{ sha: bSha, content: blobs[bSha], encoding: "base64" }});
+    }}
+    return makeRes(404, {{ message: "Unexpected URL: " + url }});
+  }}
+}};
+
+const overrides2 = {{ scriptProperties: props2, lockService: lockService2, driveApp: driveApp2, urlFetchApp: urlFetchApp2 }};
+
+// Run 1: Should scan first 25 blobs of research/page2-deep-notes and pause with 5 remaining!
+const scanRun1 = gas.relayDriveReceiptsToGitHub(overrides2);
+
+// Run 2: Should resume from blob #26, scan the remaining 5 blobs, find dQw4w9WgXcQ in note_28.md, and skip it!
+const scanRun2 = gas.relayDriveReceiptsToGitHub(overrides2);
+
+// Run 3: Simulate truncated Git tree -> must throw error refusing incomplete duplicate detection
+simulateTruncatedTree = true;
+let truncatedError = "";
+try {{
+  gas.relayDriveReceiptsToGitHub(overrides2);
+}} catch (e) {{
+  truncatedError = String(e.message || e);
+}}
+
+process.stdout.write(JSON.stringify({{
+  jsSecretRejected,
+  jsSrtRejected,
+  jsNewlinesRejected,
+  boundedBytes,
+  pagesFetched,
+  scanRun1,
+  scanRun2,
+  truncatedError
+}}));
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        out = json.loads(res.stdout)
+
+        self.assertTrue(out["jsSecretRejected"])
+        self.assertTrue(out["jsSrtRejected"])
+        self.assertTrue(out["jsNewlinesRejected"])
+        self.assertLessEqual(out["boundedBytes"], 7500)
+        self.assertIn(1, out["pagesFetched"])
+        self.assertIn(2, out["pagesFetched"])
+
+        # Run 1 paused safely because 5 of the 30 notes/*.md on page 2 were still unscanned
+        self.assertEqual(
+            out["scanRun1"]["status"],
+            "PAUSED_INCOMPLETE_DEDUP_SCAN_CONTINUES_NEXT_RUN",
+        )
+        self.assertFalse(out["scanRun1"]["dedupScanComplete"])
+        self.assertEqual(out["scanRun1"]["remainingUnscannedFiles"], 5)
+
+        # Run 2 resumed, finished the remaining 5 files, and detected dQw4w9WgXcQ in notes/note_28.md on origin/research/page2-deep-notes!
+        self.assertEqual(out["scanRun2"]["status"], "COMPLETED")
+        self.assertTrue(out["scanRun2"]["dedupScanComplete"])
+        r2_rep = out["scanRun2"]["relayReport"][0]
+        self.assertEqual(
+            r2_rep["status"], "SKIPPED_ALL_VIDEOS_DUPLICATE_OR_UNVERIFIED"
+        )
+        self.assertEqual(
+            r2_rep["skipped"][0]["reason"], "SKIP_EXISTING_REMOTE_BRANCH"
+        )
+        self.assertIn(
+            "origin/research/page2-deep-notes",
+            r2_rep["skipped"][0]["branches"],
+        )
+        self.assertEqual(
+            r2_rep["skipped"][0]["detected_via"], "body:notes/note_28.md"
+        )
+
+        # Run 3 halted immediately when Git Trees API returned truncated: true
+        self.assertIn("is truncated", out["truncatedError"])
+        self.assertIn("refusing incomplete duplicate detection", out["truncatedError"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
 
