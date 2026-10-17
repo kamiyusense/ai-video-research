@@ -49,10 +49,10 @@ V06_CLAIM_LINE_RE = re.compile(
 # または
 # | [03:00](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=180s)〜04:10 | 内容 | 事実の区別 |
 LEGACY_TABLE_ROW_WITH_ID_RE = re.compile(
-    r"^\s*\|\s*(?P<seg_id>[A-Za-z0-9_-]+)\s*\|\s*\[(?P<start_mmss>\d{1,2}:\d{2})\]\((?P<url>https://www\.youtube\.com/watch\?v=(?P<vid>[A-Za-z0-9_-]{11})&t=(?P<start_sec>\d+)s)\)(?:[〜~-](?P<end_mmss>\d{1,2}:\d{2}))?\s*\|\s*(?P<summary>[^|]+)\|\s*(?P<basis>[^|]+)\|\s*(?P<result>[^|]+)\|\s*$"
+    r"^\s*\|\s*(?P<seg_id>[A-Za-z0-9_-]+)\s*\|\s*(?:\[(?P<start_mmss>\d{1,2}:\d{2})\]\((?P<url>https://www\.youtube\.com/watch\?v=(?P<vid>[A-Za-z0-9_-]{11})&t=(?P<start_sec>\d+)s)\)|(?P<raw_start_mmss>\d{1,2}:\d{2}))(?:[〜~-](?P<end_mmss>\d{1,2}:\d{2}))?\s*\|\s*(?P<summary>[^|]+)\|\s*(?P<basis>[^|]+)\|\s*(?P<result>[^|]+)\|\s*$"
 )
 LEGACY_TABLE_ROW_NO_ID_RE = re.compile(
-    r"^\s*\|\s*\[(?P<start_mmss>\d{1,2}:\d{2})\]\((?P<url>https://www\.youtube\.com/watch\?v=(?P<vid>[A-Za-z0-9_-]{11})&t=(?P<start_sec>\d+)s)\)(?:[〜~-](?P<end_mmss>\d{1,2}:\d{2}))?\s*\|\s*(?P<summary>[^|]+)\|\s*(?P<basis>[^|]+)\|\s*$"
+    r"^\s*\|\s*(?:\[(?P<start_mmss>\d{1,2}:\d{2})\]\((?P<url>https://www\.youtube\.com/watch\?v=(?P<vid>[A-Za-z0-9_-]{11})&t=(?P<start_sec>\d+)s)\)|(?P<raw_start_mmss>\d{1,2}:\d{2}))(?:[〜~-](?P<end_mmss>\d{1,2}:\d{2}))?\s*\|\s*(?P<summary>[^|]+)\|\s*(?P<basis>[^|]+)\|\s*$"
 )
 
 RELATED_RECORD_LINE_RE = re.compile(
@@ -345,11 +345,11 @@ def infer_legacy_timestamp_source(basis_text):
     b = (basis_text or "").lower()
     if "ai studio" in b or "映像" in b or "実演" in b:
         return "VISUAL_FRAME_CHECK"
-    if "spark" in b or "字幕" in b or "transcript" in b:
-        return "TIMESTAMPED_CAPTIONS"
     if "chapter" in b or "チャプター" in b or "目次" in b:
         return "YOUTUBE_CHAPTER_METADATA"
-    return "TIMESTAMPED_CAPTIONS"
+    if "字幕直接" in b or "deterministic caption" in b:
+        return "TIMESTAMPED_CAPTIONS"
+    return "UNKNOWN"
 
 
 def split_markdown_sections(md_text):
@@ -568,7 +568,12 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
 
         m_leg_id = LEGACY_TABLE_ROW_WITH_ID_RE.match(line)
         if m_leg_id:
-            start_sec = int(m_leg_id.group("start_sec"))
+            start_mmss = m_leg_id.group("start_mmss") or m_leg_id.group("raw_start_mmss")
+            start_sec = (
+                int(m_leg_id.group("start_sec"))
+                if m_leg_id.group("start_sec")
+                else parse_mmss_to_seconds(start_mmss)
+            )
             end_mmss = m_leg_id.group("end_mmss")
             end_sec = parse_mmss_to_seconds(end_mmss) if end_mmss else None
             basis = m_leg_id.group("basis").strip()
@@ -583,10 +588,10 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                     "segment_id": m_leg_id.group("seg_id").strip(),
                     "title": summary_txt[:60],
                     "summary_ja": summary_txt,
-                    "start_seconds": start_sec,
-                    "end_seconds": end_sec,
-                    "start_mmss": m_leg_id.group("start_mmss"),
-                    "end_mmss": end_mmss,
+                    "start_seconds": start_sec if verified_url else None,
+                    "end_seconds": end_sec if verified_url else None,
+                    "start_mmss": start_mmss if verified_url else "UNKNOWN",
+                    "end_mmss": end_mmss if (verified_url and end_sec is not None) else None,
                     "timestamp_source": ts_source,
                     "timestamp_basis": basis,
                     "verification_result": m_leg_id.group("result").strip(),
@@ -598,7 +603,12 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
 
         m_leg_noid = LEGACY_TABLE_ROW_NO_ID_RE.match(line)
         if m_leg_noid:
-            start_sec = int(m_leg_noid.group("start_sec"))
+            start_mmss = m_leg_noid.group("start_mmss") or m_leg_noid.group("raw_start_mmss")
+            start_sec = (
+                int(m_leg_noid.group("start_sec"))
+                if m_leg_noid.group("start_sec")
+                else parse_mmss_to_seconds(start_mmss)
+            )
             end_mmss = m_leg_noid.group("end_mmss")
             end_sec = parse_mmss_to_seconds(end_mmss) if end_mmss else None
             basis = m_leg_noid.group("basis").strip()
@@ -613,10 +623,10 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                     "segment_id": f"SEG-{len(chapters) + 1:02d}",
                     "title": summary_txt[:60],
                     "summary_ja": summary_txt,
-                    "start_seconds": start_sec,
-                    "end_seconds": end_sec,
-                    "start_mmss": m_leg_noid.group("start_mmss"),
-                    "end_mmss": end_mmss,
+                    "start_seconds": start_sec if verified_url else None,
+                    "end_seconds": end_sec if verified_url else None,
+                    "start_mmss": start_mmss if verified_url else "UNKNOWN",
+                    "end_mmss": end_mmss if (verified_url and end_sec is not None) else None,
                     "timestamp_source": ts_source,
                     "timestamp_basis": basis,
                     "verification_result": basis,

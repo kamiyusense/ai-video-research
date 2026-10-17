@@ -90,8 +90,9 @@
           "matched_title_tokens": [
             "studio"
           ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
           "title_tokens": 2,
-          "verdict": "CAPTION_PASS"
+          "verdict": "CAPTION_FAIL"
         },
         "701": {
           "control_max_hits": 2,
@@ -258,8 +259,9 @@
           "matched_title_tokens": [
             "評価"
           ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
           "title_tokens": 6,
-          "verdict": "CAPTION_PASS"
+          "verdict": "CAPTION_FAIL"
         }
       },
       "checked_at": "2026-10-17",
@@ -534,8 +536,9 @@
           "matched_title_tokens": [
             "ファイル"
           ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
           "title_tokens": 7,
-          "verdict": "CAPTION_PASS"
+          "verdict": "CAPTION_FAIL"
         },
         "1456": {
           "control_max_hits": 0,
@@ -1962,8 +1965,9 @@
             "ブラウザ",
             "選択"
           ],
+          "reason": "LEGACY_SPARK_REPORT_WEAK_BASIS",
           "title_tokens": 5,
-          "verdict": "CAPTION_PASS"
+          "verdict": "CAPTION_FAIL"
         },
         "1748": {
           "desc_start": 1752,
@@ -1978,8 +1982,9 @@
           "matched_title_tokens": [
             "ワークフロー"
           ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
           "title_tokens": 4,
-          "verdict": "CAPTION_PASS"
+          "verdict": "CAPTION_FAIL"
         },
         "639": {
           "control_max_hits": 1,

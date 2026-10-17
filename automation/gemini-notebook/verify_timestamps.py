@@ -267,13 +267,20 @@ def verify_chapter(
             len(count_hits(tokens, window_text(cues, cs - WINDOW_BEFORE_SEC, cs + WINDOW_MIN_AFTER_SEC)))
         )
     control_max = max(controls) if controls else 0
-    passed = (len(local) >= 2 and len(local) > control_max) or (len(local) >= 1 and control_max == 0)
-    return {
+    distinct_non_num = [t for t in local if not re.match(r"^[0-9]+(?:\.[0-9]+)?$", t)]
+    passed = len(distinct_non_num) >= 2 and len(local) > control_max
+    res = {
         "verdict": "CAPTION_PASS" if passed else "CAPTION_FAIL",
         "title_tokens": len(tokens),
         "matched_title_tokens": local[:8],
         "control_max_hits": control_max,
     }
+    if not passed:
+        if len(distinct_non_num) < 2:
+            res["reason"] = "INSUFFICIENT_DISTINCT_TOKENS"
+        elif len(local) <= control_max:
+            res["reason"] = "NOT_ABOVE_CONTROL_WINDOW"
+    return res
 
 
 def load_handoff_videos(path):

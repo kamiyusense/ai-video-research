@@ -29,14 +29,14 @@ Claude Codeの「プロジェクト（Projects）」機能を用い、人間は1
 - UNKNOWN | **SEO外注費換算と自社AI活用のROI** | Gemini報告区間(17:24〜19:15 / 一次時刻未確認のため再生リンク非生成): SEO外注費換算と自社AI活用のROI | time_source: UNKNOWN | topics: Claude Code Projects, オーケストレーション, コーディネーター
 - [19:15〜20:20](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1155s) | **プロジェクトUIの弱点（返信待ちスレッドの視認性）とスマホ連携** | 区間 19:15〜20:20 の解説: プロジェクトUIの弱点（返信待ちスレッドの視認性）とスマホ連携 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
 - [20:20〜23:06](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1220s) | **成果確認：11 PR、9レポート、llms.txt / llms-full.txt、17言語対応ページの自動生成** | 区間 20:20〜23:06 の解説: 成果確認：11 PR、9レポート、llms.txt / llms-full.txt、17言語対応ページの自動生成 | time_source: TIMESTAMPED_CAPTIONS | topics: llms.txt, llms-full.txt
-- [23:06〜24:16](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1386s) | **本番マージとブラウザでの多言語・AI検索向けファイル表示確認** | 区間 23:06〜24:16 の解説: 本番マージとブラウザでの多言語・AI検索向けファイル表示確認 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- 23:06〜24:16 | **本番マージとブラウザでの多言語・AI検索向けファイル表示確認** | 区間 23:06〜24:16 の解説: 本番マージとブラウザでの多言語・AI検索向けファイル表示確認 | time_source: UNKNOWN | topics: Claude Code Projects, オーケストレーション, コーディネーター
 - UNKNOWN | **まとめ・テンプレートプレゼント案内** | Gemini報告区間(24:16〜25:32 / 一次時刻未確認のため再生リンク非生成): まとめ・テンプレートプレゼント案内 | time_source: UNKNOWN | topics: Claude Code Projects, オーケストレーション, コーディネーター
 
 ## 詳細技術知識・再利用ノート
 - 整理番号・区分: No.09 (Part 1: 直近調査12本 (No.01〜12)) / 投稿者(Gemini記載): みかみ【東大退学させられた男】 / 調査日: 2026-10-16
 - YouTube一次メタデータ照合: タイトル=一致 / 投稿者=一致
 - 動画長・公開日一次照合: YouTube一次実測長=25:32 (1532s) vs Gemini記載長=25:32 (一致(±2s以内)) | YouTube一次公開日=2026-10-16 vs Gemini記載公開日=2026-10-16 (一致)
-- チャプター時刻一次検証内訳: 全14章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)=0章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)=10章, 一次根拠未確認(UNKNOWN)=4章
+- チャプター時刻一次検証内訳: 全14章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)=0章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)=9章, 一次根拠未確認(UNKNOWN)=5章
 - 証拠強度区分: PART1（Notebook内のYouTubeソース由来・章別一次照合適用）
 - 全体要約（原文保持）: Claude Codeの「プロジェクト（Projects）」機能を用い、人間は1人のメインスレッド（コーディネーター：デフォルトOpus 5.5・エフォート低）と話すだけで、裏で7つのサブスレッド（エフォート中）を並列稼働させる実演。自社サイトのSEO・AIO対策プロジェクトを立ち上げ、数十分で1.72億トークンを消費して11 PR、9レポート、llms.txt / llms-full.txt、17言語対応ページを自動生成・本番マージする様子を公開。
 - 主要技術キーワード: Claude Code Projects, オーケストレーション, コーディネーター, サブスレッド並列実行, Opus 5.5 低エフォート, SEO/AIO対策, llms.txt, llms-full.txt

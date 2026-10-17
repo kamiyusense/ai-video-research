@@ -27,10 +27,10 @@
 | V05-02 | [10:39](https://www.youtube.com/watch?v=lC5jxpYmatE&t=639s)〜24:16 | 成功した資料を必要なときに参照し、案件別の一時的な手順を生成する | Spark字幕、AI Studioの10:39〜12:00映像報告（出演者のトーク・テロップのみ、実演なし） | VIDEO_REPORTED / 実演 UNKNOWN |
 | V05-03 | [24:16](https://www.youtube.com/watch?v=lC5jxpYmatE&t=1456s)〜27:38 | Computer Useで既存アプリを操作する発想 | Spark字幕、AI Studioの24:16〜25:30映像報告（トーク・テロップのみ） | VIDEO_REPORTED / 実演 UNKNOWN |
 | V05-04 | [27:38](https://www.youtube.com/watch?v=lC5jxpYmatE&t=1658s)〜28:19 | 反復的な画面操作は、可能なら手順をコードに移して利用量を減らす | Spark字幕、AI Studioの27:38〜28:19映像報告（コード画面・実演なし） | VIDEO_REPORTED / 費用削減実測 UNKNOWN |
-| V05-05 | [28:19](https://www.youtube.com/watch?v=lC5jxpYmatE&t=1699s)〜29:08 | Jevのような特化型判断モデルをブラウザ選択へ使う案 | Spark字幕のみ | VIDEO_REPORTED / 実性能 UNKNOWN |
-| V05-06 | [29:08](https://www.youtube.com/watch?v=lC5jxpYmatE&t=1748s)〜37:57 | 守り・拡張のハーネスと、実行前後のHooksを説明 | Spark字幕のみ | VIDEO_REPORTED / 個々の設計は要検証 |
+| V05-05 | 28:19〜29:08 | Jevのような特化型判断モデルをブラウザ選択へ使う案 | Spark字幕のみ | VIDEO_REPORTED / 実性能 UNKNOWN |
+| V05-06 | 29:08〜37:57 | 守り・拡張のハーネスと、実行前後のHooksを説明 | Spark字幕のみ | VIDEO_REPORTED / 個々の設計は要検証 |
 | V05-07 | [37:57](https://www.youtube.com/watch?v=lC5jxpYmatE&t=2277s)〜46:29 | できなかった課題を蓄積し、新機能で再挑戦する学び方 | Spark字幕、AI Studioの37:57〜39:40映像報告（トーク・ロゴ・テロップのみ） | VIDEO_REPORTED / 有効性実証 UNKNOWN |
-| V05-08 | [51:18](https://www.youtube.com/watch?v=lC5jxpYmatE&t=3078s)〜55:01 | DifyのようなGUIワークフローに対する批判的意見 | Spark字幕のみ | 出演者の評価であり普遍的事実ではない |
+| V05-08 | 51:18〜55:01 | DifyのようなGUIワークフローに対する批判的意見 | Spark字幕のみ | 出演者の評価であり普遍的事実ではない |
 
 重要: ここでの時刻は、**Sparkの時刻付き字幕解析報告およびAI Studioの選択区間報告**に基づく。動画内時刻をChatGPTが目視測定したわけではない。映像確認は指定4区間のみで、他区間に実演が無いと断定しない。
 

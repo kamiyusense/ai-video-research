@@ -39,6 +39,11 @@ q_spec = importlib.util.spec_from_file_location("query_research", QUERY_MODULE_P
 query_mod = importlib.util.module_from_spec(q_spec)
 q_spec.loader.exec_module(query_mod)
 
+VTS_MODULE_PATH = ROOT / "automation" / "gemini-notebook" / "verify_timestamps.py"
+vts_spec = importlib.util.spec_from_file_location("verify_timestamps", VTS_MODULE_PATH)
+vts_mod = importlib.util.module_from_spec(vts_spec)
+vts_spec.loader.exec_module(vts_mod)
+
 
 def make_sample_receipt(**overrides):
     base = {
@@ -1804,12 +1809,14 @@ process.stdout.write(JSON.stringify({{
             root=real_root,
         )
         self.assertEqual(q4["step2_matched_records"][0]["video_id"], "Vr3JkAT9mo8")
-        q4_urls = [
-            s["playback_url"]
-            for s in q4["step5_and_6_recommended_video_segments"]
-            if s.get("playback_url")
+        # 180s is from legacy '動画の説明' (weak basis -> demoted to UNKNOWN), so its playback_url MUST be None
+        vr3_segs = [
+            s for s in q4["step5_and_6_recommended_video_segments"]
+            if s.get("video_id") == "Vr3JkAT9mo8"
         ]
-        self.assertIn("https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=180s", q4_urls)
+        self.assertTrue(len(vr3_segs) > 0)
+        self.assertIsNone(vr3_segs[0].get("playback_url"))
+        self.assertEqual(vr3_segs[0].get("timestamp_source"), "UNKNOWN")
 
         # Query 5: Skill design failures & Computer Use (lC5jxpYmatE)
         q5 = query_mod.answer_question(
@@ -2274,18 +2281,159 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
         self.assertEqual(res.stdout.strip(), "OK_NON_DESTRUCTIVE_DEDUP")
 
     def test_caption_single_token_false_positive_audit(self):
-        """4. Audit that single-token hits in caption evidence are documented and never treated as primary doc."""
+        """Audit that single-token hits in caption verification are strictly rejected as CAPTION_FAIL.
+        
+        Verifies:
+        1. Unit logic in verify_timestamps.verify_chapter: a single generic word (e.g. 'studio')
+           or numeric-only tokens must fail with INSUFFICIENT_DISTINCT_TOKENS, even if control_max == 0.
+        2. Only chapters with >= 2 distinct non-numeric tokens and local > control_max can achieve CAPTION_PASS.
+        3. Entire 28-video timestamp_evidence.json has exactly 0 weak single-token CAPTION_PASS verdicts.
+        4. The 4 demoted single-token chapters (studio, 評価, ファイル, ワークフロー) are strictly CAPTION_FAIL.
+        5. Total CAPTION_PASS count in evidence is exactly 73.
+        """
+        # 1. Unit test verify_chapter logic with synthetic cues
+        sample_cues = [
+            (100.0, 105.0, "ここで studio の説明をします"),
+            (200.0, 205.0, "notebooklm cli をセットアップします"),
+        ]
+        # Single token 'studio' (control_max = 0) -> MUST FAIL
+        res_single = vts_mod.verify_chapter(
+            start=100,
+            end=120,
+            title="studio 機能の実演",
+            cues=sample_cues,
+            yt_len=300,
+            desc_starts=[],
+            dur_match=True,
+            contradicts_desc=False,
+        )
+        self.assertEqual(res_single["verdict"], "CAPTION_FAIL")
+        self.assertEqual(res_single["reason"], "INSUFFICIENT_DISTINCT_TOKENS")
+
+        # Two distinct non-numeric tokens 'notebooklm', 'cli' -> MUST PASS
+        res_multi = vts_mod.verify_chapter(
+            start=200,
+            end=220,
+            title="notebooklm cli のセットアップ",
+            cues=sample_cues,
+            yt_len=300,
+            desc_starts=[],
+            dur_match=True,
+            contradicts_desc=False,
+        )
+        self.assertEqual(res_multi["verdict"], "CAPTION_PASS")
+        self.assertGreaterEqual(len(res_multi["matched_title_tokens"]), 2)
+
+        # Numeric-only tokens (e.g. '10', '20') -> MUST FAIL
+        res_num = vts_mod.verify_chapter(
+            start=100,
+            end=120,
+            title="10 20",
+            cues=sample_cues,
+            yt_len=300,
+            desc_starts=[],
+            dur_match=True,
+            contradicts_desc=False,
+        )
+        self.assertEqual(res_num["verdict"], "CAPTION_FAIL")
+        self.assertEqual(res_num["reason"], "INSUFFICIENT_DISTINCT_TOKENS")
+
+        # 2. Audit actual evidence file
         evidence_map = bridge.load_timestamp_evidence()
         weak_count = 0
+        caption_pass_count = 0
         for vid, data in evidence_map.items():
             for sec_str, ch in (data.get("chapters") or {}).items():
                 if ch.get("verdict") == "CAPTION_PASS":
-                    toks = ch.get("matched_title_tokens") or []
-                    if len(toks) < 2:
+                    caption_pass_count += 1
+                    toks = [
+                        t for t in (ch.get("matched_title_tokens") or [])
+                        if not t.isdigit()
+                    ]
+                    if len(set(toks)) < 2:
                         weak_count += 1
-        # Exactly 4 single-token matches exist in the 28-video evidence (studio, 評価, ファイル, ワークフロー).
-        # None of them fabricate a CONFIRMED_DOC status or create an unverified playback link.
-        self.assertLessEqual(weak_count, 4)
+
+        self.assertEqual(
+            weak_count,
+            0,
+            "No single-token or weak multi-token matches may be marked as CAPTION_PASS",
+        )
+        self.assertEqual(
+            caption_pass_count,
+            73,
+            "Total CAPTION_PASS count in timestamp_evidence.json must be exactly 73",
+        )
+
+        # 3. Assert specific 4 demoted chapters are strictly CAPTION_FAIL
+        self.assertEqual(
+            evidence_map["2-8cXaRHlqI"]["chapters"]["619"]["verdict"],
+            "CAPTION_FAIL",
+        )
+        self.assertEqual(
+            evidence_map["2-8cXaRHlqI"]["chapters"]["619"]["reason"],
+            "INSUFFICIENT_DISTINCT_TOKENS",
+        )
+        self.assertEqual(
+            evidence_map["26MGuVIJh4A"]["chapters"]["772"]["verdict"],
+            "CAPTION_FAIL",
+        )
+        self.assertEqual(
+            evidence_map["26MGuVIJh4A"]["chapters"]["772"]["reason"],
+            "INSUFFICIENT_DISTINCT_TOKENS",
+        )
+        self.assertEqual(
+            evidence_map["Eh75KT85Y40"]["chapters"]["1386"]["verdict"],
+            "CAPTION_FAIL",
+        )
+        self.assertEqual(
+            evidence_map["Eh75KT85Y40"]["chapters"]["1386"]["reason"],
+            "INSUFFICIENT_DISTINCT_TOKENS",
+        )
+        self.assertEqual(
+            evidence_map["lC5jxpYmatE"]["chapters"]["3078"]["verdict"],
+            "CAPTION_FAIL",
+        )
+        self.assertEqual(
+            evidence_map["lC5jxpYmatE"]["chapters"]["3078"]["reason"],
+            "INSUFFICIENT_DISTINCT_TOKENS",
+        )
+
+    def test_catalog_caption_discrepancy_and_unknown_safety(self):
+        """5. Verify exact alignment between evidence CAPTION_PASS (73) and catalog TIMESTAMPED_CAPTIONS (73),
+        and verify that UNKNOWN chapters never generate a playback_url or leaked seconds.
+        """
+        catalog_path = ROOT / "automation" / "gemini-notebook" / "state" / "video_knowledge_catalog.json"
+        cat = json.loads(catalog_path.read_text(encoding="utf-8"))
+
+        ts_counts = {}
+        for rec in cat.get("records", []):
+            for ch in rec.get("chapters", []):
+                src = ch.get("timestamp_source")
+                ts_counts[src] = ts_counts.get(src, 0) + 1
+                if src == "UNKNOWN":
+                    self.assertIsNone(
+                        ch.get("playback_url"),
+                        f"UNKNOWN chapter must not have playback_url: {rec.get('video_id')} @ {ch.get('title')}",
+                    )
+                    self.assertIsNone(
+                        ch.get("start_seconds"),
+                        f"UNKNOWN chapter must not expose start_seconds: {rec.get('video_id')} @ {ch.get('title')}",
+                    )
+                    self.assertEqual(ch.get("start_mmss"), "UNKNOWN")
+                else:
+                    self.assertTrue(
+                        ch.get("playback_url", "").startswith("https://www.youtube.com/watch?v="),
+                        f"Verified chapter must have valid playback_url: {rec.get('video_id')} @ {ch.get('title')}",
+                    )
+
+        self.assertEqual(
+            ts_counts.get("TIMESTAMPED_CAPTIONS"),
+            73,
+            "Catalog TIMESTAMPED_CAPTIONS must strictly equal 73 (matching evidence CAPTION_PASS)",
+        )
+        self.assertEqual(ts_counts.get("YOUTUBE_CHAPTER_METADATA"), 48)
+        self.assertEqual(ts_counts.get("VISUAL_FRAME_CHECK"), 9)
+        self.assertEqual(cat.get("total_verified_chapters"), 130)
 
 
 if __name__ == "__main__":

@@ -17,11 +17,11 @@
 ## 実演と出典位置（すべてAI Studioの報告に基づく）
 | 時刻 | 内容 | 事実の区別 |
 |---|---|---|
-| [03:00](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=180s)〜04:10 | AGENTS.md / MEMORY.md / Resources の役割分離。03:57付近にスライド | 動画の説明 |
+| 03:00〜04:10 | AGENTS.md / MEMORY.md / Resources の役割分離。03:57付近にスライド | 動画の説明 |
 | [04:30](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=270s)〜05:20 | スターターキットをローカル配置、Workにフォルダを紐付け | 映像実演の報告 |
 | [08:05](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=485s)〜08:40 | 質問を受けて記憶ファイルを更新 | 映像実演の報告 |
 | [13:00](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=780s)〜14:40 | 植物管理担当のフォルダ・初期ファイルを生成 | 映像実演の報告 |
-| [14:45](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=885s)〜15:20 | 人間が専門担当用Workプロジェクトを作る | 手動作業 |
+| 14:45〜15:20 | 人間が専門担当用Workプロジェクトを作る | 手動作業 |
 | [15:30](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=930s)〜16:15 | 植物写真・管理CSVの更新 | 映像実演の報告 |
 | [17:40](https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=1060s)〜17:58 | 定期リマインド設定 | 映像実演の報告 |
 
