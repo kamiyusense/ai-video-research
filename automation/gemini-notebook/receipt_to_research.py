@@ -57,7 +57,6 @@ ALLOWED_TIMESTAMP_SOURCES = set(
             "YOUTUBE_CHAPTER_METADATA",
             "TIMESTAMPED_CAPTIONS",
             "VISUAL_FRAME_CHECK",
-            "OFFICIAL_TIME_RANGE",
             "UNKNOWN",
         ],
     )

@@ -817,6 +817,16 @@ def analyze_query_intent(query):
         "の動画",
         "連携の",
         "連携",
+        "完全に",
+        "完全",
+        "リポジトリ外",
+        "リポジトリ",
+        "例えば",
+        "例：",
+        "例:",
+        "例",
+        "検証済み",
+        "確認済み",
         "を",
         "の",
         "で",
@@ -847,12 +857,15 @@ def analyze_query_intent(query):
     for sp in stop_phrases:
         cleaned_q = cleaned_q.replace(sp, " ")
     raw_tokens = []
+    explicit_video_ids = []
     for tok in re.split(r"[\s/・,，]+", cleaned_q):
         t_clean = tok.strip().replace("__", " ")
         if t_clean.endswith("する") and len(t_clean) >= 4:
             t_clean = t_clean[:-2]
         if len(t_clean) >= 2 and t_clean not in raw_tokens:
             raw_tokens.append(t_clean)
+            if VIDEO_ID_RE.match(t_clean):
+                explicit_video_ids.append(t_clean)
     for tok in raw_tokens:
         expanded_terms.add(tok)
 
@@ -862,7 +875,30 @@ def analyze_query_intent(query):
         "matched_concepts": matched_concepts,
         "search_terms": sorted(expanded_terms),
         "raw_tokens": raw_tokens,
+        "explicit_video_ids": explicit_video_ids,
     }
+
+
+GENERIC_QUERY_TOKENS = {
+    "技術",
+    "方法",
+    "機能",
+    "手順",
+    "概要",
+    "詳細",
+    "設定",
+    "連携",
+    "解説",
+    "紹介",
+    "活用",
+    "全体",
+    "開発",
+    "自動化",
+    "作成",
+    "確認",
+    "検証",
+    "比較",
+}
 
 
 def score_text_against_terms(text, terms, raw_tokens):
@@ -966,6 +1002,13 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
         if "VIDEO_LOCATOR" in intents and rec.get("video_id"):
             rec_total += 20
 
+        is_explicit_vid = bool(
+            rec.get("video_id")
+            and rec["video_id"].lower() in [v.lower() for v in intent_info.get("explicit_video_ids", [])]
+        )
+        if is_explicit_vid:
+            rec_total += 300
+
         # チャプター / 区間の個別スコアリング（章タイトル・要約の直接一致をトピックタグより優先）
         best_seg_score_for_rec = 0
         for ch in rec.get("chapters", []):
@@ -980,6 +1023,13 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
             )
             seg_score = (title_seg_score * 1.5) + (topic_seg_score * 0.4)
             seg_matches = sorted(set(m_ts + m_tp))
+
+            if is_explicit_vid:
+                # 動画ID明示指定時は全章（特に検証済み章）を候補として抽出
+                seg_score = max(seg_score, 40.0)
+                if ch.get("playback_url"):
+                    seg_score += 30.0
+
             # チャプター自身がトピック語に一致している場合のみ意図・時刻ボーナスを付与
             if seg_score > 0:
                 if "FAILURE_AND_LIMITS" in intents and any(
@@ -1076,7 +1126,18 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
 
         rec_total += best_seg_score_for_rec * 0.8
         all_matched_terms = sorted(set(m1 + m2 + m3 + m4 + m5 + m6))
-        if rec_total > 0 and all_matched_terms:
+
+        # 固有キーワードが存在するクエリで、汎用ストップワードのみに合致した誤検出を除外
+        specific_raw_tokens = [tok for tok in raw_tokens if tok not in GENERIC_QUERY_TOKENS]
+        if specific_raw_tokens and not is_explicit_vid:
+            has_specific_match = any(
+                tok in all_matched_terms or any(tok in m for m in all_matched_terms)
+                for tok in specific_raw_tokens
+            )
+            if not has_specific_match:
+                rec_total = 0
+
+        if rec_total > 0 and (all_matched_terms or is_explicit_vid):
             chapters_list = rec.get("chapters", [])
             scored_records.append(
                 {
@@ -1104,6 +1165,19 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
     if scored_records and scored_records[0]["score"] >= 80:
         min_rec_score = scored_records[0]["score"] * 0.22
         scored_records = [r for r in scored_records if r["score"] >= min_rec_score]
+    elif scored_records and scored_records[0]["score"] < 60 and not intent_info.get("explicit_video_ids"):
+        # 固有クエリにもかかわらず十分な確信度がない（リポジトリ外技術の可能性）場合はゼロ件扱い
+        scored_records = []
+
+    if not scored_records:
+        scored_segments = []
+    else:
+        valid_vids = {r.get("video_id") for r in scored_records if r.get("video_id")}
+        valid_paths = {r.get("record_path") for r in scored_records if r.get("record_path")}
+        scored_segments = [
+            s for s in scored_segments
+            if s.get("video_id") in valid_vids or s.get("record_path") in valid_paths
+        ]
 
     scored_segments.sort(
         key=lambda x: (

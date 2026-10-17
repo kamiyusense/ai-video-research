@@ -55,7 +55,6 @@ const CONTRACT_SPEC_V1 = {
     "YOUTUBE_CHAPTER_METADATA",
     "TIMESTAMPED_CAPTIONS",
     "VISUAL_FRAME_CHECK",
-    "OFFICIAL_TIME_RANGE",
     "UNKNOWN",
   ],
   allowed_relation_types: [

@@ -1981,6 +1981,46 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(total_normalized, 100)
 
 
+class TestQueryResearchEngine(unittest.TestCase):
+    """Test natural-language query and verified timestamp locator engine (query_research.py)."""
+
+    def test_query_case_e_out_of_scope_rejection(self):
+        """Case E: Completely out-of-scope technologies (e.g. Rust WebAssembly compiler) must be rejected with INSUFFICIENT_NEEDS_NEW_RESEARCH."""
+        query = "完全にリポジトリ外の技術（例：RustのWebAssemblyコンパイラ最適化）"
+        res = query_mod.answer_question(query, root=ROOT, top_k=2)
+        gap = res.get("step4_gap_analysis", {})
+        self.assertEqual(gap.get("coverage_status"), "INSUFFICIENT_NEEDS_NEW_RESEARCH")
+        self.assertEqual(len(res.get("step2_matched_records", [])), 0)
+        self.assertEqual(len(res.get("step5_and_6_recommended_video_segments", [])), 0)
+
+    def test_query_case_f_explicit_video_id_and_verified_links(self):
+        """Case F: Targeting a specific video ID (lC5jxpYmatE) extracts its verified chapters with valid &t=XXs URLs."""
+        query = "lC5jxpYmatEの検証済み箇所"
+        res = query_mod.answer_question(query, root=ROOT, top_k=2)
+        records = res.get("step2_matched_records", [])
+        self.assertGreaterEqual(len(records), 1)
+        self.assertEqual(records[0]["video_id"], "lC5jxpYmatE")
+
+        segments = res.get("step5_and_6_recommended_video_segments", [])
+        self.assertGreaterEqual(len(segments), 1)
+        for seg in segments:
+            if seg.get("video_id") == "lC5jxpYmatE" and seg.get("playback_url"):
+                self.assertIn("watch?v=lC5jxpYmatE&t=", seg["playback_url"])
+                self.assertIn(
+                    seg.get("timestamp_source"),
+                    {"VISUAL_FRAME_CHECK", "TIMESTAMPED_CAPTIONS", "YOUTUBE_CHAPTER_METADATA"},
+                )
+
+    def test_query_case_a_claude_code_knowledge(self):
+        """Case A: Claude Code CLI setup query retrieves Claude Code records and notebook recommendations."""
+        query = "Claude Codeのエラー解決とCLI環境設定"
+        res = query_mod.answer_question(query, root=ROOT, top_k=2)
+        records = res.get("step2_matched_records", [])
+        self.assertGreaterEqual(len(records), 1)
+        titles = " ".join([r["title"] for r in records]).lower()
+        self.assertIn("claude", titles)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 
