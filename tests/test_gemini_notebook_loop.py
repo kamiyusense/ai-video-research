@@ -2518,8 +2518,62 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
             self.assertIsNone(ch.get("playback_url"))
             self.assertEqual(ch.get("start_mmss"), "UNKNOWN")
 
+    def test_cp1_gemini_task_and_contract_spec_alignment(self):
+        """CP1: Verify cross-spec alignment between GEMINI_TASK.md, contract_spec_v1.json,
+        receipt_to_research.py, and cloud_relay_gas.js.
+        """
+        task_md_path = ROOT / "automation" / "gemini-notebook" / "GEMINI_TASK.md"
+        task_text = task_md_path.read_text(encoding="utf-8")
+
+        # 1. Ensure OFFICIAL_TIME_RANGE is completely removed from GEMINI_TASK.md
+        self.assertNotIn("OFFICIAL_TIME_RANGE", task_text)
+
+        # 2. Ensure allowed timestamp sources in GEMINI_TASK.md match contract_spec_v1.json exactly
+        contract = bridge.CONTRACT
+        for src in contract["allowed_timestamp_sources"]:
+            self.assertIn(f'"{src}"', task_text)
+
+        # 3. Ensure receipt_to_research rejects receipts with OFFICIAL_TIME_RANGE
+        bad_receipt = make_sample_receipt()
+        bad_receipt["videos"][0]["chapters"] = [
+            {
+                "title": "Bad timestamp source chapter",
+                "start_seconds": 120,
+                "end_seconds": 180,
+                "summary_ja": "Test summary",
+                "timestamp_source": "OFFICIAL_TIME_RANGE",
+            }
+        ]
+        with self.assertRaises(ValueError) as ctx:
+            bridge.validate(bad_receipt)
+        self.assertIn("Invalid chapter timestamp_source", str(ctx.exception))
+
+        # 4. Ensure cloud_relay_gas (JS) also rejects OFFICIAL_TIME_RANGE
+        node_script = f"""
+const gas = require({json.dumps(self.gas_path)});
+try {{
+  gas.validateReceipt({json.dumps(bad_receipt)});
+  process.stdout.write("FAILED_TO_REJECT");
+}} catch (e) {{
+  if (String(e.message).includes("Invalid chapter timestamp_source")) {{
+    process.stdout.write("REJECTED_AS_EXPECTED");
+  }} else {{
+    process.stdout.write("REJECTED_OTHER: " + e.message);
+  }}
+}}
+"""
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "REJECTED_AS_EXPECTED")
+
 
 if __name__ == "__main__":
+
 
     unittest.main(verbosity=2)
 

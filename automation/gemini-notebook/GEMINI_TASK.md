@@ -36,7 +36,6 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
   - `"YOUTUBE_CHAPTER_METADATA"`: YouTube動画概要欄・公式チャプターメタデータで当該章の開始時刻が一致確認できた場合のみ
   - `"TIMESTAMPED_CAPTIONS"`: 時刻付き字幕・トランスクリプトの該当秒数付近の発話内容で当該章の話題開始が直接確認できた場合のみ
   - `"VISUAL_FRAME_CHECK"`: 映像フレーム・画面表示時刻で直接確認できた場合のみ
-  - `"OFFICIAL_TIME_RANGE"`: 投稿者の公式解説記事等で明示された時刻区間で確認できた場合のみ
   - `"UNKNOWN"`: 時刻未確認・尺不一致・字幕未照合（**この場合、`start_seconds` / `end_seconds` / `timestamp_seconds` は必ず `null` にし、推測で秒数を埋めてはならない**）
 
 ## 毎回の自律実行（全工程を1タスクで連続実行する）
@@ -78,7 +77,7 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
       - `start_seconds`: 開始秒（0以上の整数、時刻未確認なら `null`）
       - `end_seconds`: 終了秒（`start_seconds` 以上の整数、または `null`）
       - `summary_ja`: その章で解説されている内容の独自要約（1〜300文字）
-      - `timestamp_source`: `"YOUTUBE_CHAPTER_METADATA"` / `"TIMESTAMPED_CAPTIONS"` / `"VISUAL_FRAME_CHECK"` / `"OFFICIAL_TIME_RANGE"` / `"UNKNOWN"`
+      - `timestamp_source`: `"YOUTUBE_CHAPTER_METADATA"` / `"TIMESTAMPED_CAPTIONS"` / `"VISUAL_FRAME_CHECK"` / `"UNKNOWN"`
       - `key_topics`: 検索用キーワード配列（最大8個、各60文字以内）
     - `related_records`（任意・推奨、最大10件）: 既存の研究や未解決課題との関連。各要素は：
       - `target_id`: 対象ID（例: `"youtube:lC5jxpYmatE"`, `"P006-U02"`, `"R001"`）
