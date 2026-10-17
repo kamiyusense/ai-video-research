@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
-  "kind": "gemini_notebook_loop_v05_verification",
-  "recorded_at_utc": "2026-10-17T00:53:00Z",
+  "kind": "gemini_notebook_loop_v06_verification",
+  "recorded_at_utc": "2026-10-17T01:28:00Z",
   "repository": "kamiyusense/ai-video-research",
   "visibility": "private",
   "branch": "feature/gemini-notebook-research-loop-20261016",
-  "base_commit_before_v05": "4bdebc6a8b86187e0d0fd93d5c3a0ed5599a3b43",
+  "base_commit_before_v06": "5dab24b79d03023e85b99019cfd1356c3051255a",
   "pull_request": {
     "url": "https://github.com/kamiyusense/ai-video-research/pull/10",
     "number": 10,
     "draft": true,
     "merged": false
   },
-  "selected_architecture": "GAS_DIRECT_VALIDATION_AND_GIT_DATABASE_API_ATOMIC_COMMIT_V05",
+  "selected_architecture": "GAS_DIRECT_VALIDATION_AND_GIT_DATABASE_API_ATOMIC_COMMIT_WITH_QA_VIDEO_LOCATOR_V06",
   "operational_completion_criteria": {
     "1_code_exists": "PASS",
     "2_mock_parity_and_anomaly_tests_succeed": "PASS",
@@ -20,33 +20,30 @@
     "4_actual_github_write_from_production_gas_runtime": "NOT_TESTED",
     "5_actual_notebook_update_succeeds": "NOT_TESTED",
     "6_gemini_to_github_without_manual_copy": "NOT_TESTED",
-    "7_periodic_execution_continues_when_pc_is_off": "UNKNOWN"
+    "7_periodic_execution_continues_when_pc_is_off": "UNKNOWN",
+    "8_natural_language_qa_and_verified_timestamp_video_locator": "PASS (LOCAL_CLI_AND_MOCK_VERIFIED)"
   },
-  "v05_five_review_fixes_verification": {
-    "1_gas_script_properties_9kb_limit_protection": {
-      "status": "PASS (MOCK_VERIFIED)",
-      "mechanism": "Moved persistent `processed_receipts` and completed `remote_branch_cache` to GitHub SSOT (`automation/gemini-notebook/state/loop_state.json`). Restricted GAS `RELAY_STATE_V1` (`gas_relay_compact_state_v2`) to compact transient fields and enforced `saveBoundedRelayState_()` trimming at <= 7,500 UTF-8 bytes (well under Google's 9KB limit)."
-    },
-    "2_duplicate_detection_completeness": {
-      "status": "PASS (MOCK_VERIFIED)",
-      "mechanism": "Added full `/branches?per_page=100&page=N` pagination, explicit `tree.truncated === true` error stop, and multi-run `partialScanProgress` continuation when markdown body scans exceed `max_blob_fetches_per_run = 25` (`PAUSED_INCOMPLETE_DEDUP_SCAN_CONTINUES_NEXT_RUN`). Never marks a branch `scan_complete: true` or treats deduplication as PASS while unscanned files remain."
-    },
-    "3_github_rest_api_commit_to_tree_sha_alignment": {
-      "status": "PASS (MOCK_VERIFIED)",
-      "mechanism": "Every remote branch now resolves `commit_sha -> tree_sha` via `GET /repos/{owner}/{repo}/git/commits/{commit_sha}` before calling `GET /repos/{owner}/{repo}/git/trees/{tree_sha}?recursive=1`. Mock server in `test_10` and `test_11` strictly rejects any `commit_sha` passed to `/git/trees/` with HTTP 404. Removed silent `continue` on remote branch API errors."
-    },
-    "4_gemini_task_md_instruction_alignment": {
+  "v06_feature_expansion_verification": {
+    "1_notebook_library_and_companion_card_design": {
       "status": "PASS",
-      "mechanism": "Updated `automation/gemini-notebook/GEMINI_TASK.md` to remove outdated v0.3 GitHub Actions references and align with the v0.5 GAS direct atomic commit architecture, while explicitly maintaining that unattended Gemini Scheduled Actions -> Google Drive export and autonomous Notebook source registration remain `NOT_TESTED` / `UNKNOWN`."
+      "mechanism": "Updated `GEMINI_TASK.md` and `QA_WORKFLOW.md` so YouTube URLs are registered as Notebook sources (for primary-source transcript reference inside Notebook without copying transcripts to GitHub) alongside a structured companion study card (`動画研究カード_<video_id>`) containing chapter table of contents, verified timestamps, clickable YouTube deep links, and related research, while strictly protecting existing Notebook sources and `AI技術研究室_知識索引.md`."
     },
-    "5_value_level_validation_and_residual_risk_disclosure": {
-      "status": "PASS (MOCK_VERIFIED)",
-      "mechanism": "Added recursive string value scanning (`forbidden_value_patterns` in `contract_spec_v1.json`) blocking GitHub/Google/OpenAI/Anthropic/Slack tokens, PEM private keys, Bearer headers, SRT/WebVTT subtitle timecodes, 3+ line timestamped transcripts, and >3 newlines in summaries/claims. Explicitly documented residual limits (short untimestamped quotes or unprefixed custom secrets cannot be 100% eliminated heuristically, hence isolation to non-default Draft PR branch)."
+    "2_github_rich_research_records_and_backward_compatible_receipt_v1_6": {
+      "status": "PASS (PYTHON_AND_JS_100_PERCENT_PARITY)",
+      "mechanism": "Upgraded `contract_spec_v1.json` to `gemini_notebook_bridge_contract_v1_6` while keeping 100% backward compatibility with `research_receipt_v1`. Added optional `detailed_findings_ja` (up to 2,500 chars / 25 newlines of structured analysis, still protected by `scan_forbidden_keys` against secret tokens and verbatim SRT/transcript dumps), `chapters` (up to 25 chapter segments with `start_seconds`, `end_seconds`, `summary_ja`, `timestamp_source`, `key_topics`), `related_records` (`EXTENDS`, `UPDATES`, `COMPLEMENTS`, `CONTRADICTS`, `RESOLVES_BACKLOG`), and `claims[].timestamp_source`."
+    },
+    "3_strict_timestamp_reliability_and_provenance": {
+      "status": "PASS (DOUBLE_GUARD_VERIFIED)",
+      "mechanism": "Every chapter and claim timestamp records `timestamp_source` (`YOUTUBE_CHAPTER_METADATA`, `TIMESTAMPED_CAPTIONS`, `VISUAL_FRAME_CHECK`, `OFFICIAL_TIME_RANGE`, `UNKNOWN`). Validation in both Python and GAS rejects any numeric `start_seconds`/`timestamp_seconds` when `timestamp_source == 'UNKNOWN'` and rejects missing `start_seconds` when `timestamp_source != 'UNKNOWN'`. Rendering and search generate clickable `&t=XXs` YouTube links ONLY when `start_seconds` is a verified integer and `timestamp_source != 'UNKNOWN'`."
+    },
+    "4_natural_language_qa_and_timestamped_video_locator": {
+      "status": "PASS (VERIFIED_ON_EXISTING_AND_V06_RECORDS)",
+      "mechanism": "Implemented `automation/gemini-notebook/query_research.py` and generated `automation/gemini-notebook/state/video_knowledge_catalog.json`. Executes the 6-step pipeline: (1) query intent & synonym analysis (`CONCEPT_AND_BASICS`, `FAILURE_AND_LIMITS`, `IMPLEMENTATION_AND_HOWTO`, `VERIFICATION_AND_OFFICIAL_SPEC`, `VIDEO_LOCATOR`), (2) purpose-weighted + verification-weighted search across GitHub records/chapters/claims, (3) Gemini Notebook deep-source lookup recommendation, (4) knowledge gap detection & follow-up discovery query suggestion, (5) evidence-backed answer synthesis, and (6) verified YouTube deep-link (`&t=XXs`) table output."
     }
   },
   "automated_tests": {
     "command": "py -3 tests/test_gemini_notebook_loop.py",
-    "test_count": 11,
+    "test_count": 12,
     "all_pass": true,
     "verified_cases": [
       {
@@ -87,13 +84,16 @@
       },
       {
         "test_id": "test_10_gas_mock_atomic_commit_concurrency_conflict_and_drive_self_healing",
-        "status": "PASS",
-        "evidence": "Mock server rejects commit_sha on `/git/trees/`; verifies Commit->Tree SHA resolution, GitHub SSOT `remote_branch_cache` reuse, Drive self-healing, and compact ScriptProperties (<1KB)."
+        "status": "PASS"
       },
       {
         "test_id": "test_11_pagination_truncated_tree_partial_scan_continuation_and_value_patterns",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_12_v06_chapters_detailed_findings_timestamp_provenance_and_qa_search",
         "status": "PASS",
-        "evidence": "Verified 2-page `/branches` pagination, 30-file multi-run partial scan pause (Run 1: 5 remaining) and continuation (Run 2: detects `dQw4w9WgXcQ` in `notes/note_28.md` on page-2 branch), `truncated: true` tree immediate error stop, `saveBoundedRelayState` <= 7,500 byte trimming, and value-level secret/SRT/newline rejection in both Python and JS."
+        "evidence": "Verified 100% Python/GAS output parity on v0.6 rich receipts (`chapters`, `detailed_findings_ja`, `related_records`, `timestamp_source`), rejection of fabricated timestamps on `UNKNOWN` source, and end-to-end natural-language Q&A + verified `&t=XXs` segment ranking and gap detection via `query_research.py`."
       }
     ]
   },

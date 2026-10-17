@@ -1286,6 +1286,220 @@ process.stdout.write(JSON.stringify({{
         self.assertIn("is truncated", out["truncatedError"])
         self.assertIn("refusing incomplete duplicate detection", out["truncatedError"])
 
+    def test_12_v06_chapters_detailed_findings_timestamp_provenance_and_qa_search(self):
+        """v0.6: Verify chapters, detailed_findings_ja, related_records, timestamp_source provenance, and query_research.py Q&A."""
+        gas_path = (ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").as_posix()
+        query_mod_path = ROOT / "automation" / "gemini-notebook" / "query_research.py"
+        q_spec = importlib.util.spec_from_file_location("query_research", query_mod_path)
+        query_mod = importlib.util.module_from_spec(q_spec)
+        q_spec.loader.exec_module(query_mod)
+
+        rich_receipt = make_sample_receipt()
+        rich_video = rich_receipt["videos"][0]
+        rich_video["detailed_findings_ja"] = (
+            "1. **ハーネス設計の核心（状態管理と決定論的ガードの分離）**:\n"
+            "   - LLMの推論ループに直接ファイル書込みや外部送信を委ねるのではなく、PreToolUse / PostToolUse のHooksで決定論的検証を挟む。\n"
+            "2. **スキル設計で起きやすい失敗例と対策**:\n"
+            "   - 常設ルールやスキルを無秩序に増やすと、どのスキルを呼ぶべきかのメタデータ選択が衝突し、保守負担が増大する。\n"
+            "   - 公式仕様（CONFIRMED_DOC）では `SKILL.md` 本文はオンデマンド遅延ロードされるため、トークン消費の主因は本文全量ではなく説明文の重複にある。\n"
+            "3. **再利用手順**:\n"
+            "   - 失敗時のリトライ上限（retry=0）とReadback確認をハーネス側で強制する。"
+        )
+        rich_video["chapters"] = [
+            {
+                "title": "ハーネスとは何か：モデル推論と状態管理・Hooksの役割分離",
+                "start_seconds": 60,
+                "end_seconds": 320,
+                "summary_ja": "ハーネスの基本概念と、ツール実行前後にHooksを挟んで暴走や誤書込みを防ぐアーキテクチャを解説。",
+                "timestamp_source": "YOUTUBE_CHAPTER_METADATA",
+                "key_topics": ["ハーネス", "Harness", "Hooks", "状態管理"],
+            },
+            {
+                "title": "スキル設計の失敗例：スキルの増やしすぎ・重複とメタデータ競合",
+                "start_seconds": 320,
+                "end_seconds": 680,
+                "summary_ja": "スキルを無秩序に増やした際に起きる選択ミス・保守破綻の失敗例と、SKILL.md遅延読み込みの正しい仕様を解説。",
+                "timestamp_source": "TIMESTAMPED_CAPTIONS",
+                "key_topics": ["スキル", "Skill", "失敗例", "SKILL.md"],
+            },
+            {
+                "title": "補足議論：時刻未確認の質疑応答パート",
+                "start_seconds": None,
+                "end_seconds": None,
+                "summary_ja": "Notebookのテキストチャンクから抽出されたが秒単位の時刻根拠が未確認の補足パート。",
+                "timestamp_source": "UNKNOWN",
+                "key_topics": ["補足", "Q&A"],
+            },
+        ]
+        rich_video["related_records"] = [
+            {
+                "target_id": "youtube:lC5jxpYmatE",
+                "relation": "EXTENDS",
+                "note": "動画研究05のHooks・Skill遅延読み込みの検証をハーネス実装パターンへ拡張",
+            },
+            {
+                "target_id": "P006-U03",
+                "relation": "RESOLVES_BACKLOG",
+                "note": "反復操作を決定論的Hooksとスクリプトへ移行する判断基準を提供",
+            },
+        ]
+        rich_video["claims"][0]["timestamp_source"] = "TIMESTAMPED_CAPTIONS"
+
+        # 1. Validate and check 100% Python/JS output parity on rich v0.6 receipt
+        bridge.validate(rich_receipt)
+        py_md = bridge.render(rich_video, rich_receipt["checked_at"])
+        py_delta_md = bridge.render_delta_section(rich_video, rich_receipt["checked_at"])
+
+        # Verify verified chapter has &t=60s link, while UNKNOWN chapter has NO fake link
+        self.assertIn(
+            "[01:00〜05:20](https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=60s)",
+            py_md,
+        )
+        self.assertIn(
+            "- UNKNOWN | **補足議論：時刻未確認の質疑応答パート**",
+            py_md,
+        )
+
+        # 2. Verify strict rejection of fabricated timestamps when timestamp_source == "UNKNOWN"
+        bad_unknown_chapter = json.loads(json.dumps(rich_receipt))
+        bad_unknown_chapter["videos"][0]["chapters"][2]["start_seconds"] = 700
+        with self.assertRaisesRegex(
+            ValueError,
+            "Chapter with UNKNOWN timestamp_source cannot specify start_seconds/end_seconds",
+        ):
+            bridge.validate(bad_unknown_chapter)
+
+        bad_verified_without_sec = json.loads(json.dumps(rich_receipt))
+        bad_verified_without_sec["videos"][0]["chapters"][0]["start_seconds"] = None
+        bad_verified_without_sec["videos"][0]["chapters"][0]["end_seconds"] = None
+        with self.assertRaisesRegex(
+            ValueError,
+            "Chapter with verified timestamp_source must specify start_seconds",
+        ):
+            bridge.validate(bad_verified_without_sec)
+
+        bad_claim_unknown_with_sec = json.loads(json.dumps(rich_receipt))
+        bad_claim_unknown_with_sec["videos"][0]["claims"][0]["timestamp_source"] = "UNKNOWN"
+        with self.assertRaisesRegex(
+            ValueError,
+            "Claim with UNKNOWN timestamp_source cannot specify timestamp_seconds",
+        ):
+            bridge.validate(bad_claim_unknown_with_sec)
+
+        # 3. Verify Node.js (GAS) parity on validation and Markdown rendering
+        node_script = f"""
+const gas = require({json.dumps(gas_path)});
+const richReceipt = {json.dumps(rich_receipt, ensure_ascii=False)};
+const richVideo = richReceipt.videos[0];
+const badUnknownChapter = {json.dumps(bad_unknown_chapter, ensure_ascii=False)};
+const badVerifiedWithoutSec = {json.dumps(bad_verified_without_sec, ensure_ascii=False)};
+const badClaimUnknownWithSec = {json.dumps(bad_claim_unknown_with_sec, ensure_ascii=False)};
+
+gas.validateReceipt(richReceipt);
+
+let err1 = false, err2 = false, err3 = false;
+try {{ gas.validateReceipt(badUnknownChapter); }} catch (e) {{
+  err1 = String(e.message).includes("Chapter with UNKNOWN timestamp_source cannot specify start_seconds/end_seconds");
+}}
+try {{ gas.validateReceipt(badVerifiedWithoutSec); }} catch (e) {{
+  err2 = String(e.message).includes("Chapter with verified timestamp_source must specify start_seconds");
+}}
+try {{ gas.validateReceipt(badClaimUnknownWithSec); }} catch (e) {{
+  err3 = String(e.message).includes("Claim with UNKNOWN timestamp_source cannot specify timestamp_seconds");
+}}
+
+process.stdout.write(JSON.stringify({{
+  digest: gas.computeReceiptDigest(richReceipt),
+  md: gas.renderResearchMarkdown(richVideo, richReceipt.checked_at),
+  deltaMd: gas.renderDeltaSection(richVideo, richReceipt.checked_at),
+  err1,
+  err2,
+  err3
+}}));
+"""
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        js_out = json.loads(res.stdout)
+        self.assertEqual(js_out["digest"], bridge.compute_receipt_digest(rich_receipt))
+        self.assertEqual(js_out["md"], py_md)
+        self.assertEqual(js_out["deltaMd"], py_delta_md)
+        self.assertTrue(js_out["err1"])
+        self.assertTrue(js_out["err2"])
+        self.assertTrue(js_out["err3"])
+
+        # 4. Apply rich v0.6 receipt to repo_root and run query_research.py Q&A pipeline
+        with redirect_stdout(io.StringIO()):
+            bridge.process_receipt_data(
+                data=rich_receipt,
+                root=self.repo_root,
+                apply=True,
+                sync_index=True,
+            )
+
+        catalog_path = (
+            self.repo_root
+            / "automation"
+            / "gemini-notebook"
+            / "state"
+            / "video_knowledge_catalog.json"
+        )
+        catalog, _ = query_mod.build_video_knowledge_catalog(
+            root=self.repo_root, write_path=catalog_path
+        )
+        self.assertTrue(catalog_path.exists())
+        self.assertGreaterEqual(catalog["total_verified_chapters"], 2)
+
+        # Q&A Test A: "ハーネスって何？どの動画のどこを見ればいい？"
+        qa_harness = query_mod.answer_question(
+            "ハーネスって何？どの動画のどこを見ればいい？", root=self.repo_root
+        )
+        self.assertIn(
+            "CONCEPT_AND_BASICS", qa_harness["step1_intent_analysis"]["intents"]
+        )
+        self.assertIn(
+            "VIDEO_LOCATOR", qa_harness["step1_intent_analysis"]["intents"]
+        )
+        top_seg_h = qa_harness["step5_and_6_recommended_video_segments"][0]
+        self.assertEqual(top_seg_h["video_id"], "dQw4w9WgXcQ")
+        self.assertIn(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=",
+            top_seg_h["playback_url"],
+        )
+
+        # Q&A Test B: "前に調べたスキル設計の動画で、失敗例を話していた箇所を教えて"
+        qa_skill_fail = query_mod.answer_question(
+            "前に調べたスキル設計の動画で、失敗例を話していた箇所を教えて",
+            root=self.repo_root,
+        )
+        self.assertIn(
+            "FAILURE_AND_LIMITS", qa_skill_fail["step1_intent_analysis"]["intents"]
+        )
+        top_seg_s = qa_skill_fail["step5_and_6_recommended_video_segments"][0]
+        self.assertEqual(
+            top_seg_s["playback_url"],
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=320s",
+        )
+        self.assertEqual(top_seg_s["timestamp_source"], "TIMESTAMPED_CAPTIONS")
+        md_response = query_mod.format_qa_response_markdown(qa_skill_fail)
+        self.assertIn(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=320s", md_response
+        )
+
+        # Q&A Test C: Unresearched topic gap detection
+        qa_gap = query_mod.answer_question(
+            "量子暗号コンパイラのゼロ知識証明ベンチマークは？", root=self.repo_root
+        )
+        self.assertEqual(
+            qa_gap["step4_gap_analysis"]["coverage_status"],
+            "INSUFFICIENT_NEEDS_NEW_RESEARCH",
+        )
+        self.assertEqual(len(qa_gap["step2_matched_records"]), 0)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

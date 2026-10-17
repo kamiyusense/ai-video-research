@@ -1,5 +1,5 @@
 {
-  "contract_version": "gemini_notebook_bridge_contract_v1_5",
+  "contract_version": "gemini_notebook_bridge_contract_v1_6",
   "receipt_schema_version": "research_receipt_v1",
   "loop_state_schema_version": "gemini_notebook_loop_state_v1",
   "expected_repo": "kamiyusense/ai-video-research",
@@ -13,6 +13,7 @@
   "default_notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
   "notebook_internal_master_index_name": "AI技術研究室_知識索引.md",
   "github_index_export_file": "automation/gemini-notebook/state/github_knowledge_index_export.md",
+  "video_catalog_export_file": "automation/gemini-notebook/state/video_knowledge_catalog.json",
   "loop_state_file": "automation/gemini-notebook/state/loop_state.json",
   "youtube_hosts": [
     "www.youtube.com",
@@ -42,6 +43,20 @@
   "allowed_dedup_status": [
     "PASS",
     "UNKNOWN"
+  ],
+  "allowed_timestamp_sources": [
+    "YOUTUBE_CHAPTER_METADATA",
+    "TIMESTAMPED_CAPTIONS",
+    "VISUAL_FRAME_CHECK",
+    "OFFICIAL_TIME_RANGE",
+    "UNKNOWN"
+  ],
+  "allowed_relation_types": [
+    "EXTENDS",
+    "UPDATES",
+    "COMPLEMENTS",
+    "CONTRADICTS",
+    "RESOLVES_BACKLOG"
   ],
   "forbidden_payload_keys": [
     "transcript",
@@ -102,6 +117,16 @@
     "max_claims_per_video": 12,
     "max_title_length": 250,
     "max_summary_ja_length": 300,
+    "max_detailed_findings_length": 2500,
+    "max_newlines_in_detailed_findings": 25,
+    "max_chapters_per_video": 25,
+    "max_chapter_title_length": 150,
+    "max_chapter_summary_length": 300,
+    "max_chapter_key_topics": 8,
+    "max_chapter_key_topic_length": 60,
+    "max_related_records_per_video": 10,
+    "max_related_target_id_length": 120,
+    "max_related_note_length": 250,
     "max_source_scope_length": 180,
     "max_claim_text_length": 500,
     "max_newlines_per_text_field": 3,

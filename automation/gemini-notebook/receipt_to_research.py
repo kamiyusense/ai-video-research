@@ -50,6 +50,24 @@ ALLOWED_STATUSES = set(
 ALLOWED_CHANGES = set(
     CONTRACT.get("allowed_changes", ["KNOWN", "NEW", "UPDATED", "CONFLICT", "UNKNOWN"])
 )
+ALLOWED_TIMESTAMP_SOURCES = set(
+    CONTRACT.get(
+        "allowed_timestamp_sources",
+        [
+            "YOUTUBE_CHAPTER_METADATA",
+            "TIMESTAMPED_CAPTIONS",
+            "VISUAL_FRAME_CHECK",
+            "OFFICIAL_TIME_RANGE",
+            "UNKNOWN",
+        ],
+    )
+)
+ALLOWED_RELATION_TYPES = set(
+    CONTRACT.get(
+        "allowed_relation_types",
+        ["EXTENDS", "UPDATES", "COMPLEMENTS", "CONTRADICTS", "RESOLVES_BACKLOG"],
+    )
+)
 FORBIDDEN_PAYLOAD_KEYS = {
     k.lower()
     for k in CONTRACT.get(
@@ -112,7 +130,18 @@ FORBIDDEN_VALUE_PATTERNS = [
         ],
     )
 ]
-MAX_NEWLINES_PER_TEXT_FIELD = CONTRACT.get("limits", {}).get("max_newlines_per_text_field", 3)
+LIMITS = CONTRACT.get("limits", {})
+MAX_NEWLINES_PER_TEXT_FIELD = LIMITS.get("max_newlines_per_text_field", 3)
+MAX_DETAILED_FINDINGS_LENGTH = LIMITS.get("max_detailed_findings_length", 2500)
+MAX_NEWLINES_IN_DETAILED_FINDINGS = LIMITS.get("max_newlines_in_detailed_findings", 25)
+MAX_CHAPTERS_PER_VIDEO = LIMITS.get("max_chapters_per_video", 25)
+MAX_CHAPTER_TITLE_LENGTH = LIMITS.get("max_chapter_title_length", 150)
+MAX_CHAPTER_SUMMARY_LENGTH = LIMITS.get("max_chapter_summary_length", 300)
+MAX_CHAPTER_KEY_TOPICS = LIMITS.get("max_chapter_key_topics", 8)
+MAX_CHAPTER_KEY_TOPIC_LENGTH = LIMITS.get("max_chapter_key_topic_length", 60)
+MAX_RELATED_RECORDS_PER_VIDEO = LIMITS.get("max_related_records_per_video", 10)
+MAX_RELATED_TARGET_ID_LENGTH = LIMITS.get("max_related_target_id_length", 120)
+MAX_RELATED_NOTE_LENGTH = LIMITS.get("max_related_note_length", 250)
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_REPO = CONTRACT.get("expected_repo", "kamiyusense/ai-video-research")
 DEFAULT_STATE_PATH = Path(__file__).resolve().parent / "state" / "loop_state.json"
@@ -352,9 +381,124 @@ def validate(data):
             t = c.get("timestamp_seconds")
             if t is not None and (type(t) is not int or t < 0):
                 raise ValueError("Invalid timestamp")
+            ts_source = c.get("timestamp_source")
+            if ts_source is not None:
+                if ts_source not in ALLOWED_TIMESTAMP_SOURCES:
+                    raise ValueError("Invalid claim timestamp_source")
+                if ts_source == "UNKNOWN" and t is not None:
+                    raise ValueError(
+                        "Claim with UNKNOWN timestamp_source cannot specify timestamp_seconds"
+                    )
+                if ts_source != "UNKNOWN" and t is None:
+                    raise ValueError(
+                        "Claim with verified timestamp_source must specify timestamp_seconds"
+                    )
             u = c.get("official_url")
             if u is not None and not valid_url(u):
                 raise ValueError("Invalid official_url")
+
+        # v0.6 optional field: detailed_findings_ja
+        detailed_findings = v.get("detailed_findings_ja")
+        if detailed_findings is not None:
+            if (
+                not isinstance(detailed_findings, str)
+                or len(detailed_findings.strip()) < 1
+                or len(detailed_findings) > MAX_DETAILED_FINDINGS_LENGTH
+            ):
+                raise ValueError("Invalid detailed_findings_ja")
+            if detailed_findings.count("\n") > MAX_NEWLINES_IN_DETAILED_FINDINGS:
+                raise ValueError(
+                    "detailed_findings_ja contains too many line breaks (possible transcript dump)"
+                )
+
+        # v0.6 optional field: chapters
+        chapters = v.get("chapters")
+        if chapters is not None:
+            if not isinstance(chapters, list) or len(chapters) > MAX_CHAPTERS_PER_VIDEO:
+                raise ValueError("chapters must be a list of <=25 items")
+            for ch in chapters:
+                if not isinstance(ch, dict):
+                    raise ValueError("Invalid chapter entry")
+                ch_title = ch.get("title")
+                if (
+                    not isinstance(ch_title, str)
+                    or len(ch_title.strip()) < 1
+                    or len(ch_title) > MAX_CHAPTER_TITLE_LENGTH
+                    or "\n" in ch_title
+                ):
+                    raise ValueError("Invalid chapter title")
+                ch_summary = ch.get("summary_ja")
+                if (
+                    not isinstance(ch_summary, str)
+                    or len(ch_summary.strip()) < 1
+                    or len(ch_summary) > MAX_CHAPTER_SUMMARY_LENGTH
+                    or ch_summary.count("\n") > MAX_NEWLINES_PER_TEXT_FIELD
+                ):
+                    raise ValueError("Invalid chapter summary_ja")
+                ch_ts_source = ch.get("timestamp_source")
+                if ch_ts_source not in ALLOWED_TIMESTAMP_SOURCES:
+                    raise ValueError("Invalid chapter timestamp_source")
+                s_sec = ch.get("start_seconds")
+                e_sec = ch.get("end_seconds")
+                if s_sec is not None and (type(s_sec) is not int or s_sec < 0):
+                    raise ValueError("Invalid chapter start_seconds")
+                if e_sec is not None and (type(e_sec) is not int or e_sec < 0):
+                    raise ValueError("Invalid chapter end_seconds")
+                if ch_ts_source == "UNKNOWN" and (s_sec is not None or e_sec is not None):
+                    raise ValueError(
+                        "Chapter with UNKNOWN timestamp_source cannot specify start_seconds/end_seconds"
+                    )
+                if ch_ts_source != "UNKNOWN" and s_sec is None:
+                    raise ValueError(
+                        "Chapter with verified timestamp_source must specify start_seconds"
+                    )
+                if s_sec is None and e_sec is not None:
+                    raise ValueError("Chapter end_seconds requires start_seconds")
+                if s_sec is not None and e_sec is not None and e_sec < s_sec:
+                    raise ValueError("Chapter end_seconds must be >= start_seconds")
+                k_topics = ch.get("key_topics")
+                if k_topics is not None:
+                    if (
+                        not isinstance(k_topics, list)
+                        or len(k_topics) > MAX_CHAPTER_KEY_TOPICS
+                        or not all(
+                            isinstance(kt, str)
+                            and 1 <= len(kt.strip()) <= MAX_CHAPTER_KEY_TOPIC_LENGTH
+                            and "\n" not in kt
+                            for kt in k_topics
+                        )
+                    ):
+                        raise ValueError("Invalid chapter key_topics")
+
+        # v0.6 optional field: related_records
+        related_records = v.get("related_records")
+        if related_records is not None:
+            if (
+                not isinstance(related_records, list)
+                or len(related_records) > MAX_RELATED_RECORDS_PER_VIDEO
+            ):
+                raise ValueError("related_records must be a list of <=10 items")
+            for rel in related_records:
+                if not isinstance(rel, dict):
+                    raise ValueError("Invalid related_record entry")
+                target_id = rel.get("target_id")
+                if (
+                    not isinstance(target_id, str)
+                    or len(target_id.strip()) < 1
+                    or len(target_id) > MAX_RELATED_TARGET_ID_LENGTH
+                    or "\n" in target_id
+                ):
+                    raise ValueError("Invalid related_record target_id")
+                if rel.get("relation") not in ALLOWED_RELATION_TYPES:
+                    raise ValueError("Invalid related_record relation")
+                rel_note = rel.get("note")
+                if (
+                    not isinstance(rel_note, str)
+                    or len(rel_note.strip()) < 1
+                    or len(rel_note) > MAX_RELATED_NOTE_LENGTH
+                    or rel_note.count("\n") > MAX_NEWLINES_PER_TEXT_FIELD
+                ):
+                    raise ValueError("Invalid related_record note")
     return videos
 
 
@@ -366,14 +510,15 @@ def format_claims_lines(vid, claims):
     lines = []
     for c in claims:
         t = c.get("timestamp_seconds")
+        ts_source = c.get("timestamp_source")
         time_ref = (
             "[{:02d}:{:02d}](https://www.youtube.com/watch?v={}&t={}s)".format(
                 t // 60, t % 60, vid, t
             )
-            if t is not None
+            if (t is not None and ts_source != "UNKNOWN")
             else "UNKNOWN"
         )
-        lines.append(
+        line = (
             "- "
             + clean(c["text"])
             + " | "
@@ -382,6 +527,64 @@ def format_claims_lines(vid, claims):
             + time_ref
             + " | official: "
             + (c.get("official_url") or "UNKNOWN")
+        )
+        if ts_source is not None:
+            line += " | time_source: " + ts_source
+        lines.append(line)
+    return lines
+
+
+def format_chapters_lines(vid, chapters):
+    lines = []
+    for ch in chapters or []:
+        s_sec = ch.get("start_seconds")
+        e_sec = ch.get("end_seconds")
+        ts_source = ch.get("timestamp_source") or "UNKNOWN"
+        if s_sec is not None and ts_source != "UNKNOWN":
+            start_mmss = "{:02d}:{:02d}".format(s_sec // 60, s_sec % 60)
+            if e_sec is not None:
+                range_label = "{}〜{:02d}:{:02d}".format(start_mmss, e_sec // 60, e_sec % 60)
+            else:
+                range_label = start_mmss
+            time_link = "[{}](https://www.youtube.com/watch?v={}&t={}s)".format(
+                range_label, vid, s_sec
+            )
+        else:
+            time_link = "UNKNOWN"
+        topics = ch.get("key_topics") or []
+        topics_str = ", ".join(clean(t) for t in topics) if topics else "NONE"
+        lines.append(
+            "- "
+            + time_link
+            + " | **"
+            + clean(ch["title"])
+            + "** | "
+            + clean(ch["summary_ja"])
+            + " | time_source: "
+            + ts_source
+            + " | topics: "
+            + topics_str
+        )
+    return lines
+
+
+def format_detailed_findings_lines(detailed_findings_ja):
+    if not detailed_findings_ja:
+        return []
+    normalized = str(detailed_findings_ja).replace("\r\n", "\n").replace("\r", "\n").strip()
+    return [line.rstrip() for line in normalized.split("\n")]
+
+
+def format_related_records_lines(related_records):
+    lines = []
+    for rel in related_records or []:
+        lines.append(
+            "- `"
+            + clean(rel["target_id"])
+            + "` ("
+            + rel["relation"]
+            + "): "
+            + clean(rel["note"])
         )
     return lines
 
@@ -407,10 +610,30 @@ def render(v, checked_at):
         "",
         "## 独自要約",
         clean(v["summary_ja"]),
+    ]
+    if v.get("chapters"):
+        lines += [
+            "",
+            "## 動画目次・確認済みタイムライン（チャプター）",
+        ]
+        lines += format_chapters_lines(vid, v["chapters"])
+    if v.get("detailed_findings_ja"):
+        lines += [
+            "",
+            "## 詳細技術知識・再利用ノート",
+        ]
+        lines += format_detailed_findings_lines(v["detailed_findings_ja"])
+    lines += [
         "",
         "## 主張・一次資料・時刻",
     ]
     lines += format_claims_lines(vid, v["claims"])
+    if v.get("related_records"):
+        lines += [
+            "",
+            "## 関連する既存研究・課題との接続",
+        ]
+        lines += format_related_records_lines(v["related_records"])
     lines += [
         "",
         "## 限界",
@@ -437,10 +660,30 @@ def render_delta_section(v, checked_at):
         "",
         "### 差分要約",
         clean(v["summary_ja"]),
+    ]
+    if v.get("chapters"):
+        lines += [
+            "",
+            "### 追加・更新された動画目次・タイムライン",
+        ]
+        lines += format_chapters_lines(vid, v["chapters"])
+    if v.get("detailed_findings_ja"):
+        lines += [
+            "",
+            "### 追加・更新された詳細技術知識",
+        ]
+        lines += format_detailed_findings_lines(v["detailed_findings_ja"])
+    lines += [
         "",
         "### 追加・更新された主張と検証",
     ]
     lines += format_claims_lines(vid, v["claims"])
+    if v.get("related_records"):
+        lines += [
+            "",
+            "### 追加・更新された関連研究・課題接続",
+        ]
+        lines += format_related_records_lines(v["related_records"])
     lines.append("")
     return "\n".join(lines)
 

@@ -27,7 +27,7 @@
  */
 
 const CONTRACT_SPEC_V1 = {
-  contract_version: "gemini_notebook_bridge_contract_v1_5",
+  contract_version: "gemini_notebook_bridge_contract_v1_6",
   receipt_schema_version: "research_receipt_v1",
   loop_state_schema_version: "gemini_notebook_loop_state_v1",
   expected_repo: "kamiyusense/ai-video-research",
@@ -38,6 +38,7 @@ const CONTRACT_SPEC_V1 = {
   default_notebook_url: "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
   notebook_internal_master_index_name: "AI技術研究室_知識索引.md",
   github_index_export_file: "automation/gemini-notebook/state/github_knowledge_index_export.md",
+  video_catalog_export_file: "automation/gemini-notebook/state/video_knowledge_catalog.json",
   loop_state_file: "automation/gemini-notebook/state/loop_state.json",
   youtube_hosts: ["www.youtube.com", "youtube.com", "m.youtube.com", "youtu.be"],
   allowed_statuses: [
@@ -50,6 +51,20 @@ const CONTRACT_SPEC_V1 = {
   allowed_changes: ["KNOWN", "NEW", "UPDATED", "CONFLICT", "UNKNOWN"],
   allowed_readback: ["PASS", "FAIL", "UNKNOWN"],
   allowed_dedup_status: ["PASS", "UNKNOWN"],
+  allowed_timestamp_sources: [
+    "YOUTUBE_CHAPTER_METADATA",
+    "TIMESTAMPED_CAPTIONS",
+    "VISUAL_FRAME_CHECK",
+    "OFFICIAL_TIME_RANGE",
+    "UNKNOWN",
+  ],
+  allowed_relation_types: [
+    "EXTENDS",
+    "UPDATES",
+    "COMPLEMENTS",
+    "CONTRADICTS",
+    "RESOLVES_BACKLOG",
+  ],
   forbidden_payload_keys: [
     "transcript",
     "full_transcript",
@@ -109,6 +124,16 @@ const CONTRACT_SPEC_V1 = {
     max_claims_per_video: 12,
     max_title_length: 250,
     max_summary_ja_length: 300,
+    max_detailed_findings_length: 2500,
+    max_newlines_in_detailed_findings: 25,
+    max_chapters_per_video: 25,
+    max_chapter_title_length: 150,
+    max_chapter_summary_length: 300,
+    max_chapter_key_topics: 8,
+    max_chapter_key_topic_length: 60,
+    max_related_records_per_video: 10,
+    max_related_target_id_length: 120,
+    max_related_note_length: 250,
     max_source_scope_length: 180,
     max_claim_text_length: 500,
     max_newlines_per_text_field: 3,
@@ -615,9 +640,172 @@ function validateReceipt_(data) {
       ) {
         throw new Error("Invalid timestamp");
       }
+      const tsSource = c.timestamp_source;
+      if (tsSource !== undefined && tsSource !== null) {
+        if (CONTRACT_SPEC_V1.allowed_timestamp_sources.indexOf(tsSource) === -1) {
+          throw new Error("Invalid claim timestamp_source");
+        }
+        if (tsSource === "UNKNOWN" && t !== undefined && t !== null) {
+          throw new Error(
+            "Claim with UNKNOWN timestamp_source cannot specify timestamp_seconds"
+          );
+        }
+        if (tsSource !== "UNKNOWN" && (t === undefined || t === null)) {
+          throw new Error(
+            "Claim with verified timestamp_source must specify timestamp_seconds"
+          );
+        }
+      }
       const u = c.official_url;
       if (u !== undefined && u !== null && !validUrl_(u)) {
         throw new Error("Invalid official_url");
+      }
+    }
+
+    // v0.6 optional field: detailed_findings_ja
+    if (v.detailed_findings_ja !== undefined && v.detailed_findings_ja !== null) {
+      if (
+        typeof v.detailed_findings_ja !== "string" ||
+        v.detailed_findings_ja.trim().length < 1 ||
+        v.detailed_findings_ja.length > lim.max_detailed_findings_length
+      ) {
+        throw new Error("Invalid detailed_findings_ja");
+      }
+      if (
+        countNewlines_(v.detailed_findings_ja) >
+        lim.max_newlines_in_detailed_findings
+      ) {
+        throw new Error(
+          "detailed_findings_ja contains too many line breaks (possible transcript dump)"
+        );
+      }
+    }
+
+    // v0.6 optional field: chapters
+    if (v.chapters !== undefined && v.chapters !== null) {
+      if (
+        !Array.isArray(v.chapters) ||
+        v.chapters.length > lim.max_chapters_per_video
+      ) {
+        throw new Error("chapters must be a list of <=25 items");
+      }
+      for (let k = 0; k < v.chapters.length; k++) {
+        const ch = v.chapters[k];
+        if (!ch || typeof ch !== "object" || Array.isArray(ch)) {
+          throw new Error("Invalid chapter entry");
+        }
+        if (
+          typeof ch.title !== "string" ||
+          ch.title.trim().length < 1 ||
+          ch.title.length > lim.max_chapter_title_length ||
+          ch.title.indexOf("\n") !== -1
+        ) {
+          throw new Error("Invalid chapter title");
+        }
+        if (
+          typeof ch.summary_ja !== "string" ||
+          ch.summary_ja.trim().length < 1 ||
+          ch.summary_ja.length > lim.max_chapter_summary_length ||
+          countNewlines_(ch.summary_ja) > lim.max_newlines_per_text_field
+        ) {
+          throw new Error("Invalid chapter summary_ja");
+        }
+        if (
+          CONTRACT_SPEC_V1.allowed_timestamp_sources.indexOf(
+            ch.timestamp_source
+          ) === -1
+        ) {
+          throw new Error("Invalid chapter timestamp_source");
+        }
+        const sSec = ch.start_seconds;
+        const eSec = ch.end_seconds;
+        const sDefined = sSec !== undefined && sSec !== null;
+        const eDefined = eSec !== undefined && eSec !== null;
+        if (
+          sDefined &&
+          (typeof sSec !== "number" ||
+            !Number.isInteger(sSec) ||
+            typeof sSec === "boolean" ||
+            sSec < 0)
+        ) {
+          throw new Error("Invalid chapter start_seconds");
+        }
+        if (
+          eDefined &&
+          (typeof eSec !== "number" ||
+            !Number.isInteger(eSec) ||
+            typeof eSec === "boolean" ||
+            eSec < 0)
+        ) {
+          throw new Error("Invalid chapter end_seconds");
+        }
+        if (ch.timestamp_source === "UNKNOWN" && (sDefined || eDefined)) {
+          throw new Error(
+            "Chapter with UNKNOWN timestamp_source cannot specify start_seconds/end_seconds"
+          );
+        }
+        if (ch.timestamp_source !== "UNKNOWN" && !sDefined) {
+          throw new Error(
+            "Chapter with verified timestamp_source must specify start_seconds"
+          );
+        }
+        if (!sDefined && eDefined) {
+          throw new Error("Chapter end_seconds requires start_seconds");
+        }
+        if (sDefined && eDefined && eSec < sSec) {
+          throw new Error("Chapter end_seconds must be >= start_seconds");
+        }
+        if (ch.key_topics !== undefined && ch.key_topics !== null) {
+          if (
+            !Array.isArray(ch.key_topics) ||
+            ch.key_topics.length > lim.max_chapter_key_topics ||
+            !ch.key_topics.every(function (kt) {
+              return (
+                typeof kt === "string" &&
+                kt.trim().length >= 1 &&
+                kt.trim().length <= lim.max_chapter_key_topic_length &&
+                kt.indexOf("\n") === -1
+              );
+            })
+          ) {
+            throw new Error("Invalid chapter key_topics");
+          }
+        }
+      }
+    }
+
+    // v0.6 optional field: related_records
+    if (v.related_records !== undefined && v.related_records !== null) {
+      if (
+        !Array.isArray(v.related_records) ||
+        v.related_records.length > lim.max_related_records_per_video
+      ) {
+        throw new Error("related_records must be a list of <=10 items");
+      }
+      for (let m = 0; m < v.related_records.length; m++) {
+        const rel = v.related_records[m];
+        if (!rel || typeof rel !== "object" || Array.isArray(rel)) {
+          throw new Error("Invalid related_record entry");
+        }
+        if (
+          typeof rel.target_id !== "string" ||
+          rel.target_id.trim().length < 1 ||
+          rel.target_id.length > lim.max_related_target_id_length ||
+          rel.target_id.indexOf("\n") !== -1
+        ) {
+          throw new Error("Invalid related_record target_id");
+        }
+        if (CONTRACT_SPEC_V1.allowed_relation_types.indexOf(rel.relation) === -1) {
+          throw new Error("Invalid related_record relation");
+        }
+        if (
+          typeof rel.note !== "string" ||
+          rel.note.trim().length < 1 ||
+          rel.note.length > lim.max_related_note_length ||
+          countNewlines_(rel.note) > lim.max_newlines_per_text_field
+        ) {
+          throw new Error("Invalid related_record note");
+        }
       }
     }
   }
@@ -634,8 +822,9 @@ function formatClaimsLines_(vid, claims) {
   for (let i = 0; i < claims.length; i++) {
     const c = claims[i];
     const t = c.timestamp_seconds;
+    const tsSource = c.timestamp_source;
     let timeRef = "UNKNOWN";
-    if (t !== undefined && t !== null) {
+    if (t !== undefined && t !== null && tsSource !== "UNKNOWN") {
       const mins = Math.floor(t / 60);
       const secs = t % 60;
       timeRef =
@@ -649,15 +838,90 @@ function formatClaimsLines_(vid, claims) {
         t +
         "s)";
     }
+    let line =
+      "- " +
+      clean_(c.text) +
+      " | " +
+      c.status +
+      " | time: " +
+      timeRef +
+      " | official: " +
+      (c.official_url || "UNKNOWN");
+    if (tsSource !== undefined && tsSource !== null) {
+      line += " | time_source: " + tsSource;
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+function formatChaptersLines_(vid, chapters) {
+  const lines = [];
+  const list = Array.isArray(chapters) ? chapters : [];
+  for (let i = 0; i < list.length; i++) {
+    const ch = list[i];
+    const sSec = ch.start_seconds;
+    const eSec = ch.end_seconds;
+    const tsSource = ch.timestamp_source || "UNKNOWN";
+    let timeLink = "UNKNOWN";
+    if (sSec !== undefined && sSec !== null && tsSource !== "UNKNOWN") {
+      const startMmss = pad2_(Math.floor(sSec / 60)) + ":" + pad2_(sSec % 60);
+      let rangeLabel = startMmss;
+      if (eSec !== undefined && eSec !== null) {
+        rangeLabel =
+          startMmss + "〜" + pad2_(Math.floor(eSec / 60)) + ":" + pad2_(eSec % 60);
+      }
+      timeLink =
+        "[" +
+        rangeLabel +
+        "](https://www.youtube.com/watch?v=" +
+        vid +
+        "&t=" +
+        sSec +
+        "s)";
+    }
+    const topics = Array.isArray(ch.key_topics) ? ch.key_topics : [];
+    const topicsStr =
+      topics.length > 0 ? topics.map(clean_).join(", ") : "NONE";
     lines.push(
       "- " +
-        clean_(c.text) +
-        " | " +
-        c.status +
-        " | time: " +
-        timeRef +
-        " | official: " +
-        (c.official_url || "UNKNOWN")
+        timeLink +
+        " | **" +
+        clean_(ch.title) +
+        "** | " +
+        clean_(ch.summary_ja) +
+        " | time_source: " +
+        tsSource +
+        " | topics: " +
+        topicsStr
+    );
+  }
+  return lines;
+}
+
+function formatDetailedFindingsLines_(detailedFindingsJa) {
+  if (!detailedFindingsJa) return [];
+  const normalized = String(detailedFindingsJa)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+  return normalized.split("\n").map(function (line) {
+    return line.replace(/[ \t]+$/, "");
+  });
+}
+
+function formatRelatedRecordsLines_(relatedRecords) {
+  const lines = [];
+  const list = Array.isArray(relatedRecords) ? relatedRecords : [];
+  for (let i = 0; i < list.length; i++) {
+    const rel = list[i];
+    lines.push(
+      "- `" +
+        clean_(rel.target_id) +
+        "` (" +
+        rel.relation +
+        "): " +
+        clean_(rel.note)
     );
   }
   return lines;
@@ -684,10 +948,33 @@ function renderResearchMarkdown_(v, checkedAt) {
     "",
     "## 独自要約",
     clean_(v.summary_ja),
+  ];
+  if (Array.isArray(v.chapters) && v.chapters.length > 0) {
+    lines = lines.concat([
+      "",
+      "## 動画目次・確認済みタイムライン（チャプター）",
+    ]);
+    lines = lines.concat(formatChaptersLines_(vid, v.chapters));
+  }
+  if (v.detailed_findings_ja) {
+    lines = lines.concat([
+      "",
+      "## 詳細技術知識・再利用ノート",
+    ]);
+    lines = lines.concat(formatDetailedFindingsLines_(v.detailed_findings_ja));
+  }
+  lines = lines.concat([
     "",
     "## 主張・一次資料・時刻",
-  ];
+  ]);
   lines = lines.concat(formatClaimsLines_(vid, v.claims));
+  if (Array.isArray(v.related_records) && v.related_records.length > 0) {
+    lines = lines.concat([
+      "",
+      "## 関連する既存研究・課題との接続",
+    ]);
+    lines = lines.concat(formatRelatedRecordsLines_(v.related_records));
+  }
   lines = lines.concat([
     "",
     "## 限界",
@@ -713,10 +1000,33 @@ function renderDeltaSection_(v, checkedAt) {
     "",
     "### 差分要約",
     clean_(v.summary_ja),
+  ];
+  if (Array.isArray(v.chapters) && v.chapters.length > 0) {
+    lines = lines.concat([
+      "",
+      "### 追加・更新された動画目次・タイムライン",
+    ]);
+    lines = lines.concat(formatChaptersLines_(vid, v.chapters));
+  }
+  if (v.detailed_findings_ja) {
+    lines = lines.concat([
+      "",
+      "### 追加・更新された詳細技術知識",
+    ]);
+    lines = lines.concat(formatDetailedFindingsLines_(v.detailed_findings_ja));
+  }
+  lines = lines.concat([
     "",
     "### 追加・更新された主張と検証",
-  ];
+  ]);
   lines = lines.concat(formatClaimsLines_(vid, v.claims));
+  if (Array.isArray(v.related_records) && v.related_records.length > 0) {
+    lines = lines.concat([
+      "",
+      "### 追加・更新された関連研究・課題接続",
+    ]);
+    lines = lines.concat(formatRelatedRecordsLines_(v.related_records));
+  }
   lines.push("");
   return lines.join("\n");
 }
