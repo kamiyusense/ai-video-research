@@ -36,15 +36,15 @@ flowchart TD
 
 | 項目 | 現在のステータス | 判定根拠 |
 |---|---|---|
-| **ローカル検証（単体・結合テスト）** | **PASS（完了）** | 23件の自動テスト全通過（単体・結合・Mock・契約テスト）、Case A〜Fの実用検索確認、100本バッチ正規化テスト通過 |
+| **ローカル検証（単体・結合テスト）** | **PASS（完了）** | 27件以上の自動テスト全通過（単体・結合・Mock・契約テスト）、Case A〜Fの実用検索確認、100本バッチ正規化テスト通過 |
 | **GAS中継コード実装** | **WIRED_READY（準備完了）** | `cloud_relay_gas.js` v0.5（3348行）実装済み、Contract Spec・セキュリティ検査準拠 |
 | **Google Drive 実フォルダ** | **READY_FOR_LINK（未配線）** | フォルダ構造設計済み（実環境でのフォルダID紐付け待ち） |
-| **Gemini→Drive無人JSON出力** | **NOT_PROVEN（未実証）** | Gemini Scheduled Actions等からGoogle Driveフォルダへの直接無人JSON書き込みは未実証（手動搬送またはAPI連携設計が必要） |
+| **Gemini→Drive無人JSON出力** | **NOT_PROVEN（未実証）** | Gemini Scheduled Actions等からGoogle Driveフォルダへの直接無人JSON書き込みは未実証（詳細は `docs/PC_OFF_FEASIBILITY_REPORT.md` 参照。手動配置による半自動運用を推奨） |
 | **本番クラウド定期稼働 (Live Trigger)** | **NOT_WIRED（未接続・待機）** | **本番GASデプロイ・定期トリガー設定は未実施**。ユーザー明示承認と手動設定が必要 |
 
 > [!IMPORTANT]
 > **本番未稼働・無人出力未実証の明示**:
-> 現在は「PC上でコードを完全実装し、モック・結合テストで動作保証した状態」であり、**Google Workspace上でクラウド中継が実際に自動定期稼働しているわけではありません**。また**GeminiからGoogle Driveへの完全無人JSON出力も未実証**です。本番自動実行を稼働中と報告してはいけません。
+> 現在は「PC上でコードを完全実装し、モック・結合テストで動作保証した状態」であり、**Google Workspace上でクラウド中継が実際に自動定期稼働しているわけではありません**。また**GeminiからGoogle Driveへの完全無人JSON出力も未実証**です。詳細は [docs/PC_OFF_FEASIBILITY_REPORT.md](../../docs/PC_OFF_FEASIBILITY_REPORT.md) を参照してください。本番自動実行を稼働中と報告してはいけません。
 
 ---
 
