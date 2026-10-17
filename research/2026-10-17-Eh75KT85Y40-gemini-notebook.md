@@ -1,0 +1,55 @@
+# 【実演】指示する相手は1人、働くのはAIチーム。年商30億社長がClaude Code「プロジェクト」を徹底解説
+
+- record_id: `youtube:Eh75KT85Y40`
+- video_id: `Eh75KT85Y40`
+- canonical_url: https://www.youtube.com/watch?v=Eh75KT85Y40
+- original_url: https://www.youtube.com/watch?v=Eh75KT85Y40
+- publication_date: 2026-10-16
+- checked_at: 2026-10-17
+- source_scope: YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017
+- Gemini Notebook source: AI技術研究室_直近調査12本_完全総合辞書_20261017
+- Gemini readback (self-reported): PASS
+- GitHub independent verification: NOT_RUN
+- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB
+- changes: NEW
+
+## 独自要約
+Claude Codeの「プロジェクト（Projects）」機能を用い、人間は1人のメインスレッド（コーディネーター：デフォルトOpus 5.5・エフォート低）と話すだけで、裏で7つのサブスレッド（エフォート中）を並列稼働させる実演。自社サイトのSEO・AIO対策プロジェクトを立ち上げ、数十分で1.72億トークンを消費して11 PR、9レポート、llms.txt / llms-full.txt、17言語対応ページを自動生成・本番マージする様子を公開。
+
+## 動画目次・確認済みタイムライン（チャプター）
+- [00:00〜01:55](https://www.youtube.com/watch?v=Eh75KT85Y40&t=0s) | **概要・Claude Code「プロジェクト」機能の登場とDot/Grokbotとの比較** | 区間 00:00〜01:55 の解説: 概要・Claude Code「プロジェクト」機能の登場とDot/Grokbotとの比較 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [01:55〜04:03](https://www.youtube.com/watch?v=Eh75KT85Y40&t=115s) | **デフォルトモデル Opus 5.5 とエフォート「低（Low）」の設計意図** | 区間 01:55〜04:03 の解説: デフォルトモデル Opus 5.5 とエフォート「低（Low）」の設計意図 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [04:03〜05:20](https://www.youtube.com/watch?v=Eh75KT85Y40&t=243s) | **プロジェクト画面の立ち上げ実演とテンプレート作成依頼** | 区間 04:03〜05:20 の解説: プロジェクト画面の立ち上げ実演とテンプレート作成依頼 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [05:20〜07:02](https://www.youtube.com/watch?v=Eh75KT85Y40&t=320s) | **AI時代に求められるスキルと未来予測（クラウド移行・スマホ完結化）** | 区間 05:20〜07:02 の解説: AI時代に求められるスキルと未来予測（クラウド移行・スマホ完結化） | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [07:02〜09:04](https://www.youtube.com/watch?v=Eh75KT85Y40&t=422s) | **エフォート低の弱点（文脈誤認）とエフォート調整のコツ** | 区間 07:02〜09:04 の解説: エフォート低の弱点（文脈誤認）とエフォート調整のコツ | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [09:04〜11:48](https://www.youtube.com/watch?v=Eh75KT85Y40&t=544s) | **「SEO・AIO対策」プロジェクトの開始とサブスレッド並列稼働** | 区間 09:04〜11:48 の解説: 「SEO・AIO対策」プロジェクトの開始とサブスレッド並列稼働 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [11:48〜14:05](https://www.youtube.com/watch?v=Eh75KT85Y40&t=708s) | **5時間セッション制限と複数アカウント並行運用の実態** | 区間 11:48〜14:05 の解説: 5時間セッション制限と複数アカウント並行運用の実態 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [14:05〜16:15](https://www.youtube.com/watch?v=Eh75KT85Y40&t=845s) | **AI時代に生き残る2種類の人材（狭い領域の超専門家 vs AIマネージャー）** | 区間 14:05〜16:15 の解説: AI時代に生き残る2種類の人材（狭い領域の超専門家 vs AIマネージャー） | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [16:15〜17:24](https://www.youtube.com/watch?v=Eh75KT85Y40&t=975s) | **スレッド別トークン消費（コーディネーター320万、記事企画710万）と進捗管理** | 区間 16:15〜17:24 の解説: スレッド別トークン消費（コーディネーター320万、記事企画710万）と進捗管理 | time_source: TIMESTAMPED_CAPTIONS | topics: コーディネーター
+- [17:24〜19:15](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1044s) | **SEO外注費換算と自社AI活用のROI** | 区間 17:24〜19:15 の解説: SEO外注費換算と自社AI活用のROI | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [19:15〜20:20](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1155s) | **プロジェクトUIの弱点（返信待ちスレッドの視認性）とスマホ連携** | 区間 19:15〜20:20 の解説: プロジェクトUIの弱点（返信待ちスレッドの視認性）とスマホ連携 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [20:20〜23:06](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1220s) | **成果確認：11 PR、9レポート、llms.txt / llms-full.txt、17言語対応ページの自動生成** | 区間 20:20〜23:06 の解説: 成果確認：11 PR、9レポート、llms.txt / llms-full.txt、17言語対応ページの自動生成 | time_source: TIMESTAMPED_CAPTIONS | topics: llms.txt, llms-full.txt
+- [23:06〜24:16](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1386s) | **本番マージとブラウザでの多言語・AI検索向けファイル表示確認** | 区間 23:06〜24:16 の解説: 本番マージとブラウザでの多言語・AI検索向けファイル表示確認 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+- [24:16〜25:32](https://www.youtube.com/watch?v=Eh75KT85Y40&t=1456s) | **まとめ・テンプレートプレゼント案内** | 区間 24:16〜25:32 の解説: まとめ・テンプレートプレゼント案内 | time_source: TIMESTAMPED_CAPTIONS | topics: Claude Code Projects, オーケストレーション, コーディネーター
+
+## 詳細技術知識・再利用ノート
+- 整理番号・区分: No.09 (Part 1: 直近調査12本 (No.01〜12)) / 投稿者: みかみ【東大退学させられた男】 / 調査日: 2026-10-16
+- 動画長・公開日照合: Gemini記載長=25:32, 記載公開日=2026-10-16 | YouTube一次実測長=25:32 (1532s), 一次公開日=2026-10-16
+- 証拠強度区分: PART1（Notebook内のYouTubeソース由来）
+- 全体要約（原文完全保持）: Claude Codeの「プロジェクト（Projects）」機能を用い、人間は1人のメインスレッド（コーディネーター：デフォルトOpus 5.5・エフォート低）と話すだけで、裏で7つのサブスレッド（エフォート中）を並列稼働させる実演。自社サイトのSEO・AIO対策プロジェクトを立ち上げ、数十分で1.72億トークンを消費して11 PR、9レポート、llms.txt / llms-full.txt、17言語対応ページを自動生成・本番マージする様子を公開。
+- 主要技術キーワード: Claude Code Projects, オーケストレーション, コーディネーター, サブスレッド並列実行, Opus 5.5 低エフォート, SEO/AIO対策, llms.txt, llms-full.txt
+- 公式仕様・一次資料照合詳細: Claude Code公式「Overview」および「Use Claude Code in the cloud」の並列エージェント調整仕様、およびllms.txt標準規格と完全一致。
+- 制約・注意点: 1アカウントの5時間枠を即座に超過する消費量のため単一アカウント運用時は要注意。
+- 今後の応用・自動化案: コーディネーターAIによる複数サブエージェントの並列ディスパッチとllms.txt生成の標準化。
+- 未確認事項（UNKNOWN）: 公式LINEで配布されるテンプレート内部プロンプト全文。
+
+## 主張・一次資料・時刻
+- [PART1直近調査の公式照合] Claude Code公式「Overview」および「Use Claude Code in the cloud」の並列エージェント調整仕様、およびllms.txt標準規格と完全一致。 | CONFIRMED_DOC | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+- 制約・注意点: 1アカウントの5時間枠を即座に超過する消費量のため単一アカウント運用時は要注意。 / 今後の応用: コーディネーターAIによる複数サブエージェントの並列ディスパッチとllms.txt生成の標準化。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+- 未確認事項(UNKNOWN): 公式LINEで配布されるテンプレート内部プロンプト全文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+
+## 関連する既存研究・課題との接続
+- `youtube:Vr3JkAT9mo8` (EXTENDS): メインのコーディネータースレッド1人と7つの並列サブスレッドによるマルチエージェント分業の実演
+
+## 限界
+Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

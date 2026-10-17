@@ -1,11 +1,83 @@
 {
   "schema_version": "gemini_notebook_loop_state_v1",
   "repository": "kamiyusense/ai-video-research",
-  "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "notebook_url": "https://notebooklm.google.com/notebook/ai-video-research-part2-past14-20261017",
   "last_updated": "2026-10-17",
-  "processed_receipts": [],
+  "processed_receipts": [
+    {
+      "sha256": "4cb671417add4a1593a07405a988aeebf5c73506bd1f37dc706ef16102aaa402",
+      "checked_at": "2026-10-17",
+      "new_video_ids": [
+        "sodTFSuV4zY",
+        "cneFa24EFEk",
+        "t22FELAl-BM",
+        "X9Zk68AII4A",
+        "ZgMrRA1Czlc",
+        "gD6UZ4wG8OM",
+        "W35UQZL2w7E",
+        "JXmk7hmbS3c",
+        "Eh75KT85Y40",
+        "26MGuVIJh4A",
+        "XckM9eFa_vg",
+        "NCQZiT0e59g"
+      ],
+      "updated_video_ids": [],
+      "github_write_status": "APPLIED_LOCAL",
+      "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+    },
+    {
+      "sha256": "02a22a475c29edf76bd0398d2de68ed4c96bd7036040629a0fafae0e010421d1",
+      "checked_at": "2026-10-17",
+      "new_video_ids": [
+        "y2xCGyURl7Q",
+        "RZLAP2CLUM8",
+        "2-8cXaRHlqI",
+        "YrTVpJ1ebUk",
+        "j3Cyvbfn9_k",
+        "JMoByqOlftc",
+        "MnzEE0fLxBs",
+        "D0B-l7A69nI",
+        "Mg0pYFVAuWQ",
+        "GVB8VfuNeJQ",
+        "BvbkOQWgAw8",
+        "ZY7YuYHLlIQ"
+      ],
+      "updated_video_ids": [
+        "ZjUJ-35acaU",
+        "BStkW1HTfmk"
+      ],
+      "github_write_status": "APPLIED_LOCAL",
+      "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+    }
+  ],
   "next_topics_queue": [],
-  "open_unknowns": [],
+  "open_unknowns": [
+    "cneFa24EFEk (No.02): Addness社内Webhookエンドポイントの厳密な仕様。",
+    "t22FELAl-BM (No.03): OpenAIのエンタープライズ向け拡張キャッシュ保持期間の正確な上限値。",
+    "X9Zk68AII4A (No.04): hillclimb内部アルゴリズムにおける収束判定の完全な自動閾値パラメータ。",
+    "ZgMrRA1Czlc (No.05): 無許可送金が発生した内部モデルの完全な推論パラメータとシステムプロンプト全文。",
+    "gD6UZ4wG8OM (No.06): Felix氏の社内実験における未公開プロンプト例の完全な原文。",
+    "W35UQZL2w7E (No.07): OpenAIの将来的なトークナイザー圧縮比率改定スケジュール。",
+    "JXmk7hmbS3c (No.08): KEITO氏が内部運用している非公開Discord Botのソースコード全文。",
+    "Eh75KT85Y40 (No.09): 公式LINEで配布されるテンプレート内部プロンプト全文。",
+    "26MGuVIJh4A (No.10): AI仙人氏が社内実務で使用している8ターミナル並列管理ツールの構成詳細。",
+    "XckM9eFa_vg (No.11): 概要欄配布スターターキットZIPの1文字単位の原文。",
+    "NCQZiT0e59g (No.12): 自作iPhone録音アプリおよび自己改善ループの内部ソースコード全文。",
+    "y2xCGyURl7Q (No.13): Argonの思考プロセストークンに対する厳密な内部課金レート。",
+    "RZLAP2CLUM8 (No.14): 投稿者が実務で使用しているObsidian専用テンプレートプラグイン名。",
+    "2-8cXaRHlqI (No.15): 言及された非公式NotebookLM CLIの正確なGitHubリポジトリURL。",
+    "YrTVpJ1ebUk (No.16): dotsの日本リージョン向け専用クラウドPCの提供開始日。",
+    "j3Cyvbfn9_k (No.17): 検証で動かなかったGemini 3.1 ProのWebGL互換性バグの詳細原因。",
+    "JMoByqOlftc (No.18): サボり男。氏が使用している自作プロンプト管理スプレッドシートの全項目。",
+    "MnzEE0fLxBs (No.19): ここな氏が実務で使用している社内規定ソースのファイル名。",
+    "D0B-l7A69nI (No.20): 動画内で言及された専用要約Webサイトの現在の運営状況。",
+    "Mg0pYFVAuWQ (No.21): 音声会話時の内部コンピュート消費レートの正確な係数。",
+    "GVB8VfuNeJQ (No.22): みずたろう氏が提示した契約書サンプルの実在企業名。",
+    "BvbkOQWgAw8 (No.23): MIT学生が使用した元論文の完全な書誌情報。",
+    "ZY7YuYHLlIQ (No.24): KEITO氏が使用したSparkスキル用YAMLメタプロンプトの全文公開リンク。",
+    "ZjUJ-35acaU (No.25): 拡張機能作者の今後のアップデート予定と保守方針。",
+    "BStkW1HTfmk (No.26): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。"
+  ],
   "unresolved_backlog_refs": [
     {
       "id": "P006-U01",

@@ -1500,8 +1500,201 @@ process.stdout.write(JSON.stringify({{
         )
         self.assertEqual(len(qa_gap["step2_matched_records"]), 0)
 
+    def test_13_gemini_batch_handoff_normalization_and_remote_branch_consolidation(self):
+        """Verify Gemini batch handoff JSON conversion, master index rejection, PART1/PART2 timestamp evidence separation, and remote branch consolidation."""
+        # 1. Master index JSON without `videos` array is rejected
+        master_index_json = json.dumps(
+            {
+                "receipt_version": "research_receipt_v1",
+                "generated_at": "2026-10-17T10:50:00+09:00",
+                "total_videos": 26,
+                "split_files": ["PART1.json", "PART2.json"],
+                "video_ids": ["sodTFSuV4zY", "ZjUJ-35acaU"],
+            },
+            ensure_ascii=False,
+        )
+        with self.assertRaisesRegex(ValueError, "Master index file"):
+            bridge.extract_receipt_payload(master_index_json)
+
+        # 2. Arithmetic mismatch in `timeline` (`01:40` != `seconds: 99`) is rejected
+        bad_tl_json = json.dumps(
+            {
+                "receipt_version": "research_receipt_v1",
+                "batch_part": "1/2",
+                "generated_at": "2026-10-17T10:50:00+09:00",
+                "videos": [
+                    {
+                        "number": "01",
+                        "id": "ZgMrRA1Czlc",
+                        "title": "Test Video",
+                        "url": "https://www.youtube.com/watch?v=ZgMrRA1Czlc",
+                        "publish_date": "2026-10-16",
+                        "duration": "10:46",
+                        "summary": "要約テスト",
+                        "timeline": [
+                            {
+                                "start": "01:40",
+                                "end": "02:00",
+                                "seconds": 99,
+                                "title": "不整合タイムスタンプ",
+                                "link": "https://www.youtube.com/watch?v=ZgMrRA1Czlc&t=99s",
+                            }
+                        ],
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        )
+        with self.assertRaisesRegex(ValueError, "Timeline timestamp/seconds/link mismatch"):
+            bridge.extract_receipt_payload(bad_tl_json)
+
+        # 3. PART2 research-note-derived batch:
+        #    - Uncorroborated/duration-mismatched video (`y2xCGyURl7Q`) gets `timestamp_source: "UNKNOWN"` and `start_seconds: None`
+        #    - Remote-branch existing video (`ZjUJ-35acaU` on `origin/research/video08-mock`) gets `changes: ["UPDATED"]` and consolidates onto current branch!
+        # First create the remote research markdown file on `origin/research/video08-mock`
+        subprocess.run(
+            ["git", "-C", str(self.repo_root), "checkout", "research/video08-mock"],
+            check=True,
+            capture_output=True,
+        )
+        (self.repo_root / "research" / "2026-10-10-ZjUJ-35acaU-notebooklm-youtube-extension.md").write_text(
+            "# 動画08：YouTube to NotebookLM 拡張機能の一括収集（暫定研究）\n\n- video_id: ZjUJ-35acaU\n\n## 結論\n既存の暫定研究結論。\n",
+            encoding="utf-8",
+        )
+        subprocess.run(
+            ["git", "-C", str(self.repo_root), "add", "research/2026-10-10-ZjUJ-35acaU-notebooklm-youtube-extension.md"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(self.repo_root), "commit", "-m", "Add video08 markdown on remote branch"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(self.repo_root), "push", "origin", "research/video08-mock:research/video08-mock"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(self.repo_root), "checkout", "feature/gemini-notebook-research-loop-20261016"],
+            check=True,
+            capture_output=True,
+        )
+
+        part2_sample_raw = json.dumps(
+            {
+                "receipt_version": "research_receipt_v1",
+                "batch_part": "2/2",
+                "batch_description": "Part 2: 過去調査14本 (No.13〜26)",
+                "generated_at": "2026-10-17T10:50:00+09:00",
+                "videos": [
+                    {
+                        "number": "13",
+                        "id": "y2xCGyURl7Q",
+                        "title": "Gemini 4 Argon一般公開とアーキテクチャ解説",
+                        "url": "https://www.youtube.com/watch?v=y2xCGyURl7Q",
+                        "channel": "AI技術速報",
+                        "publish_date": "2026-10-05",
+                        "duration": "24:15",
+                        "research_date": "2026-10-16",
+                        "summary": "A" * 315,
+                        "key_technologies": ["Gemini 4 Argon", "Interactions API"],
+                        "timeline": [
+                            {
+                                "start": "02:15",
+                                "end": "05:40",
+                                "seconds": 135,
+                                "title": "モデルスペック",
+                                "link": "https://www.youtube.com/watch?v=y2xCGyURl7Q&t=135s",
+                            }
+                        ],
+                        "official_verification": {
+                            "status": "VERIFIED",
+                            "details": "Google DeepMind公式発表と一致。",
+                        },
+                        "constraints_and_notes": "レイテンシ注意。",
+                        "future_applications": "非同期リファクタリング。",
+                        "unknowns": "内部課金レート。",
+                    },
+                    {
+                        "number": "25",
+                        "id": "ZjUJ-35acaU",
+                        "title": "【超便利】Google最強AI「NotebookLM」×「YouTube」の拡張機能が神！",
+                        "url": "https://www.youtube.com/watch?v=ZjUJ-35acaU",
+                        "channel": "mikimiki web スクール",
+                        "publish_date": "2026-03-21",
+                        "duration": "21:23",
+                        "research_date": "2026-10-16",
+                        "summary": "YouTube to NotebookLM拡張による一括インポートと6つの実践プロンプトを解説。",
+                        "key_technologies": ["YouTube to NotebookLM", "Chrome拡張"],
+                        "timeline": [
+                            {
+                                "start": "12:07",
+                                "end": "14:43",
+                                "seconds": 727,
+                                "title": "ハンズオン④：複数動画横断の共通法則抽出",
+                                "link": "https://www.youtube.com/watch?v=ZjUJ-35acaU&t=727s",
+                            },
+                            {
+                                "start": "19:30",
+                                "end": "21:23",
+                                "seconds": 1170,
+                                "title": "まとめ・動画ナレッジの資産化",
+                                "link": "https://www.youtube.com/watch?v=ZjUJ-35acaU&t=1170s",
+                            },
+                        ],
+                        "official_verification": {
+                            "status": "VERIFIED",
+                            "details": "Chrome拡張仕様と一致。",
+                        },
+                        "constraints_and_notes": "5時間制限注意。",
+                        "future_applications": "一括登録と法則抽出。",
+                        "unknowns": "拡張作者の保守方針。",
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        )
+
+        normalized = bridge.extract_receipt_payload(part2_sample_raw)
+        bridge.validate(normalized)
+        v13 = normalized["videos"][0]
+        v25 = normalized["videos"][1]
+        self.assertLessEqual(len(v13["summary_ja"]), 300)
+        self.assertIn("A" * 315, v13["detailed_findings_ja"])
+        # v13 timestamp must be downgraded to UNKNOWN (no guessed playback link)
+        self.assertEqual(v13["chapters"][0]["timestamp_source"], "UNKNOWN")
+        self.assertIsNone(v13["chapters"][0]["start_seconds"])
+        # v25 12:07 (727s) is corroborated by YT chapter 12:06 & GitHub record 727s -> verified!
+        # v25 19:30 (1170s) is uncorroborated -> UNKNOWN!
+        self.assertEqual(v25["chapters"][0]["start_seconds"], 727)
+        self.assertNotEqual(v25["chapters"][0]["timestamp_source"], "UNKNOWN")
+        self.assertEqual(v25["chapters"][1]["timestamp_source"], "UNKNOWN")
+        self.assertIsNone(v25["chapters"][1]["start_seconds"])
+
+        # Apply normalized PART2 sample and verify remote branch consolidation for ZjUJ-35acaU
+        summary, _ = bridge.process_receipt_data(
+            data=normalized,
+            root=self.repo_root,
+            apply=True,
+            sync_index=True,
+        )
+        self.assertEqual(summary["new_records"], 1)
+        self.assertEqual(summary["ids"], ["y2xCGyURl7Q"])
+        self.assertEqual(summary["updated_records"], 1)
+        self.assertEqual(summary["updated_ids"], ["ZjUJ-35acaU"])
+        consolidated_md = (
+            self.repo_root / "research" / "2026-10-10-ZjUJ-35acaU-notebooklm-youtube-extension.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("既存の暫定研究結論。", consolidated_md)
+        self.assertIn("## 差分更新 (2026-10-17 / UPDATED)", consolidated_md)
+        self.assertIn("https://www.youtube.com/watch?v=ZjUJ-35acaU&t=727s", consolidated_md)
+        self.assertNotIn("https://www.youtube.com/watch?v=ZjUJ-35acaU&t=1170s", consolidated_md)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
 
 

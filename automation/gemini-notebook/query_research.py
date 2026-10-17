@@ -125,8 +125,11 @@ INTENT_RULES = {
     ],
     "VIDEO_LOCATOR": [
         "どの動画",
+        "動画はどこ",
+        "動画は",
         "どこを見れば",
         "どこをみれば",
+        "どこ？",
         "何分",
         "箇所",
         "再生",
@@ -243,6 +246,61 @@ SYNONYM_GROUPS = [
             "映像解析",
             "フレーム",
             "フリーズ",
+        ],
+    },
+    {
+        "canonical": "トークン・利用枠節約・プロンプトキャッシュ (Prompt Caching)",
+        "terms": [
+            "トークン",
+            "利用枠",
+            "使用枠",
+            "節約",
+            "キャッシュ",
+            "プロンプトキャッシュ",
+            "prompt caching",
+            "月12日問題",
+            "5時間制限",
+            "クォータ",
+        ],
+    },
+    {
+        "canonical": "Gemini Notebook Studio・スライド出力・注意点",
+        "terms": [
+            "studio",
+            "スライド",
+            "画像データ",
+            "文字編集不可",
+            "pptx",
+            "docx",
+            "ブリーフィングドキュメント",
+            "インフォグラフィック",
+        ],
+    },
+    {
+        "canonical": "AI社員・自律エージェント・並列オーケストレーション",
+        "terms": [
+            "ai社員",
+            "自律エージェント",
+            "コーディネーター",
+            "サブエージェント",
+            "サブスレッド",
+            "並列",
+            "マスターコンテキスト",
+            "自己改善ループ",
+            "rsi",
+            "dots",
+        ],
+    },
+    {
+        "canonical": "Obsidian・ローカル記憶・LLM Wiki連携",
+        "terms": [
+            "obsidian",
+            "vault",
+            "llm wiki",
+            "ローカル共創",
+            "内部リンク",
+            "claude.md",
+            "memory.md",
         ],
     },
 ]
@@ -381,6 +439,16 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         ):
             summary_ja = sec_body.strip()
             break
+    delta_summary = ""
+    for sec_title, sec_body in sections.items():
+        if "差分要約" in sec_title and sec_body.strip():
+            delta_summary = sec_body.strip()
+            break
+    if delta_summary:
+        if not summary_ja:
+            summary_ja = delta_summary
+        elif delta_summary not in summary_ja:
+            summary_ja = f"{summary_ja}\n[差分更新要約] {delta_summary}"
 
     # 詳細技術知識・持ち帰り・失敗例セクション
     detailed_findings_parts = []
@@ -398,6 +466,7 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                 "研究室への持ち帰り",
                 "解釈と研究室への活用",
                 "勉強して役立てる",
+                "適用評価",
             )
         ):
             detailed_findings_parts.append(f"[{sec_title}]\n{sec_body}")
@@ -408,7 +477,13 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
             failure_and_limits_parts.append(f"[{sec_title}]\n{sec_body}")
         if any(
             k in sec_title
-            for k in ("公式資料との照合", "一次資料との照合", "主張・一次資料・時刻")
+            for k in (
+                "公式資料との照合",
+                "一次資料との照合",
+                "主張・一次資料・時刻",
+                "追加・更新された主張と検証",
+                "独立して確認したこと",
+            )
         ):
             official_verification_parts.append(f"[{sec_title}]\n{sec_body}")
 
@@ -710,6 +785,16 @@ def analyze_query_intent(query):
         "どの動画",
         "どこを見れば",
         "どこをみれば",
+        "解説している",
+        "する動画",
+        "動画はどこ",
+        "動画と時刻",
+        "動画は",
+        "動画",
+        "時刻",
+        "どこ",
+        "組み合わせる",
+        "組み合わせ",
         "いいですか",
         "いい？",
         "教えて",
@@ -735,13 +820,21 @@ def analyze_query_intent(query):
         "。",
     ]
     cleaned_q = q_lower
+    compound_map = {
+        "claude code": "claude__code",
+        "gemini notebook": "gemini__notebook",
+    }
+    for k, v in compound_map.items():
+        cleaned_q = cleaned_q.replace(k, v)
     for sp in stop_phrases:
         cleaned_q = cleaned_q.replace(sp, " ")
-    raw_tokens = [
-        tok.strip()
-        for tok in re.split(r"[\s/・,，]+", cleaned_q)
-        if len(tok.strip()) >= 2
-    ]
+    raw_tokens = []
+    for tok in re.split(r"[\s/・,，]+", cleaned_q):
+        t_clean = tok.strip().replace("__", " ")
+        if t_clean.endswith("する") and len(t_clean) >= 4:
+            t_clean = t_clean[:-2]
+        if len(t_clean) >= 2 and t_clean not in raw_tokens:
+            raw_tokens.append(t_clean)
     for tok in raw_tokens:
         expanded_terms.add(tok)
 
@@ -760,10 +853,14 @@ def score_text_against_terms(text, terms, raw_tokens):
     t_lower = text.lower()
     score = 0
     matched = []
+    raw_matched_count = 0
     for tok in raw_tokens:
         if tok in t_lower:
             score += 18
             matched.append(tok)
+            raw_matched_count += 1
+    if raw_matched_count >= 2:
+        score += (raw_matched_count - 1) * 15
     for term in terms:
         if term in t_lower and term not in matched:
             score += 10
@@ -792,6 +889,7 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
         "批判",
         "フリーズ",
         "保留",
+        "罠",
     )
     concept_cue_words = (
         "役割",
@@ -807,11 +905,14 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
         "手順",
         "構築",
         "配置",
-        "生成",
+        "設計",
+        "アーキテクチャ",
+        "要素",
         "設定",
         "スクリプト",
         "移行",
         "実装",
+        "実践",
     )
 
     for rec in parsed_records:
@@ -860,8 +961,8 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
             seg_score, seg_matches = score_text_against_terms(
                 ch_text, terms, raw_tokens
             )
-            # 同じ動画がトピックに一致している場合、チャプターにも基礎文脈スコアを付与
-            if seg_score > 0 or title_score > 0 or sum_score > 0:
+            # チャプター自身がトピック語に一致している場合のみ意図・時刻ボーナスを付与
+            if seg_score > 0:
                 if "FAILURE_AND_LIMITS" in intents and any(
                     w in ch_text for w in failure_cue_words
                 ):
@@ -874,10 +975,12 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
                     w in ch_text for w in howto_cue_words
                 ):
                     seg_score += 25
+                if "VIDEO_LOCATOR" in intents:
+                    seg_score += 20
 
                 # 確認済み再生リンクがある場合は時刻信頼性ボーナス
                 if ch.get("playback_url"):
-                    seg_score += 15
+                    seg_score += 25 if "VIDEO_LOCATOR" in intents else 15
 
                 if seg_score > best_seg_score_for_rec:
                     best_seg_score_for_rec = seg_score
@@ -885,7 +988,7 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
                 if seg_score >= 20:
                     scored_segments.append(
                         {
-                            "score": round(seg_score + (title_score * 0.4), 1),
+                            "score": round(seg_score + (title_score * 0.15), 1),
                             "video_id": rec["video_id"],
                             "video_title": rec["title"],
                             "record_path": rec["record_path"],
@@ -928,7 +1031,7 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
 
                 scored_segments.append(
                     {
-                        "score": round(cl_score + (title_score * 0.4), 1),
+                        "score": round(cl_score + (title_score * 0.15), 1),
                         "video_id": rec["video_id"],
                         "video_title": rec["title"],
                         "record_path": rec["record_path"],
@@ -953,6 +1056,7 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
         rec_total += best_seg_score_for_rec * 0.8
         all_matched_terms = sorted(set(m1 + m2 + m3 + m4 + m5 + m6))
         if rec_total > 0 and all_matched_terms:
+            chapters_list = rec.get("chapters", [])
             scored_records.append(
                 {
                     "score": round(rec_total, 1),
@@ -968,6 +1072,10 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
                     "official_verification_ja": rec["official_verification_ja"],
                     "related_records": rec["related_records"],
                     "matched_terms": all_matched_terms,
+                    "chapter_count": len(chapters_list),
+                    "verified_chapter_count": sum(
+                        1 for c in chapters_list if c.get("playback_url")
+                    ),
                 }
             )
 
@@ -980,7 +1088,21 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
         )
     )
 
-    return scored_records[:top_k], scored_segments[: max(top_k * 2, 6)]
+    max_segs = max(top_k * 2, 6)
+    diversified_segments = []
+    overflow_segments = []
+    per_vid_counts = {}
+    for seg in scored_segments:
+        vid_key = seg.get("video_id") or seg.get("record_path")
+        cnt = per_vid_counts.get(vid_key, 0)
+        if cnt < 2:
+            diversified_segments.append(seg)
+            per_vid_counts[vid_key] = cnt + 1
+        else:
+            overflow_segments.append(seg)
+    final_segments = (diversified_segments + overflow_segments)[:max_segs]
+
+    return scored_records[:top_k], final_segments
 
 
 def recommend_notebook_lookup(matched_records, intent_info, catalog):
