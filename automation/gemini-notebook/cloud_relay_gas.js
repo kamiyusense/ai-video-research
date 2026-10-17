@@ -1230,6 +1230,14 @@ function validateReceipt_(data) {
       throw new Error("Invalid notebook source readback");
     }
     if (
+      typeof v.notebook_source_id !== "string" ||
+      v.notebook_source_id.trim().length < 1 ||
+      v.notebook_source_id.length > 120
+    ) {
+      throw new Error("Invalid notebook_source_id");
+    }
+    if (
+
       !Array.isArray(v.changes) ||
       v.changes.length === 0 ||
       !v.changes.every(function (ch) {

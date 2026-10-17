@@ -938,6 +938,12 @@ def validate(data):
         if v.get("notebook_readback") not in {"PASS", "FAIL", "UNKNOWN"}:
             raise ValueError("Invalid notebook source readback")
         if (
+            not isinstance(v.get("notebook_source_id"), str)
+            or not (1 <= len(v["notebook_source_id"].strip()) <= 120)
+        ):
+            raise ValueError("Invalid notebook_source_id")
+        if (
+
             not isinstance(v.get("changes"), list)
             or not v["changes"]
             or not set(v["changes"]) <= ALLOWED_CHANGES

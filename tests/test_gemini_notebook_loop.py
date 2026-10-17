@@ -2681,8 +2681,157 @@ try {{
                 self.assertEqual(ret, 0)
 
 
+    def test_cp5_cloud_relay_gas_comprehensive_mock_and_edge_cases(self):
+        """CP5: Comprehensive Mock Verification of cloud_relay_gas.js edge cases:
+        1. Secret/token leak pattern rejection (PAT, API keys, private keys, Bearer)
+        2. Missing notebook_source_id rejection
+        3. Malformed/corrupted JSON string handling
+        4. Duplicate receipt multi-ingestion non-destructive skip
+        5. Forbidden branch rejection (main/master)
+        """
+        node_script = f"""
+const gas = require({json.dumps(self.gas_path)});
+const assert = require("assert");
+
+const results = {{}};
+
+// 1. Test secret/token leak pattern rejection
+const secretTests = [
+  {{ name: "GITHUB_PAT", val: "github_pat_11ABCDEF0123456789_abcdef1234567890abcdef12" }},
+  {{ name: "GHP_TOKEN", val: "ghp_123456789012345678901234567890123456" }},
+  {{ name: "GOOGLE_API_KEY", val: "AIzaSyD-1234567890abcdef1234567890abcdef" }},
+  {{ name: "OPENAI_SECRET", val: "sk-proj-1234567890abcdef1234567890abcdef123456" }},
+  {{ name: "PRIVATE_KEY", val: "-----BEGIN RSA PRIVATE KEY-----\\nMIIEowIBAAKCAQEA..." }},
+  {{ name: "BEARER_AUTH", val: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0" }}
+];
+
+results.secretRejections = {{}};
+for (const st of secretTests) {{
+  const badReceipt = {json.dumps(make_sample_receipt())};
+  badReceipt.videos[0].summary_ja = "説明文の中に " + st.val + " が紛れ込んでいる";
+  try {{
+    gas.validateReceipt(badReceipt);
+    results.secretRejections[st.name] = "FAILED_TO_REJECT";
+  }} catch (e) {{
+    results.secretRejections[st.name] = "REJECTED: " + (e.message.includes("Forbidden") || e.message.includes("pattern"));
+  }}
+}}
+
+// 2. Test missing/empty notebook_source_id rejection
+const badSourceIdReceipt = {json.dumps(make_sample_receipt())};
+badSourceIdReceipt.videos[0].notebook_source_id = "";
+try {{
+  gas.validateReceipt(badSourceIdReceipt);
+  results.missingSourceId = "FAILED_TO_REJECT";
+}} catch (e) {{
+  results.missingSourceId = "REJECTED: " + e.message.includes("notebook_source_id");
+}}
+
+// 3. Test malformed JSON extraction
+const malformedJsonText = "前置きテキスト\\n```json\\n{{ invalid json, missing quotes: 123 \\n```";
+try {{
+  gas.extractReceiptPayload(malformedJsonText);
+  results.malformedJson = "FAILED_TO_REJECT";
+}} catch (e) {{
+  results.malformedJson = "REJECTED_AS_EXPECTED";
+}}
+
+// 4. Test duplicate receipt ingestion skip in planReceiptApplication
+const validReceipt = {json.dumps(make_sample_receipt())};
+const digest = gas.computeReceiptDigest(validReceipt);
+const repoState = {{
+  dedupScanComplete: true,
+  registry: {{ records: [] }},
+  loopState: {{
+    schema_version: "gemini_notebook_loop_state_v1",
+    target_branch: "feature/gemini-notebook-research-loop-20261016",
+    processed_receipts: [{{ sha256: digest, received_at: "2026-10-17T00:00:00Z", video_ids: ["dQw4w9WgXcQ"] }}],
+    remote_branch_cache: {{}},
+    open_unknowns: [],
+    next_topics_queue: [],
+    last_applied_commit_sha: "abcd123"
+  }},
+  localMap: {{}},
+  remoteMap: {{}},
+  existingResearchMdByVid: {{}}
+}};
+
+const plan = gas.planReceiptApplication(validReceipt, repoState, [], "mode_apply");
+results.duplicatePlan = {{
+  alreadyRecordedInGitHubState: plan.alreadyRecordedInGitHubState,
+  newRecordsCount: plan.newRecordsCount,
+  updatedRecordsCount: plan.updatedRecordsCount,
+  filesToCommitCount: Object.keys(plan.filesToCommit).length
+}};
+
+
+// 5. Test forbidden branch rejection (main / master)
+const mockForbiddenProps = {{
+  store: {{
+    GITHUB_FINE_GRAINED_PAT: "dummy_token",
+    DRIVE_INBOX_FOLDER_ID: "dummy_inbox",
+    TARGET_GITHUB_BRANCH: "main"
+  }},
+  getProperty(k) {{ return this.store[k] || null; }},
+  setProperty(k, v) {{ this.store[k] = String(v); }}
+}};
+try {{
+  gas.relayDriveReceiptsToGitHub({{ scriptProperties: mockForbiddenProps }});
+  results.forbiddenBranch = "FAILED_TO_REJECT";
+}} catch (e) {{
+  results.forbiddenBranch = "REJECTED: " + (e.message.includes("forbidden") || e.message.includes("Forbidden") || e.message.includes("main"));
+}}
+
+// 6. Test concurrent lock contention (LockService)
+const mockContentionLock = {{
+  getScriptLock() {{
+    return {{
+      tryLock(ms) {{ return false; }}
+    }};
+  }}
+}};
+const lockRes = gas.relayDriveReceiptsToGitHub({{ lockService: mockContentionLock }});
+results.concurrentLockStatus = lockRes.status;
+
+
+process.stdout.write(JSON.stringify(results));
+"""
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        out = json.loads(res.stdout)
+
+        # Assert secret rejections
+        for st_name, rej in out["secretRejections"].items():
+            self.assertTrue(rej.startswith("REJECTED: true"), f"{st_name} must be rejected: {rej}")
+
+        # Assert notebook_source_id rejection
+        self.assertTrue(out["missingSourceId"].startswith("REJECTED: true"))
+
+        # Assert malformed JSON rejection
+        self.assertEqual(out["malformedJson"], "REJECTED_AS_EXPECTED")
+
+        # Assert duplicate receipt is correctly flagged with 0 new records and 0 files to commit
+        self.assertTrue(out["duplicatePlan"]["alreadyRecordedInGitHubState"])
+        self.assertEqual(out["duplicatePlan"]["newRecordsCount"], 0)
+        self.assertEqual(out["duplicatePlan"]["filesToCommitCount"], 0)
+
+
+        # Assert forbidden branch (main) rejection
+        self.assertTrue(out["forbiddenBranch"].startswith("REJECTED: true"))
+
+        # Assert concurrent execution safely skips when lock is held
+        self.assertEqual(out["concurrentLockStatus"], "SKIPPED_CONCURRENT_LOCK_HELD")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
 
 
 
