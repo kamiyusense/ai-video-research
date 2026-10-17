@@ -70,9 +70,8 @@ PC-OFF無人運用を実際に開始する際は、ユーザーが以下のス�
 
 ### Step 1: Google Drive フォルダの準備
 Google Drive上に以下のフォルダを作成します：
-- `AI技術研究室_受信トレイ` （Geminiの出力先、GASの監視元）
-- `AI技術研究室_処理済み` （中継成功後の退避先）
-- `AI技術研究室_エラー退避` （バリデーションエラー時の隔離先）
+- `AI技術研究室_受信トレイ` （Geminiの出力先、GASの監視元。必須）
+- （任意で保管用フォルダを設ける場合も、GAS側は非破壊インプレース重複判定を行うためファイル消失の危険はありません）
 
 ### Step 2: Google Apps Script プロジェクトの作成
 1. [Google Apps Script](https://script.google.com/) で新規プロジェクトを作成。
@@ -80,25 +79,31 @@ Google Drive上に以下のフォルダを作成します：
 
 ### Step 3: スクリプトプロパティ（Script Properties）の設定
 GASの「プロジェクトの設定」>「スクリプト プロパティ」に以下を登録：
-- `GITHUB_PAT`: リポジトリへの書き込み権限（Contents: Read & Write）を持つFine-grained PAT（最小権限）
-- `DRIVE_INBOX_FOLDER_ID`: `AI技術研究室_受信トレイ` のフォルダID
-- `DRIVE_PROCESSED_FOLDER_ID`: `AI技術研究室_処理済み` のフォルダID
-- `DRIVE_ERROR_FOLDER_ID`: `AI技術研究室_エラー退避` のフォルダID
-- `TARGET_BRANCH`: `feature/gemini-notebook-research-loop-20261016`
+- `GITHUB_FINE_GRAINED_PAT`（または `GITHUB_PAT`）: リポジトリへの書き込み権限（Contents: Read & Write）を持つFine-grained PAT（最小権限）
+- `DRIVE_INBOX_FOLDER_ID`: `AI技術研究室_受信トレイ` のフォルダID（必須）
+- `DRIVE_EXPORT_DOC_ID`: GitHub正本の知識索引をミラー同期するGoogle DocsのドキュメントID（任意）
+- `TARGET_GITHUB_BRANCH`（または `TARGET_BRANCH`）: 対象作業ブランチ（省略時: `feature/gemini-notebook-research-loop-20261016`。main/masterはコードレベルで拒絶）
+
+> [!NOTE]
+> **ファイル退避・移動処理について（実装仕様）**:
+> `cloud_relay_gas.js` v0.5 は受信トレイ内のファイルを移動・削除せず、**インプレース（非破壊的）に完全重複防止**を行います。
+> 処理済みReceiptのダイジェスト（SHA-256）はGitHub正本（`loop_state.json`）および揮発キャッシュに記録されるため、受信トレイに同名ファイルが残っていても二重コミットやファイル破壊は発生しません。
+> `DRIVE_PROCESSED_FOLDER_ID` や `DRIVE_ERROR_FOLDER_ID` は現在のコードでは未参照（未使用）であり、ファイル消失リスクを回避する設計となっています。
 
 ### Step 4: トリガー（時間主導型）の有効化
 GASの「トリガー」設定画面から：
-- 実行する関数: `runCloudRelayLoop_`
+- 実行する関数: `runCloudRelayLoop_`（または `relayDriveReceiptsToGitHub`）
 - イベントのソース: `時間主導型`
 - 時間の間隔: `1時間おき`（または1日数回）
 
 ---
 
-## 5. 異常検知と復旧手順
+## 5. 異常検知・安全停止と再試行ポリシー
 
 - **Receipt破損・バリデーションエラー**:
-  - 当該ファイルを `AI技術研究室_エラー退避/` フォルダへ移動し、詳細なエラー理由をログおよび `loop_state.json` の `relay_errors` に記録。GitHub正本を汚染しません。
-- **GitHub API レートリミット / 一時的ネットワーク障害**:
-  - `retryCount = 3` まで指数バックオフで再試行。回復しない場合は当該実行を安全に中断し、次回トリガーで再開（未完了ファイルを再取得）。
-- **Git Tree 競合 / Truncated検知**:
-  - リモートHEADが他者により先行更新されていた場合は `STATUS_REMOTE_DIVERGENCE_PAUSE` で安全停止。強制プッシュを行わず、人間の確認を待ちます。
+  - `status: "REJECTED_VALIDATION_BEFORE_GITHUB_WRITE"` としてレポートに記録され、GitHubコミットは一切実行されません。元ファイルはそのまま保持され、手動調査が可能です。
+- **外部書き込み成功不明・ブランチ競合 (422)・Tree Truncated**:
+  - **無条件の再試行は行いません**。ネットワーク不達やRef更新の不明なステータス時は `STOPPED_ON_UNKNOWN_REF_UPDATE_NO_RETRY` や `STOPPED_ON_BRANCH_CONFLICT_422_NO_OVERWRITE` として安全停止し、当該Receiptを `haltedReceipts` に記録します。
+  - 次回実行時はGitHub側のリモートHEADおよび正本 `loop_state.json` を **remote readback** してコミット済みかを照合し、重複コミットを絶対に防止します。
+- **同時実行排他制御**:
+  - `LockService.getScriptLock()` による排他ロックを取得。多重起動時は `SKIPPED_CONCURRENT_LOCK_HELD` で安全スキップします。

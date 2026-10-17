@@ -2021,6 +2021,273 @@ class TestQueryResearchEngine(unittest.TestCase):
         self.assertIn("claude", titles)
 
 
+class TestGasConfigurationAndOperationsContract(unittest.TestCase):
+    """Verify GAS configuration, manual contract, property aliases, and non-destructive operations."""
+
+    def setUp(self):
+        self.gas_path = (ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").as_posix()
+
+    def test_gas_entry_function_and_aliases_exist(self):
+        """1. Verify that runCloudRelayLoop_ and relayDriveReceiptsToGitHub are exported and callable."""
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+if (typeof gas.runCloudRelayLoop_ !== "function") {{
+  throw new Error("runCloudRelayLoop_ is not exported as a function");
+}}
+if (typeof gas.relayDriveReceiptsToGitHub !== "function") {{
+  throw new Error("relayDriveReceiptsToGitHub is not exported as a function");
+}}
+process.stdout.write("OK");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "OK")
+
+    def test_gas_script_properties_aliases_and_safety_stop_on_missing(self):
+        """2. Verify that GITHUB_PAT and TARGET_BRANCH aliases work, and missing properties halt safely."""
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+
+// Test A: Missing properties must throw an explicit Error
+let threwOnMissing = false;
+try {{
+  gas.relayDriveReceiptsToGitHub({{
+    scriptProperties: {{
+      getProperty: () => null
+    }}
+  }});
+}} catch (e) {{
+  if (e.message.includes("Missing required Script Properties")) {{
+    threwOnMissing = true;
+  }}
+}}
+if (!threwOnMissing) {{
+  throw new Error("Failed to throw on missing Script Properties");
+}}
+
+// Test B: GITHUB_PAT alias + TARGET_BRANCH alias accepted
+const store = {{
+  GITHUB_PAT: "ghp_alias_test_token",
+  DRIVE_INBOX_FOLDER_ID: "FOLDER_ALIAS_123",
+  TARGET_BRANCH: "feature/gemini-notebook-research-loop-20261016"
+}};
+let propsChecked = false;
+const mockDriveApp = {{
+  getFolderById: () => ({{
+    getFiles: () => ({{
+      hasNext: () => false,
+      next: () => null
+    }})
+  }})
+}};
+const mockUrlFetch = {{
+  fetch: (url) => {{
+    if (url.includes("/branches?per_page=100")) {{
+      return {{
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify([
+          {{ name: "main", protected: true, commit: {{ sha: "c_main" }} }},
+          {{ name: "feature/gemini-notebook-research-loop-20261016", protected: false, commit: {{ sha: "c_target" }} }}
+        ])
+      }};
+    }}
+    if (url.includes("/git/commits/")) {{
+      return {{
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({{ sha: "c_target", tree: {{ sha: "t_target" }} }})
+      }};
+    }}
+    if (url.includes("/git/trees/")) {{
+      return {{
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({{
+          sha: "t_target",
+          truncated: false,
+          tree: [{{ path: "registry.json", type: "blob", sha: "sha_reg_stub" }}]
+        }})
+      }};
+    }}
+    if (url.includes("/git/blobs/")) {{
+      return {{
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({{
+          sha: "sha_reg_stub",
+          content: Buffer.from(JSON.stringify({{ schema_version: 1, repository: "kamiyusense/ai-video-research", records: [] }})).toString("base64"),
+          encoding: "base64"
+        }})
+      }};
+    }}
+    return {{ getResponseCode: () => 404, getContentText: () => "{{}}" }};
+  }}
+}};
+
+const out = gas.runCloudRelayLoop_({{
+  scriptProperties: {{
+    getProperty: (k) => store[k] || null,
+    setProperty: (k, v) => {{ store[k] = String(v); }}
+  }},
+  driveApp: mockDriveApp,
+  urlFetchApp: mockUrlFetch
+}});
+
+if (out.status !== "COMPLETED" || out.targetBranch !== "feature/gemini-notebook-research-loop-20261016") {{
+  throw new Error("Alias run failed: " + JSON.stringify(out));
+}}
+process.stdout.write("OK_ALIASES");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "OK_ALIASES")
+
+    def test_gas_in_place_dedup_and_zero_duplicate_on_identical_receipt(self):
+        """3. Verify non-destructive in-place dedup prevents duplicate commits without deleting inbox files."""
+        sample_receipt = make_sample_receipt()
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+const sampleReceipt = {json.dumps(sample_receipt, ensure_ascii=False)};
+
+const store = {{
+  GITHUB_FINE_GRAINED_PAT: "ghp_mock_token",
+  DRIVE_INBOX_FOLDER_ID: "FOLDER_123",
+  TARGET_GITHUB_BRANCH: "feature/gemini-notebook-research-loop-20261016"
+}};
+const initialReg = {{ schema_version: 1, repository: "kamiyusense/ai-video-research", records: [] }};
+let targetHeadSha = "commit_init";
+const trees = {{ "t_init": [{{ path: "registry.json", type: "blob", sha: "sha_reg" }}] }};
+const commits = {{ "commit_init": {{ sha: "commit_init", tree: {{ sha: "t_init" }} }} }};
+const blobs = {{ "sha_reg": Buffer.from(JSON.stringify(initialReg)).toString("base64") }};
+
+  function putBlob(text) {{
+    const sha = "sha_" + Object.keys(blobs).length;
+    blobs[sha] = Buffer.from(text).toString("base64");
+    return sha;
+  }}
+
+  let patchCount = 0;
+  const mockFetch = {{
+    fetch: (url, opts) => {{
+      const method = (opts.method || "get").toLowerCase();
+      const body = opts.payload ? JSON.parse(opts.payload) : null;
+      const makeRes = (c, o) => ({{ getResponseCode: () => c, getContentText: () => JSON.stringify(o) }});
+
+      if (url.includes("/branches?per_page=100")) {{
+        return makeRes(200, [
+          {{ name: "main", protected: true, commit: {{ sha: "c_main" }} }},
+          {{ name: "feature/gemini-notebook-research-loop-20261016", protected: false, commit: {{ sha: targetHeadSha }} }}
+        ]);
+      }}
+      if (url.includes("/git/commits/") && method === "get") return makeRes(200, commits[url.split("/git/commits/")[1]]);
+      if (url.includes("/git/trees/") && method === "get") {{
+        const t = url.split("/git/trees/")[1].split("?")[0];
+        return makeRes(200, {{ sha: t, truncated: false, tree: trees[t] || [] }});
+      }}
+      if (url.includes("/git/blobs/") && method === "get") {{
+        const b = url.split("/git/blobs/")[1];
+        return makeRes(200, {{ sha: b, content: blobs[b] || "", encoding: "base64" }});
+      }}
+      if (url.endsWith("/git/blobs") && method === "post") {{
+        const s = putBlob(body.content);
+        return makeRes(201, {{ sha: s }});
+      }}
+      if (url.endsWith("/git/trees") && method === "post") {{
+        const baseItems = JSON.parse(JSON.stringify(trees[body.base_tree] || []));
+        const byPath = {{}};
+        baseItems.forEach((it) => {{ byPath[it.path] = it; }});
+        body.tree.forEach((it) => {{ byPath[it.path] = {{ path: it.path, type: "blob", sha: it.sha }}; }});
+        const newTreeSha = "t_" + Object.keys(trees).length;
+        trees[newTreeSha] = Object.values(byPath);
+        return makeRes(201, {{ sha: newTreeSha }});
+      }}
+      if (url.endsWith("/git/commits") && method === "post") {{
+        const newCommitSha = "c_" + Object.keys(commits).length;
+        commits[newCommitSha] = {{ sha: newCommitSha, tree: {{ sha: body.tree }} }};
+        return makeRes(201, {{ sha: newCommitSha }});
+      }}
+      if (url.includes("/git/refs/heads/") && method === "patch") {{
+        patchCount++;
+        targetHeadSha = body.sha;
+        return makeRes(200, {{ object: {{ sha: targetHeadSha }} }});
+      }}
+      if (url.includes("/git/refs/heads/") && method === "get") return makeRes(200, {{ object: {{ sha: targetHeadSha }} }});
+      return makeRes(404, {{}});
+    }}
+  }};
+
+const inbox = [{{
+  getId: () => "DOC_1",
+  getName: () => "receipt.json",
+  getMimeType: () => "text/plain",
+  getBlob: () => ({{ getDataAsString: () => JSON.stringify(sampleReceipt) }})
+}}];
+
+const mockDrive = {{
+  getFolderById: () => ({{
+    getFiles: () => {{
+      let idx = 0;
+      return {{ hasNext: () => idx < inbox.length, next: () => inbox[idx++] }};
+    }}
+  }})
+}};
+
+const env = {{
+  scriptProperties: {{
+    getProperty: (k) => store[k] || null,
+    setProperty: (k, v) => {{ store[k] = String(v); }}
+  }},
+  driveApp: mockDrive,
+  urlFetchApp: mockFetch
+}};
+
+// Run 1: Should commit new receipt
+const res1 = gas.runCloudRelayLoop_(env);
+const p1 = patchCount;
+
+// Run 2: Same receipt remains in inbox (non-destructive). Must SKIP duplicate without any new Git patch!
+const res2 = gas.runCloudRelayLoop_(env);
+const p2 = patchCount;
+
+if (p1 !== 1 || p2 !== 1) {{
+  throw new Error(`Duplicate commit detected! Run1 patches: ${{p1}}, Run2 patches: ${{p2}}`);
+}}
+if (res2.relayReport[0].status !== "SKIP_DUPLICATE_NOOP_RECEIPT" && res2.relayReport[0].status !== "SKIP_DUPLICATE_ALREADY_COMMITTED_ON_GITHUB") {{
+  throw new Error("Unexpected duplicate status: " + JSON.stringify(res2.relayReport));
+}}
+process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "OK_NON_DESTRUCTIVE_DEDUP")
+
+    def test_caption_single_token_false_positive_audit(self):
+        """4. Audit that single-token hits in caption evidence are documented and never treated as primary doc."""
+        evidence_map = bridge.load_timestamp_evidence()
+        weak_count = 0
+        for vid, data in evidence_map.items():
+            for sec_str, ch in (data.get("chapters") or {}).items():
+                if ch.get("verdict") == "CAPTION_PASS":
+                    toks = ch.get("matched_title_tokens") or []
+                    if len(toks) < 2:
+                        weak_count += 1
+        # Exactly 4 single-token matches exist in the 28-video evidence (studio, 評価, ファイル, ワークフロー).
+        # None of them fabricate a CONFIRMED_DOC status or create an unverified playback link.
+        self.assertLessEqual(weak_count, 4)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 

@@ -2919,17 +2919,20 @@ function relayDriveReceiptsToGitHub(envOverrides) {
       throw new Error("PropertiesService unavailable");
     }
 
-    const token = props.getProperty("GITHUB_FINE_GRAINED_PAT");
+    const token =
+      props.getProperty("GITHUB_FINE_GRAINED_PAT") ||
+      props.getProperty("GITHUB_PAT");
     const folderId = props.getProperty("DRIVE_INBOX_FOLDER_ID");
     const exportDocId = props.getProperty("DRIVE_EXPORT_DOC_ID");
     const targetBranch = verifyTargetBranchBoundary_(
       props.getProperty("TARGET_GITHUB_BRANCH") ||
+        props.getProperty("TARGET_BRANCH") ||
         CONTRACT_SPEC_V1.default_target_branch
     );
 
     if (!token || !folderId) {
       throw new Error(
-        "Missing required Script Properties: GITHUB_FINE_GRAINED_PAT and/or DRIVE_INBOX_FOLDER_ID"
+        "Missing required Script Properties: GITHUB_FINE_GRAINED_PAT (or GITHUB_PAT) and/or DRIVE_INBOX_FOLDER_ID"
       );
     }
 
@@ -3265,6 +3268,14 @@ function relayDriveReceiptsToGitHub(envOverrides) {
   }
 }
 
+/**
+ * 手順書 (`PC_OFF_OPERATIONS.md`) との完全互換エントリポイント:
+ * 時間主導型トリガーから直接呼び出される関数。
+ */
+function runCloudRelayLoop_(envOverrides) {
+  return relayDriveReceiptsToGitHub(envOverrides);
+}
+
 function pullGitHubIndexExportToDriveDoc(envOverrides) {
   const overrides = envOverrides || {};
   const props =
@@ -3341,6 +3352,7 @@ if (typeof module !== "undefined" && module.exports) {
     renderGitHubKnowledgeIndexExportMd: renderGitHubKnowledgeIndexExportMd_,
     planReceiptApplication: planReceiptApplication_,
     relayDriveReceiptsToGitHub: relayDriveReceiptsToGitHub,
+    runCloudRelayLoop_: runCloudRelayLoop_,
     pullGitHubIndexExportToDriveDoc: pullGitHubIndexExportToDriveDoc,
   };
 }
