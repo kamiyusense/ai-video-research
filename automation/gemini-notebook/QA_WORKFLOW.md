@@ -32,7 +32,8 @@
      - `timestamp_source == "UNKNOWN"` なのに `start_seconds` や `timestamp_seconds` に数値を入れることをスキーマ違反として拒否（推測秒数の混入を防止）。
      - 逆に `timestamp_source != "UNKNOWN"` なのに `start_seconds` / `timestamp_seconds` が `null` の場合も拒否。
   2. **Markdownレンダリング・質問検索時 (`query_research.py`)**:
-     - `start_seconds` が非負整数かつ `timestamp_source != "UNKNOWN"` の場合のみ `[MM:SS〜MM:SS](https://www.youtube.com/watch?v=<ID>&t=<sec>s)` を出力し、それ以外は `UNKNOWN (時刻未確認のためリンク生成なし)` と出力。
+     - `start_seconds` が非負整数かつ `timestamp_source != "UNKNOWN"` の場合のみ `[MM:SS〜MM:SS](https://www.youtube.com/watch?v=<ID>&t=<sec>s)` を出力。
+     - 時刻未確認（`UNKNOWN`）の場合は推測リンクを作らず、`UNKNOWN (時刻未確認のため&t=リンク非生成 / [通常動画URL](https://www.youtube.com/watch?v=...) + Notebook <source_id> 参照)` と出力して元資料への参照を誘導。
 
 ---
 
