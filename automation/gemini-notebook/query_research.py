@@ -1550,6 +1550,33 @@ def format_qa_response_markdown(qa_res):
     return "\n".join(lines)
 
 
+def interactive_mode(root: Path = ROOT, top_k: int = 5, json_output: bool = False):
+    """対話型プロンプトで継続的に質問を受け付けるモード。"""
+    print("=" * 60)
+    print("AI技術研究室 | 自然言語Q&A・動画チャプター検索 (対話モード)")
+    print("質問を入力してください ('exit', 'quit', 'q' で終了)")
+    print("=" * 60)
+    while True:
+        try:
+            query = input("\n質問 > ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n終了します。")
+            break
+        if not query:
+            continue
+        if query.lower() in ("exit", "quit", "q"):
+            print("終了します。")
+            break
+        try:
+            qa_res = answer_question(query, root=root, top_k=top_k)
+            if json_output:
+                print(json.dumps(qa_res, ensure_ascii=False, indent=2))
+            else:
+                print(format_qa_response_markdown(qa_res))
+        except Exception as e:
+            print(f"[エラー] 回答生成中に問題が発生しました: {e}")
+
+
 def main(argv=None):
     if hasattr(sys.stdout, "reconfigure"):
         try:
@@ -1563,6 +1590,12 @@ def main(argv=None):
         "--query",
         "-q",
         help="Natural-language question (e.g., 'ハーネスって何？どの動画のどこを見ればいい？')",
+    )
+    parser.add_argument(
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Start interactive Q&A mode.",
     )
     parser.add_argument(
         "--build-catalog",
@@ -1591,7 +1624,7 @@ def main(argv=None):
         catalog, _ = build_video_knowledge_catalog(
             root=ROOT, write_path=Path(args.catalog_path)
         )
-        if not args.query:
+        if not args.query and not args.interactive:
             print(
                 json.dumps(
                     {
@@ -1606,8 +1639,12 @@ def main(argv=None):
             )
             return 0
 
+    if args.interactive or (not args.query and sys.stdin.isatty()):
+        interactive_mode(root=ROOT, top_k=args.top_k, json_output=args.json)
+        return 0
+
     if not args.query:
-        parser.error("Provide --query '...' or --build-catalog")
+        parser.error("Provide --query '...', --interactive, or --build-catalog")
 
     qa_res = answer_question(args.query, root=ROOT, top_k=args.top_k)
     if args.json:
@@ -1619,3 +1656,4 @@ def main(argv=None):
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -2638,10 +2638,52 @@ try {{
         self.assertEqual(ans5["step4_gap_analysis"]["coverage_status"], "INSUFFICIENT_NEEDS_NEW_RESEARCH")
 
 
+    def test_cp3_user_qa_interactive_and_launcher(self):
+        """CP3: Verify user daily Q&A guide, launcher script, and interactive CLI functionality."""
+        from unittest.mock import patch
+        import io
+
+        # 1. Verify docs/USER_QA_GUIDE.md exists and covers all 4 pathways & 8 criteria
+        guide_path = ROOT / "docs" / "USER_QA_GUIDE.md"
+        self.assertTrue(guide_path.is_file(), "docs/USER_QA_GUIDE.md must exist")
+        guide_text = guide_path.read_text(encoding="utf-8")
+        self.assertIn("経路A: ChatGPT", guide_text)
+        self.assertIn("経路B: ローカルCLI", guide_text)
+        self.assertIn("経路C: Gemini Notebook", guide_text)
+        self.assertIn("経路D: 軽量ワンライナー", guide_text)
+        for criterion in ["応答速度", "正確性", "再生リンク", "導入コスト", "保守性", "拡張性", "モバイル", "非エンジニア"]:
+            self.assertIn(criterion, guide_text)
+        self.assertIn("TIMESTAMPED_CAPTIONS", guide_text)
+        self.assertIn("YOUTUBE_CHAPTER_METADATA", guide_text)
+        self.assertIn("VISUAL_FRAME_CHECK", guide_text)
+        self.assertIn("UNKNOWN", guide_text)
+
+        # 2. Verify run_qa.ps1 launcher exists
+        ps_path = ROOT / "run_qa.ps1"
+        self.assertTrue(ps_path.is_file(), "run_qa.ps1 launcher must exist")
+        ps_text = ps_path.read_text(encoding="utf-8")
+        self.assertIn("query_research.py", ps_text)
+
+        # 3. Test interactive_mode via simulated user inputs
+        simulated_inputs = ["ハーネスとは？", "exit"]
+        with patch("builtins.input", side_effect=simulated_inputs):
+            with patch("sys.stdout", new=io.StringIO()) as fake_stdout:
+                query_mod.interactive_mode(root=ROOT, top_k=2)
+                output = fake_stdout.getvalue()
+                self.assertIn("AI技術研究室 | 自然言語Q&A・動画チャプター検索 (対話モード)", output)
+                self.assertIn("ハーネス", output)
+                self.assertIn("終了します", output)
+
+        # 4. Test main() invocation with --interactive and mocked input
+        with patch("builtins.input", side_effect=["q"]):
+            with patch("sys.stdout", new=io.StringIO()):
+                ret = query_mod.main(["--interactive"])
+                self.assertEqual(ret, 0)
+
+
 if __name__ == "__main__":
-
-
     unittest.main(verbosity=2)
+
 
 
 
