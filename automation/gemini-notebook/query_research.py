@@ -35,7 +35,7 @@ VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 # または
 # - UNKNOWN | **章タイトル** | 要約 | time_source: UNKNOWN | topics: NONE
 V06_CHAPTER_LINE_RE = re.compile(
-    r"^\s*-\s*(?:\[(?P<range_label>[^\]]+)\]\((?P<url>https://www\.youtube\.com/watch\?v=(?P<vid>[A-Za-z0-9_-]{11})&t=(?P<start>\d+)s)\)|(?P<unknown_tok>UNKNOWN))\s*\|\s*\*\*(?P<title>[^*]+)\*\*\s*\|\s*(?P<summary>[^|]+)\|\s*time_source:\s*(?P<ts_source>[A-Z_]+)\s*\|\s*topics:\s*(?P<topics>.+?)\s*$"
+    r"^\s*-\s*(?:\[(?P<range_label>[^\]]+)\]\((?P<url>https://www\.youtube\.com/watch\?v=(?P<vid>[A-Za-z0-9_-]{11})&t=(?P<start>\d+)s)\)|(?P<unlinked_range>[^|]+?))\s*\|\s*\*\*(?P<title>[^*]+)\*\*\s*\|\s*(?P<summary>[^|]+)\|\s*time_source:\s*(?P<ts_source>[A-Z_]+)\s*\|\s*topics:\s*(?P<topics>.+?)\s*$"
 )
 
 # 2.v0.5/v0.6形式のClaim行:
@@ -343,12 +343,24 @@ def build_verified_youtube_link(video_id, start_seconds, timestamp_source):
 
 def infer_legacy_timestamp_source(basis_text):
     b = (basis_text or "").lower()
-    if "ai studio" in b or "映像" in b or "実演" in b:
+    # 映像フレーム確認の客観的報告（単なる「映像」「実演」の単語存在ではなく具体的な報告フレーズ）
+    if "visual_frame_check" in b:
         return "VISUAL_FRAME_CHECK"
-    if "chapter" in b or "チャプター" in b or "目次" in b:
+    if "映像実演の報告" in b or ("ai studio" in b and "映像報告" in b):
+        return "VISUAL_FRAME_CHECK"
+
+    # YouTube公式チャプターメタデータ（単なる「チャプター」「目次」ではなく公式照合フレーズ）
+    if "youtube_chapter_metadata" in b:
         return "YOUTUBE_CHAPTER_METADATA"
+    if "youtube公式チャプター" in b or "概要欄チャプター" in b:
+        return "YOUTUBE_CHAPTER_METADATA"
+
+    # 字幕直接照合
+    if "timestamped_captions" in b:
+        return "TIMESTAMPED_CAPTIONS"
     if "字幕直接" in b or "deterministic caption" in b:
         return "TIMESTAMPED_CAPTIONS"
+
     return "UNKNOWN"
 
 
@@ -498,7 +510,11 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
             ts_source = m_ch.group("ts_source").strip()
             start_str = m_ch.group("start")
             start_sec = int(start_str) if start_str is not None else None
-            range_label = m_ch.group("range_label") or "UNKNOWN"
+            range_label = (
+                m_ch.group("range_label")
+                or m_ch.group("unlinked_range")
+                or "UNKNOWN"
+            ).strip()
             end_sec = None
             if "〜" in range_label:
                 end_part = range_label.split("〜", 1)[1]
@@ -542,7 +558,7 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
             ts_source = (
                 m_cl.group("ts_source").strip()
                 if m_cl.group("ts_source")
-                else ("TIMESTAMPED_CAPTIONS" if sec_val is not None else "UNKNOWN")
+                else "UNKNOWN"
             )
             vid_for_link = m_cl.group("vid") or video_id
             verified_url = build_verified_youtube_link(

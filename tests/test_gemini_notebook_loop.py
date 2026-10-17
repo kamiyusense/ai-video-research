@@ -2433,10 +2433,94 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
         )
         self.assertEqual(ts_counts.get("YOUTUBE_CHAPTER_METADATA"), 48)
         self.assertEqual(ts_counts.get("VISUAL_FRAME_CHECK"), 9)
+        self.assertEqual(ts_counts.get("UNKNOWN"), 111)
+        self.assertEqual(sum(ts_counts.values()), 241)
         self.assertEqual(cat.get("total_verified_chapters"), 130)
+
+    def test_all_241_chapters_parity_between_raw_notes_and_catalog(self):
+        """6. Regression test: verify that all 241 chapters in raw research/*.md notes
+        are accurately preserved in video_knowledge_catalog.json with zero silent drops,
+        and that the 3 restored unlinked chapters exist strictly as UNKNOWN.
+        """
+        import re
+
+        catalog_path = ROOT / "automation" / "gemini-notebook" / "state" / "video_knowledge_catalog.json"
+        cat = json.loads(catalog_path.read_text(encoding="utf-8"))
+
+        # Collect raw chapters from markdown notes
+        raw_chaps = []
+        for p in sorted((ROOT / "research").glob("*.md")):
+            text = p.read_text(encoding="utf-8")
+            m_vid = re.search(r"^\s*-\s*video_id:\s*`?([A-Za-z0-9_-]{11})`?", text, re.MULTILINE)
+            if not m_vid:
+                m_vid = re.search(r"^\s*-\s*動画ID:\s*`?([A-Za-z0-9_-]{11})`?", text, re.MULTILINE)
+            if not m_vid:
+                continue
+            vid = m_vid.group(1)
+
+            # Match v0.6 lines (both linked and unlinked)
+            for line in text.splitlines():
+                m = query_mod.V06_CHAPTER_LINE_RE.match(line)
+                if m:
+                    raw_chaps.append((vid, m.group("title").strip()))
+                    continue
+                # Match legacy table rows
+                m_leg_id = query_mod.LEGACY_TABLE_ROW_WITH_ID_RE.match(line)
+                if m_leg_id:
+                    raw_chaps.append((vid, m_leg_id.group("summary").strip()[:60]))
+                    continue
+                m_leg_noid = query_mod.LEGACY_TABLE_ROW_NO_ID_RE.match(line)
+                if m_leg_noid:
+                    raw_chaps.append((vid, m_leg_noid.group("summary").strip()[:60]))
+                    continue
+
+        # Collect catalog chapters
+        cat_chaps = []
+        cat_map = {}
+        for r in cat.get("records", []):
+            vid = r.get("video_id")
+            for c in r.get("chapters", []):
+                cat_chaps.append((vid, c["title"]))
+                cat_map[(vid, c["title"])] = c
+
+        self.assertEqual(
+            len(raw_chaps),
+            241,
+            f"Expected exactly 241 chapters in raw research notes, got {len(raw_chaps)}",
+        )
+        self.assertEqual(
+            len(cat_chaps),
+            241,
+            f"Expected exactly 241 chapters in catalog, got {len(cat_chaps)}",
+        )
+        self.assertEqual(
+            len(raw_chaps),
+            len(cat_chaps),
+            "Raw markdown chapters and catalog chapters must have zero discrepancy",
+        )
+
+        # Verify specific 3 restored unlinked chapters
+        restored_targets = [
+            ("2-8cXaRHlqI", "Studio機能9種生成の実演"),
+            ("26MGuVIJh4A", "ゴッホの『ひまわり』比較法（一流作品とAI生成物をブラインド評価）"),
+            ("Eh75KT85Y40", "本番マージとブラウザでの多言語・AI検索向けファイル表示確認"),
+        ]
+        for vid, title in restored_targets:
+            key = (vid, title)
+            self.assertIn(key, cat_map, f"Restored chapter {key} missing from catalog!")
+            ch = cat_map[key]
+            self.assertEqual(
+                ch.get("timestamp_source"),
+                "UNKNOWN",
+                f"Restored chapter {title} must be UNKNOWN, not verified",
+            )
+            self.assertIsNone(ch.get("start_seconds"))
+            self.assertIsNone(ch.get("playback_url"))
+            self.assertEqual(ch.get("start_mmss"), "UNKNOWN")
 
 
 if __name__ == "__main__":
+
     unittest.main(verbosity=2)
 
 
