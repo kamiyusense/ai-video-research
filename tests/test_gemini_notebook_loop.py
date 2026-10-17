@@ -2571,6 +2571,72 @@ try {{
         )
         self.assertEqual(res.stdout.strip(), "REJECTED_AS_EXPECTED")
 
+    def test_cp2_query_research_quality_and_provenance_audit(self):
+        """CP2: Comprehensive search quality and provenance audit across diverse user questions."""
+        real_root = ROOT
+
+        # 1. Audit provenance metadata across all catalog chapters
+        catalog_path = ROOT / "automation" / "gemini-notebook" / "state" / "video_knowledge_catalog.json"
+        cat = json.loads(catalog_path.read_text(encoding="utf-8"))
+        prov_counts = {}
+        for r in cat.get("records", []):
+            for c in r.get("chapters", []):
+                p = c.get("provenance")
+                prov_counts[p] = prov_counts.get(p, 0) + 1
+                self.assertIsNotNone(c.get("verification_scope"))
+                self.assertIsNotNone(c.get("verification_actor"))
+                if c["timestamp_source"] == "VISUAL_FRAME_CHECK":
+                    self.assertEqual(p, "LEGACY_AI_STUDIO_USER_REPORT")
+                    self.assertEqual(c["verification_actor"], "USER_REPORTED_AI_STUDIO_ANALYSIS")
+                elif c["timestamp_source"] == "TIMESTAMPED_CAPTIONS":
+                    self.assertEqual(p, "YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH")
+                    self.assertEqual(c["verification_actor"], "INDEPENDENT_CAPTION_VERIFIER")
+                elif c["timestamp_source"] == "YOUTUBE_CHAPTER_METADATA":
+                    self.assertEqual(p, "YOUTUBE_SHORT_DESCRIPTION_OFFICIAL_METADATA")
+                    self.assertEqual(c["verification_actor"], "YOUTUBE_METADATA_EXTRACTOR")
+                elif c["timestamp_source"] == "UNKNOWN":
+                    self.assertEqual(p, "UNVERIFIED")
+                    self.assertEqual(c["verification_actor"], "NONE")
+
+        self.assertEqual(prov_counts["LEGACY_AI_STUDIO_USER_REPORT"], 9)
+        self.assertEqual(prov_counts["YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH"], 73)
+        self.assertEqual(prov_counts["YOUTUBE_SHORT_DESCRIPTION_OFFICIAL_METADATA"], 48)
+        self.assertEqual(prov_counts["UNVERIFIED"], 111)
+
+        # 2. Test user questions covering distinct practical scenarios
+        # Scenario 1: NotebookLM and Obsidian synergy
+        ans1 = query_mod.answer_question("NotebookLMとObsidianを連携する価値や構成方法は？", root=real_root)
+        top_vids1 = [r["video_id"] for r in ans1["step2_matched_records"][:2]]
+        self.assertIn("2-8cXaRHlqI", top_vids1)
+        # Ensure restored UNKNOWN chapter does NOT generate a playback link
+        segs1 = ans1["step5_and_6_recommended_video_segments"]
+        for s in segs1:
+            if s.get("chapter_title") == "Studio機能9種生成の実演":
+                self.assertIsNone(s.get("playback_url"))
+                self.assertEqual(s.get("timestamp_source"), "UNKNOWN")
+
+        # Scenario 2: Memory preservation in agents
+        ans2 = query_mod.answer_question("AIエージェントの記憶を長持ちさせる方法は？", root=real_root)
+        top_vids2 = [r["video_id"] for r in ans2["step2_matched_records"][:3]]
+        self.assertTrue(any(v in top_vids2 for v in ["BStkW1HTfmk", "sodTFSuV4zY", "Vr3JkAT9mo8"]))
+
+        # Scenario 3: Safety stop for dangerous actions
+        ans3 = query_mod.answer_question("AIの自律実行で危険な操作を止めるには？", root=real_root)
+        self.assertGreater(len(ans3["step2_matched_records"]), 0)
+        self.assertIn("FAILURE_AND_LIMITS", ans3["step1_intent_analysis"]["intents"])
+
+        # Scenario 4: Specific video locator query
+        ans4 = query_mod.answer_question("動画 2-8cXaRHlqI の具体的な説明位置や目次は？", root=real_root)
+        self.assertEqual(ans4["step2_matched_records"][0]["video_id"], "2-8cXaRHlqI")
+        self.assertGreaterEqual(len(ans4["step5_and_6_recommended_video_segments"]), 5)
+        # Check title alias is present
+        self.assertIn("title", ans4["step5_and_6_recommended_video_segments"][0])
+
+        # Scenario 5: Unrelated technology must reject safely
+        ans5 = query_mod.answer_question("超伝導トカマク型核融合炉のプラズマ閉じ込め磁場コイル設計手順は？", root=real_root)
+        self.assertEqual(len(ans5["step2_matched_records"]), 0)
+        self.assertEqual(ans5["step4_gap_analysis"]["coverage_status"], "INSUFFICIENT_NEEDS_NEW_RESEARCH")
+
 
 if __name__ == "__main__":
 

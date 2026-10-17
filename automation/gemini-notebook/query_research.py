@@ -80,6 +80,15 @@ INTENT_RULES = {
         "誤解",
         "苦労",
         "負担",
+        "危険",
+        "暴走",
+        "事故",
+        "リスク",
+        "止める",
+        "防ぐ",
+        "安全境界",
+        "ガードレール",
+        "ブロック",
     ],
     "CONCEPT_AND_BASICS": [
         "って何",
@@ -364,6 +373,33 @@ def infer_legacy_timestamp_source(basis_text):
     return "UNKNOWN"
 
 
+def get_provenance_info(timestamp_source):
+    """時刻根拠の由来・検証主体・確認範囲の厳格なメタデータを返す。"""
+    if timestamp_source == "TIMESTAMPED_CAPTIONS":
+        return {
+            "provenance": "YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH",
+            "verification_scope": "YouTube字幕生データとの2語以上直接一致（発話確認済み・内容全体の網羅性は非保証）",
+            "verification_actor": "INDEPENDENT_CAPTION_VERIFIER",
+        }
+    if timestamp_source == "YOUTUBE_CHAPTER_METADATA":
+        return {
+            "provenance": "YOUTUBE_SHORT_DESCRIPTION_OFFICIAL_METADATA",
+            "verification_scope": "YouTube動画概要欄公式チャプター定義との秒数・順序完全一致",
+            "verification_actor": "YOUTUBE_METADATA_EXTRACTOR",
+        }
+    if timestamp_source == "VISUAL_FRAME_CHECK":
+        return {
+            "provenance": "LEGACY_AI_STUDIO_USER_REPORT",
+            "verification_scope": "過去のGoogle AI Studio映像・テロップ解析報告に基づく引き継ぎ（AGY直接視聴ではない）",
+            "verification_actor": "USER_REPORTED_AI_STUDIO_ANALYSIS",
+        }
+    return {
+        "provenance": "UNVERIFIED",
+        "verification_scope": "一次証拠未確認（推測再生リンク非生成）",
+        "verification_actor": "NONE",
+    }
+
+
 def split_markdown_sections(md_text):
     """Markdown本文を見出し (## / ###) ごとの辞書に分割する。"""
     sections = {"_header": []}
@@ -529,6 +565,7 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
             verified_url = build_verified_youtube_link(
                 vid_for_link, start_sec, ts_source
             )
+            prov = get_provenance_info(ts_source)
             chapters.append(
                 {
                     "segment_id": f"CH-{len(chapters) + 1:02d}",
@@ -545,6 +582,9 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                     "timestamp_source": ts_source,
                     "timestamp_basis": ts_source,
                     "verification_result": "CHAPTER_TIMELINE",
+                    "provenance": prov["provenance"],
+                    "verification_scope": prov["verification_scope"],
+                    "verification_actor": prov["verification_actor"],
                     "key_topics": topics,
                     "playback_url": verified_url,
                 }
@@ -599,6 +639,7 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                 vid_for_link, start_sec, ts_source
             )
             summary_txt = m_leg_id.group("summary").strip()
+            prov = get_provenance_info(ts_source)
             chapters.append(
                 {
                     "segment_id": m_leg_id.group("seg_id").strip(),
@@ -611,6 +652,9 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                     "timestamp_source": ts_source,
                     "timestamp_basis": basis,
                     "verification_result": m_leg_id.group("result").strip(),
+                    "provenance": prov["provenance"],
+                    "verification_scope": prov["verification_scope"],
+                    "verification_actor": prov["verification_actor"],
                     "key_topics": [],
                     "playback_url": verified_url,
                 }
@@ -634,6 +678,7 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                 vid_for_link, start_sec, ts_source
             )
             summary_txt = m_leg_noid.group("summary").strip()
+            prov = get_provenance_info(ts_source)
             chapters.append(
                 {
                     "segment_id": f"SEG-{len(chapters) + 1:02d}",
@@ -646,6 +691,9 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                     "timestamp_source": ts_source,
                     "timestamp_basis": basis,
                     "verification_result": basis,
+                    "provenance": prov["provenance"],
+                    "verification_scope": prov["verification_scope"],
+                    "verification_actor": prov["verification_actor"],
                     "key_topics": [],
                     "playback_url": verified_url,
                 }
@@ -1092,6 +1140,7 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
                             "segment_type": "CHAPTER_SEGMENT",
                             "segment_id": ch["segment_id"],
                             "chapter_title": ch["title"],
+                            "title": ch["title"],
                             "summary_ja": ch["summary_ja"],
                             "start_seconds": ch["start_seconds"],
                             "end_seconds": ch["end_seconds"],
@@ -1100,6 +1149,9 @@ def search_github_knowledge(intent_info, parsed_records, top_k=5):
                             "timestamp_source": ch["timestamp_source"],
                             "timestamp_basis": ch["timestamp_basis"],
                             "verification_status": ch["verification_result"],
+                            "provenance": ch.get("provenance"),
+                            "verification_scope": ch.get("verification_scope"),
+                            "verification_actor": ch.get("verification_actor"),
                             "playback_url": ch["playback_url"],
                             "official_url": None,
                             "matched_terms": sorted(set(seg_matches)),
