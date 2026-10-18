@@ -4003,6 +4003,208 @@ process.stdout.write(JSON.stringify({{
         self.assertEqual(fail_res["status"], "VALIDATION_FAILED")
         self.assertTrue(len(fail_res["errors"]) > 0)
 
+    def test_phase_okf_knowledge_and_qa_pipeline(self):
+        """OKF v0.2: Test schema specs, GAS/Python parity, knowledge network, 5-category router, and QA pipeline."""
+        gas_path = (ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").as_posix()
+        query_mod_path = ROOT / "automation" / "gemini-notebook" / "query_research.py"
+        q_spec = importlib.util.spec_from_file_location("query_research", query_mod_path)
+        query_mod = importlib.util.module_from_spec(q_spec)
+        q_spec.loader.exec_module(query_mod)
+
+        # 1. Spec consistency: contract_spec_v1.json vs cloud_relay_gas.js
+        spec_path = ROOT / "automation" / "gemini-notebook" / "contract_spec_v1.json"
+        py_spec = json.loads(spec_path.read_text(encoding="utf-8"))
+        self.assertEqual(py_spec["okf_spec"]["version"], "0.2")
+        self.assertIn("FULL_VERIFIED", py_spec["allowed_transcript_statuses"])
+        self.assertIn("UNVERIFIED", py_spec["allowed_transcript_statuses"])
+        self.assertIn("CONFIRMED", py_spec["allowed_relation_statuses"])
+        self.assertIn("UNRESOLVED", py_spec["allowed_relation_statuses"])
+
+        # GAS parity on CONTRACT_SPEC_V1
+        node_check_spec = f"""
+const gas = require({json.dumps(gas_path)});
+process.stdout.write(JSON.stringify(gas.CONTRACT_SPEC_V1));
+"""
+        proc = subprocess.run(
+            ["node", "-e", node_check_spec],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        gas_spec = json.loads(proc.stdout)
+        self.assertEqual(gas_spec["okf_spec"]["version"], "0.2")
+        self.assertEqual(gas_spec["allowed_transcript_statuses"], py_spec["allowed_transcript_statuses"])
+        self.assertEqual(gas_spec["allowed_relation_statuses"], py_spec["allowed_relation_statuses"])
+
+        # 2. Render parity on OKF v0.2 frontmatter and related records with status & evidence
+        sample_receipt = make_sample_receipt()
+        v = sample_receipt["videos"][0]
+        v["logical_id"] = "youtube:dQw4w9WgXcQ:research"
+        v["transcript_logical_id"] = "youtube:dQw4w9WgXcQ:transcript"
+        v["transcript_status"] = "FULL_VERIFIED"
+        v["related_records"] = [
+            {
+                "target_id": "youtube:u3ka_AAb8qE:research",
+                "relation": "COMPLEMENTS",
+                "note": "OKF知識構造化と補完",
+                "status": "CONFIRMED",
+                "evidence": "08:16荷札と照合",
+            }
+        ]
+
+        py_rendered = bridge.render(v, sample_receipt["checked_at"])
+        self.assertIn("- logical_id: `youtube:dQw4w9WgXcQ:research`", py_rendered)
+        self.assertIn("- transcript_logical_id: `youtube:dQw4w9WgXcQ:transcript`", py_rendered)
+        self.assertIn("- transcript_status: FULL_VERIFIED", py_rendered)
+        self.assertIn("- okf_version: 0.2", py_rendered)
+        self.assertIn("| status: CONFIRMED", py_rendered)
+        self.assertIn("| evidence: 08:16荷札と照合", py_rendered)
+
+        node_render_script = f"""
+const gas = require({json.dumps(gas_path)});
+const v = {json.dumps(v, ensure_ascii=False)};
+const checkedAt = {json.dumps(sample_receipt["checked_at"])};
+process.stdout.write(gas.renderResearchMarkdown(v, checkedAt));
+"""
+        node_res = subprocess.run(
+            ["node", "-e", node_render_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        gas_rendered = node_res.stdout
+        self.assertEqual(py_rendered.strip(), gas_rendered.strip())
+
+        # 3. Test Knowledge Network construction and link resolution
+        test_records = [
+            {
+                "video_id": "VID_A",
+                "logical_id": "youtube:VID_A:research",
+                "title": "Record A",
+                "record_path": "research/rec_a.md",
+                "related_records": [
+                    {
+                        "target_id": "VID_B",
+                        "relation": "COMPLEMENTS",
+                        "note": "A complements B",
+                        "evidence": "section 1",
+                        "status": "CONFIRMED",
+                    },
+                    {
+                        "target_id": "VID_A",
+                        "relation": "UPDATES",
+                        "note": "Self link to A",
+                    },
+                    {
+                        "target_id": "NON_EXISTENT_VID",
+                        "relation": "EXTENDS",
+                        "note": "Missing link",
+                    },
+                ],
+            },
+            {
+                "video_id": "VID_B",
+                "logical_id": "youtube:VID_B:research",
+                "title": "Record B",
+                "record_path": "research/rec_b.md",
+                "related_records": [],
+            },
+        ]
+        network = query_mod.build_knowledge_network(test_records)
+        self.assertEqual(network["total_nodes"], 2)
+        self.assertEqual(network["total_links"], 3)
+        self.assertEqual(network["confirmed_links"], 1)
+        self.assertEqual(network["unresolved_links"], 2)
+        self.assertEqual(len(network["self_link_warnings"]), 1)
+        self.assertEqual(network["self_link_warnings"][0]["reason"], "SELF_LINK_DETECTED")
+        self.assertIn("VID_B", network["backlinks"])
+        self.assertEqual(network["backlinks"]["VID_B"][0]["from_video_id"], "VID_A")
+
+        # 4. Test 5 question categories router
+        cat_search, _ = query_mod.classify_question_category("ハーネスの基本概念を教えて", "ハーネスの基本概念を教えて")
+        self.assertEqual(cat_search, "CATEGORY_A_SEARCH")
+
+        cat_agg, _ = query_mod.classify_question_category("何件の動画が登録されている？", "何件の動画が登録されている？")
+        self.assertEqual(cat_agg, "CATEGORY_B_AGGREGATE")
+
+        cat_timeline, _ = query_mod.classify_question_category("最近調査した研究を時系列で教えて", "最近調査した研究を時系列で教えて")
+        self.assertEqual(cat_timeline, "CATEGORY_C_TIMELINE")
+
+        cat_synthesis, _ = query_mod.classify_question_category("OKFとRAGを組み合わせるとどうなる？", "okfとragを組み合わせるとどうなる？")
+        self.assertEqual(cat_synthesis, "CATEGORY_D_SYNTHESIS")
+
+        cat_verify, _ = query_mod.classify_question_category("動画内で実際にそう発言していた？元字幕を確認したい", "動画内で実際にそう発言していた？元字幕を確認したい")
+        self.assertEqual(cat_verify, "CATEGORY_E_SOURCE_VERIFY")
+
+        # 5. Test Cross-Research Q&A pipeline (OKF + RAG synthesis) in isolated fixture root
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_root = Path(tmpdir)
+            tmp_research = tmp_root / "research"
+            tmp_research.mkdir(parents=True)
+
+            # Copy pRfC1DILDEM note
+            prf_src = ROOT / "research" / "2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+            (tmp_research / prf_src.name).write_text(prf_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+            # Write u3ka_AAb8qE fixture note (no full transcript, pure OKF structure & timestamps)
+            u3ka_content = """# 【研究カード】 【OKF実践】AI時代の知識管理とオープンナレッジフォーマット v0.2
+
+- logical_id: `youtube:u3ka_AAb8qE:research`
+- record_id: `youtube:u3ka_AAb8qE`
+- video_id: `u3ka_AAb8qE`
+- canonical_url: https://www.youtube.com/watch?v=u3ka_AAb8qE
+- publication_date: 2026-08-20
+- checked_at: 2026-10-19
+- source_scope: ユーザー提供字幕（主要タイムスタンプ付き区間 08:16〜16:33）を分析。
+- transcript_logical_id: `youtube:u3ka_AAb8qE:transcript`
+- transcript_status: UNVERIFIED
+- primary_source_notebook_id: UNKNOWN
+- document_type: AI技術研究室 構造化研究カード（二次分析資料）
+- okf_version: 0.2
+
+## 独自要約
+オープンナレッジフォーマット（OKF v0.2）に基づく文書構造化手法を解説。資料先頭の標準荷札、1件1ファイルの資料分割、意味付けされた双方向リンク。
+
+## 動画目次・確認済みタイムライン（チャプター）
+- [08:16〜09:08](https://www.youtube.com/watch?v=u3ka_AAb8qE&t=496s) | **荷札（メタデータによる資料識別）** | メタデータによる資料識別原則。 | time_source: TIMESTAMPED_CAPTIONS | topics: OKF, Metadata
+- [09:35〜10:11](https://www.youtube.com/watch?v=u3ka_AAb8qE&t=575s) | **リンク（関係の意味付けと双方向参照）** | 資料間を関係種別で結ぶ設計。 | time_source: TIMESTAMPED_CAPTIONS | topics: Links, Graph
+
+## 関連研究・資料リンク
+- `youtube:pRfC1DILDEM:research` (COMPLEMENTS): RAGとOKFが相互補完関係にある | status: CONFIRMED | evidence: 08:16荷札とpRfC1DILDEMの13:16言及
+"""
+            (tmp_research / "2026-10-19-u3ka_AAb8qE-okf-knowledge-management.md").write_text(
+                u3ka_content, encoding="utf-8"
+            )
+
+            qa_res_synthesis = query_mod.answer_question("OKFとRAGを組み合わせるとどうなる？", root=tmp_root)
+            self.assertEqual(qa_res_synthesis["question_category"], "CATEGORY_D_SYNTHESIS")
+            synth_vids = [
+                (r["source_video_id"], r["target_video_id"])
+                for r in qa_res_synthesis["synthesized_relations"]
+            ]
+            self.assertTrue(
+                ("u3ka_AAb8qE", "pRfC1DILDEM") in synth_vids or ("pRfC1DILDEM", "u3ka_AAb8qE") in synth_vids,
+                f"Expected u3ka_AAb8qE and pRfC1DILDEM relation, got {synth_vids}",
+            )
+            md_output = query_mod.format_qa_response_markdown(qa_res_synthesis)
+            self.assertIn("関連研究ネットワークの横断合成知見", md_output)
+            self.assertIn("COMPLEMENTS", md_output)
+
+        # 6. Test Aggregate Q&A
+        qa_res_agg = query_mod.answer_question("何本の動画が登録されている？", root=ROOT)
+        self.assertEqual(qa_res_agg["question_category"], "CATEGORY_B_AGGREGATE")
+        self.assertGreaterEqual(qa_res_agg["category_data"]["total_video_records"], 29)
+        agg_md = query_mod.format_qa_response_markdown(qa_res_agg)
+        self.assertIn("台帳集計結果（RAGではなく台帳直接集計）", agg_md)
+
+        # 7. Test Source Verify Q&A
+        qa_res_verify = query_mod.answer_question("字幕原文を確認したい", root=ROOT)
+        self.assertEqual(qa_res_verify["question_category"], "CATEGORY_E_SOURCE_VERIFY")
+        verify_md = query_mod.format_qa_response_markdown(qa_res_verify)
+        self.assertIn("字幕全文は著作権保護・利用規約のためGitHub正本には保持せず", verify_md)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

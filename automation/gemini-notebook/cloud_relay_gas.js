@@ -64,6 +64,23 @@ const CONTRACT_SPEC_V1 = {
     "CONTRADICTS",
     "RESOLVES_BACKLOG",
   ],
+  allowed_transcript_statuses: [
+    "FULL_VERIFIED",
+    "PARTIAL_VERIFIED",
+    "UNVERIFIED",
+    "NOT_ACQUIRED",
+    "UNKNOWN",
+  ],
+  allowed_relation_statuses: [
+    "CONFIRMED",
+    "CANDIDATE",
+    "UNRESOLVED",
+  ],
+  okf_spec: {
+    version: "0.2",
+    default_research_doc_type: "RESEARCH_NOTE",
+    default_transcript_doc_type: "TRANSCRIPT_SOURCE",
+  },
   forbidden_payload_keys: [
     "transcript",
     "full_transcript",
@@ -1556,14 +1573,20 @@ function formatRelatedRecordsLines_(relatedRecords) {
   const list = Array.isArray(relatedRecords) ? relatedRecords : [];
   for (let i = 0; i < list.length; i++) {
     const rel = list[i];
-    lines.push(
+    let line =
       "- `" +
-        clean_(rel.target_id) +
-        "` (" +
-        rel.relation +
-        "): " +
-        clean_(rel.note)
-    );
+      clean_(rel.target_id) +
+      "` (" +
+      rel.relation +
+      "): " +
+      clean_(rel.note);
+    if (rel.status) {
+      line += " | status: " + rel.status;
+    }
+    if (rel.evidence) {
+      line += " | evidence: " + clean_(rel.evidence);
+    }
+    lines.push(line);
   }
   return lines;
 }
@@ -1576,9 +1599,13 @@ function renderResearchMarkdown_(v, checkedAt) {
     ? rawTitle
     : "【研究カード】 " + rawTitle;
   const nbSrc = clean_(v.notebook_source_id || "UNKNOWN");
+  const logicalId = clean_(v.logical_id || ("youtube:" + vid + ":research"));
+  const transcriptLogicalId = clean_(v.transcript_logical_id || ("youtube:" + vid + ":transcript"));
+  const transcriptStatus = clean_(v.transcript_status || "UNKNOWN");
   let lines = [
     "# " + titleDisplay,
     "",
+    "- logical_id: `" + logicalId + "`",
     "- record_id: `youtube:" + vid + "`",
     "- video_id: `" + vid + "`",
     "- canonical_url: " + canon,
@@ -1586,9 +1613,12 @@ function renderResearchMarkdown_(v, checkedAt) {
     "- publication_date: " + clean_(v.published_at || "UNKNOWN"),
     "- checked_at: " + checkedAt,
     "- source_scope: " + clean_(v.source_scope),
+    "- transcript_logical_id: `" + transcriptLogicalId + "`",
+    "- transcript_status: " + transcriptStatus,
     "- primary_source_notebook_id: " + nbSrc,
     "- Gemini Notebook source (一次資料YouTube動画): " + nbSrc,
     "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
+    "- okf_version: 0.2",
     "- Gemini readback (self-reported): " + v.notebook_readback,
     "- GitHub independent verification: NOT_RUN",
     "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
@@ -1639,15 +1669,22 @@ function renderDeltaSection_(v, checkedAt) {
   const vid = v.video_id;
   const changesStr = v.changes.join(", ");
   const nbSrc = clean_(v.notebook_source_id || "UNKNOWN");
+  const logicalId = clean_(v.logical_id || ("youtube:" + vid + ":research"));
+  const transcriptLogicalId = clean_(v.transcript_logical_id || ("youtube:" + vid + ":transcript"));
+  const transcriptStatus = clean_(v.transcript_status || "UNKNOWN");
   let lines = [
     "",
     "## 差分更新 (" + checkedAt + " / " + changesStr + ")",
     "",
     "- checked_at: " + checkedAt,
     "- source_scope: " + clean_(v.source_scope),
+    "- logical_id: `" + logicalId + "`",
+    "- transcript_logical_id: `" + transcriptLogicalId + "`",
+    "- transcript_status: " + transcriptStatus,
     "- primary_source_notebook_id: " + nbSrc,
     "- Gemini Notebook source (一次資料YouTube動画): " + nbSrc,
     "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
+    "- okf_version: 0.2",
     "- Gemini readback (self-reported): " + v.notebook_readback,
     "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
     "- changes: " + changesStr,

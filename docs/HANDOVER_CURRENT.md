@@ -51,10 +51,18 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
 
 ## 3. 今何をすべきか
 
-1. **Phase 0**: このハンドオーバーと専用ロードマップをGitHubの非default branchへ保存し、README/AGENTS/ChatGPT指示/旧研究計画から参照させ、読み戻しまで行う。成功後に文書整備完了と報告。
-2. **次はPhase 1**: 公式OKF v0.2の必須構造、既存契約 `research_receipt_v1`（`contract_spec_v1.json`）との差、原文/研究の荷札、資料ID、関係リンク、重複防止、取得完全性メタデータを非破壊で設計。可能なら静的テスト。ユーザーへ工程ごとの無意味な再確認を求めない。
-3. **Phase 2**: 既存2動画を使う。OKF動画の字幕はユーザーがチャットで提供した時刻付きテキストだが、**GitHubに字幕全文を転記しない**。Notebookへの実機書込み、外部モデルLIVE起動は対象を説明して別途承認。
-4. **Phase 3以降**: 合意済みロードマップ参照。既存GASを捨てない。ChatGPTのGitHub研究QAルートを維持。
+1. **Phase 0〜6 完了 (2026-10-19)**:
+   - **Phase 0**: 入口導線・ロードマップ整備完了。
+   - **Phase 1**: OKF v0.2契約・スキーマ確定、GAS/Pythonレンダリングパリティ100%一致。
+   - **Phase 2**: OKF動画（`u3ka_AAb8qE`）とRAG動画（`pRfC1DILDEM`）の2資料構造・`COMPLEMENTS`リンク解決・自己リンク検知・誤リンク隔離を実証。
+   - **Phase 3**: `GEMINI_TASK.md` v0.7へOKF荷札・論理ID・字幕原文保護・関連リンク生成契約を統合。
+   - **Phase 4**: `cloud_relay_gas.js` および `query_research.py` の知識ネットワーク（`build_knowledge_network`）・逆リンク（`backlinks`）マップを統合。
+   - **Phase 5**: 既存29動画・263章の下位互換を完全維持（全42テストPASS）。
+   - **Phase 6**: 5分類ルーター（探し物・集計・時系列・横断合成・原文確認）およびOKF+RAGマルチホップ横断QAパイプラインの動作実証完了。
+2. **次はPhase 7（実機省力化運用・Gemini Task v0.7試験）**:
+   - ユーザーがGemini Task v0.7を使って新規動画を調査し、生成された `research_receipt_v1` をGoogle Driveへ配置。
+   - GAS `runCloudRelayLoop` による非default作業ブランチへのLIVE保存（要承認）。
+   - 課金・権限変更・default branch書き込みは行わず、非破壊的に実機運転を進める。
 
 ## 4. 安全停止条件（再確認）
 

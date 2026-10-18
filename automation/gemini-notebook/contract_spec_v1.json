@@ -57,6 +57,23 @@
     "CONTRADICTS",
     "RESOLVES_BACKLOG"
   ],
+  "allowed_transcript_statuses": [
+    "FULL_VERIFIED",
+    "PARTIAL_VERIFIED",
+    "UNVERIFIED",
+    "NOT_ACQUIRED",
+    "UNKNOWN"
+  ],
+  "allowed_relation_statuses": [
+    "CONFIRMED",
+    "CANDIDATE",
+    "UNRESOLVED"
+  ],
+  "okf_spec": {
+    "version": "0.2",
+    "default_research_doc_type": "RESEARCH_NOTE",
+    "default_transcript_doc_type": "TRANSCRIPT_SOURCE"
+  },
   "forbidden_payload_keys": [
     "transcript",
     "full_transcript",

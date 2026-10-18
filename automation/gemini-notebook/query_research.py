@@ -16,6 +16,7 @@ import argparse
 import json
 import re
 import sys
+from collections import defaultdict
 from datetime import date
 from pathlib import Path
 
@@ -467,6 +468,27 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         val = re.sub(r"\s*\([^)]*\)$", "", val).strip()
         notebook_source_id = val
 
+    # OKF metadata
+    logical_id = f"youtube:{video_id}:research" if video_id else "UNKNOWN"
+    m_lid = re.search(r"^\s*-\s*logical_id:\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
+    if m_lid:
+        logical_id = m_lid.group(1).strip()
+
+    transcript_logical_id = f"youtube:{video_id}:transcript" if video_id else "UNKNOWN"
+    m_tlid = re.search(r"^\s*-\s*transcript_logical_id:\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
+    if m_tlid:
+        transcript_logical_id = m_tlid.group(1).strip()
+
+    transcript_status = "UNKNOWN"
+    m_tstat = re.search(r"^\s*-\s*transcript_status:\s*(.+?)\s*$", text, re.MULTILINE)
+    if m_tstat:
+        transcript_status = m_tstat.group(1).strip()
+
+    okf_version = None
+    m_okf = re.search(r"^\s*-\s*okf_version:\s*(.+?)\s*$", text, re.MULTILINE)
+    if m_okf:
+        okf_version = m_okf.group(1).strip()
+
     # source_scope
     source_scope = (
         registry_entry.get("source_scope", "") if registry_entry else ""
@@ -706,11 +728,31 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
 
         m_rel = RELATED_RECORD_LINE_RE.match(line)
         if m_rel:
+            raw_note = m_rel.group("note").strip()
+            rel_status = "CONFIRMED"
+            rel_evidence = None
+            if " | status: " in raw_note:
+                parts = raw_note.split(" | status: ")
+                raw_note = parts[0].strip()
+                rem = parts[1]
+                if " | evidence: " in rem:
+                    st_part, ev_part = rem.split(" | evidence: ", 1)
+                    rel_status = st_part.strip()
+                    rel_evidence = ev_part.strip()
+                else:
+                    rel_status = rem.strip()
+            elif " | evidence: " in raw_note:
+                parts = raw_note.split(" | evidence: ")
+                raw_note = parts[0].strip()
+                rel_evidence = parts[1].strip()
+
             related_records.append(
                 {
                     "target_id": m_rel.group("target_id").strip(),
                     "relation": m_rel.group("relation").strip(),
-                    "note": m_rel.group("note").strip(),
+                    "note": raw_note,
+                    "status": rel_status,
+                    "evidence": rel_evidence,
                 }
             )
 
@@ -750,6 +792,10 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         "video_id": video_id,
         "title": title,
         "canonical_url": canonical_url,
+        "logical_id": logical_id,
+        "transcript_logical_id": transcript_logical_id,
+        "transcript_status": transcript_status,
+        "okf_version": okf_version,
         "notebook_source_id": notebook_source_id,
         "source_scope": source_scope,
         "summary_ja": summary_ja,
@@ -763,14 +809,169 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
     }
 
 
+def extract_clean_target_vid(target_id):
+    """target_id (例: youtube:u3ka_AAb8qE:research, u3ka_AAb8qE, proposals/006-...) から動画IDまたは主識別子を抽出する。"""
+    if not target_id:
+        return ""
+    tid = str(target_id).strip()
+    if tid.startswith("youtube:"):
+        parts = tid.split(":")
+        if len(parts) >= 2:
+            return parts[1]
+    m = re.search(r"([A-Za-z0-9_-]{11})", tid)
+    if m and "/" not in tid:
+        return m.group(1)
+    return tid
+
+
+def build_knowledge_network(records, registry_entries=None):
+    """OKF関連研究ネットワークを構築し、リンクの解決・検証・逆リンクマップ・自己リンク警告を行う。"""
+    known_vids = set()
+    known_logical_ids = set()
+    known_paths = set()
+    records_by_vid = {}
+
+    for r in records:
+        vid = r.get("video_id")
+        if vid:
+            known_vids.add(vid)
+            records_by_vid[vid] = r
+        if r.get("logical_id"):
+            known_logical_ids.add(r["logical_id"])
+        if r.get("record_path"):
+            known_paths.add(r["record_path"])
+
+    if registry_entries:
+        for entry in registry_entries:
+            if isinstance(entry, dict):
+                if entry.get("video_id"):
+                    known_vids.add(entry["video_id"])
+                if entry.get("research_path"):
+                    known_paths.add(entry["research_path"])
+
+    backlinks = defaultdict(list)
+    resolved_edges = []
+    total_links = 0
+    confirmed_links = 0
+    unresolved_links = 0
+    self_link_warnings = []
+    nodes = []
+
+    for r in records:
+        vid = r.get("video_id") or ""
+        lid = r.get("logical_id") or (f"youtube:{vid}:research" if vid else "UNKNOWN")
+        nodes.append(
+            {
+                "video_id": vid,
+                "logical_id": lid,
+                "title": r.get("title", ""),
+                "record_path": r.get("record_path", ""),
+                "transcript_status": r.get("transcript_status", "UNKNOWN"),
+            }
+        )
+
+        for rel in r.get("related_records", []):
+            total_links += 1
+            raw_target = rel.get("target_id", "")
+            target_vid = extract_clean_target_vid(raw_target)
+            relation = rel.get("relation", "")
+            note = rel.get("note", "")
+            evidence = rel.get("evidence")
+            status = rel.get("status")
+
+            # 自己リンク検知
+            is_self = (
+                (target_vid and target_vid == vid)
+                or (raw_target and raw_target == lid)
+                or (raw_target and raw_target == r.get("record_path"))
+            )
+            if is_self:
+                self_link_warnings.append(
+                    {
+                        "source_video_id": vid,
+                        "target_id": raw_target,
+                        "reason": "SELF_LINK_DETECTED",
+                    }
+                )
+
+            # リンク実在確認
+            target_exists = (
+                (target_vid in known_vids)
+                or (raw_target in known_logical_ids)
+                or (raw_target in known_paths)
+            )
+
+            if target_exists and not is_self:
+                resolved_status = status if status in ("CONFIRMED", "CANDIDATE") else "CONFIRMED"
+                confirmed_links += 1
+            else:
+                resolved_status = "UNRESOLVED"
+                unresolved_links += 1
+
+            edge = {
+                "source_video_id": vid,
+                "source_logical_id": lid,
+                "target_id": raw_target,
+                "target_video_id": target_vid,
+                "relation": relation,
+                "note": note,
+                "status": resolved_status,
+                "evidence": evidence,
+                "is_self_link": is_self,
+                "target_exists": target_exists,
+            }
+            resolved_edges.append(edge)
+
+            if target_vid:
+                backlinks[target_vid].append(
+                    {
+                        "from_video_id": vid,
+                        "from_logical_id": lid,
+                        "relation": relation,
+                        "note": note,
+                        "evidence": evidence,
+                        "status": resolved_status,
+                    }
+                )
+
+    # 孤立ノード（リンク元にもリンク先にもなっていない）の特定
+    connected_vids = set()
+    for e in resolved_edges:
+        if e["source_video_id"]:
+            connected_vids.add(e["source_video_id"])
+        if e["target_video_id"] and e["target_exists"]:
+            connected_vids.add(e["target_video_id"])
+
+    isolated_vids = [
+        r.get("video_id")
+        for r in records
+        if r.get("video_id") and r["video_id"] not in connected_vids
+    ]
+
+    return {
+        "schema_version": "okf_knowledge_network_v1",
+        "total_nodes": len(nodes),
+        "total_links": total_links,
+        "confirmed_links": confirmed_links,
+        "unresolved_links": unresolved_links,
+        "self_link_warnings": self_link_warnings,
+        "isolated_nodes_count": len(isolated_vids),
+        "isolated_video_ids": isolated_vids,
+        "edges": resolved_edges,
+        "backlinks": dict(backlinks),
+    }
+
+
 def build_video_knowledge_catalog(root=ROOT, write_path=None):
     """GitHubリポジトリ内の全研究記録・台帳を走査し、構造化知識・タイムラインカタログを生成する。"""
     registry_path = root / "registry.json"
     reg_by_path = {}
     reg_by_vid = {}
+    reg_entries = []
     if registry_path.exists():
         reg = json.loads(registry_path.read_text(encoding="utf-8"))
-        for rec in reg.get("records", []):
+        reg_entries = reg.get("records", [])
+        for rec in reg_entries:
             if isinstance(rec, dict):
                 if rec.get("research_path"):
                     reg_by_path[rec["research_path"]] = rec
@@ -793,6 +994,12 @@ def build_video_knowledge_catalog(root=ROOT, write_path=None):
                 md_file, root=root, registry_entry=reg_entry
             )
             records.append(parsed)
+
+    # 関連研究ネットワークを構築
+    network = build_knowledge_network(records, registry_entries=reg_entries)
+    for r in records:
+        vid = r.get("video_id")
+        r["backlinks"] = network["backlinks"].get(vid, []) if vid else []
 
     state_path = root / "automation" / "gemini-notebook" / "state" / "loop_state.json"
     loop_state = {}
@@ -817,6 +1024,7 @@ def build_video_knowledge_catalog(root=ROOT, write_path=None):
             {k: v for k, v in r.items() if k != "full_text_for_index"}
             for r in records
         ],
+        "knowledge_network": network,
         "unresolved_backlog_refs": loop_state.get("unresolved_backlog_refs", []),
         "next_topics_queue": loop_state.get("next_topics_queue", []),
         "open_unknowns": loop_state.get("open_unknowns", []),
@@ -831,6 +1039,51 @@ def build_video_knowledge_catalog(root=ROOT, write_path=None):
         )
 
     return catalog, records
+
+
+def classify_question_category(query, q_lower):
+    """RAG研究動画(pRfC1DILDEM)の教訓に基づく質問の5分類判定。
+    CATEGORY_A_SEARCH: ピンポイント探し物・概念・仕組み・設定方法
+    CATEGORY_B_AGGREGATE: 正確な件数・台帳集計・何件あるか・網羅的数え上げ
+    CATEGORY_C_TIMELINE: 時系列・日付・公開日・確認日・更新履歴
+    CATEGORY_D_SYNTHESIS: 全体傾向・横断的知見・アーキテクチャ組み合わせ（OKF+RAG等）
+    CATEGORY_E_SOURCE_VERIFY: 元発言確認・字幕原文・Notebook参照確認
+    """
+    # B: 正確な件数・集計
+    aggregate_patterns = [
+        r"何件", r"何本", r"何個", r"いくつ", r"件数", r"総数", r"合計", r"登録数",
+        r"何動画", r"カウント"
+    ]
+    if any(re.search(pat, q_lower) for pat in aggregate_patterns):
+        return "CATEGORY_B_AGGREGATE", "件数・台帳集計に関する質問（RAGではなく台帳カウントで即答）"
+
+    # C: 時系列・日付
+    timeline_patterns = [
+        r"時系列", r"最近", r"最新の", r"古い順", r"新しい順", r"いつ公開", r"公開日",
+        r"調査日", r"確認日", r"タイムライン", r"更新履歴", r"変遷"
+    ]
+    if any(re.search(pat, q_lower) for pat in timeline_patterns):
+        return "CATEGORY_C_TIMELINE", "時系列・日付（公開日/確認日）に関する質問"
+
+    # E: 元発言確認・字幕原文
+    source_verify_patterns = [
+        r"発言", r"実際にそう言", r"元字幕", r"字幕原文", r"文字起こし",
+        r"言い回し", r"どう言ってた", r"一次発言", r"ソース原文"
+    ]
+    if any(re.search(pat, q_lower) for pat in source_verify_patterns):
+        return "CATEGORY_E_SOURCE_VERIFY", "動画内の元発言・字幕原文の確認に関する質問"
+
+    # D: 全体傾向・横断的知見・組み合わせ
+    synthesis_patterns = [
+        r"全体傾向", r"全体像", r"全体的", r"傾向", r"組み合わせ", r"連携", r"どう結びつく",
+        r"okf.*rag", r"rag.*okf", r"関係性", r"関連研究", r"横断", r"アーキテクチャ全体",
+        r"共通点", r"相違点", r"比較"
+    ]
+    if any(re.search(pat, q_lower) for pat in synthesis_patterns):
+        return "CATEGORY_D_SYNTHESIS", "全体傾向・複数研究の横断的知見・アーキテクチャ統合に関する質問"
+
+    # デフォルト: A (ピンポイント探し物・概念・仕組み)
+    return "CATEGORY_A_SEARCH", "ピンポイント知識探索・概念説明・該当区間検索"
 
 
 def analyze_query_intent(query):
@@ -947,8 +1200,12 @@ def analyze_query_intent(query):
     for tok in raw_tokens:
         expanded_terms.add(tok)
 
+    category, category_reason = classify_question_category(q_norm, q_lower)
+
     return {
         "original_query": q_norm,
+        "question_category": category,
+        "category_reason": category_reason,
         "intents": detected_intents,
         "matched_concepts": matched_concepts,
         "search_terms": sorted(expanded_terms),
@@ -1392,9 +1649,112 @@ def answer_question(query, root=ROOT, top_k=5):
     """質問回答・時刻付き動画箇所検索の統合パイプライン（①〜⑥）を実行する。"""
     catalog, parsed_records = build_video_knowledge_catalog(root=root)
     intent_info = analyze_query_intent(query)
+    category = intent_info.get("question_category", "CATEGORY_A_SEARCH")
+
     matched_records, matched_segments = search_github_knowledge(
         intent_info, parsed_records, top_k=top_k
     )
+
+    # 関連研究ネットワークの1ホップ探索と知見集約
+    network = catalog.get("knowledge_network", {})
+    records_by_vid = {r["video_id"]: r for r in parsed_records if r.get("video_id")}
+
+    synthesized_relations = []
+    seen_pairs = set()
+    target_pool = matched_records[:top_k] if matched_records else ([] if category != "CATEGORY_D_SYNTHESIS" else parsed_records[:top_k])
+    for rec in target_pool:
+        vid = rec.get("video_id")
+        # 自身から出ているリンク
+        for rel in rec.get("related_records", []):
+            t_vid = extract_clean_target_vid(rel.get("target_id", ""))
+            if not t_vid or t_vid == vid:
+                continue
+            pair_key = tuple(sorted([vid, t_vid]))
+            if t_vid in records_by_vid and pair_key not in seen_pairs:
+                seen_pairs.add(pair_key)
+                target_rec = records_by_vid[t_vid]
+                synthesized_relations.append(
+                    {
+                        "source_video_id": vid,
+                        "source_title": rec.get("title", ""),
+                        "target_video_id": t_vid,
+                        "target_title": target_rec.get("title", ""),
+                        "relation": rel.get("relation", ""),
+                        "note": rel.get("note", ""),
+                        "evidence": rel.get("evidence"),
+                        "status": rel.get("status", "CONFIRMED"),
+                    }
+                )
+        # 自身への逆リンク (backlinks)
+        for bl in rec.get("backlinks", []):
+            f_vid = bl.get("from_video_id")
+            if not f_vid or f_vid == vid:
+                continue
+            pair_key = tuple(sorted([vid, f_vid]))
+            if f_vid in records_by_vid and pair_key not in seen_pairs:
+                seen_pairs.add(pair_key)
+                source_rec = records_by_vid[f_vid]
+                synthesized_relations.append(
+                    {
+                        "source_video_id": f_vid,
+                        "source_title": source_rec.get("title", ""),
+                        "target_video_id": vid,
+                        "target_title": rec.get("title", ""),
+                        "relation": bl.get("relation", ""),
+                        "note": bl.get("note", ""),
+                        "evidence": bl.get("evidence"),
+                        "status": bl.get("status", "CONFIRMED"),
+                    }
+                )
+
+    # 特殊カテゴリ用の集約情報
+    category_data = {}
+    if category == "CATEGORY_B_AGGREGATE":
+        category_data = {
+            "total_records": catalog.get("total_records", len(parsed_records)),
+            "total_video_records": catalog.get("total_video_records", 0),
+            "total_verified_chapters": catalog.get("total_verified_chapters", 0),
+            "total_network_links": network.get("total_links", 0),
+            "confirmed_links": network.get("confirmed_links", 0),
+            "unresolved_links": network.get("unresolved_links", 0),
+            "isolated_nodes_count": network.get("isolated_nodes_count", 0),
+        }
+    elif category == "CATEGORY_C_TIMELINE":
+        timeline_entries = []
+        for r in parsed_records:
+            if r.get("video_id"):
+                timeline_entries.append(
+                    {
+                        "video_id": r["video_id"],
+                        "title": r.get("title", ""),
+                        "checked_at": r.get("checked_at") or "UNKNOWN",
+                        "publication_date": r.get("publication_date") or "UNKNOWN",
+                        "record_path": r.get("record_path", ""),
+                    }
+                )
+        timeline_entries.sort(key=lambda x: str(x.get("checked_at", "")), reverse=True)
+        category_data = {"timeline": timeline_entries[:10]}
+    elif category == "CATEGORY_D_SYNTHESIS":
+        category_data = {
+            "synthesized_relations": synthesized_relations,
+            "connected_topics": list({r.get("relation") for r in synthesized_relations}),
+        }
+    elif category == "CATEGORY_E_SOURCE_VERIFY":
+        category_data = {
+            "policy": "字幕全文は著作権保護・利用規約のためGitHub正本には保持せず、Notebook内の独立ソースとして管理されています。",
+            "matched_source_statuses": [
+                {
+                    "video_id": r.get("video_id"),
+                    "title": r.get("title"),
+                    "transcript_status": r.get("transcript_status", "UNKNOWN"),
+                    "transcript_logical_id": r.get("transcript_logical_id", "UNKNOWN"),
+                    "notebook_source_id": r.get("notebook_source_id", "UNKNOWN"),
+                }
+                for r in matched_records[:3]
+                if r.get("video_id")
+            ],
+        }
+
     notebook_guide = recommend_notebook_lookup(
         matched_records, intent_info, catalog
     )
@@ -1405,8 +1765,12 @@ def answer_question(query, root=ROOT, top_k=5):
     return {
         "schema_version": "research_qa_response_v1",
         "query": query,
+        "question_category": category,
+        "category_reason": intent_info.get("category_reason", ""),
         "step1_intent_analysis": intent_info,
         "step2_matched_records": matched_records,
+        "synthesized_relations": synthesized_relations,
+        "category_data": category_data,
         "step3_notebook_lookup": notebook_guide,
         "step4_gap_analysis": gap_analysis,
         "step5_and_6_recommended_video_segments": matched_segments,
@@ -1420,17 +1784,89 @@ def format_qa_response_markdown(qa_res):
     nb = qa_res["step3_notebook_lookup"]
     gaps = qa_res["step4_gap_analysis"]
     segments = qa_res["step5_and_6_recommended_video_segments"]
+    category = qa_res.get("question_category", "CATEGORY_A_SEARCH")
+    cat_reason = qa_res.get("category_reason", "")
+    synth_rel = qa_res.get("synthesized_relations", [])
+    cat_data = qa_res.get("category_data", {})
 
     lines = [
         "# AI技術研究室｜質問回答・時刻付き動画ガイド",
         "",
         f"- **質問**: {qa_res['query']}",
+        f"- **質問分類**: `{category}` ({cat_reason})",
         f"- **① 意図解析 (`intents`)**: `{', '.join(intent['intents'])}`",
         f"- **検出された技術概念**: {', '.join(intent['matched_concepts']) if intent['matched_concepts'] else '（一般キーワード検索）'}",
         f"- **知識カバレッジ判定**: `{gaps['coverage_status']}`",
         "",
         "---",
         "",
+    ]
+
+    # B: 正確な台帳集計
+    if category == "CATEGORY_B_AGGREGATE" and cat_data:
+        lines += [
+            "## 📊 台帳集計結果（RAGではなく台帳直接集計）",
+            "",
+            "| 集計項目 | 正確な値 | 備考 |",
+            "|---|---|---|",
+            f"| 総研究記録数 | {cat_data.get('total_records', 0)} 件 | `research/*.md` + `notes/*.md` |",
+            f"| 登録動画数 | {cat_data.get('total_video_records', 0)} 本 | 一意のYouTube動画IDを持つ記録 |",
+            f"| 時刻確認済み章数 | {cat_data.get('total_verified_chapters', 0)} 区間 | 再生位置URL (&t=XXs) 付き |",
+            f"| OKF関連リンク総数 | {cat_data.get('total_network_links', 0)} 本 | 確認済み: {cat_data.get('confirmed_links', 0)} / 未解決: {cat_data.get('unresolved_links', 0)} |",
+            f"| 孤立ノード数 | {cat_data.get('isolated_nodes_count', 0)} 件 | 相互リンク未設定の記録 |",
+            "",
+            "---",
+            "",
+        ]
+
+    # C: 時系列タイムライン
+    if category == "CATEGORY_C_TIMELINE" and cat_data.get("timeline"):
+        lines += [
+            "## ⏱ 時系列タイムライン（研究確認日 / 公開日）",
+            "",
+            "> **日付の区別**: `checked_at` は研究室で調査・確認した日付、`publication_date` はYouTube一次動画の公開日です。",
+            "",
+            "| 動画ID | タイトル | 研究室確認日 (`checked_at`) | 動画公開日 (`publication_date`) | 記録パス |",
+            "|---|---|---|---|---|",
+        ]
+        for t in cat_data["timeline"]:
+            lines.append(
+                f"| `{t['video_id']}` | {t['title'][:32]} | `{t['checked_at']}` | `{t['publication_date']}` | `{t['record_path']}` |"
+            )
+        lines += ["", "---", ""]
+
+    # D: 横断的知見・アーキテクチャ統合
+    if synth_rel:
+        lines += [
+            "## 🔗 関連研究ネットワークの横断合成知見",
+            "",
+            "> **マルチホップ探索**: 単一動画の検索にとどまらず、OKF関連リンク（`related_records` / `backlinks`）をたどって複数研究の相互関係を抽出しています。",
+            "",
+        ]
+        for r in synth_rel:
+            ev_str = f" (根拠: {r['evidence']})" if r.get("evidence") else ""
+            lines.append(
+                f"- **`{r['source_video_id']}` ⇔ `{r['target_video_id']}`** [`{r['relation']}` | `{r['status']}`]: {r['note']}{ev_str}"
+            )
+        lines += ["", "---", ""]
+
+    # E: 字幕原文・一次発言確認
+    if category == "CATEGORY_E_SOURCE_VERIFY" and cat_data:
+        lines += [
+            "## 🛡 字幕原文・元発言の確認方針とステータス",
+            "",
+            f"> **保存境界・改変禁止ルール**: {cat_data.get('policy')}",
+            "",
+            "| 動画ID | タイトル | 字幕原文ステータス (`transcript_status`) | 論理ID (`transcript_logical_id`) | Notebook一次ソースID |",
+            "|---|---|---|---|---|",
+        ]
+        for ms in cat_data.get("matched_source_statuses", []):
+            lines.append(
+                f"| `{ms['video_id']}` | {ms['title'][:30]} | `{ms['transcript_status']}` | `{ms['transcript_logical_id']}` | `{ms['notebook_source_id']}` |"
+            )
+        lines += ["", "---", ""]
+
+    lines += [
         "## ⑤ 根拠付きの回答要約（GitHub正本・一次資料照合結果）",
         "",
     ]

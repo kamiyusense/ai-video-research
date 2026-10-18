@@ -1,5 +1,6 @@
 # 【AI中級】RAGのその先。巨大な資料をAIで精度高く取り扱いたい。
 
+- logical_id: `youtube:pRfC1DILDEM:research`
 - record_id: `youtube:pRfC1DILDEM`
 - video_id: `pRfC1DILDEM`
 - canonical_url: https://www.youtube.com/watch?v=pRfC1DILDEM
@@ -7,7 +8,12 @@
 - publication_date: 2026-09-02
 - checked_at: 2026-10-18
 - source_scope: Gemini報告: YouTube字幕 00:00〜14:23 を取得して分析。映像・画面未確認。ChatGPT独立確認なし。Notebook登録・読戻しはGemini自己申告。
-- Gemini Notebook source: 25c0f62e-99aa-48bc-9486-357a350c76f5
+- transcript_logical_id: `youtube:pRfC1DILDEM:transcript`
+- transcript_status: UNVERIFIED
+- primary_source_notebook_id: 25c0f62e-99aa-48bc-9486-357a350c76f5
+- Gemini Notebook source (一次資料YouTube動画): 25c0f62e-99aa-48bc-9486-357a350c76f5
+- document_type: AI技術研究室 構造化研究カード（二次分析資料）
+- okf_version: 0.2
 - Gemini readback (self-reported): PASS
 - GitHub independent verification: NOT_RUN
 - GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB
@@ -67,3 +73,7 @@ Claude Codeの実例 : 初期はTypeScript製ローカルベクトルDBでRAGを
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。
+
+## 関連研究・資料リンク
+- `youtube:u3ka_AAb8qE:research` (COMPLEMENTS): OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある | status: CONFIRMED | evidence: 13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造
+

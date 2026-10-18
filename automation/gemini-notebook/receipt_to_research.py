@@ -1162,7 +1162,7 @@ def format_detailed_findings_lines(detailed_findings_ja):
 def format_related_records_lines(related_records):
     lines = []
     for rel in related_records or []:
-        lines.append(
+        line = (
             "- `"
             + clean(rel["target_id"])
             + "` ("
@@ -1170,6 +1170,11 @@ def format_related_records_lines(related_records):
             + "): "
             + clean(rel["note"])
         )
+        if rel.get("status"):
+            line += " | status: " + str(rel["status"])
+        if rel.get("evidence"):
+            line += " | evidence: " + clean(rel["evidence"])
+        lines.append(line)
     return lines
 
 
@@ -1179,9 +1184,13 @@ def render(v, checked_at):
     raw_title = clean(v["title"])
     title_display = raw_title if raw_title.startswith("【研究カード】") else f"【研究カード】 {raw_title}"
     nb_src = clean(v.get("notebook_source_id") or "UNKNOWN")
+    logical_id = clean(v.get("logical_id") or f"youtube:{vid}:research")
+    transcript_logical_id = clean(v.get("transcript_logical_id") or f"youtube:{vid}:transcript")
+    transcript_status = clean(v.get("transcript_status") or "UNKNOWN")
     lines = [
         "# " + title_display,
         "",
+        "- logical_id: `" + logical_id + "`",
         "- record_id: `youtube:" + vid + "`",
         "- video_id: `" + vid + "`",
         "- canonical_url: " + canon,
@@ -1189,9 +1198,12 @@ def render(v, checked_at):
         "- publication_date: " + clean(v.get("published_at") or "UNKNOWN"),
         "- checked_at: " + checked_at,
         "- source_scope: " + clean(v["source_scope"]),
+        "- transcript_logical_id: `" + transcript_logical_id + "`",
+        "- transcript_status: " + transcript_status,
         "- primary_source_notebook_id: " + nb_src,
         "- Gemini Notebook source (一次資料YouTube動画): " + nb_src,
         "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
+        "- okf_version: 0.2",
         "- Gemini readback (self-reported): " + v["notebook_readback"],
         "- GitHub independent verification: NOT_RUN",
         "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
@@ -1240,15 +1252,22 @@ def render_delta_section(v, checked_at):
     vid = v["video_id"]
     changes_str = ", ".join(v["changes"])
     nb_src = clean(v.get("notebook_source_id") or "UNKNOWN")
+    logical_id = clean(v.get("logical_id") or f"youtube:{vid}:research")
+    transcript_logical_id = clean(v.get("transcript_logical_id") or f"youtube:{vid}:transcript")
+    transcript_status = clean(v.get("transcript_status") or "UNKNOWN")
     lines = [
         "",
         f"## 差分更新 ({checked_at} / {changes_str})",
         "",
         "- checked_at: " + checked_at,
         "- source_scope: " + clean(v["source_scope"]),
+        "- logical_id: `" + logical_id + "`",
+        "- transcript_logical_id: `" + transcript_logical_id + "`",
+        "- transcript_status: " + transcript_status,
         "- primary_source_notebook_id: " + nb_src,
         "- Gemini Notebook source (一次資料YouTube動画): " + nb_src,
         "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
+        "- okf_version: 0.2",
         "- Gemini readback (self-reported): " + v["notebook_readback"],
         "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
         "- changes: " + changes_str,
