@@ -2,7 +2,7 @@
   "schema_version": "gemini_notebook_loop_state_v1",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "last_updated": "2026-10-17",
+  "last_updated": "2026-10-18",
   "processed_receipts": [
     {
       "sha256": "877cf5c0e2c84f6db654a5d3dee27a03766aa596a5eba5a58e96d29bfe706ac8",
@@ -48,14 +48,22 @@
       ],
       "github_write_status": "APPLIED_LOCAL",
       "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+    },
+    {
+      "sha256": "9e9cee013562efd403bd77326686d9132116045957d87bee838c4d6a42acb392",
+      "checked_at": "2026-10-18",
+      "new_video_ids": [
+        "pRfC1DILDEM"
+      ],
+      "updated_video_ids": [],
+      "github_write_status": "APPLIED_ATOMIC_COMMIT",
+      "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
     }
   ],
-  "next_topics_queue": [],
+  "next_topics_queue": [
+    "研究室の質問を4分類し、適切な検索・集計・時点照会・全体要約の使い分けを検証する"
+  ],
   "open_unknowns": [
-    "t22FELAl-BM (No.03): OpenAIのエンタープライズ向け拡張キャッシュ保持期間の正確な上限値。",
-    "X9Zk68AII4A (No.04): hillclimb内部アルゴリズムにおける収束判定の完全な自動閾値パラメータ。",
-    "ZgMrRA1Czlc (No.05): 無許可送金が発生した内部モデルの完全な推論パラメータとシステムプロンプト全文。",
-    "gD6UZ4wG8OM (No.06): Felix氏の社内実験における未公開プロンプト例の完全な原文。",
     "W35UQZL2w7E (No.07): OpenAIの将来的なトークナイザー圧縮比率改定スケジュール。",
     "JXmk7hmbS3c (No.08): KEITO氏が内部運用している非公開Discord Botのソースコード全文。",
     "Eh75KT85Y40 (No.09): 公式LINEで配布されるテンプレート内部プロンプト全文。",
@@ -76,7 +84,11 @@
     "ZY7YuYHLlIQ (No.24): KEITO氏が使用したSparkスキル用YAMLメタプロンプトの全文公開リンク。",
     "ZjUJ-35acaU (No.25): 拡張機能作者の今後のアップデート予定と保守方針。",
     "BStkW1HTfmk (No.26): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。",
-    "sodTFSuV4zY (No.01): 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。"
+    "sodTFSuV4zY (No.01): 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。",
+    "ChatGPTは対象動画の字幕・映像を独立取得していない。時刻はGemini報告のみで独立証拠がなく、正式タイムスタンプをUNKNOWNとした。",
+    "Gemini Notebookのソース登録・読戻しPASSはGemini自己申告で、ChatGPTによる独立検証ではない。",
+    "Gemini報告に含まれる外部公式資料の照合判定は、この保存工程では独立確認していない。",
+    "対象動画の映像・スライド・画面操作は未確認。"
   ],
   "unresolved_backlog_refs": [
     {
@@ -100,5 +112,6 @@
   ],
   "notebook_internal_master_index_name": "AI技術研究室_知識索引.md",
   "github_index_export_file": "automation/gemini-notebook/state/github_knowledge_index_export.md",
-  "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+  "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB",
+  "remote_branch_cache": {}
 }

@@ -8,7 +8,7 @@
 
 - 対象リポジトリ: `kamiyusense/ai-video-research` (private)
 - 補助知識庫 (Gemini Notebook): https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
-- GitHub側エクスポート更新日: 2026-10-17
+- GitHub側エクスポート更新日: 2026-10-18
 - リモートブランチ照合鮮度: `FRESH_FETCHED`
 - Notebook側への逆同期状態: `NOT_SYNCED_FROM_GITHUB`
 
@@ -45,22 +45,17 @@
 | `gD6UZ4wG8OM` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-gD6UZ4wG8OM-gemini-notebook.md` |
 | `j3Cyvbfn9_k` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-j3Cyvbfn9_k-gemini-notebook.md` |
 | `lC5jxpYmatE` | RESEARCH_RECORDED; LIVE_NOT_RUN | current_branch (registry.json) | `research/2026-10-10-lC5jxpYmatE-ai-techniques.md` |
+| `pRfC1DILDEM` | GEMINI_REPORTED; NOTEBOOK_READBACK_SELF_REPORTED_ONLY; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-18-pRfC1DILDEM-gemini-notebook.md` |
 | `sodTFSuV4zY` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-sodTFSuV4zY-gemini-notebook.md` |
 | `t22FELAl-BM` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-t22FELAl-BM-gemini-notebook.md` |
 | `y2xCGyURl7Q` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md` |
 
 ## 2. 優先研究テーマ・次回調査キュー (`next_topics`)
 
-1. R001/R002: 自律研究Loopの完了条件・停止条件と、重複イベントや結果不明書込みの安全な復旧パターン
-2. R004/R005: ハーネス・MCP・プラグイン・公式コネクタの権限境界とモデル非依存の状態管理
-3. P006連携: 新しいAI機能・ツール発表時に「過去の未解決課題」と自動照合して再挑戦を提案する仕組み
+1. 研究室の質問を4分類し、適切な検索・集計・時点照会・全体要約の使い分けを検証する
 
 ## 3. 未確認・要検証事項 (`unknowns`)
 
-- t22FELAl-BM (No.03): OpenAIのエンタープライズ向け拡張キャッシュ保持期間の正確な上限値。
-- X9Zk68AII4A (No.04): hillclimb内部アルゴリズムにおける収束判定の完全な自動閾値パラメータ。
-- ZgMrRA1Czlc (No.05): 無許可送金が発生した内部モデルの完全な推論パラメータとシステムプロンプト全文。
-- gD6UZ4wG8OM (No.06): Felix氏の社内実験における未公開プロンプト例の完全な原文。
 - W35UQZL2w7E (No.07): OpenAIの将来的なトークナイザー圧縮比率改定スケジュール。
 - JXmk7hmbS3c (No.08): KEITO氏が内部運用している非公開Discord Botのソースコード全文。
 - Eh75KT85Y40 (No.09): 公式LINEで配布されるテンプレート内部プロンプト全文。
@@ -82,6 +77,10 @@
 - ZjUJ-35acaU (No.25): 拡張機能作者の今後のアップデート予定と保守方針。
 - BStkW1HTfmk (No.26): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。
 - sodTFSuV4zY (No.01): 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。
+- ChatGPTは対象動画の字幕・映像を独立取得していない。時刻はGemini報告のみで独立証拠がなく、正式タイムスタンプをUNKNOWNとした。
+- Gemini Notebookのソース登録・読戻しPASSはGemini自己申告で、ChatGPTによる独立検証ではない。
+- Gemini報告に含まれる外部公式資料の照合判定は、この保存工程では独立確認していない。
+- 対象動画の映像・スライド・画面操作は未確認。
 
 ## 4. 未解決課題ストック（P006 再評価対象）
 

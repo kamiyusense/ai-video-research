@@ -315,6 +315,16 @@
           "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017"
         }
       ]
+    },
+    {
+      "record_id": "youtube:pRfC1DILDEM",
+      "video_id": "pRfC1DILDEM",
+      "canonical_url": "https://www.youtube.com/watch?v=pRfC1DILDEM",
+      "research_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
+      "source_scope": "Gemini報告: YouTube字幕 00:00〜14:23 を取得して分析。映像・画面未確認。ChatGPT独立確認なし。Notebook登録・読戻しはGemini自己申告。",
+      "research_date": "2026-10-18",
+      "status": "GEMINI_REPORTED; NOTEBOOK_READBACK_SELF_REPORTED_ONLY; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT"
     }
   ]
 }
