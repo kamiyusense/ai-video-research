@@ -1,5 +1,8 @@
 # 📺 AI技術研究室
 
+> **新チャット再開時の必読（2026-10-19）**: ユーザーが「GitHub見て引き継いで」「GitHubを見て続きから」と言った場合、非公開 `kamiyusense/ai-video-research` のGitHub current stateを確認し、`README.md`、`AGENTS.md`、**`docs/HANDOVER_CURRENT.md`**、**`docs/OKF_KNOWLEDGE_ROADMAP.md`**、`RESEARCH_ROADMAP.md` を読んでから状況回答・提案・実装する。最新方針は原字幕のNotebook独立保存（原文保護・完全性UNKNOWNの管理）＋OKF荷札＋独自研究ノート＋研究間リンク＋根拠付き質問回答。GitHub→Notebook逆同期は必須経路ではない。この記述自体はChatGPTプロジェクト設定への自動同期を意味しない。読めない場合はその旨明示。
+
+
 ## 目的
 AI関連全般を可能な限り幅広く学び、知識を蓄積し、最終的にAIが安全に自律継続できる自動化へつなげる。
 Claude×Julesに限定せず、各社のAI・ツール・実行環境を対象にする。
