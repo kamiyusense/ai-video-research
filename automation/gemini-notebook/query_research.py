@@ -458,10 +458,14 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
     # Notebook source ID
     notebook_source_id = "UNKNOWN"
     m_nb = re.search(
-        r"^\s*-\s*Gemini Notebook source:\s*(.+?)\s*$", text, re.MULTILINE
+        r"^\s*-\s*(?:primary_source_notebook_id|Gemini Notebook source(?: \([^)]+\))?):\s*(.+?)\s*$",
+        text,
+        re.MULTILINE,
     )
     if m_nb:
-        notebook_source_id = m_nb.group(1).strip()
+        val = m_nb.group(1).strip()
+        val = re.sub(r"\s*\([^)]*\)$", "", val).strip()
+        notebook_source_id = val
 
     # source_scope
     source_scope = (

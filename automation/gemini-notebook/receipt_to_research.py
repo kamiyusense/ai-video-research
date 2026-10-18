@@ -1176,8 +1176,11 @@ def format_related_records_lines(related_records):
 def render(v, checked_at):
     vid = v["video_id"]
     canon = canonical_youtube_url(vid)
+    raw_title = clean(v["title"])
+    title_display = raw_title if raw_title.startswith("【研究カード】") else f"【研究カード】 {raw_title}"
+    nb_src = clean(v.get("notebook_source_id") or "UNKNOWN")
     lines = [
-        "# " + clean(v["title"]),
+        "# " + title_display,
         "",
         "- record_id: `youtube:" + vid + "`",
         "- video_id: `" + vid + "`",
@@ -1186,11 +1189,16 @@ def render(v, checked_at):
         "- publication_date: " + clean(v.get("published_at") or "UNKNOWN"),
         "- checked_at: " + checked_at,
         "- source_scope: " + clean(v["source_scope"]),
-        "- Gemini Notebook source: " + clean(v.get("notebook_source_id") or "UNKNOWN"),
+        "- primary_source_notebook_id: " + nb_src,
+        "- Gemini Notebook source (一次資料YouTube動画): " + nb_src,
+        "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
         "- Gemini readback (self-reported): " + v["notebook_readback"],
         "- GitHub independent verification: NOT_RUN",
         "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
         "- changes: " + ", ".join(v["changes"]),
+        "",
+        "> [!IMPORTANT]",
+        "> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。",
         "",
         "## 独自要約",
         clean(v["summary_ja"]),
@@ -1231,13 +1239,16 @@ def render_delta_section(v, checked_at):
     """Render an append-only delta section for UPDATED or CONFLICT records."""
     vid = v["video_id"]
     changes_str = ", ".join(v["changes"])
+    nb_src = clean(v.get("notebook_source_id") or "UNKNOWN")
     lines = [
         "",
         f"## 差分更新 ({checked_at} / {changes_str})",
         "",
         "- checked_at: " + checked_at,
         "- source_scope: " + clean(v["source_scope"]),
-        "- Gemini Notebook source: " + clean(v.get("notebook_source_id") or "UNKNOWN"),
+        "- primary_source_notebook_id: " + nb_src,
+        "- Gemini Notebook source (一次資料YouTube動画): " + nb_src,
+        "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
         "- Gemini readback (self-reported): " + v["notebook_readback"],
         "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
         "- changes: " + changes_str,

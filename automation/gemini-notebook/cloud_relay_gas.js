@@ -1571,8 +1571,13 @@ function formatRelatedRecordsLines_(relatedRecords) {
 function renderResearchMarkdown_(v, checkedAt) {
   const vid = v.video_id;
   const canon = canonicalYoutubeUrl_(vid);
+  const rawTitle = clean_(v.title);
+  const titleDisplay = rawTitle.startsWith("【研究カード】")
+    ? rawTitle
+    : "【研究カード】 " + rawTitle;
+  const nbSrc = clean_(v.notebook_source_id || "UNKNOWN");
   let lines = [
-    "# " + clean_(v.title),
+    "# " + titleDisplay,
     "",
     "- record_id: `youtube:" + vid + "`",
     "- video_id: `" + vid + "`",
@@ -1581,11 +1586,16 @@ function renderResearchMarkdown_(v, checkedAt) {
     "- publication_date: " + clean_(v.published_at || "UNKNOWN"),
     "- checked_at: " + checkedAt,
     "- source_scope: " + clean_(v.source_scope),
-    "- Gemini Notebook source: " + clean_(v.notebook_source_id || "UNKNOWN"),
+    "- primary_source_notebook_id: " + nbSrc,
+    "- Gemini Notebook source (一次資料YouTube動画): " + nbSrc,
+    "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
     "- Gemini readback (self-reported): " + v.notebook_readback,
     "- GitHub independent verification: NOT_RUN",
     "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
     "- changes: " + v.changes.join(", "),
+    "",
+    "> [!IMPORTANT]",
+    "> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。",
     "",
     "## 独自要約",
     clean_(v.summary_ja),
@@ -1628,13 +1638,16 @@ function renderResearchMarkdown_(v, checkedAt) {
 function renderDeltaSection_(v, checkedAt) {
   const vid = v.video_id;
   const changesStr = v.changes.join(", ");
+  const nbSrc = clean_(v.notebook_source_id || "UNKNOWN");
   let lines = [
     "",
     "## 差分更新 (" + checkedAt + " / " + changesStr + ")",
     "",
     "- checked_at: " + checkedAt,
     "- source_scope: " + clean_(v.source_scope),
-    "- Gemini Notebook source: " + clean_(v.notebook_source_id || "UNKNOWN"),
+    "- primary_source_notebook_id: " + nbSrc,
+    "- Gemini Notebook source (一次資料YouTube動画): " + nbSrc,
+    "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
     "- Gemini readback (self-reported): " + v.notebook_readback,
     "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
     "- changes: " + changesStr,
@@ -2923,6 +2936,82 @@ function updateDriveExportDocSafely_(exportDocId, indexMarkdownText, customDocAp
 }
 
 /**
+ * 下流受け渡し省力化:
+ * GitHubへコミットした各研究Markdown（research/*.md）を、Google Driveの出力先フォルダ
+ * （DRIVE_OUTPUT_FOLDER_ID、未設定時はDRIVE_INBOX_FOLDER_ID）へ自動配置・同期する。
+ * これにより、ユーザーはGitHubからの手動DL・手動UPなしでNotebookLMのDrive選択から即追加できる。
+ */
+function syncResearchCardsToDriveSafely_(driveService, folderId, filesToCommit, isDryRun) {
+  if (!driveService || !folderId || !Array.isArray(filesToCommit)) {
+    return {
+      status: "SKIPPED_NO_DRIVE_FOLDER_OR_FILES",
+      syncedCards: [],
+    };
+  }
+  const cardFiles = [];
+  for (let i = 0; i < filesToCommit.length; i++) {
+    const f = filesToCommit[i];
+    if (f.path && f.path.indexOf("research/") === 0 && f.path.endsWith(".md")) {
+      const parts = f.path.split("/");
+      const baseName = parts[parts.length - 1];
+      const cardFileName = "【研究カード】_" + baseName;
+      cardFiles.push({
+        path: f.path,
+        fileName: cardFileName,
+        content: f.content,
+      });
+    }
+  }
+  if (cardFiles.length === 0) {
+    return {
+      status: "NO_RESEARCH_CARDS_TO_SYNC",
+      syncedCards: [],
+    };
+  }
+  if (isDryRun) {
+    return {
+      status: "DRY_RUN_PREVIEW_ONLY_NO_DRIVE_WRITE",
+      syncedCards: cardFiles.map(function(c) {
+        return { fileName: c.fileName, path: c.path, action: "WOULD_SYNC" };
+      }),
+    };
+  }
+  const folder = driveService.getFolderById(folderId);
+  const results = [];
+  const plainTextMime =
+    typeof MimeType !== "undefined" && MimeType.PLAIN_TEXT
+      ? MimeType.PLAIN_TEXT
+      : "text/plain";
+
+  for (let i = 0; i < cardFiles.length; i++) {
+    const c = cardFiles[i];
+    const existing = folder.getFilesByName(c.fileName);
+    if (existing.hasNext()) {
+      const file = existing.next();
+      file.setContent(c.content);
+      results.push({
+        fileName: c.fileName,
+        path: c.path,
+        fileId: file.getId(),
+        action: "UPDATED",
+      });
+    } else {
+      const newFile = folder.createFile(c.fileName, c.content, plainTextMime);
+      results.push({
+        fileName: c.fileName,
+        path: c.path,
+        fileId: newFile.getId(),
+        action: "CREATED",
+      });
+    }
+  }
+  return {
+    status: "DRIVE_CARDS_SYNCHRONIZED",
+    syncedCards: results,
+  };
+}
+
+/**
  * メインエントリ1: Google Drive の Inbox フォルダを走査し、GAS内で検証・完全重複照合・
  * GitHub非defaultブランチへの単一アトミック保存・Readback検証・Drive索引Doc自己修復同期までを完結させる。
  */
@@ -2955,6 +3044,8 @@ function relayDriveReceiptsToGitHub(envOverrides) {
       props.getProperty("GITHUB_FINE_GRAINED_PAT") ||
       props.getProperty("GITHUB_PAT");
     const folderId = props.getProperty("DRIVE_INBOX_FOLDER_ID");
+    const outputFolderId =
+      props.getProperty("DRIVE_OUTPUT_FOLDER_ID") || folderId;
     const exportDocId = props.getProperty("DRIVE_EXPORT_DOC_ID");
     const targetBranch = verifyTargetBranchBoundary_(
       props.getProperty("TARGET_GITHUB_BRANCH") ||
@@ -3183,7 +3274,17 @@ function relayDriveReceiptsToGitHub(envOverrides) {
       }
 
       if (isDryRun) {
-
+        let dryRunCards = { status: "SKIPPED_DRY_RUN", syncedCards: [] };
+        try {
+          dryRunCards = syncResearchCardsToDriveSafely_(
+            driveService,
+            outputFolderId,
+            plan.filesToCommit,
+            true
+          );
+        } catch (dErr) {
+          dryRunCards = { status: "PREVIEW_ERROR", error: String(dErr) };
+        }
         report.push({
           file: name,
           digest: digest,
@@ -3194,6 +3295,7 @@ function relayDriveReceiptsToGitHub(envOverrides) {
           newIds: plan.newIds,
           updatedIds: plan.updatedIds,
           skipped: plan.skipped,
+          driveCardSyncPreview: dryRunCards,
           githubWriteStatus: "PREVIEW_ONLY",
           notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
           securityPosture: {
@@ -3258,6 +3360,21 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         }
       }
 
+      let driveCardSync = { status: "SKIPPED_NO_DRIVE_FOLDER_OR_FILES", syncedCards: [] };
+      try {
+        driveCardSync = syncResearchCardsToDriveSafely_(
+          driveService,
+          outputFolderId,
+          plan.filesToCommit,
+          false
+        );
+      } catch (cardErr) {
+        driveCardSync = {
+          status: "DRIVE_CARD_SYNC_FAILED",
+          error: String(cardErr.message || cardErr),
+        };
+      }
+
       report.push({
         file: name,
         digest: digest,
@@ -3267,6 +3384,7 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         updatedIds: plan.updatedIds,
         githubWriteStatus: "PUSHED_AND_READBACK_VERIFIED",
         driveSyncStatus: driveStatus,
+        driveCardSyncStatus: driveCardSync,
         notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
         securityPosture: {
           applicationBranchGuard: "ENFORCED_NON_DEFAULT_ONLY",
@@ -3457,5 +3575,6 @@ if (typeof module !== "undefined" && module.exports) {
     runCloudRelayLoop: runCloudRelayLoop,
     runCloudRelayLoop_: runCloudRelayLoop_,
     pullGitHubIndexExportToDriveDoc: pullGitHubIndexExportToDriveDoc,
+    syncResearchCardsToDriveSafely: syncResearchCardsToDriveSafely_,
   };
 }

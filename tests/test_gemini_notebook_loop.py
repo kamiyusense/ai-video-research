@@ -3792,6 +3792,217 @@ class TestUrlIntakeDuplicateCheck(unittest.TestCase):
         readback_vids = [r["video_id"] for r in reg_readback.get("records", [])]
         self.assertIn("lC5jxpYmatE", readback_vids)
 
+    def test_phase2_notebook_confusion_prevention_and_markdown_parity(self):
+        """Phase 2: Verify explicit research card title, primary source metadata, and JS/Python parity."""
+        gas_path_str = str((ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").resolve().as_posix())
+        sample_video = {
+            "video_id": "testVid1234",
+            "url": "https://www.youtube.com/watch?v=testVid1234",
+            "title": "AIエージェントの未来と自律実行",
+            "published_at": "2026-10-18",
+            "summary_ja": "AIエージェントの自律実行アーキテクチャに関する解説。",
+            "source_scope": "字幕分析 00:00-10:00",
+            "notebook_source_id": "src_test_youtube_uuid_001",
+            "notebook_readback": "PASS",
+            "changes": ["NEW"],
+            "claims": [{"text": "テスト主張", "status": "CONFIRMED_DOC", "timestamp_seconds": None, "timestamp_source": "UNKNOWN"}],
+        }
+        checked_at = "2026-10-18"
+
+        # 1. Render in Python
+        py_md = bridge.render(sample_video, checked_at)
+
+        # 2. Render in Node.js GAS
+        node_script = f"""
+const gas = require({json.dumps(gas_path_str)});
+const v = {json.dumps(sample_video)};
+const md = gas.renderResearchMarkdown(v, {json.dumps(checked_at)});
+process.stdout.write(md);
+"""
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        js_md = res.stdout
+
+        # Verify exact parity
+        self.assertEqual(py_md, js_md)
+
+        # Verify H1 Title contains 【研究カード】
+        self.assertTrue(py_md.startswith("# 【研究カード】 AIエージェントの未来と自律実行"))
+
+        # Verify primary source metadata separation
+        self.assertIn("- primary_source_notebook_id: src_test_youtube_uuid_001", py_md)
+        self.assertIn("- Gemini Notebook source (一次資料YouTube動画): src_test_youtube_uuid_001", py_md)
+        self.assertIn("- document_type: AI技術研究室 構造化研究カード（二次分析資料）", py_md)
+
+        # Verify distinction callout block
+        self.assertIn("> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。", py_md)
+
+        # Verify query_research.py parses notebook_source_id correctly
+        tmp_md = self.root / "research" / "2026-10-18-testVid1234-temp-test.md"
+        try:
+            tmp_md.write_text(py_md, encoding="utf-8")
+            parsed = query_mod.parse_research_markdown_file(tmp_md, root=self.root)
+            self.assertEqual(parsed.get("notebook_source_id"), "src_test_youtube_uuid_001")
+            self.assertIn("【研究カード】", parsed.get("title", ""))
+        finally:
+            if tmp_md.is_file():
+                tmp_md.unlink()
+
+    def test_phase2_cloud_relay_gas_sync_research_cards_to_drive(self):
+        """Phase 2: Verify GAS syncResearchCardsToDriveSafely creates, updates, and previews research card files in Drive."""
+        gas_path_str = str((ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").resolve().as_posix())
+        node_script = f"""
+const gas = require({json.dumps(gas_path_str)});
+
+// Mock DriveService
+const store = new Map();
+let idCounter = 1;
+
+function makeMockFile(name, content) {{
+  let c = content;
+  const fid = "file_" + (idCounter++);
+  return {{
+    getId: () => fid,
+    getName: () => name,
+    getContent: () => c,
+    setContent: (newC) => {{ c = newC; }},
+  }};
+}}
+
+const mockFolder = {{
+  getFilesByName: (name) => {{
+    const found = [];
+    for (const f of store.values()) {{
+      if (f.getName() === name) found.push(f);
+    }}
+    let idx = 0;
+    return {{
+      hasNext: () => idx < found.length,
+      next: () => found[idx++],
+    }};
+  }},
+  createFile: (name, content, mime) => {{
+    const f = makeMockFile(name, content);
+    store.set(f.getId(), f);
+    return f;
+  }},
+}};
+
+const mockDriveService = {{
+  getFolderById: (id) => mockFolder,
+}};
+
+const filesToCommit = [
+  {{ path: "research/2026-10-18-kCc8FmEb1nY-gemini-notebook.md", content: "# Test Card Content" }},
+  {{ path: "registry.json", content: "{{}}" }},
+];
+
+// Test 1: Dry Run preview
+const previewRes = gas.syncResearchCardsToDriveSafely(mockDriveService, "folder_123", filesToCommit, true);
+
+// Test 2: Live create
+const liveRes = gas.syncResearchCardsToDriveSafely(mockDriveService, "folder_123", filesToCommit, false);
+
+// Test 3: Live update (existing file)
+const updateRes = gas.syncResearchCardsToDriveSafely(mockDriveService, "folder_123", [
+  {{ path: "research/2026-10-18-kCc8FmEb1nY-gemini-notebook.md", content: "# Updated Test Card Content" }},
+], false);
+
+process.stdout.write(JSON.stringify({{
+  previewRes,
+  liveRes,
+  updateRes,
+  storeSize: store.size,
+  finalContent: store.values().next().value ? store.values().next().value.getContent() : null,
+}}));
+"""
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        out = json.loads(res.stdout)
+
+        # 1. Preview
+        self.assertEqual(out["previewRes"]["status"], "DRY_RUN_PREVIEW_ONLY_NO_DRIVE_WRITE")
+        self.assertEqual(len(out["previewRes"]["syncedCards"]), 1)
+        self.assertEqual(out["previewRes"]["syncedCards"][0]["fileName"], "【研究カード】_2026-10-18-kCc8FmEb1nY-gemini-notebook.md")
+        self.assertEqual(out["previewRes"]["syncedCards"][0]["action"], "WOULD_SYNC")
+
+        # 2. Live create
+        self.assertEqual(out["liveRes"]["status"], "DRIVE_CARDS_SYNCHRONIZED")
+        self.assertEqual(out["liveRes"]["syncedCards"][0]["action"], "CREATED")
+        self.assertEqual(out["storeSize"], 1)
+
+        # 3. Live update
+        self.assertEqual(out["updateRes"]["status"], "DRIVE_CARDS_SYNCHRONIZED")
+        self.assertEqual(out["updateRes"]["syncedCards"][0]["action"], "UPDATED")
+        self.assertEqual(out["finalContent"], "# Updated Test Card Content")
+
+    def test_phase2_intake_receipt_validation_dedup_and_readback(self):
+        """Phase 2: Verify intake_receipt.py extraction, validation, dedup stop, and readback hash verification."""
+        intake_rc_path = ROOT / "automation" / "gemini-notebook" / "intake_receipt.py"
+        spec = importlib.util.spec_from_file_location("intake_receipt", intake_rc_path)
+        intake_receipt = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(intake_receipt)
+
+        test_out_dir = self.root / "scratch" / "test_intake_suite"
+        test_out_dir.mkdir(parents=True, exist_ok=True)
+
+        sample_fixture = (
+            ROOT
+            / "automation"
+            / "gemini-notebook"
+            / "fixtures"
+            / "live_sample_receipt_v1.json"
+        )
+        raw_text = sample_fixture.read_text(encoding="utf-8")
+
+        # 1. Test valid new intake
+        res = intake_receipt.intake_and_verify_receipt(
+            raw_text,
+            output_dir=test_out_dir,
+            source_label="FIXTURE_TEST",
+            allow_overwrite=False,
+        )
+        self.assertEqual(res["status"], "SUCCESS_SAVED_AND_READBACK_VERIFIED")
+        self.assertEqual(res["video_count"], 1)
+        self.assertTrue(Path(res["target_file"]).is_file())
+        self.assertEqual(len(res["digest"]), 64)
+        self.assertEqual(len(res["readback_hash"]), 64)
+
+        # 2. Test duplicate stop on existing video (pRfC1DILDEM)
+        dup_data = json.loads(raw_text)
+        dup_data["videos"][0]["video_id"] = "pRfC1DILDEM"
+        dup_data["videos"][0]["url"] = "https://www.youtube.com/watch?v=pRfC1DILDEM"
+        dup_raw = json.dumps(dup_data)
+
+        dup_res = intake_receipt.intake_and_verify_receipt(
+            dup_raw,
+            output_dir=test_out_dir,
+            source_label="DUP_TEST",
+            allow_overwrite=False,
+        )
+        self.assertEqual(dup_res["status"], "STOPPED_DUPLICATE_REGISTERED")
+        self.assertIn("すでにregistry.jsonに登録されています", dup_res["message"])
+
+        # 3. Test validation failure on invalid schema
+        invalid_raw = json.dumps({"schema_version": "invalid_v999"})
+        fail_res = intake_receipt.intake_and_verify_receipt(
+            invalid_raw,
+            output_dir=test_out_dir,
+            source_label="INVALID_TEST",
+        )
+        self.assertEqual(fail_res["status"], "VALIDATION_FAILED")
+        self.assertTrue(len(fail_res["errors"]) > 0)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

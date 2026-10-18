@@ -7,38 +7,39 @@
 
 ---
 
-## 1. 第1号の基本構成と受入基準（条件A〜E）
+## 1. 基本構成と受入基準（第2段階: 省力化・混同防止完了版）
 
-第1号では、無理な完全無人化や過剰な外部API課金を避け、人間とクラウドの得意分野を分担した**最も堅牢で持続可能な半自動アーキテクチャ**を採用します。
+第2段階では、第1号で実証された基本骨格（Gemini → Drive → GAS → GitHub → Notebook）を完全に維持しながら、人間によるコピー・ダウンロード・アップロードの手間と、NotebookLM内でのソース混同を解消した**省力化運用フロー**を採用しています。
 
 ```text
-【日常の運用フロー】
+【第2段階の省力化運用フロー】
 ユーザー (PCまたはスマホ)
-   │ ① Geminiで動画を調査・JSON出力 (1〜2分)
+   │ ① Geminiで動画を調査・JSON出力
+   │   └─ [省力化] クリップボードにコピーし `py -3 automation/gemini-notebook/intake_receipt.py -c` を実行
    ▼
-Google Drive (AI技術研究室_受信トレイ/) にJSONを配置 (数秒)
+Google Drive (AI技術研究室_受信トレイ/) に事前検証済みJSONを自動安全配置 (1秒)
    │ 
    │ ※ここからPCをシャットダウンして就寝・外出可能 (PC-OFF)
    ▼
-Google Apps Script (cloud_relay_gas.js) [時間主導型トリガー: 1時間おき]
+Google Apps Script (cloud_relay_gas.js) [時間主導型トリガー: 1時間おき / 手動実行]
    │ ② 検証・秘密情報遮断・非破壊的重複排除
+   │ ③ GitHub (featureブランチ) へ単一アトミックコミット & Remote Readback
+   │ ④ [下流省力化] Google Driveへ『【研究カード】_*.md』を自動直接保存！
    ▼
-GitHub (feature/gemini-notebook-research-loop-20261016)
-   │ ③ 単一アトミックコミット & Remote Readback
-   ▼
-GitHub正本の知識カタログ更新・保存確認
-   │ ④ 必要に応じてNotebookへ最小手動反映
+Gemini Notebook での知識活用
+   │ ⑤ NotebookLMの「ソースを追加」→「Google ドライブ」からワンクリック選択
+   │    （※PCへの手動ダウンロード・手動アップロードは完全撤廃）
    ▼
 Gemini Notebook で深掘り質問・知識を日常再利用
+   （※【研究カード】と一次資料動画の混同防止メタデータにより正確に引用・回答）
 ```
 
-### 第1号の受入基準（条件A〜E）達成状況
+### 受入基準達成状況
 - **条件A（研究結果の作成）**: `GEMINI_TASK.md` に準拠した `research_receipt_v1` 形式の出力プロンプト整備済み。
-- **条件B（Google Drive受渡し）**: 受信フォルダ `AI技術研究室_受信トレイ` を選定。インプレース重複排除によりファイル消失ゼロ。
-- **条件C（GASによるGitHub保存）**: `cloud_relay_gas.js` v0.6 実装済み。トークン漏洩スキャン、アトミックコミット、409/422競合時の安全停止対応。
-- **条件D（本番E2E検証）**: 以下のTEST 1〜7の手順を策定。本番初回テスト用Fixture（非破壊スモークテストデータ）を用意。
-- **条件E（研究の再利用）**: ローカルCLI対話モード（`run_qa.ps1`）およびGemini Notebookへの最小手動反映フローを整備。
-
+- **条件B（Google Drive受渡し省力化）**: `intake_receipt.py` により、クリップボードからの1秒安全配置と事前重複チェックを実現。
+- **条件C（GASによるGitHub保存 & Drive自動配置）**: `cloud_relay_gas.js` がアトミックコミットと同時に、Driveへ研究カードMarkdownを自動生成。
+- **条件D（本番E2E検証）**: 実機検証（動画 `pRfC1DILDEM`）完了、全41件のテストスイートPASS。
+- **条件E（Notebookソース混同防止）**: タイトル接頭辞 `【研究カード】`、一次資料ID分離（`primary_source_notebook_id`）、文書区分ブロックによりNotebookLM内での引用精度を確立。
 ---
 
 ## 2. ユーザー事前準備（初回のみ・所要時間 約10分）
@@ -80,6 +81,7 @@ Gemini Notebook で深掘り質問・知識を日常再利用
 | :--- | :--- | :--- | :--- |
 | **`GITHUB_FINE_GRAINED_PAT`** | `github_pat_...` (Step 2でコピーしたトークン) | **必須** | GitHubへのコミット認証用 |
 | **`DRIVE_INBOX_FOLDER_ID`** | Step 1でメモしたフォルダID | **必須** | 受信フォルダのID |
+| **`DRIVE_OUTPUT_FOLDER_ID`** | （空白のままでOK） | 任意 | 研究カード（成果物）の保存先フォルダID。未設定時は受信フォルダに自動保存されます |
 | **`TARGET_GITHUB_BRANCH`** | `feature/gemini-notebook-research-loop-20261016` | **必須** | 保存先作業ブランチ（※main/masterはコードレベルで拒絶） |
 | **`DRIVE_EXPORT_DOC_ID`** | （空白のままでOK） | 任意 | 知識索引をGoogle Docsにミラー同期する場合のみ指定 |
 | **`DRY_RUN`** | `true` または `false`（デフォルトは未設定/false） | 任意 | `"true"` に設定すると `runCloudRelayLoop` でも書き込みを抑止してプレビューのみ実行 |
@@ -199,14 +201,22 @@ Dry-Runで `newRecordsCount: 1` と差分プレビューが正常であること
 3. **「保存」** をクリックします。
 4. これで、**PCの電源を落としても、クラウド上で1時間おきに自動巡回・中継が行われる状態**になります。
 
-### TEST 7: 保存した研究成果をGemini Notebookで利用する手順
-> [!NOTE]
-> **Notebook直接同期の現状ステータス: 手動反映（外部API自動同期は UNKNOWN / NOT_WIRED）**  
-> Google公式による外部システムからのNotebookLM自動ソース登録APIは一般提供されていないため、第1号では「GitHub正本のエクスポート文書を手動でNotebookへコピーする方式」を安全な基本運用として採用しています。
+### TEST 7: 保存した研究成果をGemini Notebookで利用する手順（第2段階: ワンクリック追加）
 
-1. GitHub正本に保存された研究サマリーは、`automation/gemini-notebook/state/github_knowledge_index_export.md` に集約されます。
-2. ユーザーは必要に応じてこのMarkdownの内容をコピーし、[Gemini Notebook](https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7) のメモ（ノート）に追加するか、新しいソースとして登録します。
-3. Notebook上で「最近追加されたハーネスの知見について教えて」とチャットで質問し、回答を得られることを確認します。
+第2段階の実装により、**GitHubからローカルPCへのファイルダウンロードや、ローカルファイルの手動アップロードは一切不要**になりました。
+
+1. **Google Drive上の研究カード確認**:
+   - GASの `runCloudRelayLoop` 実行後、Google Driveの受信フォルダ（または `DRIVE_OUTPUT_FOLDER_ID`）を開きます。
+   - `【研究カード】_2026-10-18-pRfC1DILDEM-gemini-notebook.md` という成果物ファイルが自動配置されていることを確認します。
+2. **NotebookLMへワンクリック追加**:
+   - [Gemini Notebook](https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7) をブラウザで開きます。
+   - 左側の **「ソースを追加」**（＋アイコン）をクリックします。
+   - **「Google ドライブ」** を選択します。
+   - 先ほどDriveに自動配置された `【研究カード】_...md` を選択して **「挿入」** をクリックします。
+   - これだけで、PCへのダウンロード作業なしに最新の研究カードがNotebookLMへ安全に取り込まれます。
+3. **ソース混同防止と回答検証**:
+   - NotebookLM上でチャットを開き、追加した動画に関する質問を行います。
+   - 研究カードのタイトル（`【研究カード】`）および文書区分ブロック（`[!IMPORTANT]`）により、Geminiは「元動画の字幕・一次資料」と「研究室が構造化した研究カード」を混同することなく、正確に区別して引用・回答します。
 
 ---
 
