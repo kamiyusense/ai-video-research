@@ -1718,10 +1718,10 @@ process.stdout.write(JSON.stringify({{
         self.assertNotIn("https://www.youtube.com/watch?v=ZjUJ-35acaU&t=1170s", consolidated_md)
 
     def test_14_search_precision_and_no_unverified_timestamp_links(self):
-        """Verify 28-video catalog integrity, strict per-chapter timestamp links, and natural-language Q&A search accuracy."""
+        """Verify 29-video catalog integrity, strict per-chapter timestamp links, and natural-language Q&A search accuracy."""
         real_root = Path(__file__).resolve().parents[1]
         catalog, _ = query_mod.build_video_knowledge_catalog(root=real_root)
-        self.assertEqual(catalog["total_video_records"], 28)
+        self.assertEqual(catalog["total_video_records"], 29)
         self.assertEqual(
             catalog["notebook_url"],
             "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
@@ -1729,7 +1729,7 @@ process.stdout.write(JSON.stringify({{
 
         evidence_map = bridge.load_timestamp_evidence()
         vid_records = {r["video_id"]: r for r in catalog["records"] if r.get("video_id")}
-        self.assertEqual(len(vid_records), 28)
+        self.assertEqual(len(vid_records), 29)
 
         # 1. Verify t22FELAl-BM has 0 verified chapters (no 24:18 / 1458s special-case hack)
         t22_rec = vid_records["t22FELAl-BM"]
@@ -2669,8 +2669,8 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
         )
         self.assertEqual(ts_counts.get("YOUTUBE_CHAPTER_METADATA"), 48)
         self.assertEqual(ts_counts.get("VISUAL_FRAME_CHECK"), 9)
-        self.assertEqual(ts_counts.get("UNKNOWN"), 111)
-        self.assertEqual(sum(ts_counts.values()), 241)
+        self.assertEqual(ts_counts.get("UNKNOWN"), 133)
+        self.assertEqual(sum(ts_counts.values()), 263)
         self.assertEqual(cat.get("total_verified_chapters"), 130)
 
     def test_all_241_chapters_parity_between_raw_notes_and_catalog(self):
@@ -2721,13 +2721,13 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
 
         self.assertEqual(
             len(raw_chaps),
-            241,
-            f"Expected exactly 241 chapters in raw research notes, got {len(raw_chaps)}",
+            263,
+            f"Expected exactly 263 chapters in raw research notes, got {len(raw_chaps)}",
         )
         self.assertEqual(
             len(cat_chaps),
-            241,
-            f"Expected exactly 241 chapters in catalog, got {len(cat_chaps)}",
+            263,
+            f"Expected exactly 263 chapters in catalog, got {len(cat_chaps)}",
         )
         self.assertEqual(
             len(raw_chaps),
@@ -2837,7 +2837,7 @@ try {{
         self.assertEqual(prov_counts["LEGACY_AI_STUDIO_USER_REPORT"], 9)
         self.assertEqual(prov_counts["YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH"], 73)
         self.assertEqual(prov_counts["YOUTUBE_SHORT_DESCRIPTION_OFFICIAL_METADATA"], 48)
-        self.assertEqual(prov_counts["UNVERIFIED"], 111)
+        self.assertEqual(prov_counts["UNVERIFIED"], 133)
 
         # 2. Test user questions covering distinct practical scenarios
         # Scenario 1: NotebookLM and Obsidian synergy
