@@ -42,7 +42,11 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
 
 1. **READ（既存Notebook総合索引とGitHubエクスポートの参照）**: 最初にNotebookの現在のソース一覧、Notebook内総合索引（`AI技術研究室_知識索引.md`）、および参照可能であればGoogle Drive上のGitHub側エクスポート（`github_knowledge_index_export.md` ミラードキュメント）、既存の動画ID、関係する過去研究、UNKNOWN課題、P006未解決課題ストックを読む。参照できなければ `BLOCKED_NOTEBOOK` とし、無関係な動画の量産へ進まない。
 2. **DISCOVER（有用なAI情報の自動発見）**: 日英のYouTube、Google/各開発元の公式発表、公開実装を横断して有用な最新候補を発見する。候補を6～15件内部で評価。直近の更新、優先研究テーマ（`next_topics`）や未解決課題（P006）との適合度、一次資料の信頼性、費用・自動化への有用性で優先順位を付ける。
-3. **SELECT（重複確認と対象選定）**: 既存 `video_id`（`lC5jxpYmatE`, `Vr3JkAT9mo8`, `3bLrrkA1nlQ`, `ZjUJ-35acaU`, `BStkW1HTfmk`, 対象外 `MVVpR2Bb0Rk` およびNotebook内既存ソース・GitHubエクスポート記載ID）と重複する候補を除き、1回の実行で**意味のある新規研究を原則2～5件まで**処理する。新情報がないなら0件で正常終了してよい。既存動画に対する重要な公式仕様更新や章立てタイムラインの補足がある場合は、既存研究への版付き補足（`changes: ["UPDATED"]` または `["CONFLICT"]`）を優先する。
+3. **SELECT（重複確認と対象選定・URL受付時の事前チェック）**:
+   - **個別URL指定時の事前チェック**: ユーザーからYouTube URLが直接指定された場合、動画解析を開始する前に、まず抽出した11文字の動画IDがNotebook内総合索引（`AI技術研究室_知識索引.md`）またはGitHubエクスポート（`github_knowledge_index_export.md`）に登録済みでないか確認する。
+   - **登録済みの場合の即時停止**: 既に登録されている動画IDと一致した場合は、動画の解析・要約を実行せず、直ちに「登録済みであること」「動画タイトル」「一行要約」「研究記録リンク」を返し、「差分更新として再調査するか」を確認して停止する。
+   - **安全停止ルール**: NotebookまたはGitHub台帳自体が取得・参照できない場合は、新規と断定せず `UNKNOWN` として安全停止し、登録状態を捏造しない。
+   - **自律発見時の選定**: 既存 `video_id`（`lC5jxpYmatE`, `Vr3JkAT9mo8`, `3bLrrkA1nlQ`, `ZjUJ-35acaU`, `BStkW1HTfmk`, 対象外 `MVVpR2Bb0Rk` およびNotebook内既存ソース・GitHubエクスポート記載ID）と重複する候補を除き、1回の実行で**意味のある新規研究を原則2～5件まで**処理する。新情報がないなら0件で正常終了してよい。既存動画に対する重要な公式仕様更新や章立てタイムラインの補足がある場合は、既存研究への版付き補足（`changes: ["UPDATED"]` または `["CONFLICT"]`）を優先する。
 4. **ACQUIRE（動画・章立てタイムライン・公式資料の調査）**: 選んだ動画の字幕・時刻付き文字起こし・概要欄チャプターを取得し、動画全体の章立て目次（`chapters`）と各章の開始・終了秒、時刻の確認根拠（`timestamp_source`）を整理する。映像フレームを直接取得していなければ、実演を見たと書かない。
 5. **VERIFY（事実検証）**: 各重要主張を公式一次資料、公開実装、利用条件と照合。動画公開日・製品の対象バージョン・今回の公式照合日を区別。発言、公式資料の事実、開発者の自己申告、AI解釈、実機検証を混同しない。**一次資料の公式URL（`official_url`）を提示できない主張を `CONFIRMED_DOC` にしてはならない（一次URL未添付の場合は `REPORTED_BY_AUTHOR` または `UNKNOWN` とする）**。
 6. **DIFF（既存知識との差分抽出・関連研究/P006接続）**: Notebookの関連チャンクおよび既存GitHub記録と比較し、`KNOWN` / `NEW` / `UPDATED` / `CONFLICT` / `UNKNOWN` に分ける。関連する既存研究やP006課題を `related_records`（`EXTENDS`, `UPDATES`, `COMPLEMENTS`, `CONTRADICTS`, `RESOLVES_BACKLOG`）として明記する。

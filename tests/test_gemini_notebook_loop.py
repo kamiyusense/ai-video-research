@@ -3619,6 +3619,180 @@ process.stdout.write("TRIMMING_SAFE_OK");
         self.assertEqual(res.stdout.strip(), "TRIMMING_SAFE_OK")
 
 
+class TestUrlIntakeDuplicateCheck(unittest.TestCase):
+    """Verify pre-analysis duplicate checking for YouTube URL intake."""
+
+    def setUp(self):
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp_dir.name)
+        self.research_dir = self.root / "research"
+        self.research_dir.mkdir(parents=True, exist_ok=True)
+
+        intake_mod_path = ROOT / "automation" / "gemini-notebook" / "intake_url.py"
+        spec = importlib.util.spec_from_file_location("intake_url", intake_mod_path)
+        self.intake_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.intake_mod)
+
+        # Create a sample registry.json
+        self.registry_path = self.root / "registry.json"
+        self.sample_registry = {
+            "schema_version": 1,
+            "repository": "kamiyusense/ai-video-research",
+            "records": [
+                {
+                    "record_id": "youtube:lC5jxpYmatE",
+                    "video_id": "lC5jxpYmatE",
+                    "canonical_url": "https://www.youtube.com/watch?v=lC5jxpYmatE",
+                    "research_path": "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+                    "status": "RESEARCH_RECORDED",
+                }
+            ],
+        }
+        self.registry_path.write_text(
+            json.dumps(self.sample_registry, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        # Create sample research markdown
+        self.sample_md = self.research_dir / "2026-10-10-lC5jxpYmatE-ai-techniques.md"
+        self.sample_md.write_text(
+            "# 動画研究05｜課題ドリブン・Skill再利用・Computer Useの省力化\n\n"
+            "## 結論（独自要約）\n"
+            "目新しいAIの機能を片端から覚えるより、日々の課題を記録して再挑戦する学び方が有用。\n",
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        self.tmp_dir.cleanup()
+
+    def test_01_same_video_url_twice_detected_as_duplicate(self):
+        """1. Verify feeding the same video URL twice flags duplicate with title, summary, link, and revisit prompt."""
+        url = "https://www.youtube.com/watch?v=lC5jxpYmatE"
+
+        # First intake: detected as registered
+        res1 = self.intake_mod.check_url_intake(
+            url, root=self.root, registry_path=self.registry_path
+        )
+        self.assertEqual(res1["status"], "ALREADY_REGISTERED")
+        self.assertTrue(res1["is_registered"])
+        self.assertEqual(res1["video_id"], "lC5jxpYmatE")
+        self.assertEqual(
+            res1["title"], "動画研究05｜課題ドリブン・Skill再利用・Computer Useの省力化"
+        )
+        self.assertIn("課題を記録して再挑戦する", res1["summary_ja"])
+        self.assertEqual(
+            res1["research_path"],
+            "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+        )
+        self.assertIsNotNone(res1["github_link"])
+        self.assertIn("再調査", res1["revisit_prompt"])
+        self.assertIn("UNKNOWN", res1["notebook_status"])
+
+        # Second intake of same URL: identical duplicate verdict
+        res2 = self.intake_mod.check_url_intake(
+            url, root=self.root, registry_path=self.registry_path
+        )
+        self.assertEqual(res2["status"], "ALREADY_REGISTERED")
+        self.assertEqual(res2["video_id"], "lC5jxpYmatE")
+
+    def test_02_short_url_and_timestamped_url_same_video_detected(self):
+        """2 & 3. Verify short URL (youtu.be) and timestamped URL (?t=... &t=...) resolve to same video_id and duplicate."""
+        urls = [
+            "https://youtu.be/lC5jxpYmatE",
+            "https://youtu.be/lC5jxpYmatE?t=123",
+            "https://www.youtube.com/watch?v=lC5jxpYmatE&t=123s",
+            "https://www.youtube.com/watch?feature=shared&v=lC5jxpYmatE&t=2m30s",
+            "https://www.youtube.com/shorts/lC5jxpYmatE",
+            "https://www.youtube.com/live/lC5jxpYmatE?feature=share",
+        ]
+        for u in urls:
+            res = self.intake_mod.check_url_intake(
+                u, root=self.root, registry_path=self.registry_path
+            )
+            self.assertEqual(
+                res["status"],
+                "ALREADY_REGISTERED",
+                f"Failed duplicate check for URL: {u}",
+            )
+            self.assertEqual(res["video_id"], "lC5jxpYmatE")
+            self.assertEqual(
+                res["canonical_url"], "https://www.youtube.com/watch?v=lC5jxpYmatE"
+            )
+
+    def test_03_unregistered_video_allows_research(self):
+        """4. Verify unregistered video returns NOT_REGISTERED and allows starting research."""
+        unregistered_url = "https://youtu.be/kCc8FmEb1nY"
+        res = self.intake_mod.check_url_intake(
+            unregistered_url, root=self.root, registry_path=self.registry_path
+        )
+        self.assertEqual(res["status"], "NOT_REGISTERED")
+        self.assertFalse(res["is_registered"])
+        self.assertEqual(res["video_id"], "kCc8FmEb1nY")
+        self.assertEqual(
+            res["canonical_url"], "https://www.youtube.com/watch?v=kCc8FmEb1nY"
+        )
+        self.assertIsNone(res["research_path"])
+        self.assertIn("研究を開始できます", res["message_ja"])
+        self.assertIn("UNKNOWN", res["notebook_status"])
+
+    def test_04_github_registry_unreachable_safe_halt(self):
+        """5. Verify unreachable or corrupted GitHub registry fails safe without false NEW classification."""
+        missing_path = self.root / "missing_registry.json"
+        res_missing = self.intake_mod.check_url_intake(
+            "https://youtu.be/kCc8FmEb1nY",
+            root=self.root,
+            registry_path=missing_path,
+        )
+        self.assertEqual(res_missing["status"], "BLOCKED_GITHUB_UNREACHABLE")
+        self.assertIsNone(res_missing["is_registered"])
+        self.assertIn("安全停止", res_missing["message_ja"])
+
+        # Corrupted JSON
+        corrupted_path = self.root / "corrupted_registry.json"
+        corrupted_path.write_text("{ broken json ...", encoding="utf-8")
+        res_corrupt = self.intake_mod.check_url_intake(
+            "https://youtu.be/kCc8FmEb1nY",
+            root=self.root,
+            registry_path=corrupted_path,
+        )
+        self.assertEqual(res_corrupt["status"], "BLOCKED_GITHUB_UNREACHABLE")
+        self.assertIsNone(res_corrupt["is_registered"])
+
+    def test_05_pre_guard_and_pre_save_double_check_and_readback(self):
+        """6 & 7. Verify pre-analysis intake check, pre-save double check, and post-save readback sequence."""
+        # Step 1: Pre-analysis intake check rejects duplicate before video analysis
+        res_pre = self.intake_mod.check_url_intake(
+            "https://www.youtube.com/watch?v=lC5jxpYmatE",
+            root=self.root,
+            registry_path=self.registry_path,
+        )
+        self.assertEqual(res_pre["status"], "ALREADY_REGISTERED")
+
+        # Step 2: Even if an analysis receipt is somehow prepared, pre-save double check blocks it
+        sample_receipt = make_sample_receipt()
+        sample_receipt["videos"][0]["video_id"] = "lC5jxpYmatE"
+        sample_receipt["videos"][0]["url"] = "https://www.youtube.com/watch?v=lC5jxpYmatE"
+
+        # Execute process_receipt_data (pre-save double check)
+        res_summary, _ = bridge.process_receipt_data(
+            sample_receipt,
+            root=self.root,
+            apply=False,
+            check_remote_branches=False,
+            fetch_remote=False,
+        )
+        # Pre-save double check skipped applying this video!
+        self.assertEqual(res_summary["new_records"], 0)
+        self.assertEqual(len(res_summary["skipped"]), 1)
+        self.assertEqual(res_summary["skipped"][0]["video_id"], "lC5jxpYmatE")
+        self.assertEqual(res_summary["skipped"][0]["reason"], "SKIP_EXISTING")
+
+        # Step 3: Post-save readback verification (verifying registry readback)
+        reg_readback = json.loads(self.registry_path.read_text(encoding="utf-8"))
+        readback_vids = [r["video_id"] for r in reg_readback.get("records", [])]
+        self.assertIn("lC5jxpYmatE", readback_vids)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 
