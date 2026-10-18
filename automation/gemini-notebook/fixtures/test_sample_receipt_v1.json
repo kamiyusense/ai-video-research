@@ -1,0 +1,52 @@
+{
+  "schema_version": "research_receipt_v1",
+  "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "checked_at": "2026-10-18",
+  "notebook_readback": "PASS",
+  "github_dedup_status": "PASS",
+  "videos": [
+    {
+      "video_id": "dQw4w9WgXcQ",
+      "title": "【本番接続検証用スモークテスト】AI技術研究室 第1号 疎通確認Receipt",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=60s",
+      "published_at": "2026-10-18",
+      "summary_ja": "AI技術研究室のGoogle DriveからGASを経由したGitHub非defaultブランチへの疎通・重複排除・Readback検証用のテスト研究Receiptです。",
+      "source_scope": "V1本番接続確認用スモークテスト（架空知見の本番汚損防止フラグ適用）",
+      "notebook_source_id": "src_v1_smoke_test",
+      "notebook_readback": "PASS",
+      "changes": [
+        "NEW"
+      ],
+      "claims": [
+        {
+          "text": "GAS経由でのGitHubへの単一アトミックコミットと非破壊的重複排除が正常に機能する",
+          "status": "CONFIRMED_DOC",
+          "timestamp_seconds": 60,
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "official_url": "https://github.com/kamiyusense/ai-video-research"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "第1号本番疎通テスト区間",
+          "start_seconds": 60,
+          "end_seconds": 120,
+          "summary_ja": "Google Drive受信トレイからGitHubへの自動リレーが安全に成立することを確認するテスト区間。",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "key_topics": [
+            "疎通確認",
+            "GAS中継",
+            "重複排除"
+          ]
+        }
+      ],
+      "detailed_findings_ja": "1. **疎通確認の目的**:\n   - Google Driveの受信トレイフォルダに配置されたJSONをGASが検知し、GitHubの `feature/gemini-notebook-research-loop-20261016` ブランチへ正しくコミットできるかを確認する。\n2. **安全ガードの確認**:\n   - 再度同じファイルを投入した際に、GitHubコミットが発生せず無変更スキップされることを確認する。"
+    }
+  ],
+  "next_topics": [
+    "第1号本番運転の定常稼働確認"
+  ],
+  "unknowns": [
+    "GASの実行トリガーによるPC-OFF完全無人リレーの初回稼働時間"
+  ]
+}

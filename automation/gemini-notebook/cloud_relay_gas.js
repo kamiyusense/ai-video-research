@@ -3278,7 +3278,15 @@ function relayDriveReceiptsToGitHub(envOverrides) {
 
 /**
  * 手順書 (`PC_OFF_OPERATIONS.md`) との完全互換エントリポイント:
- * 時間主導型トリガーから直接呼び出される関数。
+ * 時間主導型トリガーから直接呼び出される関数（公開関数: 末尾アンダースコアなし）。
+ * GASのトリガー設定ダイアログ・エディタ実行ドロップダウンに表示されます。
+ */
+function runCloudRelayLoop(envOverrides) {
+  return relayDriveReceiptsToGitHub(envOverrides);
+}
+
+/**
+ * 互換用エイリアス（旧ドキュメント指定用）
  */
 function runCloudRelayLoop_(envOverrides) {
   return relayDriveReceiptsToGitHub(envOverrides);
@@ -3291,12 +3299,16 @@ function pullGitHubIndexExportToDriveDoc(envOverrides) {
     (typeof PropertiesService !== "undefined"
       ? PropertiesService.getScriptProperties()
       : null);
-  const token = props.getProperty("GITHUB_FINE_GRAINED_PAT");
+  const token =
+    props.getProperty("GITHUB_FINE_GRAINED_PAT") ||
+    props.getProperty("GITHUB_PAT");
   const exportDocId = props.getProperty("DRIVE_EXPORT_DOC_ID");
   const targetBranch = verifyTargetBranchBoundary_(
     props.getProperty("TARGET_GITHUB_BRANCH") ||
+      props.getProperty("TARGET_BRANCH") ||
       CONTRACT_SPEC_V1.default_target_branch
   );
+
 
   if (!token || !exportDocId) {
     throw new Error("Missing GITHUB_FINE_GRAINED_PAT or DRIVE_EXPORT_DOC_ID");
@@ -3360,6 +3372,7 @@ if (typeof module !== "undefined" && module.exports) {
     renderGitHubKnowledgeIndexExportMd: renderGitHubKnowledgeIndexExportMd_,
     planReceiptApplication: planReceiptApplication_,
     relayDriveReceiptsToGitHub: relayDriveReceiptsToGitHub,
+    runCloudRelayLoop: runCloudRelayLoop,
     runCloudRelayLoop_: runCloudRelayLoop_,
     pullGitHubIndexExportToDriveDoc: pullGitHubIndexExportToDriveDoc,
   };

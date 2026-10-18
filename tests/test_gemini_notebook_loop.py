@@ -2038,6 +2038,9 @@ class TestGasConfigurationAndOperationsContract(unittest.TestCase):
         """1. Verify that runCloudRelayLoop_ and relayDriveReceiptsToGitHub are exported and callable."""
         node_test = f"""
 const gas = require({json.dumps(self.gas_path)});
+if (typeof gas.runCloudRelayLoop !== "function") {{
+  throw new Error("runCloudRelayLoop is not exported as a function");
+}}
 if (typeof gas.runCloudRelayLoop_ !== "function") {{
   throw new Error("runCloudRelayLoop_ is not exported as a function");
 }}
@@ -2045,6 +2048,7 @@ if (typeof gas.relayDriveReceiptsToGitHub !== "function") {{
   throw new Error("relayDriveReceiptsToGitHub is not exported as a function");
 }}
 process.stdout.write("OK");
+
 """
         res = subprocess.run(
             ["node", "-e", node_test],
