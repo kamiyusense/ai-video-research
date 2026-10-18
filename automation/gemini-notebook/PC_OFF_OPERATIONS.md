@@ -36,8 +36,8 @@ flowchart TD
 
 | 項目 | 現在のステータス | 判定根拠 |
 |---|---|---|
-| **ローカル検証（単体・結合テスト）** | **PASS（完了）** | 27件以上の自動テスト全通過（単体・結合・Mock・契約テスト）、Case A〜Fの実用検索確認、100本バッチ正規化テスト通過 |
-| **GAS中継コード実装** | **WIRED_READY（準備完了）** | `cloud_relay_gas.js` v0.5（3348行）実装済み、Contract Spec・セキュリティ検査準拠 |
+| **ローカル検証（単体・結合テスト）** | **PASS（完了）** | 30件の自動テスト全通過（単体・結合・Mock・契約テスト）、Dry-Run書き込み抑止確認、Case A〜Fの実用検索確認、100本バッチ正規化テスト通過 |
+| **GAS中継コード実装** | **WIRED_READY（準備完了）** | `cloud_relay_gas.js` v0.6（3425行）実装済み、Contract Spec・セキュリティ検査準拠、Dry-Run公開関数配備 |
 | **Google Drive 実フォルダ** | **READY_FOR_LINK（未配線）** | フォルダ構造設計済み（実環境でのフォルダID紐付け待ち） |
 | **Gemini→Drive無人JSON出力** | **NOT_PROVEN（未実証）** | Gemini Scheduled Actions等からGoogle Driveフォルダへの直接無人JSON書き込みは未実証（詳細は `docs/PC_OFF_FEASIBILITY_REPORT.md` 参照。手動配置による半自動運用を推奨） |
 | **本番クラウド定期稼働 (Live Trigger)** | **NOT_WIRED（未接続・待機）** | **本番GASデプロイ・定期トリガー設定は未実施**。ユーザー明示承認と手動設定が必要 |
@@ -87,13 +87,13 @@ GASの「プロジェクトの設定」>「スクリプト プロパティ」に
 
 > [!NOTE]
 > **ファイル退避・移動処理について（実装仕様）**:
-> `cloud_relay_gas.js` v0.5 は受信トレイ内のファイルを移動・削除せず、**インプレース（非破壊的）に完全重複防止**を行います。
+> `cloud_relay_gas.js` v0.6 は受信トレイ内のファイルを移動・削除せず、**インプレース（非破壊的）に完全重複防止**を行います。
 > 処理済みReceiptのダイジェスト（SHA-256）はGitHub正本（`loop_state.json`）および揮発キャッシュに記録されるため、受信トレイに同名ファイルが残っていても二重コミットやファイル破壊は発生しません。
 > `DRIVE_PROCESSED_FOLDER_ID` や `DRIVE_ERROR_FOLDER_ID` は現在のコードでは未参照（未使用）であり、ファイル消失リスクを回避する設計となっています。
 
 ### Step 4: トリガー（時間主導型）の有効化
 GASの「トリガー」設定画面から：
-- 実行する関数: `runCloudRelayLoop_`（または `relayDriveReceiptsToGitHub`）
+- 実行する関数: `runCloudRelayLoop`（公開関数。事前検証時は `runCloudRelayDryRun` で安全プレビュー可能）
 - イベントのソース: `時間主導型`
 - 時間の間隔: `1時間おき`（または1日数回）
 
