@@ -2244,6 +2244,52 @@ process.stdout.write("DRY_RUN_SUCCESS");
         )
         self.assertEqual(res.stdout.strip(), "DRY_RUN_SUCCESS")
 
+    def test_live_sample_receipt_fixture_validity(self):
+        """Verify that live_sample_receipt_v1.json uses genuine kCc8FmEb1nY data, is valid in JS & Python, and contains no false flags."""
+        live_fixture_path = (ROOT / "automation" / "gemini-notebook" / "fixtures" / "live_sample_receipt_v1.json").as_posix()
+        self.assertTrue(os.path.exists(live_fixture_path), "live_sample_receipt_v1.json must exist")
+
+        with open(live_fixture_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        self.assertEqual(data.get("schema_version"), "research_receipt_v1")
+        self.assertEqual(data.get("notebook_readback"), "UNKNOWN")
+        videos = data.get("videos", [])
+        self.assertEqual(len(videos), 1)
+        v = videos[0]
+        self.assertEqual(v.get("video_id"), "kCc8FmEb1nY")
+        self.assertEqual(v.get("changes"), ["NEW"])
+        self.assertEqual(v.get("notebook_readback"), "UNKNOWN")
+
+        # Verify no fake CONFIRMED_DOC or TIMESTAMPED_CAPTIONS
+        for c in v.get("claims", []):
+            self.assertNotEqual(c.get("status"), "CONFIRMED_DOC")
+            self.assertEqual(c.get("timestamp_source"), "UNKNOWN")
+            self.assertIsNone(c.get("timestamp_seconds"))
+        for ch in v.get("chapters", []):
+            self.assertEqual(ch.get("timestamp_source"), "UNKNOWN")
+            self.assertIsNone(ch.get("start_seconds"))
+
+        # Verify JS validation
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+const fs = require("fs");
+const raw = fs.readFileSync({json.dumps(live_fixture_path)}, "utf8");
+const clean = gas.validateReceipt(JSON.parse(raw));
+if (!clean || clean.length !== 1 || clean[0].video_id !== "kCc8FmEb1nY") {{
+  throw new Error("JS validation failed for live_sample_receipt_v1.json");
+}}
+process.stdout.write("JS_OK");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "JS_OK")
+
 
     def test_gas_script_properties_aliases_and_safety_stop_on_missing(self):
         """2. Verify that GITHUB_PAT and TARGET_BRANCH aliases work, and missing properties halt safely."""

@@ -111,33 +111,38 @@ Gemini Notebook で深掘り質問・知識を日常再利用
    > [!NOTE]
    > `runCloudRelayDryRun` はGitHubリポジトリのブランチ・ファイル構造の読み取り（GET）のみを行い、コミット・プッシュ（POST/PATCH）は一切行いません。
 
-### TEST 2: 受信・検証テスト（実在データによる Dry-Run 検証 → 承認後単発LIVE保存）
-台帳へ架空の動画・主張を保存しないため、実在かつ検証済みの研究データ（動画ID: `sodTFSuV4zY`）を使用し、**書き込みなしの Dry-Run** を先行して実施します。
+### TEST 2: 受信・検証テスト（Dry-Run プレビュー → 承認後単発LIVE保存）
+台帳へ架空の動画・主張を保存せず、かつ「新規保存」の成功を客観的に証明するため、2種類の検証データを用意しています：
+- **予行演習用**: `test_sample_receipt_v1.json`（既存動画 `sodTFSuV4zY`。台帳を増やさずにGAS接続と更新系動作を確認）
+- **本番新規保存実証用**: `live_sample_receipt_v1.json`（実在する未登録動画 `kCc8FmEb1nY`。新規1件の確実な保存を証明）
 
 #### Step 2A: Dry-Run プレビュー検証（GitHub書き込みなし・非破壊）
-1. リポジトリ内のテスト用Receipt **[`automation/gemini-notebook/fixtures/test_sample_receipt_v1.json`](file:///c:/Users/yuuki/Documents/ai-video-research/automation/gemini-notebook/fixtures/test_sample_receipt_v1.json)** をダウンロード（または内容をコピーして `.json` ファイルとして保存）。
-   - ※本Fixtureは実在する動画 `sodTFSuV4zY` の実データに基づいており、未確認の時刻や主張には偽の検証済フラグを一切含みません。
+1. まずは予行演習または本番新規実証用のいずれかを選択します：
+   - **本番新規保存を実証する場合**: リポジトリ内の **[`automation/gemini-notebook/fixtures/live_sample_receipt_v1.json`](file:///c:/Users/yuuki/Documents/ai-video-research/automation/gemini-notebook/fixtures/live_sample_receipt_v1.json)** をダウンロード。
+   - ※未登録の実在動画 `kCc8FmEb1nY`（Andrej Karpathy氏 nanoGPT講義）の実データであり、未検証時刻は誠実に `UNKNOWN` と記録されています。
 2. Google Driveの `AI技術研究室_受信トレイ` フォルダにアップロードします。
 3. GASエディタで **`runCloudRelayDryRun`** を再度 **「実行」** します。
-4. 実行ログを確認します。GitHubへのコミットは発生せず、安全に検証・差分プレビューが行われたことを確認します：
+4. 実行ログを確認します。GitHubへのコミットは発生せず、安全に検証・新規差分プレビューが行われたことを確認します：
    ```json
    {
      "status": "COMPLETED",
      "mode": "DRY_RUN",
      "relayReport": [
        {
-         "file": "test_sample_receipt_v1.json",
+         "file": "live_sample_receipt_v1.json",
          "status": "DRY_RUN_PREVIEW_ONLY_NO_GITHUB_WRITE",
          "githubWriteStatus": "PREVIEW_ONLY",
          "wouldCommit": true,
-         "videoIds": ["sodTFSuV4zY"]
+         "newRecordsCount": 1,
+         "updatedRecordsCount": 0,
+         "newIds": ["kCc8FmEb1nY"]
        }
      ]
    }
    ```
 
-#### Step 2B: 承認後の単発LIVE保存テスト（初回本番書き込み）
-Dry-Runでスキーマ検証と差分プレビューが正常であることを確認した後、実際にブランチへ書き込みます。
+#### Step 2B: ユーザー承認後の単発LIVE保存テスト（初回本番書き込み）
+Dry-Runで `newRecordsCount: 1` と差分プレビューが正常であることを確認した後、ユーザー承認のもとで実際にブランチへ1度だけ書き込みます。
 1. GASエディタで実行関数を **`runCloudRelayLoop`** に切り替えます。
 2. **「実行」** ボタンをクリックします。
 3. 実行ログを確認します：
@@ -147,11 +152,11 @@ Dry-Runでスキーマ検証と差分プレビューが正常であることを�
      "mode": "APPLY",
      "relayReport": [
        {
-         "file": "test_sample_receipt_v1.json",
+         "file": "live_sample_receipt_v1.json",
          "status": "COMMITTED_AND_READBACK_VERIFIED",
          "githubWriteStatus": "COMMITTED_AND_READBACK_VERIFIED",
          "headSha": "...",
-         "videoIds": ["sodTFSuV4zY"]
+         "videoIds": ["kCc8FmEb1nY"]
        }
      ]
    }
@@ -160,7 +165,7 @@ Dry-Runでスキーマ検証と差分プレビューが正常であることを�
 ### TEST 3: GitHub側の保存確認（Remote Readback確認）
 1. GitHubの [PR #10 ページ](https://github.com/kamiyusense/ai-video-research/pull/10) を開きます。
 2. Commits タブを確認し、GASから新しいコミット（`auto(gemini-loop): relay 1 research updates from Google Drive receipt`）が追加されていることを確認します。
-3. Files changed タブで、`research/2026-10-14-sodTFSuV4zY-software-tour.md` および `automation/gemini-notebook/state/loop_state.json` にダイジェストが記録されていることを確認します。
+3. Files changed タブで、`research/2023-01-17-kCc8FmEb1nY-lets-build-gpt.md` が新規作成され、`registry.json` に1件追加され、`automation/gemini-notebook/state/loop_state.json` にダイジェストが記録されていることを確認します。
 
 ### TEST 4: 重複排除テスト（非破壊性の確認）
 1. Drive受信トレイにファイルが残った状態のまま、GASエディタで **`runCloudRelayLoop`** をもう一度 **「実行」** します。
@@ -195,6 +200,10 @@ Dry-Runでスキーマ検証と差分プレビューが正常であることを�
 4. これで、**PCの電源を落としても、クラウド上で1時間おきに自動巡回・中継が行われる状態**になります。
 
 ### TEST 7: 保存した研究成果をGemini Notebookで利用する手順
+> [!NOTE]
+> **Notebook直接同期の現状ステータス: 手動反映（外部API自動同期は UNKNOWN / NOT_WIRED）**  
+> Google公式による外部システムからのNotebookLM自動ソース登録APIは一般提供されていないため、第1号では「GitHub正本のエクスポート文書を手動でNotebookへコピーする方式」を安全な基本運用として採用しています。
+
 1. GitHub正本に保存された研究サマリーは、`automation/gemini-notebook/state/github_knowledge_index_export.md` に集約されます。
 2. ユーザーは必要に応じてこのMarkdownの内容をコピーし、[Gemini Notebook](https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7) のメモ（ノート）に追加するか、新しいソースとして登録します。
 3. Notebook上で「最近追加されたハーネスの知見について教えて」とチャットで質問し、回答を得られることを確認します。
