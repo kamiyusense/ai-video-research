@@ -3239,6 +3239,7 @@ const mockDrive = {{
   }}
 }};
 
+let branchACommit = "sha_branch_a";
 let branchABlobFetches = 0;
 const mockFetcher = {{
   fetch(url, opts) {{
@@ -3249,7 +3250,7 @@ const mockFetcher = {{
         getContentText() {{
           return JSON.stringify([
             {{ name: "feature/gemini-notebook-research-loop-20261016", commit: {{ sha: "head_commit_sha" }} }},
-            {{ name: "feature/other-branch-a", commit: {{ sha: "sha_branch_a" }} }}
+            {{ name: "feature/other-branch-a", commit: {{ sha: branchACommit }} }}
           ]);
         }}
       }};
@@ -3262,11 +3263,11 @@ const mockFetcher = {{
         }}
       }};
     }}
-    if (u.includes("/git/commits/sha_branch_a")) {{
+    if (u.includes("/git/commits/" + branchACommit)) {{
       return {{
         getResponseCode() {{ return 200; }},
         getContentText() {{
-          return JSON.stringify({{ sha: "sha_branch_a", tree: {{ sha: "tree_branch_a" }} }});
+          return JSON.stringify({{ sha: branchACommit, tree: {{ sha: "tree_branch_a" }} }});
         }}
       }};
     }}
@@ -3309,7 +3310,7 @@ const mockFetcher = {{
             content: Buffer.from(JSON.stringify({{
               schema_version: 1,
               repository: "kamiyusense/ai-video-research",
-              records: [{{ video_id: "lC5jxpYmatE", record_id: "youtube:lC5jxpYmatE" }}]
+              records: [{{ video_id: "lC5jxpYmatE", record_id: "youtube:lC5jxpYmatE", research_path: "research/2026-10-10-lC5jxpYmatE-ai-techniques.md", status: "CONFIRMED_DOC" }}]
             }})).toString("base64"),
             encoding: "base64"
           }});
@@ -3360,13 +3361,21 @@ if (branchABlobFetches !== 1) {{
   throw new Error("Expected 1 blob fetch on branch A during Run 1, got: " + branchABlobFetches);
 }}
 
-// Verify RELAY_STATE_V1 now has completedBranchCache for branch A
+// Verify RELAY_STATE_V1 now has completedBranchCache for branch A with full video metadata
 const stateObj = JSON.parse(mockProps.store["RELAY_STATE_V1"]);
-if (!stateObj.completedBranchCache || !stateObj.completedBranchCache["origin/feature/other-branch-a"]) {{
+const cachedEntry = stateObj.completedBranchCache && stateObj.completedBranchCache["origin/feature/other-branch-a"];
+if (!cachedEntry) {{
   throw new Error("completedBranchCache not saved in RELAY_STATE_V1: " + JSON.stringify(stateObj));
 }}
+if (!Array.isArray(cachedEntry.videos) || cachedEntry.videos.length === 0) {{
+  throw new Error("cachedEntry.videos missing or empty in completedBranchCache");
+}}
+const cachedVideo = cachedEntry.videos[0];
+if (cachedVideo.video_id !== "lC5jxpYmatE" || !cachedVideo.research_path || !cachedVideo.status || !cachedVideo.detected_via) {{
+  throw new Error("cachedVideo metadata degraded: " + JSON.stringify(cachedVideo));
+}}
 
-// Run 2: Second Dry-Run must NOT re-fetch branch A blobs
+// Run 2: Second Dry-Run must NOT re-fetch branch A blobs, preserving metadata
 branchABlobFetches = 0;
 const out2 = gas.runCloudRelayDryRun({{
   scriptProperties: mockProps,
@@ -3376,6 +3385,25 @@ const out2 = gas.runCloudRelayDryRun({{
 
 if (branchABlobFetches !== 0) {{
   throw new Error("Branch A was re-fetched on Run 2! Expected 0, got: " + branchABlobFetches);
+}}
+
+// Run 3: Branch A commit SHA changes -> cache must be invalidated and re-fetched
+branchACommit = "sha_branch_a_v2";
+branchABlobFetches = 0;
+const out3 = gas.runCloudRelayDryRun({{
+  scriptProperties: mockProps,
+  driveApp: mockDrive,
+  urlFetchApp: mockFetcher
+}});
+
+if (branchABlobFetches !== 1) {{
+  throw new Error("Branch A was not re-fetched after commit SHA change! Expected 1, got: " + branchABlobFetches);
+}}
+
+const stateObjV2 = JSON.parse(mockProps.store["RELAY_STATE_V1"]);
+const cachedEntryV2 = stateObjV2.completedBranchCache["origin/feature/other-branch-a"];
+if (cachedEntryV2.commit_sha !== "sha_branch_a_v2") {{
+  throw new Error("Cache commit_sha was not updated after re-fetch: " + JSON.stringify(cachedEntryV2));
 }}
 
 process.stdout.write("BRANCH_CACHE_PERSIST_OK");
@@ -3390,7 +3418,7 @@ process.stdout.write("BRANCH_CACHE_PERSIST_OK");
         self.assertEqual(res.stdout.strip(), "BRANCH_CACHE_PERSIST_OK")
 
     def test_gas_state_trimming_preserves_partial_progress_safely(self):
-        """Verify that when state size exceeds safe byte limit, volatile caches are trimmed first to protect partialScanProgress."""
+        """Verify that when state size exceeds safe byte limit, volatile caches are trimmed first to protect partialScanProgress, and if partialScanProgress alone exceeds limit, fail-fast without corrupting state."""
         node_test = f"""
 const gas = require({json.dumps(self.gas_path)});
 
@@ -3530,9 +3558,53 @@ if (byteLenAfter > 7500) {{
   throw new Error("Pruned state exceeds 7500 bytes: " + byteLenAfter);
 }}
 
-// Verify volatile recentNoOpDigests was trimmed significantly
+// 1. Verify partialScanProgress is FULLY preserved (never discarded or truncated)
+if (!prunedState.partialScanProgress || !prunedState.partialScanProgress["target:feature/test"]) {{
+  throw new Error("partialScanProgress was lost during state trimming!");
+}}
+const preservedEntry = prunedState.partialScanProgress["target:feature/test"];
+if (!preservedEntry.scanned_paths["research/file1.md"] || preservedEntry.videos.length !== 1) {{
+  throw new Error("partialScanProgress content corrupted during state trimming: " + JSON.stringify(preservedEntry));
+}}
+
+// 2. Verify volatile caches were trimmed
 if (prunedState.recentNoOpDigests.length >= 200) {{
   throw new Error("recentNoOpDigests was not trimmed!");
+}}
+
+// 3. Verify that if partialScanProgress ALONE exceeds 7,500 bytes, saveBoundedRelayState throws explicit error and NEVER corrupts state
+const oversizedProgressState = {{
+  recentNoOpDigests: [],
+  haltedReceipts: {{}},
+  completedBranchCache: {{}},
+  partialScanProgress: {{
+    "branch_oversized": {{
+      commit_sha: "c".repeat(40),
+      scanned_paths: {{}},
+      videos_by_id: {{}}
+    }}
+  }}
+}};
+for (let i = 0; i < 400; i++) {{
+  oversizedProgressState.partialScanProgress["branch_oversized"].scanned_paths["deep/path/to/markdown/note_" + i + ".md"] = true;
+}}
+
+const savedStateBeforeFailure = mockProps.store["RELAY_STATE_V1"];
+let caughtError = null;
+try {{
+  gas.saveBoundedRelayState(mockProps, oversizedProgressState);
+}} catch (e) {{
+  caughtError = e;
+}}
+
+if (!caughtError) {{
+  throw new Error("saveBoundedRelayState did not throw error on oversized partialScanProgress!");
+}}
+if (!caughtError.message.includes("Unable to safely persist partialScanProgress")) {{
+  throw new Error("Unexpected error message: " + caughtError.message);
+}}
+if (mockProps.store["RELAY_STATE_V1"] !== savedStateBeforeFailure) {{
+  throw new Error("Existing valid RELAY_STATE_V1 in ScriptProperties was corrupted after save failure!");
 }}
 
 process.stdout.write("TRIMMING_SAFE_OK");

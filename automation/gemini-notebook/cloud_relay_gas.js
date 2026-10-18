@@ -238,36 +238,17 @@ function saveBoundedRelayState_(props, relayState) {
   let byteLen = utf8ByteLength_(serialized);
 
   // 安全サイズ制限（7,500 bytes）を超過した場合の段階的トリム処理
-  // 優先順位: 1. recentNoOpDigests -> 2. haltedReceipts -> 3. completedBranchCache -> 4. partialScanProgress（警告記録付き）
+  // 優先順位: 1. recentNoOpDigests -> 2. completedBranchCache -> 3. haltedReceipts
+  // ※ partialScanProgress は未完了進捗であり、削除・切り詰めると無限再走査ループに陥るため絶対にトリムしない
   while (byteLen > lim.max_script_property_bytes) {
     if (relayState.recentNoOpDigests.length > 0) {
       relayState.recentNoOpDigests.shift();
-    } else if (Object.keys(relayState.haltedReceipts).length > 1) {
-      const firstKey = Object.keys(relayState.haltedReceipts)[0];
-      delete relayState.haltedReceipts[firstKey];
     } else if (Object.keys(relayState.completedBranchCache).length > 0) {
       const cKeys = Object.keys(relayState.completedBranchCache);
       delete relayState.completedBranchCache[cKeys[0]];
-    } else if (
-      relayState.partialScanProgress &&
-      Object.keys(relayState.partialScanProgress).length > 0
-    ) {
-      const pKeys = Object.keys(relayState.partialScanProgress);
-      const targetPKey = pKeys[0];
-      const pEntry = relayState.partialScanProgress[targetPKey];
-      if (pEntry && Array.isArray(pEntry.videos) && pEntry.videos.length > 5) {
-        pEntry.videos = pEntry.videos.slice(-5);
-      } else if (pEntry && pEntry.videos_by_id && Object.keys(pEntry.videos_by_id).length > 5) {
-        const vKeys = Object.keys(pEntry.videos_by_id);
-        const trimmed = {};
-        for (let i = vKeys.length - 5; i < vKeys.length; i++) {
-          if (i >= 0) trimmed[vKeys[i]] = pEntry.videos_by_id[vKeys[i]];
-        }
-        pEntry.videos_by_id = trimmed;
-      } else {
-        relayState.lastPruneWarning = "Pruned partialScanProgress for " + targetPKey + " due to ScriptProperties byte limits";
-        delete relayState.partialScanProgress[targetPKey];
-      }
+    } else if (Object.keys(relayState.haltedReceipts).length > 1) {
+      const firstKey = Object.keys(relayState.haltedReceipts)[0];
+      delete relayState.haltedReceipts[firstKey];
     } else {
       break;
     }
@@ -275,9 +256,12 @@ function saveBoundedRelayState_(props, relayState) {
     byteLen = utf8ByteLength_(serialized);
   }
 
-  if (byteLen > 8800) {
+  // 再計算可能なキャッシュを削っても制限に収まらない場合、未完了進捗を破壊して保存するのではなく明確なエラーで停止する
+  if (byteLen > lim.max_script_property_bytes) {
     throw new Error(
-      "RELAY_STATE_V1 exceeds safe ScriptProperties byte limit (" + byteLen + " bytes)"
+      "Unable to safely persist partialScanProgress within ScriptProperties byte limit (" +
+        byteLen + " > " + lim.max_script_property_bytes +
+        " bytes): refusing to corrupt or discard unfinished scan progress"
     );
   }
   props.setProperty("RELAY_STATE_V1", serialized);
@@ -2290,13 +2274,15 @@ function collectGitHubRepositoryState_(
 
     // 完全走査済み (scan_complete === true) かつ同一 Commit SHA の場合のみキャッシュヒットとする
     if (cached) {
-      const vids = Array.isArray(cached.video_ids)
-        ? cached.video_ids
-        : Array.isArray(cached.videos)
-        ? cached.videos.map(function (v) { return typeof v === "string" ? v : v.video_id; })
+      const cachedVideos = Array.isArray(cached.videos)
+        ? cached.videos
+        : Array.isArray(cached.video_ids)
+        ? cached.video_ids.map(function (v) { return { video_id: v }; })
         : [];
-      for (let j = 0; j < vids.length; j++) {
-        mergeRemoteEntry(rb.ref, { video_id: vids[j] });
+      for (let j = 0; j < cachedVideos.length; j++) {
+        const cv = cachedVideos[j];
+        const cEntry = typeof cv === "string" ? { video_id: cv } : cv;
+        mergeRemoteEntry(rb.ref, cEntry);
       }
       delete nextPartialProgress[rb.ref];
       continue;
@@ -2425,6 +2411,7 @@ function collectGitHubRepositoryState_(
         commit_sha: rb.commitSha,
         tree_sha: rbTreeSha,
         scan_complete: true,
+        videos: rbVideoList,
         video_ids: vidList,
       };
       delete nextPartialProgress[rb.ref];
