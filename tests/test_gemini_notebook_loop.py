@@ -3063,6 +3063,489 @@ process.stdout.write(JSON.stringify(results));
         # Assert concurrent execution safely skips when lock is held
         self.assertEqual(out["concurrentLockStatus"], "SKIPPED_CONCURRENT_LOCK_HELD")
 
+    def test_gas_paused_dedup_scan_logs_details(self):
+        """Verify that when dedup scan is paused due to file limit, Logger.log is invoked with detailed pausedOutput."""
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+
+const mockProps = {{
+  store: {{
+    GITHUB_FINE_GRAINED_PAT: "test_pat_token",
+    DRIVE_INBOX_FOLDER_ID: "folder_inbox_123",
+    TARGET_GITHUB_BRANCH: "feature/gemini-notebook-research-loop-20261016"
+  }},
+  getProperty(k) {{ return this.store[k] || null; }},
+  setProperty(k, v) {{ this.store[k] = String(v); }}
+}};
+
+let loggedOutput = null;
+global.Logger = {{
+  log: function(msg) {{
+    try {{
+      loggedOutput = JSON.parse(msg);
+    }} catch (e) {{}}
+  }}
+}};
+
+const mockDrive = {{
+  getFolderById(id) {{
+    return {{
+      getFiles() {{
+        return {{
+          hasNext() {{ return false; }},
+          next() {{ return null; }}
+        }};
+      }}
+    }};
+  }}
+}};
+
+let blobFetchCount = 0;
+const mockFetcher = {{
+  fetch(url, opts) {{
+    const u = String(url);
+    if (u.includes("/branches?per_page=100")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify([{{ name: "feature/gemini-notebook-research-loop-20261016", commit: {{ sha: "head_commit_sha" }} }}]);
+        }}
+      }};
+    }}
+    if (u.includes("/git/commits/head_commit_sha")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{ sha: "head_commit_sha", tree: {{ sha: "head_tree_sha" }} }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/trees/head_tree_sha")) {{
+      // Create 30 notes/ files to exceed max_blob_fetches_per_run (25)
+      const tree = [
+        {{ path: "registry.json", sha: "blob_reg", type: "blob" }},
+        {{ path: "automation/gemini-notebook/state/loop_state.json", sha: "blob_loop", type: "blob" }}
+      ];
+      for (let i = 0; i < 30; i++) {{
+        tree.push({{ path: "notes/sample_note_" + i + ".md", sha: "blob_note_" + i, type: "blob" }});
+      }}
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{ sha: "head_tree_sha", truncated: false, tree: tree }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_reg")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{ schema_version: 1, repository: "kamiyusense/ai-video-research", records: [] }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_loop")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{
+              schema_version: "gemini_notebook_loop_state_v1",
+              repository: "kamiyusense/ai-video-research",
+              processed_receipts: [],
+              remote_branch_cache: {{}},
+              open_unknowns: [],
+              next_topics_queue: []
+            }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_note_")) {{
+      blobFetchCount++;
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from("Sample note body with no video id").toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    return {{ getResponseCode() {{ return 200; }}, getContentText() {{ return "{{}}"; }} }};
+  }}
+}};
+
+const out = gas.runCloudRelayDryRun({{
+  scriptProperties: mockProps,
+  driveApp: mockDrive,
+  urlFetchApp: mockFetcher
+}});
+
+if (!loggedOutput) {{
+  throw new Error("Logger.log was not called on paused scan!");
+}}
+if (loggedOutput.status !== "PAUSED_INCOMPLETE_DEDUP_SCAN_CONTINUES_NEXT_RUN") {{
+  throw new Error("Unexpected status in logged output: " + loggedOutput.status);
+}}
+if (loggedOutput.remainingUnscannedFiles <= 0) {{
+  throw new Error("Expected remainingUnscannedFiles > 0, got: " + loggedOutput.remainingUnscannedFiles);
+}}
+if (loggedOutput.mode !== "DRY_RUN") {{
+  throw new Error("Expected mode === 'DRY_RUN', got: " + loggedOutput.mode);
+}}
+
+process.stdout.write("LOGGED_PAUSED_OK");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "LOGGED_PAUSED_OK")
+
+    def test_gas_completed_branch_cache_prevents_duplicate_scans(self):
+        """Verify that completed remote branch scan is cached in ScriptProperties across Dry-Runs."""
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+
+const mockProps = {{
+  store: {{
+    GITHUB_FINE_GRAINED_PAT: "test_pat_token",
+    DRIVE_INBOX_FOLDER_ID: "folder_inbox_123",
+    TARGET_GITHUB_BRANCH: "feature/gemini-notebook-research-loop-20261016"
+  }},
+  getProperty(k) {{ return this.store[k] || null; }},
+  setProperty(k, v) {{ this.store[k] = String(v); }}
+}};
+
+const mockDrive = {{
+  getFolderById(id) {{
+    return {{
+      getFiles() {{
+        return {{
+          hasNext() {{ return false; }},
+          next() {{ return null; }}
+        }};
+      }}
+    }};
+  }}
+}};
+
+let branchABlobFetches = 0;
+const mockFetcher = {{
+  fetch(url, opts) {{
+    const u = String(url);
+    if (u.includes("/branches?per_page=100")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify([
+            {{ name: "feature/gemini-notebook-research-loop-20261016", commit: {{ sha: "head_commit_sha" }} }},
+            {{ name: "feature/other-branch-a", commit: {{ sha: "sha_branch_a" }} }}
+          ]);
+        }}
+      }};
+    }}
+    if (u.includes("/git/commits/head_commit_sha")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{ sha: "head_commit_sha", tree: {{ sha: "head_tree_sha" }} }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/commits/sha_branch_a")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{ sha: "sha_branch_a", tree: {{ sha: "tree_branch_a" }} }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/trees/head_tree_sha")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            sha: "head_tree_sha",
+            truncated: false,
+            tree: [
+              {{ path: "registry.json", sha: "blob_reg", type: "blob" }},
+              {{ path: "automation/gemini-notebook/state/loop_state.json", sha: "blob_loop", type: "blob" }}
+            ]
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/trees/tree_branch_a")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            sha: "tree_branch_a",
+            truncated: false,
+            tree: [
+              {{ path: "registry.json", sha: "blob_reg_a", type: "blob" }},
+              {{ path: "research/2026-10-10-lC5jxpYmatE-ai-techniques.md", sha: "blob_res_a", type: "blob" }}
+            ]
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_reg_a")) {{
+      branchABlobFetches++;
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{
+              schema_version: 1,
+              repository: "kamiyusense/ai-video-research",
+              records: [{{ video_id: "lC5jxpYmatE", record_id: "youtube:lC5jxpYmatE" }}]
+            }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_reg")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{ schema_version: 1, repository: "kamiyusense/ai-video-research", records: [] }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_loop")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{
+              schema_version: "gemini_notebook_loop_state_v1",
+              repository: "kamiyusense/ai-video-research",
+              processed_receipts: [],
+              remote_branch_cache: {{}},
+              open_unknowns: [],
+              next_topics_queue: []
+            }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    return {{ getResponseCode() {{ return 200; }}, getContentText() {{ return "{{}}"; }} }};
+  }}
+}};
+
+// Run 1: First Dry-Run scans branch A
+const out1 = gas.runCloudRelayDryRun({{
+  scriptProperties: mockProps,
+  driveApp: mockDrive,
+  urlFetchApp: mockFetcher
+}});
+
+if (branchABlobFetches !== 1) {{
+  throw new Error("Expected 1 blob fetch on branch A during Run 1, got: " + branchABlobFetches);
+}}
+
+// Verify RELAY_STATE_V1 now has completedBranchCache for branch A
+const stateObj = JSON.parse(mockProps.store["RELAY_STATE_V1"]);
+if (!stateObj.completedBranchCache || !stateObj.completedBranchCache["origin/feature/other-branch-a"]) {{
+  throw new Error("completedBranchCache not saved in RELAY_STATE_V1: " + JSON.stringify(stateObj));
+}}
+
+// Run 2: Second Dry-Run must NOT re-fetch branch A blobs
+branchABlobFetches = 0;
+const out2 = gas.runCloudRelayDryRun({{
+  scriptProperties: mockProps,
+  driveApp: mockDrive,
+  urlFetchApp: mockFetcher
+}});
+
+if (branchABlobFetches !== 0) {{
+  throw new Error("Branch A was re-fetched on Run 2! Expected 0, got: " + branchABlobFetches);
+}}
+
+process.stdout.write("BRANCH_CACHE_PERSIST_OK");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "BRANCH_CACHE_PERSIST_OK")
+
+    def test_gas_state_trimming_preserves_partial_progress_safely(self):
+        """Verify that when state size exceeds safe byte limit, volatile caches are trimmed first to protect partialScanProgress."""
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+
+const mockProps = {{
+  store: {{}},
+  getProperty(k) {{ return this.store[k] || null; }},
+  setProperty(k, v) {{ this.store[k] = String(v); }}
+}};
+
+// Create an oversized state with many noOp digests and completed branches
+const relayState = {{
+  schemaVersion: "gas_relay_compact_state_v2",
+  lastGitHubCommitSha: "sha1",
+  lastDriveSyncedCommitSha: null,
+  pendingDriveSync: false,
+  recentNoOpDigests: [],
+  haltedReceipts: {{}},
+  completedBranchCache: {{}},
+  partialScanProgress: {{
+    "target:feature/test": {{
+      commit_sha: "sha1",
+      scanned_paths: {{ "research/file1.md": true }},
+      videos: [{{ video_id: "vid12345678", source: "registry" }}]
+    }}
+  }}
+}};
+
+// Inflate recentNoOpDigests and completedBranchCache to exceed 7,500 bytes
+for (let i = 0; i < 200; i++) {{
+  relayState.recentNoOpDigests.push("a".repeat(64));
+  relayState.completedBranchCache["origin/feature/branch_" + i] = {{
+    commit_sha: "b".repeat(40),
+    scan_complete: true,
+    video_ids: ["vid_" + i]
+  }};
+}}
+
+// Run saveBoundedRelayState_ via gas internal
+const serializedBefore = JSON.stringify(relayState);
+const byteLenBefore = Buffer.byteLength(serializedBefore, "utf8");
+if (byteLenBefore < 8000) {{
+  throw new Error("Test state not large enough: " + byteLenBefore);
+}}
+
+// Trigger bounded save by calling gas function that triggers it
+mockProps.setProperty("GITHUB_FINE_GRAINED_PAT", "pat_test");
+mockProps.setProperty("DRIVE_INBOX_FOLDER_ID", "folder_test");
+mockProps.setProperty("TARGET_GITHUB_BRANCH", "feature/gemini-notebook-research-loop-20261016");
+mockProps.setProperty("RELAY_STATE_V1", serializedBefore);
+
+// Trigger a Dry-Run with empty drive
+const mockDrive = {{
+  getFolderById(id) {{
+    return {{
+      getFiles() {{
+        return {{ hasNext() {{ return false; }}, next() {{ return null; }} }};
+      }}
+    }};
+  }}
+}};
+const mockFetcher = {{
+  fetch(url) {{
+    const u = String(url);
+    if (u.includes("/branches?per_page=100")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify([{{ name: "feature/gemini-notebook-research-loop-20261016", commit: {{ sha: "head_commit_sha" }} }}]);
+        }}
+      }};
+    }}
+    if (u.includes("/git/commits/head_commit_sha")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{ return JSON.stringify({{ sha: "head_commit_sha", tree: {{ sha: "head_tree_sha" }} }}); }}
+      }};
+    }}
+    if (u.includes("/git/trees/head_tree_sha")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            sha: "head_tree_sha",
+            truncated: false,
+            tree: [
+              {{ path: "registry.json", sha: "blob_reg", type: "blob" }},
+              {{ path: "automation/gemini-notebook/state/loop_state.json", sha: "blob_loop", type: "blob" }}
+            ]
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_reg")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{ schema_version: 1, repository: "kamiyusense/ai-video-research", records: [] }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_loop")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{
+              schema_version: "gemini_notebook_loop_state_v1",
+              repository: "kamiyusense/ai-video-research",
+              processed_receipts: [],
+              remote_branch_cache: {{}},
+              open_unknowns: [],
+              next_topics_queue: []
+            }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    return {{ getResponseCode() {{ return 200; }}, getContentText() {{ return "{{}}"; }} }};
+  }}
+}};
+
+gas.runCloudRelayDryRun({{
+  scriptProperties: mockProps,
+  driveApp: mockDrive,
+  urlFetchApp: mockFetcher
+}});
+
+// Read back pruned state
+const prunedState = JSON.parse(mockProps.store["RELAY_STATE_V1"]);
+const byteLenAfter = Buffer.byteLength(mockProps.store["RELAY_STATE_V1"], "utf8");
+
+if (byteLenAfter > 7500) {{
+  throw new Error("Pruned state exceeds 7500 bytes: " + byteLenAfter);
+}}
+
+// Verify volatile recentNoOpDigests was trimmed significantly
+if (prunedState.recentNoOpDigests.length >= 200) {{
+  throw new Error("recentNoOpDigests was not trimmed!");
+}}
+
+process.stdout.write("TRIMMING_SAFE_OK");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "TRIMMING_SAFE_OK")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

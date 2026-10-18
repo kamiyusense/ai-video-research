@@ -230,16 +230,24 @@ function saveBoundedRelayState_(props, relayState) {
     relayState.haltedReceipts = trimmedHalted;
   }
 
+  if (!relayState.completedBranchCache || typeof relayState.completedBranchCache !== "object") {
+    relayState.completedBranchCache = {};
+  }
+
   let serialized = JSON.stringify(relayState);
   let byteLen = utf8ByteLength_(serialized);
 
-  // 万が一 7,500 bytes (9KB上限に対して安全マージン確保) を超える場合は古い一時キャッシュから順に削減
+  // 安全サイズ制限（7,500 bytes）を超過した場合の段階的トリム処理
+  // 優先順位: 1. recentNoOpDigests -> 2. haltedReceipts -> 3. completedBranchCache -> 4. partialScanProgress（警告記録付き）
   while (byteLen > lim.max_script_property_bytes) {
     if (relayState.recentNoOpDigests.length > 0) {
       relayState.recentNoOpDigests.shift();
     } else if (Object.keys(relayState.haltedReceipts).length > 1) {
       const firstKey = Object.keys(relayState.haltedReceipts)[0];
       delete relayState.haltedReceipts[firstKey];
+    } else if (Object.keys(relayState.completedBranchCache).length > 0) {
+      const cKeys = Object.keys(relayState.completedBranchCache);
+      delete relayState.completedBranchCache[cKeys[0]];
     } else if (
       relayState.partialScanProgress &&
       Object.keys(relayState.partialScanProgress).length > 0
@@ -247,9 +255,17 @@ function saveBoundedRelayState_(props, relayState) {
       const pKeys = Object.keys(relayState.partialScanProgress);
       const targetPKey = pKeys[0];
       const pEntry = relayState.partialScanProgress[targetPKey];
-      if (pEntry && Array.isArray(pEntry.videos) && pEntry.videos.length > 10) {
-        pEntry.videos = pEntry.videos.slice(-10);
+      if (pEntry && Array.isArray(pEntry.videos) && pEntry.videos.length > 5) {
+        pEntry.videos = pEntry.videos.slice(-5);
+      } else if (pEntry && pEntry.videos_by_id && Object.keys(pEntry.videos_by_id).length > 5) {
+        const vKeys = Object.keys(pEntry.videos_by_id);
+        const trimmed = {};
+        for (let i = vKeys.length - 5; i < vKeys.length; i++) {
+          if (i >= 0) trimmed[vKeys[i]] = pEntry.videos_by_id[vKeys[i]];
+        }
+        pEntry.videos_by_id = trimmed;
       } else {
+        relayState.lastPruneWarning = "Pruned partialScanProgress for " + targetPKey + " due to ScriptProperties byte limits";
         delete relayState.partialScanProgress[targetPKey];
       }
     } else {
@@ -1953,7 +1969,8 @@ function collectGitHubRepositoryState_(
   token,
   targetBranch,
   partialScanProgress,
-  customFetcher
+  customFetcher,
+  completedBranchCache
 ) {
   const owner = CONTRACT_SPEC_V1.expected_repo_owner;
   const repo = CONTRACT_SPEC_V1.expected_repo_name;
@@ -2133,6 +2150,10 @@ function collectGitHubRepositoryState_(
     loopState.remote_branch_cache && typeof loopState.remote_branch_cache === "object"
       ? JSON.parse(JSON.stringify(loopState.remote_branch_cache))
       : {};
+  const activeCompletedBranchCache =
+    completedBranchCache && typeof completedBranchCache === "object"
+      ? JSON.parse(JSON.stringify(completedBranchCache))
+      : {};
   const nextPartialProgress =
     partialScanProgress && typeof partialScanProgress === "object"
       ? JSON.parse(JSON.stringify(partialScanProgress))
@@ -2258,16 +2279,24 @@ function collectGitHubRepositoryState_(
 
   for (let i = 0; i < remoteBranches.length; i++) {
     const rb = remoteBranches[i];
-    const cached = githubBranchCache[rb.ref];
+    const cachedOnGitHub = githubBranchCache[rb.ref];
+    const cachedInGas = activeCompletedBranchCache[rb.ref];
+    const cached =
+      cachedOnGitHub && cachedOnGitHub.commit_sha === rb.commitSha && cachedOnGitHub.scan_complete === true
+        ? cachedOnGitHub
+        : cachedInGas && cachedInGas.commit_sha === rb.commitSha && cachedInGas.scan_complete === true
+        ? cachedInGas
+        : null;
+
     // 完全走査済み (scan_complete === true) かつ同一 Commit SHA の場合のみキャッシュヒットとする
-    if (
-      cached &&
-      cached.commit_sha === rb.commitSha &&
-      cached.scan_complete === true &&
-      Array.isArray(cached.videos)
-    ) {
-      for (let j = 0; j < cached.videos.length; j++) {
-        mergeRemoteEntry(rb.ref, cached.videos[j]);
+    if (cached) {
+      const vids = Array.isArray(cached.video_ids)
+        ? cached.video_ids
+        : Array.isArray(cached.videos)
+        ? cached.videos.map(function (v) { return typeof v === "string" ? v : v.video_id; })
+        : [];
+      for (let j = 0; j < vids.length; j++) {
+        mergeRemoteEntry(rb.ref, { video_id: vids[j] });
       }
       delete nextPartialProgress[rb.ref];
       continue;
@@ -2385,11 +2414,18 @@ function collectGitHubRepositoryState_(
 
     if (rbAllScanned) {
       // 全対象ファイルの走査が完了した場合のみ scan_complete: true としてキャッシュ昇格する
+      const vidList = rbVideoList.map(function (v) { return v.video_id; });
       githubBranchCache[rb.ref] = {
         commit_sha: rb.commitSha,
         tree_sha: rbTreeSha,
         scan_complete: true,
         videos: rbVideoList,
+      };
+      activeCompletedBranchCache[rb.ref] = {
+        commit_sha: rb.commitSha,
+        tree_sha: rbTreeSha,
+        scan_complete: true,
+        video_ids: vidList,
       };
       delete nextPartialProgress[rb.ref];
     } else {
@@ -2432,6 +2468,7 @@ function collectGitHubRepositoryState_(
     dedupScanComplete: dedupScanComplete,
     remainingUnscannedFiles: remainingUnscannedFiles,
     partialScanProgress: nextPartialProgress,
+    completedBranchCache: activeCompletedBranchCache,
     mainBranchServerProtected: mainBranchServerProtected,
     fetchBlobTextBySha: fetchBlobTextBySha,
   };
@@ -2960,6 +2997,7 @@ function relayDriveReceiptsToGitHub(envOverrides) {
       recentNoOpDigests: [],
       haltedReceipts: {},
       partialScanProgress: {},
+      completedBranchCache: {},
     };
     if (stateJson) {
       try {
@@ -2981,6 +3019,11 @@ function relayDriveReceiptsToGitHub(envOverrides) {
           parsed.partialScanProgress &&
           typeof parsed.partialScanProgress === "object"
             ? parsed.partialScanProgress
+            : {};
+        relayState.completedBranchCache =
+          parsed.completedBranchCache &&
+          typeof parsed.completedBranchCache === "object"
+            ? parsed.completedBranchCache
             : {};
       } catch (e) {
         throw new Error(
@@ -3005,22 +3048,29 @@ function relayDriveReceiptsToGitHub(envOverrides) {
       token,
       targetBranch,
       relayState.partialScanProgress,
-      customFetcher
+      customFetcher,
+      relayState.completedBranchCache
     );
     relayState.partialScanProgress = repoState.partialScanProgress;
+    relayState.completedBranchCache = repoState.completedBranchCache;
     relayState.lastGitHubCommitSha = repoState.targetBranchCommitSha;
     const stateBytesAfterScan = saveBoundedRelayState_(props, relayState);
 
     // 問題2対策: 未走査のMarkdown本文が残っている場合は、重複確認PASSとみなさず次回実行へ進捗を引き継いで安全一時停止する
     if (!repoState.dedupScanComplete) {
-      return {
+      const pausedOutput = {
         status: "PAUSED_INCOMPLETE_DEDUP_SCAN_CONTINUES_NEXT_RUN",
+        mode: isDryRun ? "DRY_RUN" : "APPLY",
         targetBranch: targetBranch,
         dedupScanComplete: false,
         remainingUnscannedFiles: repoState.remainingUnscannedFiles,
         scriptPropertyBytesUsed: stateBytesAfterScan,
         notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
       };
+      if (typeof Logger !== "undefined" && Logger.log) {
+        Logger.log(JSON.stringify(pausedOutput, null, 2));
+      }
+      return pausedOutput;
     }
 
     while (files.hasNext()) {
