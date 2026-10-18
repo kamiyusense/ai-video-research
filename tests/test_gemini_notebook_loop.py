@@ -2038,6 +2038,9 @@ class TestGasConfigurationAndOperationsContract(unittest.TestCase):
         """1. Verify that runCloudRelayLoop_ and relayDriveReceiptsToGitHub are exported and callable."""
         node_test = f"""
 const gas = require({json.dumps(self.gas_path)});
+if (typeof gas.runCloudRelayDryRun !== "function") {{
+  throw new Error("runCloudRelayDryRun is not exported as a function");
+}}
 if (typeof gas.runCloudRelayLoop !== "function") {{
   throw new Error("runCloudRelayLoop is not exported as a function");
 }}
@@ -2048,7 +2051,6 @@ if (typeof gas.relayDriveReceiptsToGitHub !== "function") {{
   throw new Error("relayDriveReceiptsToGitHub is not exported as a function");
 }}
 process.stdout.write("OK");
-
 """
         res = subprocess.run(
             ["node", "-e", node_test],
@@ -2058,6 +2060,190 @@ process.stdout.write("OK");
             check=True,
         )
         self.assertEqual(res.stdout.strip(), "OK")
+
+    def test_gas_dry_run_no_github_write(self):
+        """Verify that runCloudRelayDryRun validates Drive receipt and previews diffs without performing any GitHub commits."""
+        fixture_path = (ROOT / "automation" / "gemini-notebook" / "fixtures" / "test_sample_receipt_v1.json").as_posix()
+        node_test = f"""
+const gas = require({json.dumps(self.gas_path)});
+const fs = require("fs");
+const crypto = require("crypto");
+
+const fixtureJson = fs.readFileSync({json.dumps(fixture_path)}, "utf8");
+
+// Validate fixture validity in both JS and check it uses genuine sodTFSuV4zY data
+const parsedFixture = JSON.parse(fixtureJson);
+if (parsedFixture.videos[0].video_id !== "sodTFSuV4zY") {{
+  throw new Error("Fixture must use genuine video_id sodTFSuV4zY");
+}}
+if (parsedFixture.videos[0].claims[0].status === "CONFIRMED_DOC") {{
+  throw new Error("Fixture must not fabricate CONFIRMED_DOC");
+}}
+if (parsedFixture.notebook_readback === "PASS") {{
+  throw new Error("Fixture must not claim unverified PASS for notebook_readback");
+}}
+gas.validateReceipt(parsedFixture);
+
+const mockProps = {{
+  store: {{
+    GITHUB_FINE_GRAINED_PAT: "test_pat_token",
+    DRIVE_INBOX_FOLDER_ID: "folder_inbox_123",
+    TARGET_GITHUB_BRANCH: "feature/gemini-notebook-research-loop-20261016"
+  }},
+  getProperty(k) {{ return this.store[k] || null; }},
+  setProperty(k, v) {{ this.store[k] = String(v); }}
+}};
+
+let fileRead = false;
+const mockDrive = {{
+  getFolderById(id) {{
+    return {{
+      getFiles() {{
+        return {{
+          hasNext() {{
+            if (!fileRead) {{ fileRead = true; return true; }}
+            return false;
+          }},
+          next() {{
+            return {{
+              getName() {{ return "test_sample_receipt_v1.json"; }},
+              getMimeType() {{ return "application/json"; }},
+              getBlob() {{
+                return {{
+                  getDataAsString() {{ return fixtureJson; }}
+                }};
+              }}
+            }};
+          }}
+        }};
+      }}
+    }};
+  }}
+}};
+
+let commitAttempted = false;
+const mockFetcher = {{
+  fetch(url, opts) {{
+    const u = String(url);
+    if (opts && (opts.method === "post" || opts.method === "patch")) {{
+      commitAttempted = true;
+      throw new Error("FORBIDDEN_WRITE_CALL_IN_DRY_RUN: " + opts.method + " " + u);
+    }}
+    if (u.includes("/branches?per_page=100")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify([{{ name: "feature/gemini-notebook-research-loop-20261016", commit: {{ sha: "head_commit_sha" }} }}]);
+        }}
+      }};
+    }}
+
+    if (u.includes("/branches/feature%2Fgemini-notebook-research-loop-20261016") || u.includes("/branches/feature/gemini-notebook-research-loop-20261016")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            name: "feature/gemini-notebook-research-loop-20261016",
+            commit: {{ sha: "head_commit_sha", commit: {{ tree: {{ sha: "head_tree_sha" }} }} }}
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/commits/head_commit_sha")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{ sha: "head_commit_sha", tree: {{ sha: "head_tree_sha" }} }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/trees/head_tree_sha")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            sha: "head_tree_sha",
+            truncated: false,
+            tree: [
+              {{ path: "registry.json", sha: "blob_reg", type: "blob" }},
+              {{ path: "automation/gemini-notebook/state/loop_state.json", sha: "blob_loop", type: "blob" }}
+            ]
+          }});
+        }}
+      }};
+    }}
+    if (u.includes("/git/blobs/blob_reg")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{
+              schema_version: 1,
+              repository: "kamiyusense/ai-video-research",
+              records: []
+            }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+
+    if (u.includes("/git/blobs/blob_loop")) {{
+      return {{
+        getResponseCode() {{ return 200; }},
+        getContentText() {{
+          return JSON.stringify({{
+            content: Buffer.from(JSON.stringify({{
+              schema_version: "gemini_notebook_loop_state_v1",
+              repository: "kamiyusense/ai-video-research",
+              processed_receipts: [],
+              remote_branch_cache: {{}},
+              open_unknowns: [],
+              next_topics_queue: []
+            }})).toString("base64"),
+            encoding: "base64"
+          }});
+        }}
+      }};
+    }}
+    return {{ getResponseCode() {{ return 200; }}, getContentText() {{ return "{{}}"; }} }};
+  }}
+}};
+
+const out = gas.runCloudRelayDryRun({{
+  scriptProperties: mockProps,
+  driveApp: mockDrive,
+  urlFetchApp: mockFetcher
+}});
+
+if (commitAttempted) {{
+  throw new Error("Commit was attempted during runCloudRelayDryRun!");
+}}
+if (out.mode !== "DRY_RUN") {{
+  throw new Error("Expected mode === 'DRY_RUN', got: " + out.mode);
+}}
+if (!out.relayReport || out.relayReport.length !== 1) {{
+  throw new Error("Expected 1 relayReport item, got: " + JSON.stringify(out.relayReport));
+}}
+const rep = out.relayReport[0];
+if (rep.status !== "DRY_RUN_PREVIEW_ONLY_NO_GITHUB_WRITE") {{
+  throw new Error("Expected DRY_RUN_PREVIEW_ONLY_NO_GITHUB_WRITE, got: " + rep.status);
+}}
+if (rep.githubWriteStatus !== "PREVIEW_ONLY") {{
+  throw new Error("Expected PREVIEW_ONLY, got: " + rep.githubWriteStatus);
+}}
+
+process.stdout.write("DRY_RUN_SUCCESS");
+"""
+        res = subprocess.run(
+            ["node", "-e", node_test],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        self.assertEqual(res.stdout.strip(), "DRY_RUN_SUCCESS")
+
 
     def test_gas_script_properties_aliases_and_safety_stop_on_missing(self):
         """2. Verify that GITHUB_PAT and TARGET_BRANCH aliases work, and missing properties halt safely."""

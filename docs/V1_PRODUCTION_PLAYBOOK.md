@@ -82,6 +82,7 @@ Gemini Notebook で深掘り質問・知識を日常再利用
 | **`DRIVE_INBOX_FOLDER_ID`** | Step 1でメモしたフォルダID | **必須** | 受信フォルダのID |
 | **`TARGET_GITHUB_BRANCH`** | `feature/gemini-notebook-research-loop-20261016` | **必須** | 保存先作業ブランチ（※main/masterはコードレベルで拒絶） |
 | **`DRIVE_EXPORT_DOC_ID`** | （空白のままでOK） | 任意 | 知識索引をGoogle Docsにミラー同期する場合のみ指定 |
+| **`DRY_RUN`** | `true` または `false`（デフォルトは未設定/false） | 任意 | `"true"` に設定すると `runCloudRelayLoop` でも書き込みを抑止してプレビューのみ実行 |
 
 3. **「スクリプト プロパティを保存」** をクリックします。
 
@@ -91,38 +92,96 @@ Gemini Notebook で深掘り質問・知識を日常再利用
 
 設定完了後、以下の順序で動作を確認します。
 
-### TEST 1: 構成確認（空のフォルダでの初回手動実行）
-1. GASエディタに戻り、画面上部の実行関数ドロップダウンで **`runCloudRelayLoop`** を選択します。
+### TEST 1: 構成・認証確認（空フォルダでの初回 Dry-Run 手動実行）
+1. GASエディタに戻り、画面上部の実行関数ドロップダウンで **`runCloudRelayDryRun`** を選択します。
 2. **「実行」** ボタンをクリックします。
-3. 初回実行時、「承認が必要です」というダイアログが表示されるので、ご自身のGoogleアカウントを選択し、アクセスを許可します（Driveおよび外部APIへの通信）。
-4. 実行ログ（Execution log）を確認します：
-   - `Drive folder scanned. Total files found: 0`
-   - エラーなく `Execution completed` となれば接続成功です。
+3. 初回実行時、「承認が必要です」というダイアログが表示されるので、ご自身のGoogleアカウントを選択し、アクセスを許可します（Google Driveおよび外部API GitHubへの通信）。
+4. 実行ログ（Execution log）を確認します。JSON形式で以下のように出力され、エラーなく `Execution completed` となれば接続・認証成功です：
+   ```json
+   {
+     "status": "COMPLETED",
+     "mode": "DRY_RUN",
+     "targetBranch": "feature/gemini-notebook-research-loop-20261016",
+     "applicationBranchGuard": "ENFORCED_NON_DEFAULT_ONLY",
+     "relayReport": [],
+     "driveReconciliation": null,
+     "notebookSyncStatus": "NOT_SYNCED_FROM_GITHUB"
+   }
+   ```
+   > [!NOTE]
+   > `runCloudRelayDryRun` はGitHubリポジトリのブランチ・ファイル構造の読み取り（GET）のみを行い、コミット・プッシュ（POST/PATCH）は一切行いません。
 
-### TEST 2: 単発保存テスト（非破壊スモークテスト）
-1. リポジトリ内のテスト用Receipt **[`automation/gemini-notebook/fixtures/test_sample_receipt_v1.json`](file:///c:/Users/yuuki/Documents/ai-video-research/automation/gemini-notebook/fixtures/test_sample_receipt_v1.json)** をダウンロード（またはテキストをコピーして `.json` で保存）。
+### TEST 2: 受信・検証テスト（実在データによる Dry-Run 検証 → 承認後単発LIVE保存）
+台帳へ架空の動画・主張を保存しないため、実在かつ検証済みの研究データ（動画ID: `sodTFSuV4zY`）を使用し、**書き込みなしの Dry-Run** を先行して実施します。
+
+#### Step 2A: Dry-Run プレビュー検証（GitHub書き込みなし・非破壊）
+1. リポジトリ内のテスト用Receipt **[`automation/gemini-notebook/fixtures/test_sample_receipt_v1.json`](file:///c:/Users/yuuki/Documents/ai-video-research/automation/gemini-notebook/fixtures/test_sample_receipt_v1.json)** をダウンロード（または内容をコピーして `.json` ファイルとして保存）。
+   - ※本Fixtureは実在する動画 `sodTFSuV4zY` の実データに基づいており、未確認の時刻や主張には偽の検証済フラグを一切含みません。
 2. Google Driveの `AI技術研究室_受信トレイ` フォルダにアップロードします。
-3. GASエディタで **`runCloudRelayLoop`** を再度 **「実行」** します。
-4. 実行ログを確認します：
-   - `Found receipt payload in ...`
-   - `Committed 1 research updates atomically to GitHub branch feature/gemini-notebook-research-loop-20261016`
-   - `Remote readback verified: PASS`
-   - `Execution completed`
+3. GASエディタで **`runCloudRelayDryRun`** を再度 **「実行」** します。
+4. 実行ログを確認します。GitHubへのコミットは発生せず、安全に検証・差分プレビューが行われたことを確認します：
+   ```json
+   {
+     "status": "COMPLETED",
+     "mode": "DRY_RUN",
+     "relayReport": [
+       {
+         "file": "test_sample_receipt_v1.json",
+         "status": "DRY_RUN_PREVIEW_ONLY_NO_GITHUB_WRITE",
+         "githubWriteStatus": "PREVIEW_ONLY",
+         "wouldCommit": true,
+         "videoIds": ["sodTFSuV4zY"]
+       }
+     ]
+   }
+   ```
 
-### TEST 3: GitHub側の保存確認（Readback確認）
+#### Step 2B: 承認後の単発LIVE保存テスト（初回本番書き込み）
+Dry-Runでスキーマ検証と差分プレビューが正常であることを確認した後、実際にブランチへ書き込みます。
+1. GASエディタで実行関数を **`runCloudRelayLoop`** に切り替えます。
+2. **「実行」** ボタンをクリックします。
+3. 実行ログを確認します：
+   ```json
+   {
+     "status": "COMPLETED",
+     "mode": "APPLY",
+     "relayReport": [
+       {
+         "file": "test_sample_receipt_v1.json",
+         "status": "COMMITTED_AND_READBACK_VERIFIED",
+         "githubWriteStatus": "COMMITTED_AND_READBACK_VERIFIED",
+         "headSha": "...",
+         "videoIds": ["sodTFSuV4zY"]
+       }
+     ]
+   }
+   ```
+
+### TEST 3: GitHub側の保存確認（Remote Readback確認）
 1. GitHubの [PR #10 ページ](https://github.com/kamiyusense/ai-video-research/pull/10) を開きます。
-2. Commits タブを確認し、GASから新しいコミット（例: `auto(gemini-loop): relay 1 research updates from Google Drive receipt`）が追加されていることを確認します。
-3. Files changed タブで、`research/` 配下に研究ノートが正しく追加・更新され、`automation/gemini-notebook/state/loop_state.json` にダイジェストが記録されていることを確認します。
+2. Commits タブを確認し、GASから新しいコミット（`auto(gemini-loop): relay 1 research updates from Google Drive receipt`）が追加されていることを確認します。
+3. Files changed タブで、`research/2026-10-14-sodTFSuV4zY-software-tour.md` および `automation/gemini-notebook/state/loop_state.json` にダイジェストが記録されていることを確認します。
 
 ### TEST 4: 重複排除テスト（非破壊性の確認）
 1. Drive受信トレイにファイルが残った状態のまま、GASエディタで **`runCloudRelayLoop`** をもう一度 **「実行」** します。
 2. 実行ログを確認します：
-   - `Receipt digest already recorded in loop_state.json (SKIPPED)`
-   - 新たなGitHubコミットが発生せず、スキップされたことを確認します。
+   ```json
+   {
+     "status": "COMPLETED",
+     "relayReport": [
+       {
+         "file": "test_sample_receipt_v1.json",
+         "status": "SKIP_DUPLICATE_ALREADY_COMMITTED_ON_GITHUB"
+       }
+     ]
+   }
+   ```
+   新たなGitHubコミットが発生せず、同一内容の重複保存が防止されたことを確認します。
 
 ### TEST 5: 異常系・安全停止テスト
-1. 不正なテキストファイル（例: メモ帳で `これは壊れたJSONです` とだけ書いたファイル）を受信トレイに置きます。
-2. GASを実行し、プロセス全体がクラッシュせず、エラーがログに記録されて安全に停止することを確認します。
+1. 不正なテキストファイル（例: メモ帳で `これは壊れたJSONです` とだけ書いたファイル `broken.json`）を受信トレイに置きます。
+2. GASエディタで **`runCloudRelayDryRun`** または **`runCloudRelayLoop`** を実行します。
+3. ログで `status: "SKIPPED_NO_RECEIPT"` または `"REJECTED_VALIDATION_BEFORE_GITHUB_WRITE"` となり、プロセス全体がクラッシュせず安全にスキップされることを確認します。
 
 ### TEST 6: PC-OFF時間主導型トリガーの有効化
 1. GASエディタの左メニューにある **「トリガー」**（時計アイコン）をクリックします。

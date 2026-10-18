@@ -2937,8 +2937,14 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         props.getProperty("TARGET_BRANCH") ||
         CONTRACT_SPEC_V1.default_target_branch
     );
+    const isDryRun = Boolean(
+      overrides.dryRun === true ||
+        props.getProperty("DRY_RUN") === "true" ||
+        props.getProperty("DRY_RUN") === "1"
+    );
 
     if (!token || !folderId) {
+
       throw new Error(
         "Missing required Script Properties: GITHUB_FINE_GRAINED_PAT (or GITHUB_PAT) and/or DRIVE_INBOX_FOLDER_ID"
       );
@@ -3055,7 +3061,7 @@ function relayDriveReceiptsToGitHub(envOverrides) {
           evidenceMap: repoState.timestampEvidence || {},
           defaultNotebookUrl:
             (repoState.loopState && repoState.loopState.notebook_url) ||
-            DEFAULT_CANONICAL_NOTEBOOK_URL,
+            CONTRACT_SPEC_V1.default_notebook_url,
         });
       } catch (extractErr) {
         if (isHandoffValidationError_(extractErr)) {
@@ -3139,9 +3145,33 @@ function relayDriveReceiptsToGitHub(envOverrides) {
         continue;
       }
 
+      if (isDryRun) {
+
+        report.push({
+          file: name,
+          digest: digest,
+          status: "DRY_RUN_PREVIEW_ONLY_NO_GITHUB_WRITE",
+          wouldCommit: true,
+          newRecordsCount: plan.newRecordsCount,
+          updatedRecordsCount: plan.updatedRecordsCount,
+          newIds: plan.newIds,
+          updatedIds: plan.updatedIds,
+          skipped: plan.skipped,
+          githubWriteStatus: "PREVIEW_ONLY",
+          notebookSyncStatus: "NOT_SYNCED_FROM_GITHUB",
+          securityPosture: {
+            applicationBranchGuard: "ENFORCED_NON_DEFAULT_ONLY",
+            targetBranch: targetBranch,
+            mainBranchServerProtected: repoState.mainBranchServerProtected,
+          },
+        });
+        continue;
+      }
+
       const commitMsg =
         "feat(gemini-notebook): atomic cloud ingest of verified receipt " +
         digest.slice(0, 12);
+
       const commitRes = commitFilesAtomicallyToGitHub_(
         token,
         targetBranch,
@@ -3254,6 +3284,7 @@ function relayDriveReceiptsToGitHub(envOverrides) {
     const finalBytes = saveBoundedRelayState_(props, relayState);
     const finalOutput = {
       status: "COMPLETED",
+      mode: isDryRun ? "DRY_RUN" : "APPLY",
       targetBranch: targetBranch,
       applicationBranchGuard: "ENFORCED_NON_DEFAULT_ONLY",
       mainBranchServerProtected: repoState.mainBranchServerProtected,
@@ -3277,6 +3308,18 @@ function relayDriveReceiptsToGitHub(envOverrides) {
 }
 
 /**
+ * Dry-Run（書き込み前プレビュー検証）エントリポイント:
+ * Google Drive 内の Receipt を取得・検証・重複照合するが、
+ * GitHub へのコミット・書き込みは一切行わずに安全停止する。
+ * GASエディタから安全に事前検証を行うための公開関数（末尾アンダースコアなし）。
+ */
+function runCloudRelayDryRun(envOverrides) {
+  const overrides = envOverrides || {};
+  overrides.dryRun = true;
+  return relayDriveReceiptsToGitHub(overrides);
+}
+
+/**
  * 手順書 (`PC_OFF_OPERATIONS.md`) との完全互換エントリポイント:
  * 時間主導型トリガーから直接呼び出される関数（公開関数: 末尾アンダースコアなし）。
  * GASのトリガー設定ダイアログ・エディタ実行ドロップダウンに表示されます。
@@ -3284,6 +3327,7 @@ function relayDriveReceiptsToGitHub(envOverrides) {
 function runCloudRelayLoop(envOverrides) {
   return relayDriveReceiptsToGitHub(envOverrides);
 }
+
 
 /**
  * 互換用エイリアス（旧ドキュメント指定用）
@@ -3372,6 +3416,7 @@ if (typeof module !== "undefined" && module.exports) {
     renderGitHubKnowledgeIndexExportMd: renderGitHubKnowledgeIndexExportMd_,
     planReceiptApplication: planReceiptApplication_,
     relayDriveReceiptsToGitHub: relayDriveReceiptsToGitHub,
+    runCloudRelayDryRun: runCloudRelayDryRun,
     runCloudRelayLoop: runCloudRelayLoop,
     runCloudRelayLoop_: runCloudRelayLoop_,
     pullGitHubIndexExportToDriveDoc: pullGitHubIndexExportToDriveDoc,
