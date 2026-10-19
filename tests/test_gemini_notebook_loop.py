@@ -4765,6 +4765,59 @@ process.stdout.write(JSON.stringify(res));
         self.assertTrue(res_c.get("is_full_success"))
         self.assertEqual(res_c.get("readback", {}).get("status"), "SUCCESS_2_SOURCE_OKF")
 
+    def test_post_registration_2_source_independent_verification(self):
+        """登録後に2つのソース（研究ノートOKFと字幕原文OKF）が独立して個別に確認されることを検証する。"""
+        import notebook_auto_ingest as nai
+
+        vid = "indepVid777"
+        url = f"https://www.youtube.com/watch?v={vid}"
+        title = "独立2ソース検証動画"
+        dummy_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        cues = [(0.0, 10.0, "発話1"), (10.0, 20.0, "発話2")]
+
+        # 1. 正常系: 登録後に2つの独立したソースが正しく検出されること
+        res = nai.ingest_and_verify_notebook(
+            video_id=vid,
+            video_url=url,
+            video_title=title,
+            research_md_path=dummy_md,
+            cues=cues,
+            mock_cdp=True,
+            mock_sources=[],
+            add_youtube_source=False,
+        )
+
+        rb = res.get("readback", {})
+        # A. 2つのソースが個別に検出されていること
+        self.assertTrue(res.get("research_note_found"))
+        self.assertTrue(res.get("transcript_source_found"))
+        self.assertTrue(rb.get("research_note_found"))
+        self.assertTrue(rb.get("transcript_source_found"))
+
+        # B. 2つのアイテムインデックスが異なり、別々の独立DOM要素であること（n != t）
+        note_idx = rb.get("research_note_item_index")
+        tr_idx = rb.get("transcript_item_index")
+        self.assertIsNotNone(note_idx)
+        self.assertIsNotNone(tr_idx)
+        self.assertNotEqual(note_idx, tr_idx, "研究ノートと字幕原文は同一要素ではなく別要素であること")
+
+        # C. 独立ソース数と独立フラグの検証
+        self.assertEqual(rb.get("independent_sources_count"), 2)
+        self.assertTrue(rb.get("independent_sources_distinct"))
+        self.assertTrue(res.get("independent_sources_distinct"))
+        self.assertTrue(res.get("is_2_source_okf_verified"))
+        self.assertEqual(res.get("status"), "SUCCESS_2_SOURCE_OKF")
+
+        # 2. 異常系（ネガティブテスト）: 1つの要素に両方のキーワードが混ざっているだけで独立した2要素がない場合
+        # （1要素のみで2要素と誤認してはならない）
+        items_single = [
+            {"index": 0, "text": f"AI_VIDEO_RESEARCH_NOTE:{vid} AI_VIDEO_TRANSCRIPT_RAW:{vid} 混在ソース"}
+        ]
+        independence_res = nai.evaluate_2_source_okf_independence(items_single, vid, title)
+        # 1つのインデックスしか存在しないため、distinct pairs が作れず、is_2_source_okf_verified は False となること
+        self.assertFalse(independence_res.get("is_2_source_okf_verified"), "同一の1要素だけでは2ソース独立判定を拒否すること")
+        self.assertFalse(independence_res.get("independent_sources_distinct"))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

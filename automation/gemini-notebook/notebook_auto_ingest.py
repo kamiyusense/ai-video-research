@@ -540,6 +540,8 @@ def evaluate_2_source_okf_independence(
         "research_note_open_link": note_link,
         "transcript_open_link": tr_link,
         "is_2_source_okf_verified": is_2_source_okf,
+        "independent_sources_count": (1 if note_found else 0) + (1 if transcript_found else 0),
+        "independent_sources_distinct": bool(is_2_source_okf),
     }
 
 
@@ -644,6 +646,8 @@ def readback_notebook_sources_via_cdp(
             "research_note_found": note_found,
             "transcript_source_found": transcript_found,
             "is_2_source_okf_verified": is_2_source_okf,
+            "independent_sources_count": okf_res.get("independent_sources_count", 0),
+            "independent_sources_distinct": okf_res.get("independent_sources_distinct", False),
             "youtube_item_index": okf_res["youtube_item_index"],
             "research_note_item_index": okf_res["research_note_item_index"],
             "transcript_item_index": okf_res["transcript_item_index"],
@@ -1101,6 +1105,8 @@ def ingest_and_verify_notebook(
                 "research_note_found": note_found_post,
                 "transcript_source_found": transcript_found_post,
                 "is_2_source_okf_verified": is_2_source_post,
+                "independent_sources_count": okf_post.get("independent_sources_count", 0),
+                "independent_sources_distinct": okf_post.get("independent_sources_distinct", False),
                 "youtube_item_index": okf_post["youtube_item_index"],
                 "research_note_item_index": okf_post["research_note_item_index"],
                 "transcript_item_index": okf_post["transcript_item_index"],
@@ -1219,8 +1225,9 @@ def ingest_and_verify_notebook(
 
     print(f"[3/3] Notebook Readback検証結果: {readback_res.get('status')}")
     print(f"  - YouTubeソース検出: {readback_res.get('youtube_source_found')}")
-    print(f"  - 研究ノート検出: {readback_res.get('research_note_found')}")
-    print(f"  - 字幕原文OKF検出: {readback_res.get('transcript_source_found')}")
+    print(f"  - 研究ノート検出: {readback_res.get('research_note_found')} (Index: {readback_res.get('research_note_item_index')})")
+    print(f"  - 字幕原文OKF検出: {readback_res.get('transcript_source_found')} (Index: {readback_res.get('transcript_item_index')})")
+    print(f"  - 2ソース独立性確認 (2 distinct items): {readback_res.get('independent_sources_distinct', readback_res.get('is_2_source_okf_verified'))}")
     print(f"  - 2ソースOKF完全立証: {readback_res.get('is_2_source_okf_verified')}")
     if actions_taken:
         print(f"  - 実行したUI追加アクション: {actions_taken}")
@@ -1248,6 +1255,9 @@ def ingest_and_verify_notebook(
         "readback": readback_res,
         "is_full_success": is_full_success,
         "is_2_source_okf_verified": is_2_source_okf,
+        "independent_sources_distinct": readback_res.get("independent_sources_distinct", is_2_source_okf),
+        "independent_sources_count": readback_res.get("independent_sources_count", 0),
+        "research_note_found": readback_res.get("research_note_found", False),
         "transcript_source_found": readback_res.get("transcript_source_found", False),
     }
 
