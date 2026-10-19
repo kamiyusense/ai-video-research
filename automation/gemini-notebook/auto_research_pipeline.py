@@ -545,10 +545,17 @@ def evaluate_final_status(
     no_push: bool,
     is_2_source_okf_verified: bool = False,
     notebook_transcript_readback: bool = False,
+    independent_sources_distinct: bool = True,
+    is_mock: bool = False,
 ) -> Tuple[str, List[str]]:
     """Strictly evaluate whether execution is a full SUCCESS or PARTIAL/FAILED.
     
     Full SUCCESS_2_SOURCE_OKF requires ALL 11 conditions PLUS 2-Source OKF independence.
+    Anti-false-pass rules:
+    - Drive sync alone is NOT sufficient.
+    - Chrome tab detection alone is NOT sufficient.
+    - Double counting of same item is NOT sufficient.
+    - Mock execution is flagged as is_mock=True.
     """
     reasons = []
 
@@ -572,8 +579,10 @@ def evaluate_final_status(
         reasons.append("研究ノートMarkdownが未生成")
     if not notebook_research_readback:
         reasons.append("NotebookLM上の研究ノート追加・読み戻し未完了")
-    if not (is_2_source_okf_verified or notebook_transcript_readback):
+    if not notebook_transcript_readback:
         reasons.append("NotebookLM上の字幕原文OKF独立ソース追加・読み戻し未完了 (1動画2ソースMVP契約未達)")
+    if not (is_2_source_okf_verified and independent_sources_distinct):
+        reasons.append("NotebookLM上の研究ノートOKFと字幕原文OKFが別々の独立した2要素として実画面立証されていない (同一要素二重カウント排除)")
     if not qa_verified:
         reasons.append("自然言語QA検索による第1位検出未検証")
 
@@ -593,10 +602,11 @@ def evaluate_final_status(
         return "PARTIAL_QA_MISMATCH", reasons
     if not notebook_research_readback:
         return "PARTIAL_NOTEBOOK_PENDING", reasons
-    if notebook_youtube_readback and notebook_research_readback and not (is_2_source_okf_verified or notebook_transcript_readback):
+    if not notebook_transcript_readback or not (is_2_source_okf_verified and independent_sources_distinct):
         return "PARTIAL_2_SOURCE_OKF_PENDING", reasons
 
     return "PARTIAL", reasons
+
 
 
 def run_pipeline(
@@ -913,6 +923,8 @@ def run_pipeline(
         no_push=no_push,
         is_2_source_okf_verified=is_2_source_okf_verified,
         notebook_transcript_readback=notebook_transcript_readback,
+        independent_sources_distinct=bool(nb_res.get("independent_sources_distinct", is_2_source_okf_verified)),
+        is_mock=bool(nb_res.get("is_mock", mock_cdp)),
     )
 
     print("=" * 70)
