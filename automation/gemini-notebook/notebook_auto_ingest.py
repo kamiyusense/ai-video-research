@@ -630,7 +630,7 @@ def readback_notebook_sources_via_cdp(
         if is_2_source_okf:
             status = "SUCCESS_2_SOURCE_OKF"
         elif yt_found and note_found:
-            status = "NOTEBOOK_READBACK_PASS"
+            status = "PARTIAL_2_SOURCE_OKF_PENDING"
         elif yt_found or note_found or transcript_found:
             status = "NOTEBOOK_READBACK_PARTIAL"
         else:
@@ -974,6 +974,7 @@ def ingest_and_verify_notebook(
     drive_dir: Path = DEFAULT_NOTEBOOK_SOURCES_DIR,
     cues: Optional[List[Dict[str, Any]]] = None,
     transcript_content: Optional[str] = None,
+    add_youtube_source: bool = True,
 ) -> Dict[str, Any]:
     """Execute complete notebook ingestion workflow: pre-readback, conditional UI ingest & post-readback."""
     print("=" * 60)
@@ -1060,17 +1061,20 @@ def ingest_and_verify_notebook(
             note_found = okf_pre["research_note_found"]
             transcript_found = okf_pre["transcript_source_found"]
 
-            # Ingest missing sources if allowed
+            # Ingest missing sources if allowed (Conforms to 2-Source OKF MVP standard)
             if allow_add:
-                if not yt_found:
-                    current_sources.append(f"https://www.youtube.com/watch?v={video_id}")
-                    actions_taken.append("YOUTUBE_URL_INSERTED")
+                # Mandatory 2-Source 1/2: Research Note OKF
                 if not note_found:
                     current_sources.append(f"AI_VIDEO_RESEARCH_NOTE:{video_id}")
                     actions_taken.append("COPIED_TEXT_NOTE_INSERTED")
-                if not transcript_found and cues is not None:
+                # Mandatory 2-Source 2/2: Transcript OKF
+                if not transcript_found:
                     current_sources.append(f"AI_VIDEO_TRANSCRIPT_RAW:{video_id}")
                     actions_taken.append("TRANSCRIPT_OKF_INSERTED")
+                # Optional reference: YouTube URL source
+                if add_youtube_source and not yt_found:
+                    current_sources.append(f"https://www.youtube.com/watch?v={video_id}")
+                    actions_taken.append("YOUTUBE_URL_INSERTED")
 
             # Post-readback
             post_items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
@@ -1083,7 +1087,7 @@ def ingest_and_verify_notebook(
             if is_2_source_post:
                 status = "SUCCESS_2_SOURCE_OKF"
             elif yt_found_post and note_found_post:
-                status = "NOTEBOOK_READBACK_PASS"
+                status = "PARTIAL_2_SOURCE_OKF_PENDING"
             elif yt_found_post or note_found_post or transcript_found_post:
                 status = "NOTEBOOK_READBACK_PARTIAL"
             else:
@@ -1143,16 +1147,7 @@ def ingest_and_verify_notebook(
                     transcript_already = pre_rb.get("transcript_source_found", False)
 
                     if allow_add:
-                        # Step B: Add missing YouTube source if not present
-                        if not yt_already:
-                            print(f"  - [CDP ACTION] YouTube URLソースを追加します: {video_url}")
-                            yt_add_res = add_youtube_source_via_cdp(client, notebook_tab, video_id, video_url)
-                            actions_taken.append({"action": "ADD_YOUTUBE", "result": yt_add_res})
-                            time.sleep(2.0)
-                        else:
-                            print("  - [CDP SKIP] YouTube URLソースは既に登録済みです。")
-
-                        # Step C: Add missing Research Note if not present
+                        # Step 1: Add missing Research Note OKF if not present (Mandatory 2-Source 1/2)
                         if not note_already:
                             print(f"  - [CDP ACTION] 研究ノート(Copied text)を追加します: AI_VIDEO_RESEARCH_NOTE:{video_id}")
                             note_content = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
@@ -1167,7 +1162,7 @@ def ingest_and_verify_notebook(
                         else:
                             print("  - [CDP SKIP] 研究ノートソースは既に登録済みです。")
 
-                        # Step D: Add missing Transcript OKF source if not present
+                        # Step 2: Add missing Transcript OKF source if not present (Mandatory 2-Source 2/2)
                         if not transcript_already:
                             print(f"  - [CDP ACTION] 字幕原文OKF(Copied text)を追加します: AI_VIDEO_TRANSCRIPT_RAW:{video_id}")
                             tr_add_res = add_transcript_source_via_cdp(
@@ -1180,6 +1175,15 @@ def ingest_and_verify_notebook(
                             time.sleep(2.0)
                         else:
                             print("  - [CDP SKIP] 字幕原文OKFソースは既に登録済みです。")
+
+                        # Step 3: Add missing YouTube source if not present (Optional reference)
+                        if add_youtube_source and not yt_already:
+                            print(f"  - [CDP ACTION] YouTube URLソースを追加します: {video_url}")
+                            yt_add_res = add_youtube_source_via_cdp(client, notebook_tab, video_id, video_url)
+                            actions_taken.append({"action": "ADD_YOUTUBE", "result": yt_add_res})
+                            time.sleep(2.0)
+                        elif yt_already:
+                            print("  - [CDP SKIP] YouTube URLソースは既に登録済みです。")
                     else:
                         print("  - [CDP SKIP] allow_add=False のため追加操作をスキップします。")
 
@@ -1222,15 +1226,15 @@ def ingest_and_verify_notebook(
     is_2_source_okf = readback_res.get("is_2_source_okf_verified", False)
     is_full_success = (
         drive_res.get("status") == "DRIVE_SYNC_SUCCESS"
-        and (
-            is_2_source_okf
-            or (readback_res.get("youtube_source_found") is True and readback_res.get("research_note_found") is True)
-        )
+        and is_2_source_okf
     )
 
-    final_status = "SUCCESS_2_SOURCE_OKF" if (is_full_success and is_2_source_okf) else (
-        "NOTEBOOK_REGISTRATION_VERIFIED" if is_full_success else "NOTEBOOK_SYNC_PENDING_READBACK"
-    )
+    if is_full_success and is_2_source_okf:
+        final_status = "SUCCESS_2_SOURCE_OKF"
+    elif readback_res.get("youtube_source_found") and readback_res.get("research_note_found"):
+        final_status = "PARTIAL_2_SOURCE_OKF_PENDING"
+    else:
+        final_status = "NOTEBOOK_SYNC_PENDING_READBACK"
 
     return {
         "status": final_status,
@@ -1248,11 +1252,14 @@ def ingest_and_verify_notebook(
 
 def build_parser() -> argparse.ArgumentParser:
     """Build command line argument parser."""
-    parser = argparse.ArgumentParser(description="Gemini Notebook 自動登録・読み戻しモジュール v3.0")
+    parser = argparse.ArgumentParser(description="Gemini Notebook 自動登録・読み戻しモジュール (2-Source OKF) v3.1")
     parser.add_argument("video_id", nargs="?", default=None, help="登録対象のYouTube動画ID (--launch-chrome時は省略可)")
     parser.add_argument("--url", help="YouTube動画URL", default=None)
     parser.add_argument("--title", help="動画タイトル", default="YouTube動画")
     parser.add_argument("--research-md", help="研究ノートMarkdownファイルのパス", default=None)
+    parser.add_argument("--transcript-file", help="字幕原文Markdown/テキストファイルのパス", default=None)
+    parser.add_argument("--transcript-text", help="字幕原文テキスト", default=None)
+    parser.add_argument("--skip-youtube-url", action="store_true", help="YouTube URLソース追加をスキップし2ソースのみ登録")
     parser.add_argument("--launch-chrome", action="store_true", help="専用プロファイルでChromeを起動する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
     return parser
@@ -1272,11 +1279,20 @@ def main(args_list: Optional[List[str]] = None) -> int:
 
     v_url = args.url or f"https://www.youtube.com/watch?v={args.video_id}"
     md_p = Path(args.research_md) if args.research_md else Path(f"research/{args.video_id}.md")
+
+    tr_content = args.transcript_text
+    if not tr_content and args.transcript_file:
+        tr_p = Path(args.transcript_file)
+        if tr_p.exists():
+            tr_content = tr_p.read_text(encoding="utf-8")
+
     res = ingest_and_verify_notebook(
         video_id=args.video_id,
         video_url=v_url,
         video_title=args.title,
         research_md_path=md_p,
+        transcript_content=tr_content,
+        add_youtube_source=not args.skip_youtube_url,
         mock_cdp=args.mock_cdp,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))

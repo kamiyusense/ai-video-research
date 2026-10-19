@@ -42,7 +42,7 @@ class TestNotebookAutoIngest(unittest.TestCase):
             self.assertTrue(any(f.name.endswith("_transcript_okf.md") for f in files))
 
     def test_ingest_and_verify_readback_pass(self):
-        """Mock mode: Both YouTube and Research Note present results in is_full_success=True."""
+        """Mock mode: Research Note and Transcript OKF present results in SUCCESS_2_SOURCE_OKF and is_full_success=True."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             fake_md = tmp_path / "note.md"
@@ -54,13 +54,38 @@ class TestNotebookAutoIngest(unittest.TestCase):
                 video_title="Dummy Video",
                 research_md_path=fake_md,
                 mock_cdp=True,
-                mock_sources=["dummy123456", "研究ノート_dummy123456"],
+                mock_sources=["dummy123456", "AI_VIDEO_RESEARCH_NOTE:dummy123456", "AI_VIDEO_TRANSCRIPT_RAW:dummy123456"],
                 drive_dir=tmp_path / "drive_sync",
             )
-            self.assertEqual(res["status"], "NOTEBOOK_REGISTRATION_VERIFIED")
+            self.assertEqual(res["status"], "SUCCESS_2_SOURCE_OKF")
             self.assertTrue(res["is_full_success"])
+            self.assertTrue(res["readback"]["research_note_found"])
+            self.assertTrue(res["readback"]["transcript_source_found"])
+            self.assertTrue(res["is_2_source_okf_verified"])
+
+    def test_ingest_and_verify_partial_when_transcript_missing(self):
+        """Mock mode: Only YouTube and Research Note (missing Transcript OKF) results in PARTIAL_2_SOURCE_OKF_PENDING."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            fake_md = tmp_path / "note.md"
+            fake_md.write_text("dummy note", encoding="utf-8")
+
+            res = notebook_auto_ingest.ingest_and_verify_notebook(
+                video_id="dummy123456",
+                video_url="https://www.youtube.com/watch?v=dummy123456",
+                video_title="Dummy Video",
+                research_md_path=fake_md,
+                mock_cdp=True,
+                mock_sources=["dummy123456", "AI_VIDEO_RESEARCH_NOTE:dummy123456"],
+                allow_add=False,
+                drive_dir=tmp_path / "drive_sync",
+            )
+            self.assertEqual(res["status"], "PARTIAL_2_SOURCE_OKF_PENDING")
+            self.assertFalse(res["is_full_success"])
             self.assertTrue(res["readback"]["youtube_source_found"])
             self.assertTrue(res["readback"]["research_note_found"])
+            self.assertFalse(res["readback"]["transcript_source_found"])
+            self.assertFalse(res["is_2_source_okf_verified"])
 
     def test_ingest_and_verify_readback_fail(self):
         """Mock mode: Missing YouTube or Note results in is_full_success=False."""
@@ -165,13 +190,13 @@ class TestNotebookAutoIngest(unittest.TestCase):
             notebook_auto_ingest.MinimalWebSocket = orig_cls
 
     def test_ingest_adds_missing_sources_conditionally(self):
-        """不足しているソースだけが追加され、両方揃っていれば追加が走らないこと。"""
+        """不足しているソースだけが追加され、2ソースが揃っていれば追加が走らないこと。"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
             fake_md = tmp_path / "note.md"
             fake_md.write_text("dummy note", encoding="utf-8")
 
-            # Case A: Only YouTube exists -> adds Copied text note only
+            # Case A: Only YouTube exists -> adds Research Note and Transcript OKF
             res_partial_yt = notebook_auto_ingest.ingest_and_verify_notebook(
                 video_id="vidA",
                 video_url="https://www.youtube.com/watch?v=vidA",
@@ -181,21 +206,26 @@ class TestNotebookAutoIngest(unittest.TestCase):
                 mock_sources=["https://www.youtube.com/watch?v=vidA"],
                 drive_dir=tmp_path / "drive_sync",
             )
-            self.assertEqual(res_partial_yt["status"], "NOTEBOOK_REGISTRATION_VERIFIED")
+            self.assertEqual(res_partial_yt["status"], "SUCCESS_2_SOURCE_OKF")
             self.assertIn("COPIED_TEXT_NOTE_INSERTED", res_partial_yt["actions_taken"])
+            self.assertIn("TRANSCRIPT_OKF_INSERTED", res_partial_yt["actions_taken"])
             self.assertNotIn("YOUTUBE_URL_INSERTED", res_partial_yt["actions_taken"])
 
-            # Case B: Both already exist -> no additions taken
+            # Case B: Both 2-sources already exist -> no additions taken
             res_both = notebook_auto_ingest.ingest_and_verify_notebook(
                 video_id="vidB",
                 video_url="https://www.youtube.com/watch?v=vidB",
                 video_title="Video B",
                 research_md_path=fake_md,
                 mock_cdp=True,
-                mock_sources=["https://www.youtube.com/watch?v=vidB", "AI_VIDEO_RESEARCH_NOTE:vidB"],
+                mock_sources=[
+                    "https://www.youtube.com/watch?v=vidB",
+                    "AI_VIDEO_RESEARCH_NOTE:vidB",
+                    "AI_VIDEO_TRANSCRIPT_RAW:vidB",
+                ],
                 drive_dir=tmp_path / "drive_sync",
             )
-            self.assertEqual(res_both["status"], "NOTEBOOK_REGISTRATION_VERIFIED")
+            self.assertEqual(res_both["status"], "SUCCESS_2_SOURCE_OKF")
             self.assertEqual(len(res_both["actions_taken"]), 0, "No actions should be taken when both exist")
 
     def test_cli_launch_chrome_without_video_id(self):

@@ -568,17 +568,15 @@ def evaluate_final_status(
         reasons.append(f"公式モデル gemini-3.8-flash が未使用 (model: {model_used})")
     if not research_note_generated:
         reasons.append("研究ノートMarkdownが未生成")
-    if not notebook_youtube_readback:
-        reasons.append("NotebookLM上のYouTubeソース追加・読み戻し未完了")
     if not notebook_research_readback:
         reasons.append("NotebookLM上の研究ノート追加・読み戻し未完了")
+    if not (is_2_source_okf_verified or notebook_transcript_readback):
+        reasons.append("NotebookLM上の字幕原文OKF独立ソース追加・読み戻し未完了 (1動画2ソースMVP契約未達)")
     if not qa_verified:
         reasons.append("自然言語QA検索による第1位検出未検証")
 
     if not reasons:
-        if is_2_source_okf_verified:
-            return "SUCCESS_2_SOURCE_OKF", []
-        return "SUCCESS", []
+        return "SUCCESS_2_SOURCE_OKF", []
 
     # Map to specific PARTIAL status
     if not real_content_acquired:
@@ -587,12 +585,14 @@ def evaluate_final_status(
         return "PARTIAL_NO_PUSH", reasons
     if engine_used == "LOCAL_TRANSCRIPT_EXTRACTION":
         return "PARTIAL_LOCAL_EXTRACTION", reasons
-    if not (notebook_youtube_readback and notebook_research_readback):
-        return "PARTIAL_NOTEBOOK_PENDING", reasons
-    if not qa_verified:
-        return "PARTIAL_QA_MISMATCH", reasons
     if not (remote_research_readback_matched and remote_registry_readback_matched):
         return "PARTIAL_READBACK_MISMATCH", reasons
+    if not qa_verified:
+        return "PARTIAL_QA_MISMATCH", reasons
+    if not notebook_research_readback:
+        return "PARTIAL_NOTEBOOK_PENDING", reasons
+    if notebook_youtube_readback and notebook_research_readback and not (is_2_source_okf_verified or notebook_transcript_readback):
+        return "PARTIAL_2_SOURCE_OKF_PENDING", reasons
 
     return "PARTIAL", reasons
 

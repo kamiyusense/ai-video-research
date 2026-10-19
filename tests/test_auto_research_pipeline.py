@@ -22,7 +22,7 @@ class TestAutoResearchPipeline(unittest.TestCase):
         self.assertEqual(auto_research_pipeline.DEFAULT_GEMINI_MODEL, "gemini-3.8-flash")
 
     def test_evaluate_final_status_full_success(self):
-        """All 11 conditions satisfied results in SUCCESS."""
+        """All conditions satisfied with 2-Source OKF results in SUCCESS_2_SOURCE_OKF."""
         status, reasons = auto_research_pipeline.evaluate_final_status(
             real_content_acquired=True,
             engine_used="GEMINI_API_LIVE",
@@ -36,12 +36,14 @@ class TestAutoResearchPipeline(unittest.TestCase):
             notebook_research_readback=True,
             qa_verified=True,
             no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
         )
-        self.assertEqual(status, "SUCCESS")
+        self.assertEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(len(reasons), 0)
 
-    def test_notebook_unregistered_not_success(self):
-        """2. Notebook未登録（YouTubeまたは研究ノート未確認）ではSUCCESSにならない。"""
+    def test_evaluate_final_status_partial_when_transcript_missing(self):
+        """Only YouTube and Note without Transcript OKF results in PARTIAL_2_SOURCE_OKF_PENDING."""
         status, reasons = auto_research_pipeline.evaluate_final_status(
             real_content_acquired=True,
             engine_used="GEMINI_API_LIVE",
@@ -51,12 +53,34 @@ class TestAutoResearchPipeline(unittest.TestCase):
             remote_head_matched=True,
             remote_research_readback_matched=True,
             remote_registry_readback_matched=True,
-            notebook_youtube_readback=False,  # Unregistered
+            notebook_youtube_readback=True,
             notebook_research_readback=True,
             qa_verified=True,
             no_push=False,
+            is_2_source_okf_verified=False,
+            notebook_transcript_readback=False,
         )
-        self.assertNotEqual(status, "SUCCESS")
+        self.assertEqual(status, "PARTIAL_2_SOURCE_OKF_PENDING")
+        self.assertTrue(any("字幕原文OKF" in r for r in reasons))
+
+    def test_notebook_unregistered_not_success(self):
+        """2. Notebook未登録（研究ノート未確認）ではSUCCESSにならない。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=False,  # Unregistered Note
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=False,
+        )
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(status, "PARTIAL_NOTEBOOK_PENDING")
         self.assertTrue(any("NotebookLM" in r for r in reasons))
 
@@ -115,8 +139,10 @@ class TestAutoResearchPipeline(unittest.TestCase):
             notebook_research_readback=True,
             qa_verified=True,
             no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
         )
-        self.assertNotEqual(status, "SUCCESS")
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(status, "PARTIAL_READBACK_MISMATCH")
         self.assertTrue(any("registry.json" in r for r in reasons))
 
@@ -231,8 +257,8 @@ class TestAutoResearchPipeline(unittest.TestCase):
             "https://www.youtube.com/watch?v=u3ka_AAb8qE",
             mock_cdp=True,
         )
-        self.assertIn(res.get("status"), ("RESUMED_NOTEBOOK_INGEST", "ALREADY_REGISTERED"))
-        if res.get("status") == "RESUMED_NOTEBOOK_INGEST":
+        self.assertIn(res.get("status"), ("RESUMED_NOTEBOOK_INGEST", "ALREADY_REGISTERED", "SUCCESS_2_SOURCE_OKF"))
+        if res.get("status") in ("RESUMED_NOTEBOOK_INGEST", "SUCCESS_2_SOURCE_OKF"):
             self.assertIn("notebook_ingest", res)
 
     def test_short_description_only_does_not_satisfy_real_content_acquired(self):
@@ -250,8 +276,10 @@ class TestAutoResearchPipeline(unittest.TestCase):
             notebook_research_readback=True,
             qa_verified=True,
             no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
         )
-        self.assertNotEqual(status, "SUCCESS")
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(status, "PARTIAL_NO_SUBTITLES")
         self.assertTrue(any("字幕" in r for r in reasons))
 
@@ -264,30 +292,38 @@ class TestAutoResearchPipeline(unittest.TestCase):
         self.assertNotIn("videos", reg_data, "registry.json does not use 'videos' at root")
 
     def test_resume_with_two_sources_does_not_readd(self):
-        """ALREADY_REGISTERED時にNotebook2ソース存在なら再追加せず完了すること。"""
+        """ALREADY_REGISTERED時にNotebook2ソース（字幕原文OKF＋研究ノートOKF）存在なら再追加せず完了すること。"""
         res_md = ROOT / "research" / "2026-10-10-lC5jxpYmatE-ai-techniques.md"
         nb_res = auto_research_pipeline.run_notebook_registration_only(
             video_id="lC5jxpYmatE",
             research_md_path=res_md,
             video_title="Test Video",
             mock_cdp=True,
-            mock_sources=["https://www.youtube.com/watch?v=lC5jxpYmatE", "AI_VIDEO_RESEARCH_NOTE:lC5jxpYmatE"],
+            mock_sources=[
+                "https://www.youtube.com/watch?v=lC5jxpYmatE",
+                "AI_VIDEO_RESEARCH_NOTE:lC5jxpYmatE",
+                "AI_VIDEO_TRANSCRIPT_RAW:lC5jxpYmatE",
+            ],
         )
         self.assertTrue(nb_res.get("is_full_success"))
         self.assertEqual(len(nb_res.get("actions_taken", [])), 0, "No actions should be taken when both exist")
 
     def test_resume_adds_only_missing_source(self):
-        """ALREADY_REGISTERED時に片方不足なら不足側だけ追加されること。"""
+        """ALREADY_REGISTERED時に字幕原文OKFが不足なら不足側だけ追加されること。"""
         res_md = ROOT / "research" / "2026-10-10-lC5jxpYmatE-ai-techniques.md"
         nb_res = auto_research_pipeline.run_notebook_registration_only(
             video_id="lC5jxpYmatE",
             research_md_path=res_md,
             video_title="Test Video",
             mock_cdp=True,
-            mock_sources=["https://www.youtube.com/watch?v=lC5jxpYmatE"],  # Note is missing
+            mock_sources=[
+                "https://www.youtube.com/watch?v=lC5jxpYmatE",
+                "AI_VIDEO_RESEARCH_NOTE:lC5jxpYmatE",
+            ],  # Transcript OKF is missing
         )
         self.assertTrue(nb_res.get("is_full_success"))
-        self.assertIn("COPIED_TEXT_NOTE_INSERTED", nb_res.get("actions_taken", []))
+        self.assertIn("TRANSCRIPT_OKF_INSERTED", nb_res.get("actions_taken", []))
+        self.assertNotIn("COPIED_TEXT_NOTE_INSERTED", nb_res.get("actions_taken", []))
         self.assertNotIn("YOUTUBE_URL_INSERTED", nb_res.get("actions_taken", []))
 
     def test_cli_exit_code_resumed_notebook_ingest_is_zero(self):
