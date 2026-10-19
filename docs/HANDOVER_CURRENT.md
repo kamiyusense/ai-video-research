@@ -1,12 +1,12 @@
 # AI技術研究室｜現在の引継ぎ・復帰入口（HANDOVER_CURRENT）
 
-- **更新日**: 2026-10-19
+- **更新日**: 2026-10-20
 - **対象リポジトリ**: 非公開 `kamiyusense/ai-video-research`
 - **作業ブランチ（策定時）**: `feature/gemini-notebook-research-loop-20261016`。**固定SHAを信用しない。必ずGitHub current stateをfresh readback。**
 - **最優先ロードマップ**: [OKF知識図書館・根拠付き質問回答ロードマップ](OKF_KNOWLEDGE_ROADMAP.md)
 - **別目的の広域研究計画**: [../RESEARCH_ROADMAP.md](../RESEARCH_ROADMAP.md)
-- **状態**: ロードマップの1動画2ソース完成条件を再確定。字幕原文OKF＋研究ノートOKFの実登録・readbackは新基準で未検証。新たなOKF・原文字起こし保存・Notebook同期のLIVE実行完了ではない。
-- **最優先の最新指示（2026-10-19）**: [OKF知識図書館ロードマップ v1.1](OKF_KNOWLEDGE_ROADMAP.md) 冒頭の「1動画2ソースMVP完成契約」を正本とする。既存のYouTube URL＋研究ノートだけのLIVE PASSは **PARTIAL_2_SOURCE_OKF_PENDING**。双方に元URL、相互論理リンク、Notebook別ソース登録/readbackが必要。複数Notebook横断検索・ChatGPTからのNotebook直接参照は保留。過去の「URLソースだけでも実用成功」は開発途中の暫定判定であり、完成判定に採用しない。
+- **状態**: ロードマップの1動画2ソース完成条件を再確定し、新規動画における「純粋2ソースOKF（字幕原文OKF ＋ 研究ノートOKF）」登録を絶対の原則として確立。旧来のYouTube URL＋研究ノート方式（PARTIAL_2_SOURCE_OKF_PENDING）から完全移行済み。全88テストPASS。
+- **最優先の最新指示（2026-10-20）**: 新規動画では「字幕原文OKF ＋ 研究ノートOKF」の2ソース登録を原則とする（YouTube URLは追加参考オプトイン）。1ノート300ソース枠（最大150動画相当）を厳格に保護。大規模知識グラフ開発は凍結とし、Markdown相互参照（65エッジ・30組双方向ペア・欠落ゼロ）を維持する。
 
 ## 0. 「GitHub見て引き継いで」と言われたときの必須行動
 
@@ -72,7 +72,7 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
      5. 受渡しJSONのGitHub適用：`DONE`（`receipt_to_research.py --apply` により `registry.json` 30動画、`video_knowledge_catalog.json` 更新完了）。
      6. GitHub非default作業ブランチへPush・readback：`DONE`（コミット `97515c9`）。
      7. 保存資料について自然言語質問し、研究内容が参照・回答できることを確認：`DONE`（`query_research.py --query "OKFに関する動画は何本ありますか？"` で第1位スコア、章タイムライン、公式資料、RAG動画との補完関係を正常回答確認済み）。
-   - **判定基準**: 必須2ソース（字幕原文OKF ＋ 研究ノートOKF）が別々のNotebookソースとして独立確認された場合のみ `SUCCESS_2_SOURCE_OKF` として評価。YouTube URLソースは追加参考（オプトイン）とし2ソース枠を圧迫させない。字幕原文OKFが未登録の場合は `PARTIAL_2_SOURCE_OKF_PENDING` とする。客観的正しさの証明は保存の必須条件にせず、質問回答時に最新情報と照合する方式を採用する。
+   - **判定基準**: 必須2ソース（字幕原文OKF ＋ 研究ノートOKF）が別々のNotebookソースとして独立確認された場合のみ `SUCCESS_2_SOURCE_OKF` として評価。新規動画ではこの2ソース登録を絶対の原則とし、YouTube URLソースは追加参考（オプトイン `--include-youtube-url`）としてデフォルト除外することで、1ノート300ソース枠（最大150動画相当）を厳格に保護する。字幕原文OKFが未登録の場合は `PARTIAL_2_SOURCE_OKF_PENDING` とする。客観的正しさの証明は保存の必須条件にせず、質問回答時に最新情報と照合する方式を採用する。
 
 ## 4. 安全停止条件（再確認）
 

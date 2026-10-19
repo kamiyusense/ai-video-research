@@ -86,3 +86,12 @@ AIが目標として定めた方針とユーザーの希望に認識のズレを
 5. **第2防衛線（保存直前）**: 保存直前にも既存の全ブランチ横断重複チェック（`planReceiptApplication_`）を実行し、二重保存を防止する。
 6. **読み戻し確認**: 保存後はGitHubのHEADおよびファイル内容を読み戻して完了確認を行う。
 
+## 2026-10-20 新規動画における2ソース登録原則（純粋2ソースOKF方式）
+
+今後新たに取り込む新規動画（インテーク〜研究〜保存〜Notebook登録）においては、旧来の「YouTube URL ＋ 研究ノート」方式ではなく、**「字幕原文OKF（`AI_VIDEO_TRANSCRIPT_RAW:<video_id>`）」と「研究ノートOKF（`AI_VIDEO_RESEARCH_NOTE:<video_id>`）」の2つの独立資料をNotebookへ登録することを絶対の基本原則とする**。
+
+1. **純粋2ソース登録の徹底**: 新規動画のNotebook登録は、YouTube URLソースをデフォルト除外とし、純粋な「字幕原文OKF（Copied text）」と「研究ノートOKF（Copied text）」の2ソースのみを登録する（YouTube URLは追加参考が必要な場合のみ `--include-youtube-url` でオプトイン可能）。
+2. **300ソース枠の最適化**: 1ノート上限300ソースの環境において、1動画あたり2ソース（最大150動画相当）の消費に厳格に抑え、ソース枠の枯渇を防ぐ。
+3. **完成判定基準**: 読み戻し（Readback）において、「研究ノート」と「字幕原文OKF」の双方が独立して確認された場合のみ `SUCCESS_2_SOURCE_OKF` と判定する。YouTube URL＋研究ノートのみの場合は `PARTIAL_2_SOURCE_OKF_PENDING`（暫定状態）として区別する。
+4. **著作権・規約境界**: 字幕全文はGitHubへ保存せず（Notebook/Drive配置のみ）、研究ノートのみをGitHub正本に保存する。
+

@@ -4597,6 +4597,65 @@ process.stdout.write(JSON.stringify(res));
         self.assertTrue(len(p_to_u) == 1 and p_to_u[0]["relation"] == "COMPLEMENTS" and p_to_u[0]["status"] == "CONFIRMED")
         self.assertTrue(len(u_to_p) == 1 and u_to_p[0]["relation"] == "COMPLEMENTS" and u_to_p[0]["status"] == "CONFIRMED")
 
+    def test_new_video_pure_2_source_okf_default_principle(self):
+        """新規動画における純粋2ソースOKF（字幕原文OKF ＋ 研究ノートOKF）登録原則の検証。"""
+        import notebook_auto_ingest as nai
+        import auto_research_pipeline as arp
+
+        test_vid = "newVid999"
+        test_url = f"https://www.youtube.com/watch?v={test_vid}"
+        test_title = "新規動画2ソース原則テスト"
+        dummy_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        test_cues = [(0.0, 10.0, "テスト発話その1"), (10.0, 20.0, "テスト発話その2")]
+
+        # 1. デフォルト (add_youtube_source=False) での新規動画登録シミュレーション
+        # 初期状態: Notebookにソースが何も登録されていない新規状態
+        res = nai.ingest_and_verify_notebook(
+            video_id=test_vid,
+            video_url=test_url,
+            video_title=test_title,
+            research_md_path=dummy_md,
+            cues=test_cues,
+            mock_cdp=True,
+            mock_sources=[],  # 新規動画なので最初は空
+            add_youtube_source=False,  # 新規動画の標準原則: YouTube URLはデフォルト追加しない
+        )
+
+        # 2. アクションの検証: YouTube URLは追加されず、純粋な2ソース（研究ノートOKF＋字幕原文OKF）のみ追加される
+        actions = res.get("actions_taken", [])
+        self.assertNotIn("YOUTUBE_URL_INSERTED", actions)
+        self.assertIn("COPIED_TEXT_NOTE_INSERTED", actions)
+        self.assertIn("TRANSCRIPT_OKF_INSERTED", actions)
+        self.assertEqual(len(actions), 2)
+
+        # 3. 2ソースOKF完全立証とステータスの検証
+        self.assertTrue(res.get("is_2_source_okf_verified"))
+        self.assertTrue(res.get("is_full_success"))
+        self.assertEqual(res.get("readback", {}).get("status"), "SUCCESS_2_SOURCE_OKF")
+        self.assertFalse(res.get("readback", {}).get("youtube_source_found"))
+        self.assertTrue(res.get("readback", {}).get("research_note_found"))
+        self.assertTrue(res.get("readback", {}).get("transcript_source_found"))
+
+        # 4. auto_research_pipeline の evaluate_final_status でも SUCCESS_2_SOURCE_OKF と判定されること
+        status, reasons = arp.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=False,  # YouTube URLソースなし（純粋2ソース）
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
+        )
+        self.assertEqual(status, "SUCCESS_2_SOURCE_OKF")
+        self.assertEqual(reasons, [])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

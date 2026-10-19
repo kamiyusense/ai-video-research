@@ -499,6 +499,7 @@ def run_notebook_registration_only(
     mock_cdp: bool = False,
     mock_sources: Optional[List[str]] = None,
     cues: Optional[List[Any]] = None,
+    include_youtube_url: bool = False,
 ) -> Dict[str, Any]:
     """Resume notebook registration for videos already committed to GitHub."""
     print(f"\n[RESUME NOTEBOOK INGEST] GitHub登録済み動画 '{video_id}' のNotebook登録状態を確認・再開します。")
@@ -524,6 +525,7 @@ def run_notebook_registration_only(
         cues=cues,
         mock_cdp=mock_cdp,
         mock_sources=mock_sources,
+        add_youtube_source=include_youtube_url,
     )
     return nb_res
 
@@ -607,6 +609,7 @@ def run_pipeline(
     enable_live_gemini: bool = False,
     relay_via_drive: bool = False,
     mock_cdp: bool = False,
+    include_youtube_url: bool = False,
 ) -> Dict[str, Any]:
     """Execute complete automated research pipeline from URL to GitHub commit & verification."""
     today_str = date.today().isoformat()
@@ -649,6 +652,7 @@ def run_pipeline(
                 research_md_path=res_path,
                 video_title=dedup_res.get("title", f"YouTube Video {video_id}"),
                 mock_cdp=mock_cdp,
+                include_youtube_url=include_youtube_url,
             )
             actions = nb_res.get("actions_taken", [])
             is_2_source = nb_res.get("is_2_source_okf_verified", False)
@@ -885,6 +889,7 @@ def run_pipeline(
         research_md_path=ROOT / research_md_path,
         cues=cues_for_ingest,
         mock_cdp=mock_cdp,
+        add_youtube_source=include_youtube_url,
     )
     nb_rb = nb_res.get("readback", {})
     notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
@@ -962,6 +967,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--enable-live-gemini", action="store_true", help="Gemini APIのLIVE実行を明示的に許可する（デフォルトは安全のため無効）")
     parser.add_argument("--relay-via-drive", action="store_true", help="ローカルGit Pushを行わずDrive配置によるGASリレーを優先する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
+    parser.add_argument("--include-youtube-url", action="store_true", help="YouTube URLソースもNotebookへ追加登録する（デフォルトは字幕原文OKF＋研究ノートOKFの純粋2ソース登録原則）")
     args = parser.parse_args(args_list)
 
     inbox_p = Path(args.drive_inbox) if args.drive_inbox else None
@@ -975,6 +981,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
         enable_live_gemini=args.enable_live_gemini,
         relay_via_drive=args.relay_via_drive,
         mock_cdp=args.mock_cdp,
+        include_youtube_url=args.include_youtube_url,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("status") in SUCCESS_CLI_STATUSES else 1
