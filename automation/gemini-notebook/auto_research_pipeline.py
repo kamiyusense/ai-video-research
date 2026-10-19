@@ -716,7 +716,8 @@ def run_pipeline(
             remote_md_sample = subprocess.check_output(
                 ["git", "show", f"origin/{current_branch}:{research_md_path}"],
                 cwd=ROOT,
-                text=True,
+                encoding="utf-8",
+                errors="replace",
             )
             local_md_sample = (ROOT / research_md_path).read_text(encoding="utf-8")
             if compute_sha256(remote_md_sample) == compute_sha256(local_md_sample):
@@ -724,15 +725,16 @@ def run_pipeline(
                 print(f"  - リモート研究ノート本文SHA-256一致検証成功: {research_md_path}")
             else:
                 print(f"  - [WARNING] リモート研究ノート本文SHA-256不一致")
-        except subprocess.CalledProcessError as cpe:
-            print(f"  - [WARNING] リモート研究ノート本文読み戻し失敗: {cpe}")
+        except Exception as ex:
+            print(f"  - [WARNING] リモート研究ノート本文読み戻し失敗: {ex}")
 
         # Remote registry.json content readback & SHA-256 comparison
         try:
             remote_reg_sample = subprocess.check_output(
                 ["git", "show", f"origin/{current_branch}:registry.json"],
                 cwd=ROOT,
-                text=True,
+                encoding="utf-8",
+                errors="replace",
             )
             local_reg_sample = (ROOT / "registry.json").read_text(encoding="utf-8")
             if compute_sha256(remote_reg_sample) == compute_sha256(local_reg_sample):
@@ -740,8 +742,8 @@ def run_pipeline(
                 print(f"  - リモートregistry.json本文SHA-256一致検証成功")
             else:
                 print(f"  - [WARNING] リモートregistry.json本文SHA-256不一致")
-        except subprocess.CalledProcessError as cpe:
-            print(f"  - [WARNING] リモートregistry.json読み戻し失敗: {cpe}")
+        except Exception as ex:
+            print(f"  - [WARNING] リモートregistry.json読み戻し失敗: {ex}")
 
     # 7. QA System self-verification via official answer_question API
     print("[7/8] 自然言語QA検索エンジンでの動作実証中...")
