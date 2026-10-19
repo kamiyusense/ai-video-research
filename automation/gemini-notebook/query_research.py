@@ -401,6 +401,101 @@ def get_provenance_info(timestamp_source):
     }
 
 
+def parse_yaml_scalar(val_str):
+    """YAMLスカラー値を安全にPython型にパースする（依存パッケージなし）。"""
+    s = val_str.strip()
+    if not s:
+        return ""
+    if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
+        try:
+            return json.loads(s)
+        except Exception:
+            return s[1:-1]
+    if s.lower() == "true":
+        return True
+    if s.lower() == "false":
+        return False
+    if s.lower() in ("null", "none", "~"):
+        return None
+    try:
+        if "." in s:
+            return float(s)
+        return int(s)
+    except ValueError:
+        pass
+    return s
+
+
+def parse_yaml_frontmatter(text):
+    """OKF v0.2のYAMLフロントマター（先頭の --- から ---）を安全にパースする。"""
+    if not text.startswith("---"):
+        return None, text
+    m = re.match(r"^---\r?\n(.*?)\r?\n---\r?\n?(.*)$", text, re.DOTALL)
+    if not m:
+        return None, text
+    fm_text = m.group(1)
+    body = m.group(2)
+
+    data = {}
+    current_key = None
+    current_list = None
+    current_dict_list = None
+    current_subdict = None
+
+    for raw_line in fm_text.splitlines():
+        line = raw_line.rstrip()
+        if not line or line.startswith("#"):
+            continue
+
+        # リストの辞書要素のフィールド: '    key: val'
+        m_sub = re.match(r"^\s{4}(?P<k>[A-Za-z0-9_-]+):\s*(?P<v>.*)$", line)
+        if m_sub and current_subdict is not None:
+            k = m_sub.group("k")
+            val = parse_yaml_scalar(m_sub.group("v"))
+            current_subdict[k] = val
+            continue
+
+        # リストの辞書要素開始: '  - key: val'
+        m_dict_item = re.match(r"^\s{2}-\s+(?P<k>[A-Za-z0-9_-]+):\s*(?P<v>.*)$", line)
+        if m_dict_item and current_dict_list is not None:
+            current_subdict = {}
+            k = m_dict_item.group("k")
+            val = parse_yaml_scalar(m_dict_item.group("v"))
+            current_subdict[k] = val
+            current_dict_list.append(current_subdict)
+            continue
+
+        # 単純リストの要素: '  - val'
+        m_item = re.match(r"^\s{2}-\s+(?P<v>.*)$", line)
+        if m_item and current_list is not None:
+            current_list.append(parse_yaml_scalar(m_item.group("v")))
+            continue
+
+        # トップレベルキー: 'key: val' または 'key:'
+        m_top = re.match(r"^(?P<k>[A-Za-z0-9_-]+):\s*(?P<v>.*)$", line)
+        if m_top:
+            k = m_top.group("k")
+            v_raw = m_top.group("v").strip()
+            current_key = k
+            current_subdict = None
+            if v_raw == "":
+                # 次の行からリストが始まる可能性
+                if k == "related_records":
+                    current_dict_list = []
+                    data[k] = current_dict_list
+                    current_list = None
+                else:
+                    current_list = []
+                    data[k] = current_list
+                    current_dict_list = None
+            else:
+                current_list = None
+                current_dict_list = None
+                data[k] = parse_yaml_scalar(v_raw)
+
+    return data, body
+
+
 def split_markdown_sections(md_text):
     """Markdown本文を見出し (## / ###) ごとの辞書に分割する。"""
     sections = {"_header": []}
@@ -419,23 +514,30 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
     """`research/*.md` または `notes/*.md` を解析し、構造化カタログエントリに変換する。"""
     rel_path = md_path.relative_to(root).as_posix()
     text = md_path.read_text(encoding="utf-8")
-    sections = split_markdown_sections(text)
+    fm_data, body_text = parse_yaml_frontmatter(text)
+    is_okf_frontmatter = fm_data is not None
+    sections = split_markdown_sections(body_text if is_okf_frontmatter else text)
 
     # タイトル取得
     title = rel_path
-    for line in text.splitlines():
-        if line.startswith("# "):
-            title = line[2:].strip()
-            break
-    for meta_line in text.splitlines():
-        m_title = re.match(r"^\s*-\s*タイトル[^:：]*[:：]\s*(.+)$", meta_line)
-        if m_title:
-            title = f"{title}（{m_title.group(1).strip()}）"
-            break
+    if is_okf_frontmatter and fm_data.get("title"):
+        title = str(fm_data["title"]).strip()
+    else:
+        for line in text.splitlines():
+            if line.startswith("# "):
+                title = line[2:].strip()
+                break
+        for meta_line in text.splitlines():
+            m_title = re.match(r"^\s*-\s*タイトル[^:：]*[:：]\s*(.+)$", meta_line)
+            if m_title:
+                title = f"{title}（{m_title.group(1).strip()}）"
+                break
 
     # video_id 取得
     video_id = None
-    if registry_entry and registry_entry.get("video_id"):
+    if is_okf_frontmatter and fm_data.get("video_id"):
+        video_id = str(fm_data["video_id"]).strip()
+    if not video_id and registry_entry and registry_entry.get("video_id"):
         video_id = registry_entry["video_id"]
     if not video_id:
         for pat in (
@@ -458,41 +560,91 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
 
     # Notebook source ID
     notebook_source_id = "UNKNOWN"
-    m_nb = re.search(
-        r"^\s*-\s*(?:primary_source_notebook_id|Gemini Notebook source(?: \([^)]+\))?):\s*(.+?)\s*$",
-        text,
-        re.MULTILINE,
-    )
-    if m_nb:
-        val = m_nb.group(1).strip()
-        val = re.sub(r"\s*\([^)]*\)$", "", val).strip()
-        notebook_source_id = val
+    if is_okf_frontmatter and fm_data.get("primary_source_notebook_id"):
+        notebook_source_id = str(fm_data["primary_source_notebook_id"]).strip()
+    else:
+        m_nb = re.search(
+            r"^\s*-\s*(?:primary_source_notebook_id|Gemini Notebook source(?: \([^)]+\))?):\s*(.+?)\s*$",
+            text,
+            re.MULTILINE,
+        )
+        if m_nb:
+            val = m_nb.group(1).strip()
+            val = re.sub(r"\s*\([^)]*\)$", "", val).strip()
+            notebook_source_id = val
 
     # OKF metadata
     logical_id = f"youtube:{video_id}:research" if video_id else "UNKNOWN"
-    m_lid = re.search(r"^\s*-\s*logical_id:\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
-    if m_lid:
-        logical_id = m_lid.group(1).strip()
+    if is_okf_frontmatter and fm_data.get("logical_id"):
+        logical_id = str(fm_data["logical_id"]).strip()
+    else:
+        m_lid = re.search(r"^\s*-\s*logical_id:\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
+        if m_lid:
+            logical_id = m_lid.group(1).strip()
 
     transcript_logical_id = f"youtube:{video_id}:transcript" if video_id else "UNKNOWN"
-    m_tlid = re.search(r"^\s*-\s*transcript_logical_id:\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
-    if m_tlid:
-        transcript_logical_id = m_tlid.group(1).strip()
+    if is_okf_frontmatter and fm_data.get("transcript_logical_id"):
+        transcript_logical_id = str(fm_data["transcript_logical_id"]).strip()
+    else:
+        m_tlid = re.search(r"^\s*-\s*transcript_logical_id:\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
+        if m_tlid:
+            transcript_logical_id = m_tlid.group(1).strip()
 
     transcript_status = "UNKNOWN"
-    m_tstat = re.search(r"^\s*-\s*transcript_status:\s*(.+?)\s*$", text, re.MULTILINE)
-    if m_tstat:
-        transcript_status = m_tstat.group(1).strip()
+    if is_okf_frontmatter and fm_data.get("transcript_status"):
+        transcript_status = str(fm_data["transcript_status"]).strip()
+    else:
+        m_tstat = re.search(r"^\s*-\s*transcript_status:\s*(.+?)\s*$", text, re.MULTILINE)
+        if m_tstat:
+            transcript_status = m_tstat.group(1).strip()
+
+    # publication_date & checked_at
+    publication_date = "UNKNOWN"
+    if is_okf_frontmatter and fm_data.get("publication_date"):
+        publication_date = str(fm_data["publication_date"]).strip()
+    elif registry_entry and registry_entry.get("publication_date"):
+        publication_date = str(registry_entry["publication_date"]).strip()
+    else:
+        m_pub = re.search(r"^\s*-\s*(?:publication_date|公開日):\s*`?([^`\n]+)`?\s*$", text, re.MULTILINE)
+        if m_pub:
+            publication_date = m_pub.group(1).strip()
+
+    checked_at = "UNKNOWN"
+    if is_okf_frontmatter and fm_data.get("checked_at"):
+        checked_at = str(fm_data["checked_at"]).strip()
+    elif registry_entry and registry_entry.get("checked_at"):
+        checked_at = str(registry_entry["checked_at"]).strip()
+    else:
+        m_chk = re.search(r"^\s*-\s*(?:checked_at|確認日|調査日):\s*`?([^`\n]+)`?\s*$", text, re.MULTILINE)
+        if m_chk:
+            checked_at = m_chk.group(1).strip()
+        else:
+            m_dt = re.search(r"(\d{4}-\d{2}-\d{2})", rel_path)
+            if m_dt:
+                checked_at = m_dt.group(1)
 
     okf_version = None
-    m_okf = re.search(r"^\s*-\s*okf_version:\s*(.+?)\s*$", text, re.MULTILINE)
-    if m_okf:
-        okf_version = m_okf.group(1).strip()
+    if is_okf_frontmatter and fm_data.get("okf_version"):
+        okf_version = str(fm_data["okf_version"]).strip()
+    else:
+        m_okf = re.search(r"^\s*-\s*okf_version:\s*(.+?)\s*$", text, re.MULTILINE)
+        if m_okf:
+            okf_version = m_okf.group(1).strip()
+
+    okf_type = None
+    if is_okf_frontmatter:
+        okf_type = fm_data.get("type")
+
+    tags = []
+    if is_okf_frontmatter and isinstance(fm_data.get("tags"), list):
+        tags = fm_data["tags"]
 
     # source_scope
-    source_scope = (
-        registry_entry.get("source_scope", "") if registry_entry else ""
-    )
+    source_scope = ""
+    if is_okf_frontmatter and fm_data.get("source_scope"):
+        source_scope = str(fm_data["source_scope"]).strip()
+    if not source_scope and registry_entry and registry_entry.get("source_scope"):
+        source_scope = registry_entry["source_scope"]
     if not source_scope:
         for pat in (
             r"^\s*-\s*source_scope:\s*(.+?)\s*$",
@@ -513,6 +665,9 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         ):
             summary_ja = sec_body.strip()
             break
+    if not summary_ja and is_okf_frontmatter and fm_data.get("description"):
+        summary_ja = str(fm_data["description"]).strip()
+
     delta_summary = ""
     for sec_title, sec_body in sections.items():
         if "差分要約" in sec_title and sec_body.strip():
@@ -756,6 +911,24 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                 }
             )
 
+    # OKFフロントマター内の related_records があればマージ（未重複のもの）
+    if is_okf_frontmatter and isinstance(fm_data.get("related_records"), list):
+        existing_targets = {r.get("target_id") for r in related_records}
+        for fm_rel in fm_data["related_records"]:
+            if isinstance(fm_rel, dict) and fm_rel.get("target_id"):
+                tid = str(fm_rel["target_id"]).strip()
+                if tid not in existing_targets:
+                    related_records.append(
+                        {
+                            "target_id": tid,
+                            "relation": str(fm_rel.get("relation", "RELATES_TO")).strip(),
+                            "note": str(fm_rel.get("note", "")).strip(),
+                            "status": str(fm_rel.get("status", "CANDIDATE")).strip(),
+                            "evidence": str(fm_rel.get("evidence", "")).strip() if fm_rel.get("evidence") else None,
+                        }
+                    )
+                    existing_targets.add(tid)
+
     # 既存Markdown内の公式照合番号付きリスト (例: `1. **Claude Code Skills**: https://...`) も抽出
     if not claims and official_verification_parts:
         ov_text = "\n".join(official_verification_parts)
@@ -792,10 +965,14 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         "video_id": video_id,
         "title": title,
         "canonical_url": canonical_url,
+        "publication_date": publication_date,
+        "checked_at": checked_at,
         "logical_id": logical_id,
         "transcript_logical_id": transcript_logical_id,
         "transcript_status": transcript_status,
         "okf_version": okf_version,
+        "okf_type": okf_type,
+        "tags": tags,
         "notebook_source_id": notebook_source_id,
         "source_scope": source_scope,
         "summary_ja": summary_ja,
@@ -818,8 +995,8 @@ def extract_clean_target_vid(target_id):
         parts = tid.split(":")
         if len(parts) >= 2:
             return parts[1]
-    m = re.search(r"([A-Za-z0-9_-]{11})", tid)
-    if m and "/" not in tid:
+    m = re.match(r"^([A-Za-z0-9_-]{11})$", tid)
+    if m:
         return m.group(1)
     return tid
 
@@ -853,6 +1030,7 @@ def build_knowledge_network(records, registry_entries=None):
     resolved_edges = []
     total_links = 0
     confirmed_links = 0
+    candidate_links = 0
     unresolved_links = 0
     self_link_warnings = []
     nodes = []
@@ -897,16 +1075,24 @@ def build_knowledge_network(records, registry_entries=None):
             # リンク実在確認
             target_exists = (
                 (target_vid in known_vids)
+                or (raw_target in known_vids)
                 or (raw_target in known_logical_ids)
                 or (raw_target in known_paths)
             )
 
-            if target_exists and not is_self:
-                resolved_status = status if status in ("CONFIRMED", "CANDIDATE") else "CONFIRMED"
-                confirmed_links += 1
-            else:
+            if is_self:
+                resolved_status = "SELF_LINK"
+                unresolved_links += 1
+            elif not target_exists:
                 resolved_status = "UNRESOLVED"
                 unresolved_links += 1
+            else:
+                if status == "CANDIDATE":
+                    resolved_status = "CANDIDATE"
+                    candidate_links += 1
+                else:
+                    resolved_status = "CONFIRMED"
+                    confirmed_links += 1
 
             edge = {
                 "source_video_id": vid,
@@ -953,6 +1139,7 @@ def build_knowledge_network(records, registry_entries=None):
         "total_nodes": len(nodes),
         "total_links": total_links,
         "confirmed_links": confirmed_links,
+        "candidate_links": candidate_links,
         "unresolved_links": unresolved_links,
         "self_link_warnings": self_link_warnings,
         "isolated_nodes_count": len(isolated_vids),
@@ -1041,13 +1228,35 @@ def build_video_knowledge_catalog(root=ROOT, write_path=None):
     return catalog, records
 
 
+def extract_aggregate_filter(query, q_lower):
+    """CATEGORY_B_AGGREGATE において質問文から絞り込み条件（RAG, OKF, 字幕状態等）を抽出する。"""
+    if any(k in q_lower for k in ("rag", "検索拡張生成")):
+        return "RAG", "RAG関連研究の件数集計"
+    elif any(k in q_lower for k in ("okf", "open knowledge format", "研究カード")):
+        return "OKF", "OKF形式研究の件数集計"
+    elif any(k in q_lower for k in ("字幕検証済み", "字幕確認済み", "字幕あり")):
+        return "TRANSCRIPT_VERIFIED", "字幕原文が検証済みの研究件数集計"
+    elif any(k in q_lower for k in ("未検証", "字幕未検証", "unknown")):
+        return "TRANSCRIPT_UNVERIFIED", "字幕原文が未検証/UNKNOWNの研究件数集計"
+    elif any(k in q_lower for k in ("タイムライン検証", "時刻確認済み", "再生位置", "チャプター検証")):
+        return "VERIFIED_CHAPTERS", "再生時刻確認済み区間を持つ研究件数集計"
+    return "ALL", "全体集計"
+
+
+def extract_timeline_sort(query, q_lower):
+    """CATEGORY_C_TIMELINE においてソート基準（公開日/確認日）を抽出する。"""
+    if any(k in q_lower for k in ("公開日", "いつ公開", "公開された")):
+        return "PUBLICATION_DATE", "一次動画公開日（publication_date）"
+    return "CHECKED_AT", "研究室確認日（checked_at）"
+
+
 def classify_question_category(query, q_lower):
     """RAG研究動画(pRfC1DILDEM)の教訓に基づく質問の5分類判定。
     CATEGORY_A_SEARCH: ピンポイント探し物・概念・仕組み・設定方法
-    CATEGORY_B_AGGREGATE: 正確な件数・台帳集計・何件あるか・網羅的数え上げ
-    CATEGORY_C_TIMELINE: 時系列・日付・公開日・確認日・更新履歴
-    CATEGORY_D_SYNTHESIS: 全体傾向・横断的知見・アーキテクチャ組み合わせ（OKF+RAG等）
-    CATEGORY_E_SOURCE_VERIFY: 元発言確認・字幕原文・Notebook参照確認
+    CATEGORY_B_AGGREGATE: 正確な件数・台帳集計・何件あるか・網羅的数え上げ（条件付き集計含む）
+    CATEGORY_C_TIMELINE: 時系列・日付・公開日・確認日・更新履歴（公開日/確認日区別）
+    CATEGORY_D_SYNTHESIS: 全体傾向・横断的知見・アーキテクチャ組み合わせ（OKF+RAG等、1ホップ探索）
+    CATEGORY_E_SOURCE_VERIFY: 元発言確認・字幕原文・Notebook参照確認（誇張なし・未検証明記）
     """
     # B: 正確な件数・集計
     aggregate_patterns = [
@@ -1055,7 +1264,8 @@ def classify_question_category(query, q_lower):
         r"何動画", r"カウント"
     ]
     if any(re.search(pat, q_lower) for pat in aggregate_patterns):
-        return "CATEGORY_B_AGGREGATE", "件数・台帳集計に関する質問（RAGではなく台帳カウントで即答）"
+        _, filter_desc = extract_aggregate_filter(query, q_lower)
+        return "CATEGORY_B_AGGREGATE", f"件数・台帳集計に関する質問（{filter_desc}）"
 
     # C: 時系列・日付
     timeline_patterns = [
@@ -1063,7 +1273,8 @@ def classify_question_category(query, q_lower):
         r"調査日", r"確認日", r"タイムライン", r"更新履歴", r"変遷"
     ]
     if any(re.search(pat, q_lower) for pat in timeline_patterns):
-        return "CATEGORY_C_TIMELINE", "時系列・日付（公開日/確認日）に関する質問"
+        _, sort_desc = extract_timeline_sort(query, q_lower)
+        return "CATEGORY_C_TIMELINE", f"時系列・日付に関する質問（{sort_desc}基準）"
 
     # E: 元発言確認・字幕原文
     source_verify_patterns = [
@@ -1071,7 +1282,7 @@ def classify_question_category(query, q_lower):
         r"言い回し", r"どう言ってた", r"一次発言", r"ソース原文"
     ]
     if any(re.search(pat, q_lower) for pat in source_verify_patterns):
-        return "CATEGORY_E_SOURCE_VERIFY", "動画内の元発言・字幕原文の確認に関する質問"
+        return "CATEGORY_E_SOURCE_VERIFY", "動画内の元発言・字幕原文の確認に関する質問（独立管理・未検証確認）"
 
     # D: 全体傾向・横断的知見・組み合わせ
     synthesis_patterns = [
@@ -1080,7 +1291,7 @@ def classify_question_category(query, q_lower):
         r"共通点", r"相違点", r"比較"
     ]
     if any(re.search(pat, q_lower) for pat in synthesis_patterns):
-        return "CATEGORY_D_SYNTHESIS", "全体傾向・複数研究の横断的知見・アーキテクチャ統合に関する質問"
+        return "CATEGORY_D_SYNTHESIS", "全体傾向・複数研究の横断的知見・アーキテクチャ統合に関する質問（1ホップ探索）"
 
     # デフォルト: A (ピンポイント探し物・概念・仕組み)
     return "CATEGORY_A_SEARCH", "ピンポイント知識探索・概念説明・該当区間検索"
@@ -1201,11 +1412,17 @@ def analyze_query_intent(query):
         expanded_terms.add(tok)
 
     category, category_reason = classify_question_category(q_norm, q_lower)
+    category_param = "ALL"
+    if category == "CATEGORY_B_AGGREGATE":
+        category_param, _ = extract_aggregate_filter(q_norm, q_lower)
+    elif category == "CATEGORY_C_TIMELINE":
+        category_param, _ = extract_timeline_sort(q_norm, q_lower)
 
     return {
         "original_query": q_norm,
         "question_category": category,
         "category_reason": category_reason,
+        "category_param": category_param,
         "intents": detected_intents,
         "matched_concepts": matched_concepts,
         "search_terms": sorted(expanded_terms),
@@ -1710,16 +1927,58 @@ def answer_question(query, root=ROOT, top_k=5):
     # 特殊カテゴリ用の集約情報
     category_data = {}
     if category == "CATEGORY_B_AGGREGATE":
+        filter_type = intent_info.get("category_param", "ALL")
+        total_recs = catalog.get("total_records", len(parsed_records))
+        total_vid_recs = catalog.get("total_video_records", 0)
+
+        # 条件による決定論的フィルタリング
+        filtered_records = []
+        for r in parsed_records:
+            if not r.get("video_id"):
+                continue
+            v_text = f"{r.get('title', '')} {r.get('summary_ja', '')} {' '.join(r.get('tags', []))}".lower()
+            if filter_type == "RAG":
+                if "rag" in v_text or "検索拡張生成" in v_text:
+                    filtered_records.append(r)
+            elif filter_type == "OKF":
+                if r.get("okf_version") or "okf" in v_text or "知識形式" in v_text or "研究カード" in v_text:
+                    filtered_records.append(r)
+            elif filter_type == "TRANSCRIPT_VERIFIED":
+                if str(r.get("transcript_status", "")).upper() in ("VERIFIED", "CONFIRMED"):
+                    filtered_records.append(r)
+            elif filter_type == "TRANSCRIPT_UNVERIFIED":
+                if str(r.get("transcript_status", "")).upper() in ("UNVERIFIED", "UNKNOWN", ""):
+                    filtered_records.append(r)
+            elif filter_type == "VERIFIED_CHAPTERS":
+                if any(ch.get("playback_url") for ch in r.get("chapters", [])):
+                    filtered_records.append(r)
+            else:
+                filtered_records.append(r)
+
         category_data = {
-            "total_records": catalog.get("total_records", len(parsed_records)),
-            "total_video_records": catalog.get("total_video_records", 0),
+            "filter_type": filter_type,
+            "filter_description": intent_info.get("category_reason", ""),
+            "matched_count": len(filtered_records),
+            "matched_videos": [
+                {
+                    "video_id": r["video_id"],
+                    "title": r.get("title", ""),
+                    "record_path": r.get("record_path", ""),
+                    "transcript_status": r.get("transcript_status", "UNKNOWN"),
+                }
+                for r in filtered_records
+            ],
+            "total_records": total_recs,
+            "total_video_records": total_vid_recs,
             "total_verified_chapters": catalog.get("total_verified_chapters", 0),
             "total_network_links": network.get("total_links", 0),
             "confirmed_links": network.get("confirmed_links", 0),
+            "candidate_links": network.get("candidate_links", 0),
             "unresolved_links": network.get("unresolved_links", 0),
             "isolated_nodes_count": network.get("isolated_nodes_count", 0),
         }
     elif category == "CATEGORY_C_TIMELINE":
+        sort_by = intent_info.get("category_param", "CHECKED_AT")
         timeline_entries = []
         for r in parsed_records:
             if r.get("video_id"):
@@ -1732,16 +1991,27 @@ def answer_question(query, root=ROOT, top_k=5):
                         "record_path": r.get("record_path", ""),
                     }
                 )
-        timeline_entries.sort(key=lambda x: str(x.get("checked_at", "")), reverse=True)
-        category_data = {"timeline": timeline_entries[:10]}
+        if sort_by == "PUBLICATION_DATE":
+            timeline_entries.sort(key=lambda x: str(x.get("publication_date", "")), reverse=True)
+            sort_desc = "一次動画公開日（publication_date）降順"
+        else:
+            timeline_entries.sort(key=lambda x: str(x.get("checked_at", "")), reverse=True)
+            sort_desc = "研究室確認日（checked_at）降順"
+
+        category_data = {
+            "sort_by": sort_by,
+            "sort_description": sort_desc,
+            "timeline": timeline_entries[:10],
+        }
     elif category == "CATEGORY_D_SYNTHESIS":
         category_data = {
+            "exploration_scope": "GitHub正本および研究ノートの関連リンクに基づく1ホップ探索（fixture/Mock検証済み、実機NotebookへのOKF実データ登録状況はUNKNOWN）",
             "synthesized_relations": synthesized_relations,
             "connected_topics": list({r.get("relation") for r in synthesized_relations}),
         }
     elif category == "CATEGORY_E_SOURCE_VERIFY":
         category_data = {
-            "policy": "字幕全文は著作権保護・利用規約のためGitHub正本には保持せず、Notebook内の独立ソースとして管理されています。",
+            "policy": "字幕全文は著作権保護・利用規約のためGitHub正本には保持せず、独立管理方針としています。各動画の transcript_status が UNVERIFIED/UNKNOWN の場合、Notebook内に独立ソースとして存在するかどうかは未確認（断定不可）です。",
             "matched_source_statuses": [
                 {
                     "video_id": r.get("video_id"),
@@ -1804,15 +2074,31 @@ def format_qa_response_markdown(qa_res):
 
     # B: 正確な台帳集計
     if category == "CATEGORY_B_AGGREGATE" and cat_data:
+        filter_type = cat_data.get("filter_type", "ALL")
+        matched_cnt = cat_data.get("matched_count", 0)
         lines += [
             "## 📊 台帳集計結果（RAGではなく台帳直接集計）",
             "",
+        ]
+        if filter_type != "ALL":
+            lines += [
+                f"> **🎯 条件指定集計結果**: **`{matched_cnt}` 本 / 件**（条件: `{filter_type}` - {cat_data.get('filter_description', '')}）",
+                "",
+                "### 条件該当動画一覧:",
+                "| 動画ID | タイトル | 字幕状態 | 記録パス |",
+                "|---|---|---|---|",
+            ]
+            for mv in cat_data.get("matched_videos", []):
+                lines.append(f"| `{mv['video_id']}` | {mv['title'][:32]} | `{mv['transcript_status']}` | `{mv['record_path']}` |")
+            lines += ["", "---", "### 総合台帳サマリー:", ""]
+
+        lines += [
             "| 集計項目 | 正確な値 | 備考 |",
             "|---|---|---|",
             f"| 総研究記録数 | {cat_data.get('total_records', 0)} 件 | `research/*.md` + `notes/*.md` |",
             f"| 登録動画数 | {cat_data.get('total_video_records', 0)} 本 | 一意のYouTube動画IDを持つ記録 |",
             f"| 時刻確認済み章数 | {cat_data.get('total_verified_chapters', 0)} 区間 | 再生位置URL (&t=XXs) 付き |",
-            f"| OKF関連リンク総数 | {cat_data.get('total_network_links', 0)} 本 | 確認済み: {cat_data.get('confirmed_links', 0)} / 未解決: {cat_data.get('unresolved_links', 0)} |",
+            f"| OKF関連リンク総数 | {cat_data.get('total_network_links', 0)} 本 | 確認済み: {cat_data.get('confirmed_links', 0)} / 候補: {cat_data.get('candidate_links', 0)} / 未解決: {cat_data.get('unresolved_links', 0)} |",
             f"| 孤立ノード数 | {cat_data.get('isolated_nodes_count', 0)} 件 | 相互リンク未設定の記録 |",
             "",
             "---",
@@ -1821,10 +2107,11 @@ def format_qa_response_markdown(qa_res):
 
     # C: 時系列タイムライン
     if category == "CATEGORY_C_TIMELINE" and cat_data.get("timeline"):
+        sort_desc = cat_data.get("sort_description", "")
         lines += [
-            "## ⏱ 時系列タイムライン（研究確認日 / 公開日）",
+            f"## ⏱ 時系列タイムライン（{sort_desc}）",
             "",
-            "> **日付の区別**: `checked_at` は研究室で調査・確認した日付、`publication_date` はYouTube一次動画の公開日です。",
+            "> **日付の区別**: `checked_at` は研究室で調査・確認した日付、`publication_date` はYouTube一次動画の公開日です。質問の意図に応じてソート基準を区別しています。",
             "",
             "| 動画ID | タイトル | 研究室確認日 (`checked_at`) | 動画公開日 (`publication_date`) | 記録パス |",
             "|---|---|---|---|---|",
@@ -1840,7 +2127,7 @@ def format_qa_response_markdown(qa_res):
         lines += [
             "## 🔗 関連研究ネットワークの横断合成知見",
             "",
-            "> **マルチホップ探索**: 単一動画の検索にとどまらず、OKF関連リンク（`related_records` / `backlinks`）をたどって複数研究の相互関係を抽出しています。",
+            "> **マルチホップ探索の範囲と免責**: 本回答の横断探索は、GitHub正本上のOKF関連リンクに基づく1ホップ探索（Mock/fixture検証済み）です。実機Gemini Notebook上でのOKFデータ登録・逆同期は未実施（UNKNOWN）です。",
             "",
         ]
         for r in synth_rel:
@@ -1855,7 +2142,7 @@ def format_qa_response_markdown(qa_res):
         lines += [
             "## 🛡 字幕原文・元発言の確認方針とステータス",
             "",
-            f"> **保存境界・改変禁止ルール**: {cat_data.get('policy')}",
+            f"> **保存境界・未検証方針**: {cat_data.get('policy')}",
             "",
             "| 動画ID | タイトル | 字幕原文ステータス (`transcript_status`) | 論理ID (`transcript_logical_id`) | Notebook一次ソースID |",
             "|---|---|---|---|---|",

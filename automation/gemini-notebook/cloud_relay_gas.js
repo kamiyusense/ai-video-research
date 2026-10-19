@@ -1591,7 +1591,7 @@ function formatRelatedRecordsLines_(relatedRecords) {
   return lines;
 }
 
-function renderResearchMarkdown_(v, checkedAt) {
+function renderOkfFrontmatter_(v, checkedAt) {
   const vid = v.video_id;
   const canon = canonicalYoutubeUrl_(vid);
   const rawTitle = clean_(v.title);
@@ -1602,34 +1602,75 @@ function renderResearchMarkdown_(v, checkedAt) {
   const logicalId = clean_(v.logical_id || ("youtube:" + vid + ":research"));
   const transcriptLogicalId = clean_(v.transcript_logical_id || ("youtube:" + vid + ":transcript"));
   const transcriptStatus = clean_(v.transcript_status || "UNKNOWN");
+
   let lines = [
-    "# " + titleDisplay,
+    "---",
+    'okf_version: "0.2"',
+    'type: "RESEARCH_NOTE"',
+    "title: " + JSON.stringify(titleDisplay),
+    "description: " + JSON.stringify(clean_(v.summary_ja)),
+    "resource: " + JSON.stringify(canon),
+    "tags:",
+    '  - "AI技術研究室"',
+    '  - "動画研究"',
+    "logical_id: " + JSON.stringify(logicalId),
+    "record_id: " + JSON.stringify("youtube:" + vid),
+    "video_id: " + JSON.stringify(vid),
+    "canonical_url: " + JSON.stringify(canon),
+    "original_url: " + JSON.stringify(v.url),
+    "publication_date: " + JSON.stringify(clean_(v.published_at || "UNKNOWN")),
+    "checked_at: " + JSON.stringify(checkedAt),
+    "source_scope: " + JSON.stringify(clean_(v.source_scope)),
+    "transcript_logical_id: " + JSON.stringify(transcriptLogicalId),
+    "transcript_status: " + JSON.stringify(transcriptStatus),
+    "primary_source_notebook_id: " + JSON.stringify(nbSrc),
+    'document_type: "AI技術研究室 構造化研究カード（二次分析資料）"',
+    "notebook_readback: " + JSON.stringify(v.notebook_readback),
+    'github_verification: "NOT_RUN"',
+    'github_to_notebook_sync: "NOT_SYNCED_FROM_GITHUB"',
+    "changes:",
+  ];
+  const changes = Array.isArray(v.changes) ? v.changes : [];
+  for (let i = 0; i < changes.length; i++) {
+    lines.push("  - " + JSON.stringify(changes[i]));
+  }
+  const rels = Array.isArray(v.related_records) ? v.related_records : [];
+  if (rels.length > 0) {
+    lines.push("related_records:");
+    for (let i = 0; i < rels.length; i++) {
+      const rel = rels[i];
+      lines.push("  - target_id: " + JSON.stringify(clean_(rel.target_id)));
+      lines.push("    relation: " + JSON.stringify(rel.relation));
+      lines.push("    note: " + JSON.stringify(clean_(rel.note)));
+      const st = rel.status || "CANDIDATE";
+      lines.push("    status: " + JSON.stringify(st));
+      if (rel.evidence) {
+        lines.push("    evidence: " + JSON.stringify(clean_(rel.evidence)));
+      }
+    }
+  }
+  lines.push("---");
+  return lines;
+}
+
+function renderResearchMarkdown_(v, checkedAt) {
+  const vid = v.video_id;
+  const rawTitle = clean_(v.title);
+  const titleDisplay = rawTitle.startsWith("【研究カード】")
+    ? rawTitle
+    : "【研究カード】 " + rawTitle;
+
+  let lines = renderOkfFrontmatter_(v, checkedAt);
+  lines = lines.concat([
     "",
-    "- logical_id: `" + logicalId + "`",
-    "- record_id: `youtube:" + vid + "`",
-    "- video_id: `" + vid + "`",
-    "- canonical_url: " + canon,
-    "- original_url: " + v.url,
-    "- publication_date: " + clean_(v.published_at || "UNKNOWN"),
-    "- checked_at: " + checkedAt,
-    "- source_scope: " + clean_(v.source_scope),
-    "- transcript_logical_id: `" + transcriptLogicalId + "`",
-    "- transcript_status: " + transcriptStatus,
-    "- primary_source_notebook_id: " + nbSrc,
-    "- Gemini Notebook source (一次資料YouTube動画): " + nbSrc,
-    "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
-    "- okf_version: 0.2",
-    "- Gemini readback (self-reported): " + v.notebook_readback,
-    "- GitHub independent verification: NOT_RUN",
-    "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
-    "- changes: " + v.changes.join(", "),
+    "# " + titleDisplay,
     "",
     "> [!IMPORTANT]",
     "> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。",
     "",
     "## 独自要約",
     clean_(v.summary_ja),
-  ];
+  ]);
   if (Array.isArray(v.chapters) && v.chapters.length > 0) {
     lines = lines.concat([
       "",

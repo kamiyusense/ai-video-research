@@ -63,16 +63,16 @@ YouTube URLをNotebookへ登録した場合は **別のURLソース** として�
 
 ## 4. Phase別ロードマップと受入基準
 
-| Phase | 成果 | 完了条件 | 策定時 | 現在状況 (2026-10-19) |
+| Phase | 成果 | 完了条件 | 策定時 | 現在状況 (2026-10-19 検品是正版) |
 |---|---|---|---|---|
 | **0: 方針固定・引継ぎ** | 本ロードマップとハンドオーバー、入口リンク | GitHub非default branchへ書込み・読み戻し、入口から到達 | 文書化作業中 | **DONE** (`9ae89e5`) |
-| **1: OKF契約確定** | 原文/研究の荷札、共通ID、関連リンク、索引・履歴、禁止項目を定義 | 公式OKF v0.2適合検討＋現行JSON契約との整合＋Mock | TODO | **DONE** (スキーマ・GAS/Pythonパリティ完全一致) |
-| **2: 既存2動画で静的・実機検証** | RAG動画とOKF動画の2資料構造と `COMPLEMENTS` | 独立ソース識別・両方向参照・原文の改変防止・欠落判定・誤リンク検知。Notebookの実機は別途許可 | TODO | **DONE** (静的・fixture・COMPLEMENTS探索実証済み) |
-| **3: Gemini研究タスク統合** | 原資料確保→OKF研究→Notebookへの両資料登録→JSON引継ぎ | 読み戻し証拠付き、新規動画で同じ工程を再実行できる | TODO | **DONE** (`GEMINI_TASK.md` v0.7追従) |
-| **4: 保存経路・索引整備** | GAS/GitHubに研究OKF、関係索引、更新記録を安全保存 | 既存API/JSON後方互換、重複防止、非default write readback。LIVEは新規承認 | TODO | **DONE** (GAS/Python完全同期、catalog network統合) |
-| **5: 既存知識の非破壊移行** | 既存登録を棚卸ししてOKF化・関連候補生成 | 個別動画ID照合、原文未取得はUNKNOWN、既存資料上書き・重複なし | TODO | **DONE** (29動画・263章の下位互換完全維持、全42テストPASS) |
-| **6: 質問回答品質の検証** | 関連探索・件数・時系列・全体傾向・元発言確認 | 出典付き回答、誤リンク/過剰一般化検出、UNKNOWNと根拠時刻を正しく扱う | TODO | **DONE** (5分類ルーター＋関連研究横断合成QA実証完了) |
-| **7: 省力化・継続運用** | 新規入力で同一の整理・登録・質問回答まで運用 | 実際のE2E動作、復旧可能性、手作業削減を実測。定期LIVEは別途許可 | TODO | **NEXT** (実機Notebook連携・実機GAS LIVE承認待ち) |
+| **1: OKF契約確定** | 原文/研究の荷札、共通ID、関連リンク、索引・履歴、禁止項目を定義 | 公式OKF v0.2適合検討＋現行JSON契約との整合＋Mock | TODO | **CODE_UPDATED / SPEC_ALIGNED** (公式SPEC.md準拠YAMLフロントマター・必須type・字幕保存境界遵守) |
+| **2: 既存2動画で静的・実機検証** | RAG動画とOKF動画の2資料構造と `COMPLEMENTS` | 独立ソース識別・両方向参照・原文の改変防止・欠落判定・誤リンク検知。Notebookの実機は別途許可 | TODO | **MOCK_VERIFIED / JS_PY_PARITY_100%** (pRfC1DILDEM正式OKF移行済み・u3ka_AAb8qE宛てはCANDIDATE/UNRESOLVEDに是正・JS/Python出力完全一致) |
+| **3: Gemini研究タスク統合** | 原資料確保→OKF研究→Notebookへの両資料登録→JSON引継ぎ | 読み戻し証拠付き、新規動画で同じ工程を再実行できる | TODO | **CODE_UPDATED** (`GEMINI_TASK.md` v0.7追従・未登録先CANDIDATE厳格ルール明文化) |
+| **4: 保存経路・索引整備** | GAS/GitHubに研究OKF、関係索引、更新記録を安全保存 | 既存API/JSON後方互換、重複防止、非default write readback。LIVEは新規承認 | TODO | **CODE_UPDATED** (GAS/Python完全同期、catalog networkでconfirmed/candidate/unresolvedを独立集計) |
+| **5: 既存知識の非破壊移行** | 既存登録を棚卸ししてOKF化・関連候補生成 | 個別動画ID照合、原文未取得はUNKNOWN、既存資料上書き・重複なし | TODO | **BACKWARD_COMPATIBLE_VERIFIED** (既存29動画・263章資産の下位互換完全維持、未移行28動画を透過パース) |
+| **6: 質問回答品質の検証** | 関連探索・件数・時系列・全体傾向・元発言確認 | 出典付き回答、誤リンク/過剰一般化検出、UNKNOWNと根拠時刻を正しく扱う | TODO | **TEST_PASSED** (5分類ルーター＋条件付き決定論的集計＋時系列区別＋1ホップ探索免責、全43テストPASS) |
+| **7: 省力化・継続運用** | 新規入力で同一の整理・登録・質問回答まで運用 | 実際のE2E動作、復旧可能性、手作業削減を実測。定期LIVEは別途許可 | TODO | **WAITING_APPROVAL** (実機Notebook連携・実機GAS LIVE承認待ち・実機状態UNKNOWN) |
 
 **Phaseの省略不可という意味ではない**: 許可済みの静的設計・mock・安全な非defaultコード変更は一括実行してよい。未実施のLIVEだけ明確に切る。1件の成功で全件の完全性を推定しない。
 

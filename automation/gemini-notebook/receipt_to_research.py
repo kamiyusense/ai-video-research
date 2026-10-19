@@ -1178,7 +1178,7 @@ def format_related_records_lines(related_records):
     return lines
 
 
-def render(v, checked_at):
+def render_okf_frontmatter(v, checked_at):
     vid = v["video_id"]
     canon = canonical_youtube_url(vid)
     raw_title = clean(v["title"])
@@ -1187,27 +1187,59 @@ def render(v, checked_at):
     logical_id = clean(v.get("logical_id") or f"youtube:{vid}:research")
     transcript_logical_id = clean(v.get("transcript_logical_id") or f"youtube:{vid}:transcript")
     transcript_status = clean(v.get("transcript_status") or "UNKNOWN")
+
     lines = [
-        "# " + title_display,
+        "---",
+        'okf_version: "0.2"',
+        'type: "RESEARCH_NOTE"',
+        f"title: {json.dumps(title_display, ensure_ascii=False)}",
+        f"description: {json.dumps(clean(v['summary_ja']), ensure_ascii=False)}",
+        f"resource: {json.dumps(canon, ensure_ascii=False)}",
+        "tags:",
+        '  - "AI技術研究室"',
+        '  - "動画研究"',
+        f"logical_id: {json.dumps(logical_id, ensure_ascii=False)}",
+        f"record_id: {json.dumps('youtube:' + vid, ensure_ascii=False)}",
+        f"video_id: {json.dumps(vid, ensure_ascii=False)}",
+        f"canonical_url: {json.dumps(canon, ensure_ascii=False)}",
+        f"original_url: {json.dumps(v['url'], ensure_ascii=False)}",
+        f"publication_date: {json.dumps(clean(v.get('published_at') or 'UNKNOWN'), ensure_ascii=False)}",
+        f"checked_at: {json.dumps(checked_at, ensure_ascii=False)}",
+        f"source_scope: {json.dumps(clean(v['source_scope']), ensure_ascii=False)}",
+        f"transcript_logical_id: {json.dumps(transcript_logical_id, ensure_ascii=False)}",
+        f"transcript_status: {json.dumps(transcript_status, ensure_ascii=False)}",
+        f"primary_source_notebook_id: {json.dumps(nb_src, ensure_ascii=False)}",
+        'document_type: "AI技術研究室 構造化研究カード（二次分析資料）"',
+        f"notebook_readback: {json.dumps(v['notebook_readback'], ensure_ascii=False)}",
+        'github_verification: "NOT_RUN"',
+        'github_to_notebook_sync: "NOT_SYNCED_FROM_GITHUB"',
+        "changes:",
+    ]
+    for chg in v.get("changes", []):
+        lines.append(f"  - {json.dumps(chg, ensure_ascii=False)}")
+    if v.get("related_records"):
+        lines.append("related_records:")
+        for rel in v["related_records"]:
+            lines.append(f"  - target_id: {json.dumps(clean(rel['target_id']), ensure_ascii=False)}")
+            lines.append(f"    relation: {json.dumps(rel['relation'], ensure_ascii=False)}")
+            lines.append(f"    note: {json.dumps(clean(rel['note']), ensure_ascii=False)}")
+            st = rel.get("status") or "CANDIDATE"
+            lines.append(f"    status: {json.dumps(st, ensure_ascii=False)}")
+            if rel.get("evidence"):
+                lines.append(f"    evidence: {json.dumps(clean(rel['evidence']), ensure_ascii=False)}")
+    lines.append("---")
+    return lines
+
+
+def render(v, checked_at):
+    vid = v["video_id"]
+    raw_title = clean(v["title"])
+    title_display = raw_title if raw_title.startswith("【研究カード】") else f"【研究カード】 {raw_title}"
+
+    lines = render_okf_frontmatter(v, checked_at)
+    lines += [
         "",
-        "- logical_id: `" + logical_id + "`",
-        "- record_id: `youtube:" + vid + "`",
-        "- video_id: `" + vid + "`",
-        "- canonical_url: " + canon,
-        "- original_url: " + v["url"],
-        "- publication_date: " + clean(v.get("published_at") or "UNKNOWN"),
-        "- checked_at: " + checked_at,
-        "- source_scope: " + clean(v["source_scope"]),
-        "- transcript_logical_id: `" + transcript_logical_id + "`",
-        "- transcript_status: " + transcript_status,
-        "- primary_source_notebook_id: " + nb_src,
-        "- Gemini Notebook source (一次資料YouTube動画): " + nb_src,
-        "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
-        "- okf_version: 0.2",
-        "- Gemini readback (self-reported): " + v["notebook_readback"],
-        "- GitHub independent verification: NOT_RUN",
-        "- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB",
-        "- changes: " + ", ".join(v["changes"]),
+        "# " + title_display,
         "",
         "> [!IMPORTANT]",
         "> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。",

@@ -294,8 +294,8 @@ class TestGeminiNotebookLoopV03(unittest.TestCase):
         note_path = self.repo_root / "research" / "2026-10-17-dQw4w9WgXcQ-gemini-notebook.md"
         self.assertTrue(note_path.exists())
         note_text = note_path.read_text(encoding="utf-8")
-        self.assertIn("- canonical_url: https://www.youtube.com/watch?v=dQw4w9WgXcQ", note_text)
-        self.assertIn("- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB", note_text)
+        self.assertIn('canonical_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"', note_text)
+        self.assertIn('github_to_notebook_sync: "NOT_SYNCED_FROM_GITHUB"', note_text)
 
         # Verify GitHub knowledge index export is created with distinct filename and explicit warning
         export_path = (
@@ -2687,12 +2687,17 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
         raw_chaps = []
         for p in sorted((ROOT / "research").glob("*.md")):
             text = p.read_text(encoding="utf-8")
-            m_vid = re.search(r"^\s*-\s*video_id:\s*`?([A-Za-z0-9_-]{11})`?", text, re.MULTILINE)
+            m_vid = re.search(r'^(?:-\s*)?video_id:\s*["`]?([A-Za-z0-9_-]{11})["`]?', text, re.MULTILINE)
             if not m_vid:
                 m_vid = re.search(r"^\s*-\s*動画ID:\s*`?([A-Za-z0-9_-]{11})`?", text, re.MULTILINE)
             if not m_vid:
-                continue
-            vid = m_vid.group(1)
+                m_fn = re.search(r"\d{4}-\d{2}-\d{2}-([A-Za-z0-9_-]{11})-", p.name)
+                if m_fn:
+                    vid = m_fn.group(1)
+                else:
+                    continue
+            else:
+                vid = m_vid.group(1)
 
             # Match v0.6 lines (both linked and unlinked)
             for line in text.splitlines():
@@ -3831,13 +3836,17 @@ process.stdout.write(md);
         # Verify exact parity
         self.assertEqual(py_md, js_md)
 
+        # Verify OKF frontmatter begins with ---
+        self.assertTrue(py_md.startswith("---\n"))
+        self.assertIn('okf_version: "0.2"', py_md)
+        self.assertIn('type: "RESEARCH_NOTE"', py_md)
+
         # Verify H1 Title contains 【研究カード】
-        self.assertTrue(py_md.startswith("# 【研究カード】 AIエージェントの未来と自律実行"))
+        self.assertIn("# 【研究カード】 AIエージェントの未来と自律実行", py_md)
 
         # Verify primary source metadata separation
-        self.assertIn("- primary_source_notebook_id: src_test_youtube_uuid_001", py_md)
-        self.assertIn("- Gemini Notebook source (一次資料YouTube動画): src_test_youtube_uuid_001", py_md)
-        self.assertIn("- document_type: AI技術研究室 構造化研究カード（二次分析資料）", py_md)
+        self.assertIn('primary_source_notebook_id: "src_test_youtube_uuid_001"', py_md)
+        self.assertIn('document_type: "AI技術研究室 構造化研究カード（二次分析資料）"', py_md)
 
         # Verify distinction callout block
         self.assertIn("> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。", py_md)
@@ -4054,12 +4063,14 @@ process.stdout.write(JSON.stringify(gas.CONTRACT_SPEC_V1));
         ]
 
         py_rendered = bridge.render(v, sample_receipt["checked_at"])
-        self.assertIn("- logical_id: `youtube:dQw4w9WgXcQ:research`", py_rendered)
-        self.assertIn("- transcript_logical_id: `youtube:dQw4w9WgXcQ:transcript`", py_rendered)
-        self.assertIn("- transcript_status: FULL_VERIFIED", py_rendered)
-        self.assertIn("- okf_version: 0.2", py_rendered)
-        self.assertIn("| status: CONFIRMED", py_rendered)
-        self.assertIn("| evidence: 08:16荷札と照合", py_rendered)
+        self.assertTrue(py_rendered.startswith("---\n"))
+        self.assertIn('okf_version: "0.2"', py_rendered)
+        self.assertIn('type: "RESEARCH_NOTE"', py_rendered)
+        self.assertIn('logical_id: "youtube:dQw4w9WgXcQ:research"', py_rendered)
+        self.assertIn('transcript_logical_id: "youtube:dQw4w9WgXcQ:transcript"', py_rendered)
+        self.assertIn('transcript_status: "FULL_VERIFIED"', py_rendered)
+        self.assertIn('status: "CONFIRMED"', py_rendered)
+        self.assertIn('evidence: "08:16荷札と照合"', py_rendered)
 
         node_render_script = f"""
 const gas = require({json.dumps(gas_path)});
@@ -4204,6 +4215,175 @@ process.stdout.write(gas.renderResearchMarkdown(v, checkedAt));
         self.assertEqual(qa_res_verify["question_category"], "CATEGORY_E_SOURCE_VERIFY")
         verify_md = query_mod.format_qa_response_markdown(qa_res_verify)
         self.assertIn("字幕全文は著作権保護・利用規約のためGitHub正本には保持せず", verify_md)
+
+    def test_phase_okf_v02_spec_and_regression_verification(self):
+        """Comprehensive verification of OKF v0.2 YAML frontmatter specification,
+        parity between Python and GAS, conditional aggregate QA, link resolution, and backward compatibility."""
+        import sys
+        sys_path_entry = str(ROOT / "automation" / "gemini-notebook")
+        if sys_path_entry not in sys.path:
+            sys.path.insert(0, sys_path_entry)
+        import query_research as qm
+        import receipt_to_research as bridge
+
+        # 1. Test YAML frontmatter parsing and validation
+        valid_yaml = (
+            "---\n"
+            'okf_version: "0.2"\n'
+            'type: "RESEARCH_NOTE"\n'
+            'title: "テスト研究カード"\n'
+            'description: "テスト要約"\n'
+            'resource: "https://www.youtube.com/watch?v=abcdefghijk"\n'
+            "tags:\n"
+            '  - "AI技術研究室"\n'
+            '  - "テスト"\n'
+            'logical_id: "youtube:abcdefghijk:research"\n'
+            'video_id: "abcdefghijk"\n'
+            "---\n"
+            "# テスト研究カード\n"
+        )
+        fm_data, body = qm.parse_yaml_frontmatter(valid_yaml)
+        self.assertIsNotNone(fm_data)
+        self.assertEqual(fm_data.get("okf_version"), "0.2")
+        self.assertEqual(fm_data.get("type"), "RESEARCH_NOTE")
+        self.assertEqual(fm_data.get("title"), "テスト研究カード")
+        self.assertEqual(fm_data.get("tags"), ["AI技術研究室", "テスト"])
+
+        # Missing closing ---
+        broken_yaml = "---\nokf_version: '0.2'\ntype: 'RESEARCH_NOTE'\n# No closing"
+        fm_broken, _ = qm.parse_yaml_frontmatter(broken_yaml)
+        self.assertIsNone(fm_broken)
+
+        # Missing required type
+        missing_type_yaml = "---\nokf_version: '0.2'\ntitle: 'No Type'\n---\nBody"
+        fm_no_type, _ = qm.parse_yaml_frontmatter(missing_type_yaml)
+        self.assertIsNotNone(fm_no_type)
+        self.assertIsNone(fm_no_type.get("type"))
+
+        # 2. Test Python vs GAS rendering parity (100% byte-for-byte identical)
+        sample_v = {
+            "video_id": "test_parity_vid",
+            "url": "https://www.youtube.com/watch?v=test_parity_vid",
+            "title": "Parity Test Note 2026: Special chars \"quoted\" & 'single' and : colons",
+            "summary_ja": "特殊文字やコロンを含む要約テスト。",
+            "source_scope": "Gemini 14:00字幕取得",
+            "notebook_readback": "PASS",
+            "changes": ["NEW"],
+            "primary_source_notebook_id": "nb_parity_123",
+            "published_at": "2026-10-18",
+            "logical_id": "youtube:test_parity_vid:research",
+            "transcript_logical_id": "youtube:test_parity_vid:transcript",
+            "transcript_status": "UNVERIFIED",
+            "chapters": [],
+            "claims": [],
+            "related_records": [
+                {
+                    "target_id": "youtube:u3ka_AAb8qE:research",
+                    "relation": "COMPLEMENTS",
+                    "note": "OKFとRAGの連携",
+                    "status": "CANDIDATE",
+                    "evidence": "13:16言及",
+                }
+            ],
+        }
+        py_out = bridge.render(sample_v, "2026-10-19")
+        gas_path = str(ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js")
+        node_script = f"""
+const gas = require({json.dumps(gas_path)});
+const v = {json.dumps(sample_v, ensure_ascii=False)};
+process.stdout.write(gas.renderResearchMarkdown(v, "2026-10-19"));
+"""
+        res = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        gas_out = res.stdout
+        self.assertEqual(py_out, gas_out, "Python and GAS rendered markdown must have 100% character-by-character parity")
+
+        # 3. Test link resolution and strict candidate separation in knowledge network
+        mock_records = [
+            {
+                "video_id": "vid_src",
+                "logical_id": "youtube:vid_src:research",
+                "title": "Source Video",
+                "record_path": "research/vid_src.md",
+                "transcript_status": "UNVERIFIED",
+                "related_records": [
+                    {
+                        "target_id": "vid_existing_confirmed",
+                        "relation": "COMPLEMENTS",
+                        "status": "CONFIRMED",
+                    },
+                    {
+                        "target_id": "vid_existing_candidate",
+                        "relation": "EXTENDS",
+                        "status": "CANDIDATE",
+                    },
+                    {
+                        "target_id": "vid_non_existent",
+                        "relation": "COMPLEMENTS",
+                        "status": "CONFIRMED",
+                    },
+                ],
+            },
+            {
+                "video_id": "vid_existing_confirmed",
+                "logical_id": "youtube:vid_existing_confirmed:research",
+                "title": "Existing Confirmed",
+                "record_path": "research/vid_existing_confirmed.md",
+                "transcript_status": "VERIFIED",
+                "related_records": [],
+            },
+            {
+                "video_id": "vid_existing_candidate",
+                "logical_id": "youtube:vid_existing_candidate:research",
+                "title": "Existing Candidate",
+                "record_path": "research/vid_existing_candidate.md",
+                "transcript_status": "UNKNOWN",
+                "related_records": [],
+            },
+        ]
+        net = qm.build_knowledge_network(mock_records)
+        self.assertEqual(net["total_links"], 3)
+        self.assertEqual(net["confirmed_links"], 1)
+        self.assertEqual(net["candidate_links"], 1)
+        self.assertEqual(net["unresolved_links"], 1)
+
+        # 4. Test deterministic conditional aggregate QA
+        qa_rag = qm.answer_question("RAGに関する動画は何本ありますか？", root=ROOT)
+        self.assertEqual(qa_rag["question_category"], "CATEGORY_B_AGGREGATE")
+        self.assertEqual(qa_rag["category_data"]["filter_type"], "RAG")
+        self.assertEqual(qa_rag["category_data"]["matched_count"], 2)
+        matched_rag_vids = {v["video_id"] for v in qa_rag["category_data"]["matched_videos"]}
+        self.assertIn("pRfC1DILDEM", matched_rag_vids)
+
+        qa_all = qm.answer_question("登録動画は何本ありますか？", root=ROOT)
+        self.assertEqual(qa_all["category_data"]["filter_type"], "ALL")
+        self.assertEqual(qa_all["category_data"]["matched_count"], 29)
+
+        # 5. Test timeline sorting differentiation
+        qa_time_pub = qm.answer_question("いつ公開された動画か時系列で教えて", root=ROOT)
+        self.assertEqual(qa_time_pub["category_data"]["sort_by"], "PUBLICATION_DATE")
+
+        qa_time_chk = qm.answer_question("研究室で調査した日時のタイムライン", root=ROOT)
+        self.assertEqual(qa_time_chk["category_data"]["sort_by"], "CHECKED_AT")
+
+        # 6. Test backward compatibility for existing 29 video notes (28 legacy + 1 OKF migrated)
+        cat, parsed = qm.build_video_knowledge_catalog(root=ROOT)
+        self.assertEqual(cat["total_video_records"], 29)
+        self.assertEqual(cat["total_verified_chapters"], 130)
+        # Verify pRfC1DILDEM has OKF v0.2 and 22 chapters intact
+        prf_rec = next(r for r in parsed if r.get("video_id") == "pRfC1DILDEM")
+        self.assertEqual(prf_rec["okf_version"], "0.2")
+        self.assertEqual(prf_rec["okf_type"], "RESEARCH_NOTE")
+        self.assertEqual(len(prf_rec["chapters"]), 22)
+        # Verify legacy note still parses properly without frontmatter
+        leg_rec = next(r for r in parsed if r.get("video_id") == "lC5jxpYmatE")
+        self.assertIsNone(leg_rec["okf_version"])
+        self.assertGreater(len(leg_rec["chapters"]), 0)
 
 
 if __name__ == "__main__":
