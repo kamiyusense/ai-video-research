@@ -547,10 +547,12 @@ def evaluate_final_status(
     notebook_transcript_readback: bool = False,
     independent_sources_distinct: bool = True,
     is_mock: bool = False,
+    has_canonical_url: bool = True,
+    has_mutual_logical_links: bool = True,
 ) -> Tuple[str, List[str]]:
     """Strictly evaluate whether execution is a full SUCCESS or PARTIAL/FAILED.
     
-    Full SUCCESS_2_SOURCE_OKF requires ALL 11 conditions PLUS 2-Source OKF independence.
+    Full SUCCESS_2_SOURCE_OKF requires ALL 11 conditions PLUS 2-Source OKF independence and metadata integrity.
     Anti-false-pass rules:
     - Drive sync alone is NOT sufficient.
     - Chrome tab detection alone is NOT sufficient.
@@ -571,6 +573,10 @@ def evaluate_final_status(
         reasons.append("リモートregistry.jsonのSHA-256不一致または取得失敗")
     if not real_content_acquired:
         reasons.append("実動画字幕（cue 1件以上）が未取得")
+    if not has_canonical_url:
+        reasons.append("両資料（字幕原文OKF・研究ノートOKF）に元YouTube URLが存在していない")
+    if not has_mutual_logical_links:
+        reasons.append("両資料（字幕原文OKF・研究ノートOKF）の相互論理リンク（:transcript ↔ :research）が存在していない")
     if engine_used != "GEMINI_API_LIVE":
         reasons.append(f"AIによるLIVE研究要約が未実行 (engine: {engine_used})")
     if model_used != "gemini-3.8-flash":
@@ -594,6 +600,8 @@ def evaluate_final_status(
         return "PARTIAL_NO_SUBTITLES", reasons
     if no_push:
         return "PARTIAL_NO_PUSH", reasons
+    if not (has_canonical_url and has_mutual_logical_links):
+        return "PARTIAL_METADATA_INCOMPLETE", reasons
     if engine_used == "LOCAL_TRANSCRIPT_EXTRACTION":
         return "PARTIAL_LOCAL_EXTRACTION", reasons
     if not (remote_research_readback_matched and remote_registry_readback_matched):
@@ -907,7 +915,17 @@ def run_pipeline(
     notebook_transcript_readback = bool(nb_rb.get("transcript_source_found"))
     is_2_source_okf_verified = bool(nb_res.get("is_2_source_okf_verified"))
 
-    # Final Strict SUCCESS Evaluation (11 Mandatory Conditions + 2-Source OKF)
+    # Final Strict SUCCESS Evaluation (11 Mandatory Conditions + 2-Source OKF + Metadata Integrity)
+    receipt_vids = receipt.get("videos", [])
+    first_vid_meta = receipt_vids[0] if receipt_vids else {}
+    has_canonical_url = bool(first_vid_meta.get("url") and "youtube.com/watch?v=" in first_vid_meta.get("url", ""))
+    has_mutual_logical_links = bool(
+        first_vid_meta.get("logical_id")
+        and first_vid_meta.get("transcript_logical_id")
+        and f"youtube:{video_id}:research" in first_vid_meta.get("logical_id", "")
+        and f"youtube:{video_id}:transcript" in first_vid_meta.get("transcript_logical_id", "")
+    )
+
     final_status, fail_reasons = evaluate_final_status(
         real_content_acquired=bool(receipt.get("real_captions_acquired", False)),
         engine_used=engine_used,
@@ -925,6 +943,8 @@ def run_pipeline(
         notebook_transcript_readback=notebook_transcript_readback,
         independent_sources_distinct=bool(nb_res.get("independent_sources_distinct", is_2_source_okf_verified)),
         is_mock=bool(nb_res.get("is_mock", mock_cdp)),
+        has_canonical_url=has_canonical_url,
+        has_mutual_logical_links=has_mutual_logical_links,
     )
 
     print("=" * 70)

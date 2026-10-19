@@ -103,4 +103,15 @@ AIが目標として定めた方針とユーザーの希望に認識のズレを
    - 1つのDOM要素内に複数キーワードが含まれているだけの二重カウント判定は排除し、物理的に別個のDOM要素（`Index_note != Index_transcript`）であることを必須とする。
    - Mock結果は回帰防止の静的検証（`MOCK SIMULATION`）に過ぎず、実機環境の成功とは区別して `is_mock: True` を明記し、実機未接続時は `UNKNOWN / NOT_WIRED` とする。
    - NotebookLMの実画面DOMから「研究ノートOKF」と「字幕原文OKF」の2つの独立した要素が個別に読み戻された場合のみを真の完成（`SUCCESS_2_SOURCE_OKF`）と判定する。
+9. **正式完成に必要な最低限の9大受入条件の完全充足**:
+   - (1) 字幕原文OKF生成（許諾範囲の字幕Cue全量を非改変で独立保持）
+   - (2) 研究ノートOKF生成（公式OKF v0.2荷札・独自解説・チャプター）
+   - (3) 両資料に元YouTube URLが存在（`resource` / `canonical_url`）
+   - (4) 両資料の相互論理リンク（`logical_id`: `:transcript` ↔ `:research`）
+   - (5) Notebookへ2ソース独立実画面登録・事後読み戻し立証（`Index_note != Index_transcript`）
+   - (6) GitHub研究ノート本文のremote readback一致
+   - (7) 台帳（`registry.json`）および索引（`video_knowledge_catalog.json`）の正常保存
+   - (8) GitHub remote readback（リモートHEAD一致・Push成功）
+   - (9) 自然言語QA確認（検索第1位スコア検出）
+   この9条件すべてが揃った場合のみを `SUCCESS_2_SOURCE_OKF` と判定し、1つでも未達・未確認がある場合は `PARTIAL` または `UNKNOWN` とする。
 

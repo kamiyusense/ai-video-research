@@ -303,6 +303,60 @@ def launch_dedicated_chrome(
         }
 
 
+def extract_metadata_from_research_md(research_md_path: Optional[Path]) -> Dict[str, Any]:
+    """Extract frontmatter metadata (status, related_records, etc.) from research markdown."""
+    if not research_md_path:
+        return {}
+    p = Path(research_md_path)
+    if not p.exists() or not p.is_file():
+        return {}
+    try:
+        content = p.read_text(encoding="utf-8")
+        if not content.startswith("---"):
+            return {}
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            return {}
+        fm_text = parts[1]
+        res: Dict[str, Any] = {}
+
+        status_m = re.search(r"^\s*transcript_status:\s*[\"']?([^\"'\r\n]+)[\"']?", fm_text, re.MULTILINE)
+        if status_m:
+            res["transcript_status"] = status_m.group(1).strip()
+
+        rel_records = []
+        in_related = False
+        cur_rec: Dict[str, Any] = {}
+        for line in fm_text.splitlines():
+            if re.match(r"^\s*related_records:\s*$", line):
+                in_related = True
+                continue
+            if in_related:
+                if re.match(r"^\s*-\s*target_id:\s*", line):
+                    if cur_rec and "target_id" in cur_rec:
+                        rel_records.append(cur_rec)
+                    target_id = re.sub(r"^\s*-\s*target_id:\s*[\"']?", "", line).strip().rstrip("\"'")
+                    cur_rec = {"target_id": target_id}
+                elif re.match(r"^\s*(?:relation|note|status|evidence):\s*", line):
+                    k, v = line.split(":", 1)
+                    k = k.strip()
+                    v = v.strip().strip("\"'")
+                    if cur_rec:
+                        cur_rec[k] = v
+                elif re.match(r"^[a-zA-Z0-9_-]+:\s*", line):
+                    if cur_rec and "target_id" in cur_rec:
+                        rel_records.append(cur_rec)
+                    in_related = False
+                    cur_rec = {}
+        if cur_rec and "target_id" in cur_rec:
+            rel_records.append(cur_rec)
+        if rel_records:
+            res["related_records"] = rel_records
+        return res
+    except Exception:
+        return {}
+
+
 def build_transcript_okf_content(
     video_id: str,
     video_url: str,
@@ -313,6 +367,7 @@ def build_transcript_okf_content(
     status: str = "UNVERIFIED",
     notebook_source_id: Optional[str] = "UNKNOWN",
     notebook_open_link: Optional[str] = None,
+    related_records: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -358,6 +413,24 @@ def build_transcript_okf_content(
         '  - "AI技術研究室"',
         '  - "字幕原文"',
         '  - "一次資料"',
+    ])
+
+    if related_records:
+        lines.append("related_records:")
+        for r in related_records:
+            t_id = r.get("target_id", "UNKNOWN")
+            rel = r.get("relation", "COMPLEMENTS")
+            note = r.get("note", "")
+            r_status = r.get("status", "CANDIDATE")
+            ev = r.get("evidence", "")
+            lines.append(f'  - target_id: "{t_id}"')
+            lines.append(f'    relation: "{rel}"')
+            lines.append(f'    note: "{note}"')
+            lines.append(f'    status: "{r_status}"')
+            if ev:
+                lines.append(f'    evidence: "{ev}"')
+
+    lines.extend([
         "---",
         "",
         f"# 【字幕原文】 {video_title}",
@@ -385,6 +458,24 @@ def build_transcript_okf_content(
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
         f"- **Notebook UI制限・参照案内**: NotebookLMのUI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する研究ノートを参照する場合は、上記『対応研究ノート論理ID (`{research_logical_id}`)』または『動画ID (`{video_id}`)』をもとに、Notebookのソース一覧から検索・特定してください。",
         "",
+    ])
+
+    if related_records:
+        lines.extend([
+            "## 関連する既存研究・課題との接続",
+            "",
+        ])
+        for r in related_records:
+            t_id = r.get("target_id", "UNKNOWN")
+            rel = r.get("relation", "COMPLEMENTS")
+            note = r.get("note", "")
+            r_status = r.get("status", "CANDIDATE")
+            ev = r.get("evidence", "")
+            extra = f" | status: {r_status}" + (f" | evidence: {ev}" if ev else "")
+            lines.append(f"- `{t_id}` ({rel}): {note}{extra}")
+        lines.append("")
+
+    lines.extend([
         "## 字幕発話タイムライン (取得全量)",
         "",
     ])
@@ -919,6 +1010,10 @@ def sync_to_drive_notebook_sources(
 
     # Transcript OKF source
     tr_file = target_dir / f"{video_id}_transcript_okf.md"
+    md_meta = extract_metadata_from_research_md(research_md_path)
+    extracted_status = md_meta.get("transcript_status", "UNVERIFIED")
+    extracted_rel = md_meta.get("related_records")
+
     if transcript_content:
         tr_text = transcript_content
     elif cues:
@@ -927,6 +1022,8 @@ def sync_to_drive_notebook_sources(
             video_url=video_url,
             video_title=video_title,
             cues=cues,
+            status=extracted_status,
+            related_records=extracted_rel,
         )
     else:
         tr_text = build_transcript_okf_content(
@@ -934,6 +1031,8 @@ def sync_to_drive_notebook_sources(
             video_url=video_url,
             video_title=video_title,
             raw_text="- (字幕発話データ未指定)",
+            status=extracted_status,
+            related_records=extracted_rel,
         )
     tr_file.write_text(tr_text, encoding="utf-8")
 
@@ -990,6 +1089,10 @@ def ingest_and_verify_notebook(
     print("=" * 60)
 
     # 0. Build Transcript OKF content
+    md_meta = extract_metadata_from_research_md(research_md_path)
+    extracted_status = md_meta.get("transcript_status", "UNVERIFIED")
+    extracted_rel = md_meta.get("related_records")
+
     if transcript_content:
         final_transcript_text = transcript_content
     elif cues:
@@ -998,6 +1101,8 @@ def ingest_and_verify_notebook(
             video_url=video_url,
             video_title=video_title,
             cues=cues,
+            status=extracted_status,
+            related_records=extracted_rel,
         )
     else:
         final_transcript_text = build_transcript_okf_content(
@@ -1005,6 +1110,8 @@ def ingest_and_verify_notebook(
             video_url=video_url,
             video_title=video_title,
             raw_text="- (字幕発話データ未指定)",
+            status=extracted_status,
+            related_records=extracted_rel,
         )
 
     # 1. Drive Sync (Guaranteed deterministic channel: YT txt, Research MD & Transcript OKF MD)

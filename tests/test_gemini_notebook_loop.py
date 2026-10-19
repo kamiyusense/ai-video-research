@@ -4941,6 +4941,153 @@ process.stdout.write(JSON.stringify(res));
         self.assertEqual(status, "PARTIAL_2_SOURCE_OKF_PENDING", "パイプライン評価でも PARTIAL_2_SOURCE_OKF_PENDING であること")
         self.assertTrue(any("字幕原文OKF" in r for r in reasons))
 
+    def test_rag_and_okf_existing_research_notes_conform_to_roadmap(self):
+        """既存のRAG動画(pRfC1DILDEM)とOKF動画(u3ka_AAb8qE)のGitHub研究資料がロードマップ要件を満たすことを検証。"""
+        rag_path = ROOT / "research" / "2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+        okf_path = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        self.assertTrue(rag_path.exists(), "RAG動画の研究ノートが存在すること")
+        self.assertTrue(okf_path.exists(), "OKF動画の研究ノートが存在すること")
+
+        # RAG研究ノート検証
+        rag_text = rag_path.read_text(encoding="utf-8")
+        self.assertIn('okf_version: "0.2"', rag_text)
+        self.assertIn('type: "RESEARCH_NOTE"', rag_text)
+        self.assertIn('resource: "https://www.youtube.com/watch?v=pRfC1DILDEM"', rag_text)
+        self.assertIn('video_id: "pRfC1DILDEM"', rag_text)
+        self.assertIn('transcript_logical_id: "youtube:pRfC1DILDEM:transcript"', rag_text)
+        self.assertIn('relation: "COMPLEMENTS"', rag_text)
+        self.assertIn('target_id: "youtube:u3ka_AAb8qE:research"', rag_text)
+        self.assertIn('## 独自要約', rag_text)
+        self.assertIn('## 動画目次・確認済みタイムライン（チャプター）', rag_text)
+        self.assertIn('## 詳細技術知識・再利用ノート', rag_text)
+
+        # OKF研究ノート検証
+        okf_text = okf_path.read_text(encoding="utf-8")
+        self.assertIn('okf_version: "0.2"', okf_text)
+        self.assertIn('type: "RESEARCH_NOTE"', okf_text)
+        self.assertIn('resource: "https://www.youtube.com/watch?v=u3ka_AAb8qE"', okf_text)
+        self.assertIn('video_id: "u3ka_AAb8qE"', okf_text)
+        self.assertIn('transcript_logical_id: "youtube:u3ka_AAb8qE:transcript"', okf_text)
+        self.assertIn('relation: "COMPLEMENTS"', okf_text)
+        self.assertIn('target_id: "youtube:pRfC1DILDEM:research"', okf_text)
+        self.assertIn('## 独自要約', okf_text)
+        self.assertIn('## 詳細技術知識・再利用ノート', okf_text)
+
+    def test_transcript_okf_builder_includes_full_frontmatter_and_related_records(self):
+        """字幕原文OKF資料が荷札、元URL、相互リンク、関連リンク、改変禁止規約、本文分離を満たすことを検証。"""
+        import notebook_auto_ingest as nai
+
+        vid = "u3ka_AAb8qE"
+        v_url = f"https://www.youtube.com/watch?v={vid}"
+        cues = [
+            {"start": 496.0, "end": 548.0, "text": "荷札のメタデータ原則"},
+            {"start": 575.0, "end": 611.0, "text": "関係の意味付けリンク"},
+        ]
+        rel_records = [
+            {
+                "target_id": "youtube:pRfC1DILDEM:research",
+                "relation": "COMPLEMENTS",
+                "note": "RAG探索設計とOKF知識体系が相互補完",
+                "status": "CONFIRMED",
+                "evidence": "08:16荷札とpRfC1DILDEMの13:16言及",
+            }
+        ]
+
+        text = nai.build_transcript_okf_content(
+            video_id=vid,
+            video_url=v_url,
+            video_title="OKF実践タイトル",
+            cues=cues,
+            status="UNVERIFIED",
+            related_records=rel_records,
+        )
+
+        # 1. 荷札（YAMLフロントマター）検証
+        self.assertIn('okf_version: "0.2"', text)
+        self.assertIn('type: "TRANSCRIPT"', text)
+        self.assertIn(f'video_id: "{vid}"', text)
+        self.assertIn(f'resource: "{v_url}"', text)
+        self.assertIn(f'logical_id: "youtube:{vid}:transcript"', text)
+        self.assertIn(f'research_logical_id: "youtube:{vid}:research"', text)
+        self.assertIn('transcript_status: "UNVERIFIED"', text)
+        self.assertIn('related_records:', text)
+        self.assertIn('target_id: "youtube:pRfC1DILDEM:research"', text)
+        self.assertIn('relation: "COMPLEMENTS"', text)
+
+        # 2. 構造・相互リンク・関連リンク表示検証
+        self.assertIn(f"- **動画ID**: `{vid}`", text)
+        self.assertIn(f"- **元YouTube URL**: {v_url}", text)
+        self.assertIn(f"- **対応研究ノート論理ID**: `youtube:{vid}:research`", text)
+        self.assertIn("## 関連する既存研究・課題との接続", text)
+        self.assertIn("`youtube:pRfC1DILDEM:research` (COMPLEMENTS): RAG探索設計とOKF知識体系が相互補完", text)
+
+        # 3. 原文保持規約・分離検証
+        self.assertIn("発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。", text)
+        self.assertIn("## 字幕発話タイムライン (取得全量)", text)
+        self.assertIn("- **[08:16]** (496.0s) 荷札のメタデータ原則", text)
+        self.assertIn("- **[09:35]** (575.0s) 関係の意味付けリンク", text)
+
+    def test_extract_metadata_from_research_md_aligns_transcript_with_research(self):
+        """研究ノートからメタデータ（status, related_records）が自動抽出され、字幕OKFに反映されることを検証。"""
+        import notebook_auto_ingest as nai
+
+        okf_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        meta = nai.extract_metadata_from_research_md(okf_md)
+        self.assertEqual(meta.get("transcript_status"), "UNVERIFIED")
+        self.assertTrue(len(meta.get("related_records", [])) > 0)
+        self.assertEqual(meta["related_records"][0]["target_id"], "youtube:pRfC1DILDEM:research")
+        self.assertEqual(meta["related_records"][0]["relation"], "COMPLEMENTS")
+
+    def test_evaluate_final_status_checks_canonical_url_and_mutual_logical_links(self):
+        """元URLや相互論理リンクが欠落している場合、SUCCESS_2_SOURCE_OKFにならずPARTIAL_METADATA_INCOMPLETEとなることを検証。"""
+        import auto_research_pipeline as arp
+
+        # 1. 元URL欠落
+        status, reasons = arp.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
+            independent_sources_distinct=True,
+            has_canonical_url=False,  # 元URL欠落
+            has_mutual_logical_links=True,
+        )
+        self.assertEqual(status, "PARTIAL_METADATA_INCOMPLETE")
+        self.assertTrue(any("元YouTube URLが存在していない" in r for r in reasons))
+
+        # 2. 相互論理リンク欠落
+        status, reasons = arp.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
+            independent_sources_distinct=True,
+            has_canonical_url=True,
+            has_mutual_logical_links=False,  # 相互論理リンク欠落
+        )
+        self.assertEqual(status, "PARTIAL_METADATA_INCOMPLETE")
+        self.assertTrue(any("相互論理リンク" in r for r in reasons))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
