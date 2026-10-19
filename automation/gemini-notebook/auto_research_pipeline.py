@@ -480,6 +480,7 @@ def build_research_receipt(
                 "changes": ["NEW"],
                 "logical_id": f"youtube:{video_id}:research",
                 "transcript_logical_id": f"youtube:{video_id}:transcript",
+                "related_transcript_id": f"youtube:{video_id}:transcript",
                 "transcript_status": transcript_status,
                 "detailed_findings_ja": detailed_findings_ja,
                 "chapters": chapters[:25],

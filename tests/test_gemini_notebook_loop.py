@@ -4068,6 +4068,7 @@ process.stdout.write(JSON.stringify(gas.CONTRACT_SPEC_V1));
         self.assertIn('type: "RESEARCH_NOTE"', py_rendered)
         self.assertIn('logical_id: "youtube:dQw4w9WgXcQ:research"', py_rendered)
         self.assertIn('transcript_logical_id: "youtube:dQw4w9WgXcQ:transcript"', py_rendered)
+        self.assertIn('related_transcript_id: "youtube:dQw4w9WgXcQ:transcript"', py_rendered)
         self.assertIn('transcript_status: "FULL_VERIFIED"', py_rendered)
         self.assertIn('status: "CONFIRMED"', py_rendered)
         self.assertIn('evidence: "08:16荷札と照合"', py_rendered)

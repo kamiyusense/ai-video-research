@@ -662,10 +662,10 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
             logical_id = m_lid.group(1).strip()
 
     transcript_logical_id = f"youtube:{video_id}:transcript" if video_id else "UNKNOWN"
-    if is_okf_frontmatter and fm_data.get("transcript_logical_id"):
-        transcript_logical_id = str(fm_data["transcript_logical_id"]).strip()
+    if is_okf_frontmatter and (fm_data.get("transcript_logical_id") or fm_data.get("related_transcript_id")):
+        transcript_logical_id = str(fm_data.get("transcript_logical_id") or fm_data.get("related_transcript_id")).strip()
     else:
-        m_tlid = re.search(r"^\s*-\s*transcript_logical_id:\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
+        m_tlid = re.search(r"^\s*-\s*(?:transcript_logical_id|related_transcript_id):\s*`?([^`]+)`?\s*$", text, re.MULTILINE)
         if m_tlid:
             transcript_logical_id = m_tlid.group(1).strip()
 

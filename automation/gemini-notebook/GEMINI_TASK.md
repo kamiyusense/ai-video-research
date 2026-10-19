@@ -86,6 +86,7 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
   - **OKF v0.2 拡張フィールド（荷札・論理ID・関連ネットワーク）**：
     - `logical_id`（任意、既定値: `"youtube:<video_id>:research"`）: 研究ノートの論理識別子
     - `transcript_logical_id`（任意、既定値: `"youtube:<video_id>:transcript"`）: 字幕原文ソースの論理識別子
+    - `related_transcript_id`（任意、既定値: `"youtube:<video_id>:transcript"`）: 字幕原文OKFとの双方向対称プロパティ
     - `transcript_status`（任意、既定値: `"UNKNOWN"`）: 字幕原文の検証状態（`"FULL_VERIFIED"` / `"PARTIAL_VERIFIED"` / `"UNVERIFIED"` / `"NOT_ACQUIRED"` / `"UNKNOWN"`）
     - `detailed_findings_ja`（任意・推奨、1〜2,500文字、改行最大25回）: 300字の `summary_ja` には収まらない詳しい技術的仕組み、適用条件、アーキテクチャ、失敗例・限界、研究室での再利用手順を記述する独自技術ノート（※字幕の丸写しは厳禁）。
     - `chapters`（任意・推奨、最大25件）: 動画全体の章立て・確認済みタイムライン。各要素は：
