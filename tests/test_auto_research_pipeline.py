@@ -235,6 +235,61 @@ class TestAutoResearchPipeline(unittest.TestCase):
         if res.get("status") == "RESUMED_NOTEBOOK_INGEST":
             self.assertIn("notebook_ingest", res)
 
+    def test_short_description_only_does_not_satisfy_real_content_acquired(self):
+        """shortDescriptionだけでは完全SUCCESSにならず、PARTIAL_NO_SUBTITLESになること。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=False,  # cues count = 0 or status = NOT_ACQUIRED
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+        )
+        self.assertNotEqual(status, "SUCCESS")
+        self.assertEqual(status, "PARTIAL_NO_SUBTITLES")
+        self.assertTrue(any("字幕" in r for r in reasons))
+
+    def test_registry_records_key_used_in_resume(self):
+        """registry.jsonのrecordsキーが正しく参照されること。"""
+        reg_path = ROOT / "registry.json"
+        self.assertTrue(reg_path.exists())
+        reg_data = json.loads(reg_path.read_text(encoding="utf-8"))
+        self.assertIn("records", reg_data, "registry.json must contain 'records' key")
+        self.assertNotIn("videos", reg_data, "registry.json does not use 'videos' at root")
+
+    def test_resume_with_two_sources_does_not_readd(self):
+        """ALREADY_REGISTERED時にNotebook2ソース存在なら再追加せず完了すること。"""
+        res_md = ROOT / "research" / "2026-10-10-lC5jxpYmatE-ai-techniques.md"
+        nb_res = auto_research_pipeline.run_notebook_registration_only(
+            video_id="lC5jxpYmatE",
+            research_md_path=res_md,
+            video_title="Test Video",
+            mock_cdp=True,
+            mock_sources=["https://www.youtube.com/watch?v=lC5jxpYmatE", "AI_VIDEO_RESEARCH_NOTE:lC5jxpYmatE"],
+        )
+        self.assertTrue(nb_res.get("is_full_success"))
+        self.assertEqual(len(nb_res.get("actions_taken", [])), 0, "No actions should be taken when both exist")
+
+    def test_resume_adds_only_missing_source(self):
+        """ALREADY_REGISTERED時に片方不足なら不足側だけ追加されること。"""
+        res_md = ROOT / "research" / "2026-10-10-lC5jxpYmatE-ai-techniques.md"
+        nb_res = auto_research_pipeline.run_notebook_registration_only(
+            video_id="lC5jxpYmatE",
+            research_md_path=res_md,
+            video_title="Test Video",
+            mock_cdp=True,
+            mock_sources=["https://www.youtube.com/watch?v=lC5jxpYmatE"],  # Note is missing
+        )
+        self.assertTrue(nb_res.get("is_full_success"))
+        self.assertIn("COPIED_TEXT_NOTE_INSERTED", nb_res.get("actions_taken", []))
+        self.assertNotIn("YOUTUBE_URL_INSERTED", nb_res.get("actions_taken", []))
+
 
 if __name__ == "__main__":
     unittest.main()

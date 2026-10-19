@@ -368,12 +368,15 @@ def build_research_receipt(
     today_str = date.today().isoformat()
     source_scope = f"YouTubeメタデータ（長:{length_sec}s, 投稿:{author}）" + (f", 字幕実発話{len(cues)}件 [{engine_used}]" if cues else f", 字幕なし [{engine_used}]")
 
+    has_real_captions = (len(cues) > 0 and transcript_status != "NOT_ACQUIRED")
+
     receipt = {
         "schema_version": "research_receipt_v1",
         "notebook_url": NOTEBOOK_URL,
         "checked_at": today_str,
         "notebook_readback": "UNKNOWN",
         "github_dedup_status": "PASS",
+        "real_captions_acquired": has_real_captions,
         "videos": [
             {
                 "video_id": video_id,
@@ -403,9 +406,10 @@ def run_notebook_registration_only(
     research_md_path: Path,
     video_title: str = "YouTube Video",
     mock_cdp: bool = False,
+    mock_sources: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Resume notebook registration for videos already committed to GitHub."""
-    print(f"\n[RESUME NOTEBOOK INGEST] GitHub登録済み・Notebook未完了の動画 '{video_id}' のNotebook登録を再開します。")
+    print(f"\n[RESUME NOTEBOOK INGEST] GitHub登録済み動画 '{video_id}' のNotebook登録状態を確認・再開します。")
     v_url = f"https://www.youtube.com/watch?v={video_id}"
     nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
         video_id=video_id,
@@ -413,6 +417,7 @@ def run_notebook_registration_only(
         video_title=video_title,
         research_md_path=research_md_path,
         mock_cdp=mock_cdp,
+        mock_sources=mock_sources,
     )
     return nb_res
 
@@ -448,7 +453,7 @@ def evaluate_final_status(
     if not remote_registry_readback_matched:
         reasons.append("リモートregistry.jsonのSHA-256不一致または取得失敗")
     if not real_content_acquired:
-        reasons.append("実動画字幕または実内容が未取得")
+        reasons.append("実動画字幕（cue 1件以上）が未取得")
     if engine_used != "GEMINI_API_LIVE":
         reasons.append(f"AIによるLIVE研究要約が未実行 (engine: {engine_used})")
     if model_used != "gemini-3.8-flash":
@@ -466,6 +471,8 @@ def evaluate_final_status(
         return "SUCCESS", []
 
     # Map to specific PARTIAL status
+    if not real_content_acquired:
+        return "PARTIAL_NO_SUBTITLES", reasons
     if no_push:
         return "PARTIAL_NO_PUSH", reasons
     if engine_used == "LOCAL_TRANSCRIPT_EXTRACTION":
@@ -515,26 +522,48 @@ def run_pipeline(
     if dedup_status == "ALREADY_REGISTERED":
         res_path_str = dedup_res.get("research_path")
         res_path = ROOT / res_path_str if res_path_str else None
-        
-        # Check if notebook was confirmed in registry
-        reg_data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8")) if REGISTRY_PATH.exists() else {}
-        reg_record = next((r for r in reg_data.get("videos", []) if r.get("video_id") == video_id), {})
-        nb_confirmed = "NOTEBOOK_READBACK_CONFIRMED" in reg_record.get("status", "")
 
-        if not nb_confirmed and res_path and res_path.exists():
-            print(f"\n[RESUME DETECTED] 動画 '{video_id}' はGitHub登録済みですが、Notebook未確認です。")
+        # 1. GitHub研究ノートを再解析しない
+        # 2. Gemini APIを再実行しない
+        # 3. GitHubへ再Pushしない
+
+        # 4. Check registry.json record using 'records' key (not 'videos')
+        reg_data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8")) if REGISTRY_PATH.exists() else {}
+        reg_records = reg_data.get("records", [])
+        reg_record = next((r for r in reg_records if r.get("video_id") == video_id), {})
+
+        if res_path and res_path.exists():
+            print(f"\n[ALREADY_REGISTERED] 動画 '{video_id}' のGitHub研究ノートは確認済みです。Notebook登録状態を実画面から読み戻します...")
             nb_res = run_notebook_registration_only(
                 video_id=video_id,
                 research_md_path=res_path,
                 video_title=dedup_res.get("title", f"YouTube Video {video_id}"),
                 mock_cdp=mock_cdp,
             )
-            return {
-                "status": "RESUMED_NOTEBOOK_INGEST",
-                "video_id": video_id,
-                "notebook_ingest": nb_res,
-                "details": dedup_res,
-            }
+            actions = nb_res.get("actions_taken", [])
+            if nb_res.get("is_full_success") and not actions:
+                print(f"[NOTEBOOK_ALREADY_CONFIRMED] Notebook実画面に2ソースが既に存在することを確認しました。追加処理をスキップし安全停止します。")
+                return {
+                    "status": "ALREADY_REGISTERED",
+                    "video_id": video_id,
+                    "notebook_ingest": nb_res,
+                    "details": dedup_res,
+                }
+            elif nb_res.get("is_full_success"):
+                print(f"[RESUMED_NOTEBOOK_INGEST] 不足していたNotebookソースの追加と再読み戻しに成功しました。")
+                return {
+                    "status": "RESUMED_NOTEBOOK_INGEST",
+                    "video_id": video_id,
+                    "notebook_ingest": nb_res,
+                    "details": dedup_res,
+                }
+            else:
+                return {
+                    "status": "RESUMED_NOTEBOOK_INGEST_PARTIAL",
+                    "video_id": video_id,
+                    "notebook_ingest": nb_res,
+                    "details": dedup_res,
+                }
 
         print(f"\n[STOP: {dedup_status}] 【登録済み・完全処理済みのため処理を安全停止します】")
         print(f"動画ID: {video_id}")
@@ -740,7 +769,7 @@ def run_pipeline(
 
     # Final Strict SUCCESS Evaluation (11 Mandatory Conditions)
     final_status, fail_reasons = evaluate_final_status(
-        real_content_acquired=(len(player_data.get("captions", {})) > 0 or len(vd.get("shortDescription", "")) > 0),
+        real_content_acquired=bool(receipt.get("real_captions_acquired", False)),
         engine_used=engine_used,
         model_used=model_used,
         research_note_generated=research_note_generated,

@@ -197,7 +197,7 @@ class CDPClient:
                 return tab
         return None
 
-    def execute_script_on_tab(self, tab: Dict[str, Any], js_expression: str) -> Any:
+    def execute_script_on_tab(self, tab: Dict[str, Any], js_expression: str, max_frames: int = 40) -> Any:
         ws_url = tab.get("webSocketDebuggerUrl")
         if not ws_url:
             raise ValueError("Tab has no webSocketDebuggerUrl")
@@ -212,8 +212,9 @@ class CDPClient:
         try:
             ws.connect()
             self._msg_id += 1
+            cmd_id = self._msg_id
             cmd = {
-                "id": self._msg_id,
+                "id": cmd_id,
                 "method": "Runtime.evaluate",
                 "params": {
                     "expression": js_expression,
@@ -222,8 +223,27 @@ class CDPClient:
                 },
             }
             ws.send_text(json.dumps(cmd))
-            resp_raw = ws.recv_text()
-            resp = json.loads(resp_raw)
+            
+            # Loop until matching message id response is received, skipping asynchronous CDP event frames
+            resp = None
+            for _ in range(max_frames):
+                resp_raw = ws.recv_text()
+                if not resp_raw:
+                    continue
+                try:
+                    data = json.loads(resp_raw)
+                except Exception:
+                    continue
+                if isinstance(data, dict) and data.get("id") == cmd_id:
+                    resp = data
+                    break
+
+            if not resp:
+                raise TimeoutError(f"CDP response for message id {cmd_id} not received within {max_frames} frames")
+
+            if "error" in resp:
+                raise RuntimeError(f"CDP error response: {resp['error']}")
+
             result = resp.get("result", {}).get("result", {})
             return result.get("value")
         finally:
@@ -279,6 +299,54 @@ def launch_dedicated_chrome(
         }
 
 
+def evaluate_sources_independence(
+    items: List[Dict[str, Any]],
+    video_id: str,
+    video_title: str,
+) -> Tuple[bool, bool, Optional[int], Optional[int]]:
+    """Verify that YouTube source and Research Note exist as separate, distinct DOM elements.
+    
+    Prevents false PASS when only 1 element contains both or only video_id is present.
+    """
+    note_identifier = f"AI_VIDEO_RESEARCH_NOTE:{video_id}"
+
+    # 1. YouTube candidates: contains video_id or video_title, but NOT the research note identifier
+    yt_candidates = []
+    for it in items:
+        txt = it.get("text", "")
+        idx = it.get("index")
+        if note_identifier in txt or "研究ノート" in txt:
+            continue
+        if video_id in txt or (video_title and len(video_title) >= 5 and video_title[:20] in txt):
+            yt_candidates.append(idx)
+
+    # 2. Research Note candidates: contains explicit note_identifier or distinct research note title
+    note_candidates = []
+    for it in items:
+        txt = it.get("text", "")
+        idx = it.get("index")
+        if note_identifier in txt or f"研究ノート_{video_id}" in txt or f"研究ノート {video_id}" in txt:
+            note_candidates.append(idx)
+
+    yt_found = len(yt_candidates) > 0
+    note_found = False
+    chosen_yt_idx = yt_candidates[0] if yt_candidates else None
+    chosen_note_idx = None
+
+    if yt_found:
+        # Research note MUST be a distinct element (different index)
+        distinct_notes = [idx for idx in note_candidates if idx != chosen_yt_idx]
+        if distinct_notes:
+            note_found = True
+            chosen_note_idx = distinct_notes[0]
+    else:
+        if note_candidates:
+            note_found = True
+            chosen_note_idx = note_candidates[0]
+
+    return yt_found, note_found, chosen_yt_idx, chosen_note_idx
+
+
 def readback_notebook_sources_via_cdp(
     client: CDPClient,
     tab: Dict[str, Any],
@@ -288,25 +356,21 @@ def readback_notebook_sources_via_cdp(
     """Inspect actual NotebookLM DOM via CDP to extract registered sources and verify readback."""
     js_extract_sources = """
     (() => {
-        const sources = [];
-        // Extract text from source chips, list items, or headers
+        const items = [];
         const elements = document.querySelectorAll(
-            '[role="listitem"], .source-card, .source-title, [data-source-id], mat-list-item, div.source-item'
+            '[role="listitem"], .source-card, .source-title, [data-source-id], mat-list-item, div.source-item, .source-chip'
         );
-        elements.forEach(el => {
+        elements.forEach((el, idx) => {
             const txt = (el.innerText || el.textContent || '').trim();
-            if (txt && !sources.includes(txt)) {
-                sources.push(txt);
+            if (txt) {
+                items.push({ index: idx, text: txt });
             }
         });
         
-        // Fallback: check entire body text if specific items are not queried
-        const fullBodyText = document.body ? document.body.innerText : '';
         return {
-            source_count: sources.length,
-            sources: sources.slice(0, 50),
-            has_youtube_keyword: fullBodyText.includes('YouTube') || fullBodyText.includes('youtube.com'),
-            full_text_sample: fullBodyText.slice(0, 1500)
+            item_count: items.length,
+            items: items.slice(0, 60),
+            full_text_sample: document.body ? document.body.innerText.slice(0, 1500) : ''
         };
     })()
     """
@@ -320,13 +384,8 @@ def readback_notebook_sources_via_cdp(
                 "research_note_found": False,
             }
 
-        sources = data.get("sources", [])
-        full_text = data.get("full_text_sample", "")
-
-        # Check YouTube source presence
-        yt_found = any(video_id in s or video_title[:20] in s for s in sources) or (video_id in full_text)
-        # Check Research Note presence
-        note_found = any(f"研究" in s or video_id in s for s in sources) or (f"{video_id}:research" in full_text)
+        items = data.get("items", [])
+        yt_found, note_found, yt_idx, note_idx = evaluate_sources_independence(items, video_id, video_title)
 
         status = "NOTEBOOK_READBACK_PASS" if (yt_found and note_found) else (
             "NOTEBOOK_READBACK_PARTIAL" if (yt_found or note_found) else "NOTEBOOK_READBACK_NOT_FOUND"
@@ -336,8 +395,10 @@ def readback_notebook_sources_via_cdp(
             "status": status,
             "youtube_source_found": yt_found,
             "research_note_found": note_found,
-            "detected_source_count": data.get("source_count", 0),
-            "sources_sample": sources[:10],
+            "youtube_item_index": yt_idx,
+            "research_note_item_index": note_idx,
+            "detected_source_count": data.get("item_count", 0),
+            "sources_sample": [it.get("text", "") for it in items[:10]],
         }
     except Exception as ex:
         return {
@@ -346,6 +407,146 @@ def readback_notebook_sources_via_cdp(
             "youtube_source_found": False,
             "research_note_found": False,
         }
+
+
+def add_youtube_source_via_cdp(
+    client: CDPClient,
+    tab: Dict[str, Any],
+    video_id: str,
+    video_url: str,
+) -> Dict[str, Any]:
+    """Open Notebook source modal and add YouTube URL source via CDP DOM interaction."""
+    js_add_youtube = f"""
+    (async () => {{
+        // 1. Click "Add sources" button
+        const addBtn = Array.from(document.querySelectorAll('button, div[role="button"], a[role="button"]'))
+            .find(b => {{
+                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
+                return t.includes('ソースを追加') || t.includes('Add source') || t.includes('Add sources');
+            }});
+        if (addBtn) {{
+            addBtn.click();
+            await new Promise(r => setTimeout(r, 700));
+        }}
+
+        // 2. Select YouTube / Link option
+        const ytOption = Array.from(document.querySelectorAll('button, div[role="button"], mat-card, .source-option, [role="menuitem"], div[tabindex="0"]'))
+            .find(el => {{
+                const t = (el.innerText || el.getAttribute('aria-label') || '').trim();
+                return t.includes('YouTube') || t.includes('Web リンク') || t.includes('リンク');
+            }});
+        if (ytOption) {{
+            ytOption.click();
+            await new Promise(r => setTimeout(r, 700));
+        }}
+
+        // 3. Set YouTube URL into input field
+        const inputEl = document.querySelector('input[type="text"], input[type="url"], input:not([type="hidden"]), textarea');
+        if (!inputEl) {{
+            return {{ success: false, reason: "URL input element not found in modal" }};
+        }}
+        inputEl.focus();
+        inputEl.value = {json.dumps(video_url)};
+        inputEl.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        inputEl.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        await new Promise(r => setTimeout(r, 500));
+
+        // 4. Click Insert / Confirm button
+        const confirmBtn = Array.from(document.querySelectorAll('button, div[role="button"]'))
+            .find(b => {{
+                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
+                return (t.includes('挿入') || t.includes('追加') || t.includes('確定') || t.includes('Insert')) && !t.includes('ソースを追加');
+            }});
+        if (confirmBtn) {{
+            confirmBtn.click();
+            await new Promise(r => setTimeout(r, 1200));
+            return {{ success: true, action: "YOUTUBE_URL_INSERTED" }};
+        }}
+        return {{ success: false, reason: "Insert/Confirm button not found" }};
+    }})()
+    """
+    try:
+        res = client.execute_script_on_tab(tab, js_add_youtube)
+        return res if isinstance(res, dict) else {"success": False, "raw": res}
+    except Exception as ex:
+        return {"success": False, "error": str(ex)}
+
+
+def add_copied_text_source_via_cdp(
+    client: CDPClient,
+    tab: Dict[str, Any],
+    video_id: str,
+    note_content: str,
+    note_title: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Add research note as Copied text source with unique identifier via CDP DOM interaction."""
+    title_to_set = note_title or f"AI_VIDEO_RESEARCH_NOTE:{video_id}"
+    body_to_set = f"# {title_to_set}\n\n<!-- ID: {title_to_set} -->\n" + note_content
+
+    js_add_text = f"""
+    (async () => {{
+        // 1. Click "Add sources" button
+        const addBtn = Array.from(document.querySelectorAll('button, div[role="button"], a[role="button"]'))
+            .find(b => {{
+                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
+                return t.includes('ソースを追加') || t.includes('Add source') || t.includes('Add sources');
+            }});
+        if (addBtn) {{
+            addBtn.click();
+            await new Promise(r => setTimeout(r, 700));
+        }}
+
+        // 2. Select "Copied text" option
+        const textOption = Array.from(document.querySelectorAll('button, div[role="button"], mat-card, .source-option, [role="menuitem"], div[tabindex="0"]'))
+            .find(el => {{
+                const t = (el.innerText || el.getAttribute('aria-label') || '').trim();
+                return t.includes('テキストをコピー') || t.includes('Copied text') || t.includes('貼り付けたテキスト') || t.includes('テキスト');
+            }});
+        if (textOption) {{
+            textOption.click();
+            await new Promise(r => setTimeout(r, 700));
+        }}
+
+        // 3. Find title and body textarea
+        const textareas = Array.from(document.querySelectorAll('textarea, input[type="text"]'));
+        if (textareas.length === 0) {{
+            return {{ success: false, reason: "Textarea input element not found in modal" }};
+        }}
+
+        const titleInput = textareas.find(el => {{
+            const ph = (el.getAttribute('placeholder') || el.getAttribute('aria-label') || '').toLowerCase();
+            return ph.includes('タイトル') || ph.includes('title');
+        }});
+        if (titleInput) {{
+            titleInput.value = {json.dumps(title_to_set)};
+            titleInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        }}
+
+        const contentInput = textareas.find(el => el !== titleInput) || textareas[0];
+        contentInput.value = {json.dumps(body_to_set)};
+        contentInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        contentInput.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        await new Promise(r => setTimeout(r, 500));
+
+        // 4. Click Save / Insert button
+        const saveBtn = Array.from(document.querySelectorAll('button, div[role="button"]'))
+            .find(b => {{
+                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
+                return (t.includes('保存') || t.includes('追加') || t.includes('確定') || t.includes('Insert')) && !t.includes('ソースを追加');
+            }});
+        if (saveBtn) {{
+            saveBtn.click();
+            await new Promise(r => setTimeout(r, 1200));
+            return {{ success: true, action: "COPIED_TEXT_NOTE_INSERTED" }};
+        }}
+        return {{ success: false, reason: "Save/Confirm button not found" }};
+    }})()
+    """
+    try:
+        res = client.execute_script_on_tab(tab, js_add_text)
+        return res if isinstance(res, dict) else {"success": False, "raw": res}
+    except Exception as ex:
+        return {"success": False, "error": str(ex)}
 
 
 def sync_to_drive_notebook_sources(
@@ -414,9 +615,10 @@ def ingest_and_verify_notebook(
     research_md_path: Path,
     mock_cdp: bool = False,
     mock_sources: Optional[List[str]] = None,
+    allow_add: bool = True,
     drive_dir: Path = DEFAULT_NOTEBOOK_SOURCES_DIR,
 ) -> Dict[str, Any]:
-    """Execute complete notebook ingestion workflow, CDP DOM interaction & actual readback."""
+    """Execute complete notebook ingestion workflow: pre-readback, conditional UI ingest & post-readback."""
     print("=" * 60)
     print("AI技術研究室 | Gemini Notebook 自動ソース登録・読み戻し検証")
     print(f"対象Notebook: {NOTEBOOK_URL}")
@@ -438,7 +640,7 @@ def ingest_and_verify_notebook(
     cdp_available = mock_cdp or client.is_port_open()
     print(f"[2/3] Chrome CDPポートプローブ (Port {DEFAULT_CDP_PORT}): {'OPEN' if cdp_available else 'CLOSED'}")
 
-    notebook_tab = None
+    actions_taken = []
     readback_res = {
         "status": "NOTEBOOK_READBACK_SKIPPED",
         "youtube_source_found": False,
@@ -447,23 +649,83 @@ def ingest_and_verify_notebook(
     }
 
     if mock_cdp:
-        # Mock mode for unit tests
-        sources = mock_sources or [video_id, f"研究ノート_{video_id}"]
-        yt_found = any(video_id in s for s in sources)
-        note_found = any("研究" in s for s in sources)
+        # Mock mode for deterministic testing
+        current_sources = list(mock_sources) if mock_sources is not None else []
+        items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
+        yt_found, note_found, _, _ = evaluate_sources_independence(items, video_id, video_title)
+
+        # Ingest missing sources if allowed
+        if allow_add:
+            if not yt_found:
+                current_sources.append(f"https://www.youtube.com/watch?v={video_id}")
+                actions_taken.append("YOUTUBE_URL_INSERTED")
+            if not note_found:
+                current_sources.append(f"AI_VIDEO_RESEARCH_NOTE:{video_id}")
+                actions_taken.append("COPIED_TEXT_NOTE_INSERTED")
+
+        # Post-readback
+        post_items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
+        yt_found_post, note_found_post, yt_idx, note_idx = evaluate_sources_independence(post_items, video_id, video_title)
+        
+        status = "NOTEBOOK_READBACK_PASS" if (yt_found_post and note_found_post) else (
+            "NOTEBOOK_READBACK_PARTIAL" if (yt_found_post or note_found_post) else "NOTEBOOK_READBACK_NOT_FOUND"
+        )
         readback_res = {
-            "status": "NOTEBOOK_READBACK_PASS" if (yt_found and note_found) else "NOTEBOOK_READBACK_PARTIAL",
-            "youtube_source_found": yt_found,
-            "research_note_found": note_found,
-            "detected_source_count": len(sources),
-            "sources_sample": sources,
+            "status": status,
+            "youtube_source_found": yt_found_post,
+            "research_note_found": note_found_post,
+            "youtube_item_index": yt_idx,
+            "research_note_item_index": note_idx,
+            "detected_source_count": len(post_items),
+            "sources_sample": current_sources[:10],
+            "actions_taken": actions_taken,
         }
     elif cdp_available:
         try:
             notebook_tab = client.find_notebook_tab(NOTEBOOK_ID)
             if notebook_tab:
                 print(f"  - NotebookLMタブ検出: {notebook_tab.get('title')}")
-                readback_res = readback_notebook_sources_via_cdp(client, notebook_tab, video_id, video_title)
+                
+                # Step A: Pre-readback
+                pre_rb = readback_notebook_sources_via_cdp(client, notebook_tab, video_id, video_title)
+                yt_already = pre_rb.get("youtube_source_found", False)
+                note_already = pre_rb.get("research_note_found", False)
+
+                if allow_add:
+                    # Step B: Add missing YouTube source if not present
+                    if not yt_already:
+                        print(f"  - [CDP ACTION] YouTube URLソースを追加します: {video_url}")
+                        yt_add_res = add_youtube_source_via_cdp(client, notebook_tab, video_id, video_url)
+                        actions_taken.append({"action": "ADD_YOUTUBE", "result": yt_add_res})
+                        time.sleep(2.0)
+                    else:
+                        print("  - [CDP SKIP] YouTube URLソースは既に登録済みです。")
+
+                    # Step C: Add missing Research Note if not present
+                    if not note_already:
+                        print(f"  - [CDP ACTION] 研究ノート(Copied text)を追加します: AI_VIDEO_RESEARCH_NOTE:{video_id}")
+                        note_content = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
+                        note_add_res = add_copied_text_source_via_cdp(
+                            client=client,
+                            tab=notebook_tab,
+                            video_id=video_id,
+                            note_content=note_content,
+                        )
+                        actions_taken.append({"action": "ADD_RESEARCH_NOTE", "result": note_add_res})
+                        time.sleep(2.0)
+                    else:
+                        print("  - [CDP SKIP] 研究ノートソースは既に登録済みです。")
+                else:
+                    print("  - [CDP SKIP] allow_add=False のため追加操作をスキップします。")
+
+                # Step D: Post-readback
+                if actions_taken:
+                    time.sleep(1.0)
+                    readback_res = readback_notebook_sources_via_cdp(client, notebook_tab, video_id, video_title)
+                else:
+                    readback_res = pre_rb
+
+                readback_res["actions_taken"] = actions_taken
                 print(f"  - Notebook実画面Readbackステータス: {readback_res.get('status')}")
             else:
                 readback_res = {
@@ -483,6 +745,8 @@ def ingest_and_verify_notebook(
     print(f"[3/3] Notebook Readback検証結果: {readback_res.get('status')}")
     print(f"  - YouTubeソース検出: {readback_res.get('youtube_source_found')}")
     print(f"  - 研究ノート検出: {readback_res.get('research_note_found')}")
+    if actions_taken:
+        print(f"  - 実行したUI追加アクション: {actions_taken}")
 
     is_full_success = (
         drive_res.get("status") == "DRIVE_SYNC_SUCCESS"
@@ -496,6 +760,7 @@ def ingest_and_verify_notebook(
         "notebook_url": NOTEBOOK_URL,
         "drive_sync": drive_res,
         "cdp_available": cdp_available,
+        "actions_taken": actions_taken,
         "readback": readback_res,
         "is_full_success": is_full_success,
     }
