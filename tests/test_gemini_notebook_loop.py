@@ -4656,6 +4656,51 @@ process.stdout.write(JSON.stringify(res));
         self.assertEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(reasons, [])
 
+    def test_existing_youtube_source_is_preserved_and_never_deleted(self):
+        """既存のYouTube URLソースが勝手に削除されず、そのまま非破壊で保持されることを検証する。"""
+        import notebook_auto_ingest as nai
+
+        exist_vid = "existVid888"
+        exist_url = f"https://www.youtube.com/watch?v={exist_vid}"
+        exist_title = "既存登録済み動画（YouTubeソース既存）"
+        dummy_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        test_cues = [(0.0, 15.0, "既存動画の字幕発話")]
+
+        # 初期状態: NotebookLMに既にYouTube URLソースが登録されている
+        initial_sources = [
+            f"https://www.youtube.com/watch?v={exist_vid}",
+            "AI技術研究室_知識索引.md",
+        ]
+
+        # 登録・読み戻し実行（add_youtube_source=False: 新規YouTube追加はオフだが、既存の削除は絶対にしない）
+        res = nai.ingest_and_verify_notebook(
+            video_id=exist_vid,
+            video_url=exist_url,
+            video_title=exist_title,
+            research_md_path=dummy_md,
+            cues=test_cues,
+            mock_cdp=True,
+            mock_sources=initial_sources,
+            add_youtube_source=False,
+        )
+
+        actions = res.get("actions_taken", [])
+        # 1. 削除アクションは一切発生しない
+        for act in actions:
+            self.assertNotIn("DELETE", str(act).upper())
+            self.assertNotIn("REMOVE", str(act).upper())
+
+        # 2. 既存のYouTube URLソースは削除されず、読み戻しで検出される
+        rb = res.get("readback", {})
+        self.assertTrue(rb.get("youtube_source_found"), "既存のYouTube URLソースが維持されていること")
+
+        # 3. 不足していた研究ノートと字幕原文OKFが追加され、共存した状態で2ソースOKF完全立証となる
+        self.assertTrue(rb.get("research_note_found"))
+        self.assertTrue(rb.get("transcript_source_found"))
+        self.assertTrue(res.get("is_2_source_okf_verified"))
+        self.assertTrue(res.get("is_full_success"))
+        self.assertEqual(rb.get("status"), "SUCCESS_2_SOURCE_OKF")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

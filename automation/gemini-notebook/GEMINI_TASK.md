@@ -33,7 +33,7 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
      - 動画全体の章立て・目次（`chapters`）、各章の開始時刻・終了時刻、時刻の確認根拠（`timestamp_source`）
      - 確認済み時刻の位置から再生できるYouTubeリンク（`https://www.youtube.com/watch?v=<video_id>&t=<start_seconds>s`）
      - 既存の研究や未解決課題との関連（`related_records`、関係種別、理由、検証ステータス、根拠）
-   - **既存資産の絶対保護**: Notebook内に既存の研究ソースや総合索引 **`AI技術研究室_知識索引.md`** を削除・重複登録・無断上書きしてはならない。
+   - **既存資産の絶対保護（勝手な削除の禁止）**: Notebook内に既に登録されている既存動画のYouTube URLソース、研究カード、総合索引 **`AI技術研究室_知識索引.md`** 等を勝手に削除・重複登録・無断上書きしてはならない。新規動画2ソース原則は新規動画のみに適用され、過去の登録済みYouTube URLソースを遡及削除しない。
 3. **GitHub 正本の役割（構造化研究記録と時刻付き索引）**:
    - GitHub側のブリッジ（`cloud_relay_gas.js` / `receipt_to_research.py`）は、300文字の概要要約だけでなく、**最大2,500文字の詳細技術知識・再利用ノート（`detailed_findings_ja`）**、**確認済みタイムライン・目次（`chapters`）**、**一次資料検証結果（`claims`）**、**OKF関連研究ネットワーク（`related_records`）**を構造化して保存する。
    - **GitHub への保存成功は、Gemini Notebook への同期完了を意味しない** (`notebook_sync_status: NOT_SYNCED_FROM_GITHUB`)。
