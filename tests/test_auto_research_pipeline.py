@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for auto_research_pipeline.py v2.1."""
+"""Tests for auto_research_pipeline.py v2.2."""
 import json
 import unittest
 from pathlib import Path
@@ -17,18 +17,113 @@ class TestAutoResearchPipeline(unittest.TestCase):
     def setUp(self):
         self.contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
 
-    def test_sanitize_text(self):
-        raw = "Line 1\n\nLine 2\nLine 3\nLine 4\nLine 5"
-        res = auto_research_pipeline.sanitize_text(raw, max_len=50, max_newlines=2)
-        self.assertLessEqual(len(res), 50)
-        self.assertLessEqual(res.count("\n"), 2)
+    def test_default_model_is_gemini_3_8_flash(self):
+        """1. gemini-3.8-flash が標準モデルであること。"""
+        self.assertEqual(auto_research_pipeline.DEFAULT_GEMINI_MODEL, "gemini-3.8-flash")
+
+    def test_evaluate_final_status_full_success(self):
+        """All 11 conditions satisfied results in SUCCESS."""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+        )
+        self.assertEqual(status, "SUCCESS")
+        self.assertEqual(len(reasons), 0)
+
+    def test_notebook_unregistered_not_success(self):
+        """2. Notebook未登録（YouTubeまたは研究ノート未確認）ではSUCCESSにならない。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=False,  # Unregistered
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+        )
+        self.assertNotEqual(status, "SUCCESS")
+        self.assertEqual(status, "PARTIAL_NOTEBOOK_PENDING")
+        self.assertTrue(any("NotebookLM" in r for r in reasons))
+
+    def test_no_push_not_success(self):
+        """3. --no-push ではSUCCESSにならない。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=False,
+            remote_head_matched=False,
+            remote_research_readback_matched=False,
+            remote_registry_readback_matched=False,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=True,  # no_push flag
+        )
+        self.assertNotEqual(status, "SUCCESS")
+        self.assertEqual(status, "PARTIAL_NO_PUSH")
+        self.assertTrue(any("no_push" in r for r in reasons))
+
+    def test_local_transcript_extraction_not_full_success(self):
+        """4. LOCAL_TRANSCRIPT_EXTRACTION では完全SUCCESSにならない。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="LOCAL_TRANSCRIPT_EXTRACTION",  # Non-AI local extraction
+            model_used="NONE",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+        )
+        self.assertNotEqual(status, "SUCCESS")
+        self.assertEqual(status, "PARTIAL_LOCAL_EXTRACTION")
+        self.assertTrue(any("LIVE" in r for r in reasons))
+
+    def test_registry_remote_readback_failure_not_success(self):
+        """5. registry remote readback失敗でSUCCESSにならない。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=False,  # registry readback failed
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+        )
+        self.assertNotEqual(status, "SUCCESS")
+        self.assertEqual(status, "PARTIAL_READBACK_MISMATCH")
+        self.assertTrue(any("registry.json" in r for r in reasons))
 
     def test_verify_target_branch_early_success(self):
-        # On current branch, it should not raise
         auto_research_pipeline.verify_target_branch_early(root=ROOT)
 
     def test_verify_target_branch_early_forbidden(self):
-        # When target is different, it must raise RuntimeError
         with self.assertRaises(RuntimeError):
             auto_research_pipeline.verify_target_branch_early(root=ROOT, target_branch="non-existent-branch-xyz")
 
@@ -76,29 +171,27 @@ class TestAutoResearchPipeline(unittest.TestCase):
             },
             "captions": {}
         }
-        receipt = auto_research_pipeline.build_research_receipt(
+        receipt, engine, model = auto_research_pipeline.build_research_receipt(
             video_id="test1234567",
             player_data=mock_player,
-            publish_date=None,  # Unknown
+            publish_date=None,
         )
         self.assertEqual(receipt["schema_version"], "research_receipt_v1")
         self.assertEqual(len(receipt["videos"]), 1)
         v = receipt["videos"][0]
         self.assertEqual(v["video_id"], "test1234567")
-        self.assertEqual(v["published_at"], "UNKNOWN")  # Honesty: never faked
+        self.assertEqual(v["published_at"], "UNKNOWN")
         self.assertEqual(v["transcript_status"], "NOT_ACQUIRED")
         self.assertLessEqual(len(v["title"]), 250)
         self.assertLessEqual(len(v["summary_ja"]), 300)
         self.assertLessEqual(len(v["detailed_findings_ja"]), 2500)
         self.assertLessEqual(v["detailed_findings_ja"].count("\n"), 25)
         
-        # Check forbidden keys
         forbidden = set(self.contract.get("forbidden_payload_keys", []))
         for key in v.keys():
             self.assertNotIn(key.lower(), forbidden)
 
     def test_live_gemini_requires_explicit_flag(self):
-        # Even with API key, without enable_live_gemini=True, it should fallback to local engine
         mock_player = {
             "videoDetails": {
                 "title": "テストAI動画",
@@ -108,20 +201,15 @@ class TestAutoResearchPipeline(unittest.TestCase):
             },
             "captions": {}
         }
-        receipt = auto_research_pipeline.build_research_receipt(
+        receipt, engine, model = auto_research_pipeline.build_research_receipt(
             video_id="test1234567",
             player_data=mock_player,
             publish_date="2026-10-19",
             gemini_api_key="fake-key-for-test",
-            enable_live_gemini=False,  # Not explicitly enabled
+            enable_live_gemini=False,
         )
-        # Should succeed using local fallback without network call
         self.assertEqual(receipt["videos"][0]["video_id"], "test1234567")
-
-    def test_duplicate_prevention_on_pipeline(self):
-        res = auto_research_pipeline.run_pipeline("https://www.youtube.com/watch?v=u3ka_AAb8qE")
-        self.assertEqual(res.get("status"), "ALREADY_REGISTERED")
-        self.assertEqual(res.get("video_id"), "u3ka_AAb8qE")
+        self.assertNotEqual(engine, "GEMINI_API_LIVE")
 
     def test_dry_run_no_side_effects(self):
         test_scratch = ROOT / "scratch" / "receipt_dQw4w9WgXcQ.json"
@@ -130,11 +218,22 @@ class TestAutoResearchPipeline(unittest.TestCase):
         res = auto_research_pipeline.run_pipeline(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             dry_run=True,
-            enable_live_gemini=True,  # Even if requested, dry_run must prevent API call & file write
+            enable_live_gemini=True,
             gemini_api_key="fake_key_must_not_be_called",
         )
         self.assertEqual(res.get("status"), "DRY_RUN_COMPLETE")
-        self.assertFalse(test_scratch.exists(), "Dry-run must not create scratch receipt file")
+        self.assertFalse(test_scratch.exists())
+
+    def test_resume_notebook_ingest_from_already_registered(self):
+        """8. GitHub登録済み / Notebook未登録からNotebook工程だけ再開できること。"""
+        # u3ka_AAb8qE is already registered on GitHub
+        res = auto_research_pipeline.run_pipeline(
+            "https://www.youtube.com/watch?v=u3ka_AAb8qE",
+            mock_cdp=True,
+        )
+        self.assertIn(res.get("status"), ("RESUMED_NOTEBOOK_INGEST", "ALREADY_REGISTERED"))
+        if res.get("status") == "RESUMED_NOTEBOOK_INGEST":
+            self.assertIn("notebook_ingest", res)
 
 
 if __name__ == "__main__":

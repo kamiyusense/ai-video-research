@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
-"""AI技術研究室 | 自動研究Loop統合パイプライン (auto_research_pipeline.py v2.1).
+"""AI技術研究室 | 自動研究Loop統合パイプライン (auto_research_pipeline.py v2.2).
 
 目的:
 YouTube URLを起点とし、事前重複チェック -> 実際のYouTube字幕・メタデータ取得 ->
 AI研究/ローカル字幕解析 -> OKF v0.2形式研究ノート生成 -> GitHub正本保存 ->
-実際のリモート本文読み戻し検証 -> 自然言語QA実証までを自律実行する。
+実際のリモート本文（研究ノート＆registry.json）のSHA-256読み戻し検証 ->
+Gemini Notebook自動登録＆実画面Readback検証 -> 自然言語QA実証までを自律実行する。
 
-改善点 (v2.1):
-1. [ブランチ早期検証] 処理開始前に許可された非defaultブランチであることを厳格検証。
-2. [停止判定尊重] 台帳取得失敗等の停止判定を尊重し新規登録扱いしない。
-3. [リモート重複確認] 最新のリモートブランチ走査による二重登録防止。
-4. [Dry-Run API禁止] --dry-run 時のGemini API呼び出しを完全禁止。
-5. [LIVE実行明示制] APIキーがあっても --enable-live-gemini がなければ外部APIをLIVE呼出ししない。
-6. [Geminiモデル最新化] 停止済みモデル固定を解消し、gemini-2.0-flash / 引数指定に対応。
-7. [スキーマ完全一致] Gemini出力プロンプトを contract_spec_v1.json と完全一致。
-8. [正直なエンジン区分] GEMINI_API_LIVE / LOCAL_TRANSCRIPT_EXTRACTION / METADATA_ONLY を明示。
-9. [QA戻り値正確化] step2_matched_records を正しくパースし、不一致時は QA_FAILED と判定。
-10. [知識カタログ保存] build_video_knowledge_catalog の結果を確実に保存・検証。
-11. [リモート本文読み戻し] git show origin:path によるリモート上の研究ノート・台帳本文の存在検証。
-12. [保存責任明確化] ローカルGit Push（正本責任）と Drive/GAS中継（--relay-via-drive）の完全排他。
+改善点 (v2.2):
+1. [Gemini 3.8 Flash] デフォルトモデルを gemini-3.8-flash に更新。
+2. [Notebook実登録＆Readback統合] notebook_auto_ingest v3.0 と連携し、Drive配置＋CDP DOM Readbackを実行。
+3. [厳格なSUCCESS判定] 11の必須条件すべてANDのみ完全SUCCESSを認可。1つでも未達なら PARTIAL_* を返却。
+4. [registry.json remote readback] git show origin:registry.json によるローカル/リモートSHA-256一致検証。
+5. [研究ノート remote readback] git show origin:research/*.md によるローカル/リモートSHA-256一致検証。
+6. [部分失敗後の自動レジューム] GitHub登録済み・Notebook未完了時は、Notebook工程だけを安全に再開。
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import os
@@ -62,7 +58,7 @@ import notebook_auto_ingest
 DEFAULT_DRIVE_INBOX = Path("G:/マイドライブ/AI技術研究室_受信トレイ")
 DEFAULT_TARGET_BRANCH = "feature/gemini-notebook-research-loop-20261016"
 NOTEBOOK_URL = "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7"
-DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 
 
 def sanitize_text(text: str, max_len: int, max_newlines: int = 3) -> str:
@@ -76,6 +72,12 @@ def sanitize_text(text: str, max_len: int, max_newlines: int = 3) -> str:
     if len(res) > max_len:
         res = res[: max_len - 3] + "..."
     return res
+
+
+def compute_sha256(content: str) -> str:
+    """Compute normalized SHA-256 of text string (LF normalized)."""
+    normalized = content.replace("\r\n", "\n").encode("utf-8")
+    return hashlib.sha256(normalized).hexdigest()
 
 
 def verify_target_branch_early(root: Path = ROOT, target_branch: str = DEFAULT_TARGET_BRANCH):
@@ -127,7 +129,7 @@ def analyze_with_gemini_api(
     api_key: str,
     model_name: str = DEFAULT_GEMINI_MODEL,
 ) -> Optional[Dict[str, Any]]:
-    """Analyze actual caption cues using Google Gemini Flash REST API."""
+    """Analyze actual caption cues using Google Gemini Flash REST API (defaults to gemini-3.8-flash)."""
     if not api_key:
         return None
 
@@ -298,8 +300,12 @@ def build_research_receipt(
     gemini_model: str = DEFAULT_GEMINI_MODEL,
     enable_live_gemini: bool = False,
     dry_run: bool = False,
-) -> Dict[str, Any]:
-    """Synthesize conformant research_receipt_v1 from real metadata & actual caption text."""
+) -> Tuple[Dict[str, Any], str, str]:
+    """Synthesize conformant research_receipt_v1 from real metadata & actual caption text.
+    
+    Returns:
+        (receipt_dict, engine_used, model_used)
+    """
     vd = player_data.get("videoDetails", {})
     raw_title = vd.get("title", f"YouTube Video {video_id}").strip()
     author = vd.get("author", "Unknown Author").strip()
@@ -316,12 +322,14 @@ def build_research_receipt(
     # 2. Analyze: Gemini API (Only if enabled, key present, cues present, and NOT dry_run)
     ai_analysis = None
     engine_used = "METADATA_ONLY" if not cues else "LOCAL_TRANSCRIPT_EXTRACTION"
+    model_used = "NONE"
 
     if enable_live_gemini and gemini_api_key and cues and not dry_run:
         print(f"  - Gemini API ({gemini_model}) による字幕内容の研究・要約を実行中 (LIVE承認済み)...")
         ai_analysis = analyze_with_gemini_api(title, author, length_sec, cues, gemini_api_key, model_name=gemini_model)
         if ai_analysis:
             engine_used = "GEMINI_API_LIVE"
+            model_used = gemini_model
 
     if not ai_analysis:
         if dry_run:
@@ -330,6 +338,7 @@ def build_research_receipt(
             print("  - [INFO] 外部LIVE未指定（--enable-live-geminiなし）: ローカル字幕テキスト抽出エンジンを適用します。")
         ai_analysis = analyze_with_local_transcript_engine(title, author, length_sec, cues, desc, starts)
         engine_used = ai_analysis.get("analysis_engine", engine_used)
+        model_used = "NONE"
 
     summary_ja = ai_analysis.get("summary_ja", f"{title}の技術分析。")
     detailed_findings_ja = ai_analysis.get("detailed_findings_ja", "")
@@ -386,7 +395,89 @@ def build_research_receipt(
             }
         ],
     }
-    return receipt
+    return receipt, engine_used, model_used
+
+
+def run_notebook_registration_only(
+    video_id: str,
+    research_md_path: Path,
+    video_title: str = "YouTube Video",
+    mock_cdp: bool = False,
+) -> Dict[str, Any]:
+    """Resume notebook registration for videos already committed to GitHub."""
+    print(f"\n[RESUME NOTEBOOK INGEST] GitHub登録済み・Notebook未完了の動画 '{video_id}' のNotebook登録を再開します。")
+    v_url = f"https://www.youtube.com/watch?v={video_id}"
+    nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
+        video_id=video_id,
+        video_url=v_url,
+        video_title=video_title,
+        research_md_path=research_md_path,
+        mock_cdp=mock_cdp,
+    )
+    return nb_res
+
+
+def evaluate_final_status(
+    real_content_acquired: bool,
+    engine_used: str,
+    model_used: str,
+    research_note_generated: bool,
+    github_push_success: bool,
+    remote_head_matched: bool,
+    remote_research_readback_matched: bool,
+    remote_registry_readback_matched: bool,
+    notebook_youtube_readback: bool,
+    notebook_research_readback: bool,
+    qa_verified: bool,
+    no_push: bool,
+) -> Tuple[str, List[str]]:
+    """Strictly evaluate whether execution is a full SUCCESS or PARTIAL/FAILED.
+    
+    Full SUCCESS requires ALL 11 conditions to be True.
+    """
+    reasons = []
+
+    if no_push:
+        reasons.append("no_pushフラグが指定されているためGitHubリモート未反映")
+    if not github_push_success:
+        reasons.append("GitHubリモートPush未実行または失敗")
+    if not remote_head_matched:
+        reasons.append("リモートHEADハッシュ不一致")
+    if not remote_research_readback_matched:
+        reasons.append("リモート研究ノート本文のSHA-256不一致または取得失敗")
+    if not remote_registry_readback_matched:
+        reasons.append("リモートregistry.jsonのSHA-256不一致または取得失敗")
+    if not real_content_acquired:
+        reasons.append("実動画字幕または実内容が未取得")
+    if engine_used != "GEMINI_API_LIVE":
+        reasons.append(f"AIによるLIVE研究要約が未実行 (engine: {engine_used})")
+    if model_used != "gemini-3.8-flash":
+        reasons.append(f"公式モデル gemini-3.8-flash が未使用 (model: {model_used})")
+    if not research_note_generated:
+        reasons.append("研究ノートMarkdownが未生成")
+    if not notebook_youtube_readback:
+        reasons.append("NotebookLM上のYouTubeソース追加・読み戻し未完了")
+    if not notebook_research_readback:
+        reasons.append("NotebookLM上の研究ノート追加・読み戻し未完了")
+    if not qa_verified:
+        reasons.append("自然言語QA検索による第1位検出未検証")
+
+    if not reasons:
+        return "SUCCESS", []
+
+    # Map to specific PARTIAL status
+    if no_push:
+        return "PARTIAL_NO_PUSH", reasons
+    if engine_used == "LOCAL_TRANSCRIPT_EXTRACTION":
+        return "PARTIAL_LOCAL_EXTRACTION", reasons
+    if not (notebook_youtube_readback and notebook_research_readback):
+        return "PARTIAL_NOTEBOOK_PENDING", reasons
+    if not qa_verified:
+        return "PARTIAL_QA_MISMATCH", reasons
+    if not (remote_research_readback_matched and remote_registry_readback_matched):
+        return "PARTIAL_READBACK_MISMATCH", reasons
+
+    return "PARTIAL", reasons
 
 
 def run_pipeline(
@@ -398,42 +489,73 @@ def run_pipeline(
     gemini_model: str = DEFAULT_GEMINI_MODEL,
     enable_live_gemini: bool = False,
     relay_via_drive: bool = False,
+    mock_cdp: bool = False,
 ) -> Dict[str, Any]:
     """Execute complete automated research pipeline from URL to GitHub commit & verification."""
     today_str = date.today().isoformat()
     print("=" * 70)
-    print("[PIPELINE START] AI技術研究室 完全自動化研究パイプライン 開始 (v2.1)")
+    print(f"[PIPELINE START] AI技術研究室 完全自動化研究パイプライン 開始 (v2.2, Model: {gemini_model})")
     print(f"入力URL: {url}")
     print("=" * 70)
 
     # 0. Early repository and branch verification BEFORE ANY FILE CHANGES
     verify_target_branch_early(root=ROOT, target_branch=DEFAULT_TARGET_BRANCH)
-    print(f"[0/7] ブランチ検証合格: {DEFAULT_TARGET_BRANCH}")
+    print(f"[0/8] ブランチ検証合格: {DEFAULT_TARGET_BRANCH}")
 
     # 1. Extract video ID & Check duplication (First line of defense)
     video_id = intake_url.extract_youtube_id(url)
     if not video_id:
         raise ValueError(f"有効なYouTube動画IDを抽出できませんでした: {url}")
-    print(f"[1/7] 動画ID抽出成功: {video_id}")
+    print(f"[1/8] 動画ID抽出成功: {video_id}")
 
     dedup_res = intake_url.check_url_intake(url, root=ROOT)
     dedup_status = dedup_res.get("status")
-    if dedup_status in ("ALREADY_REGISTERED", "BLOCKED_GITHUB_UNREACHABLE", "HALT", "STATUS_HALT"):
-        print(f"\n[STOP: {dedup_status}] 【安全停止判定を尊重して処理を中止します】")
+
+    # Resume support: If already registered on GitHub, check if notebook registration needs to be resumed
+    if dedup_status == "ALREADY_REGISTERED":
+        res_path_str = dedup_res.get("research_path")
+        res_path = ROOT / res_path_str if res_path_str else None
+        
+        # Check if notebook was confirmed in registry
+        reg_data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8")) if REGISTRY_PATH.exists() else {}
+        reg_record = next((r for r in reg_data.get("videos", []) if r.get("video_id") == video_id), {})
+        nb_confirmed = "NOTEBOOK_READBACK_CONFIRMED" in reg_record.get("status", "")
+
+        if not nb_confirmed and res_path and res_path.exists():
+            print(f"\n[RESUME DETECTED] 動画 '{video_id}' はGitHub登録済みですが、Notebook未確認です。")
+            nb_res = run_notebook_registration_only(
+                video_id=video_id,
+                research_md_path=res_path,
+                video_title=dedup_res.get("title", f"YouTube Video {video_id}"),
+                mock_cdp=mock_cdp,
+            )
+            return {
+                "status": "RESUMED_NOTEBOOK_INGEST",
+                "video_id": video_id,
+                "notebook_ingest": nb_res,
+                "details": dedup_res,
+            }
+
+        print(f"\n[STOP: {dedup_status}] 【登録済み・完全処理済みのため処理を安全停止します】")
         print(f"動画ID: {video_id}")
-        print(f"判定ステータス: {dedup_status}")
-        if dedup_res.get("title"):
-            print(f"タイトル: {dedup_res.get('title')}")
-            print(f"要約: {dedup_res.get('summary_ja')}")
-            print(f"研究ノート: {dedup_res.get('research_path')}")
+        print(f"タイトル: {dedup_res.get('title')}")
+        print(f"研究ノート: {dedup_res.get('research_path')}")
         return {
             "status": dedup_status,
             "video_id": video_id,
             "details": dedup_res,
         }
 
-    # 2. Fetch YouTube metadata
-    print(f"[2/7] YouTubeメタデータ＆字幕本文取得中 ({video_id})...")
+    if dedup_status in ("BLOCKED_GITHUB_UNREACHABLE", "HALT", "STATUS_HALT"):
+        print(f"\n[STOP: {dedup_status}] 【安全停止判定を尊重して処理を中止します】")
+        return {
+            "status": dedup_status,
+            "video_id": video_id,
+            "details": dedup_res,
+        }
+
+    # 2. Fetch YouTube metadata & captions
+    print(f"[2/8] YouTubeメタデータ＆字幕本文取得中 ({video_id})...")
     player_data = verify_timestamps.fetch_player(video_id)
     if not player_data or "videoDetails" not in player_data:
         raise RuntimeError(f"YouTubeプレイヤーデータの取得に失敗しました: {video_id}")
@@ -446,9 +568,9 @@ def run_pipeline(
     print(f"  - 公開日: {publish_date or 'UNKNOWN'}")
 
     # 3. Build research receipt conformant to contract_spec_v1
-    print("[3/7] OKF v0.2形式 研究レシート合成中...")
+    print(f"[3/8] OKF v0.2形式 研究レシート合成中 (Model: {gemini_model})...")
     key_to_use = gemini_api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    receipt = build_research_receipt(
+    receipt, engine_used, model_used = build_research_receipt(
         video_id=video_id,
         player_data=player_data,
         publish_date=publish_date,
@@ -464,6 +586,8 @@ def run_pipeline(
             "status": "DRY_RUN_COMPLETE",
             "video_id": video_id,
             "receipt": receipt,
+            "engine_used": engine_used,
+            "model_used": model_used,
         }
 
     # Save receipt to scratch
@@ -490,7 +614,7 @@ def run_pipeline(
         }
 
     # 4. Apply receipt to GitHub repository (generate research markdown, update registry)
-    print("[4/7] GitHubリポジトリへ研究ノート適用・台帳更新中 (リモート最新走査有効)...")
+    print("[4/8] GitHubリポジトリへ研究ノート適用・台帳更新中 (リモート最新走査有効)...")
     summary, touched = receipt_to_research.process_receipt_data(
         data=receipt,
         root=ROOT,
@@ -504,9 +628,10 @@ def run_pipeline(
     )
     print(f"  - 新規作成数: {summary.get('new_records', 0)}")
     print(f"  - 更新ファイル数: {len(touched)}")
+    research_note_generated = summary.get("new_records", 0) > 0 or len(touched) > 0
 
     # 5. Rebuild knowledge catalog via official query_research API and verify file
-    print("[5/7] 知識カタログ再構築中 (video_knowledge_catalog.json)...")
+    print("[5/8] 知識カタログ再構築中 (video_knowledge_catalog.json)...")
     catalog_res, cat_path = query_research.build_video_knowledge_catalog(root=ROOT)
     if not cat_path.exists() or cat_path.stat().st_size == 0:
         raise RuntimeError(f"知識カタログの保存に失敗しました: {cat_path}")
@@ -514,7 +639,7 @@ def run_pipeline(
 
     # 6. Git commit and push (Safety: non-default branch only)
     current_branch = subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT, text=True).strip()
-    print(f"[6/7] Gitコミット＆Push実行中 (ブランチ: {current_branch})...")
+    print(f"[6/8] Gitコミット＆Push実行中 (ブランチ: {current_branch})...")
     files_to_add = ["registry.json", "automation/gemini-notebook/state/video_knowledge_catalog.json"]
     for t in touched:
         rel = str(Path(t).relative_to(ROOT)).replace("\\", "/")
@@ -522,16 +647,23 @@ def run_pipeline(
             files_to_add.append(rel)
 
     subprocess.check_call(["git", "add"] + files_to_add, cwd=ROOT)
-    commit_msg = f"feat(research): auto-ingest video {video_id} via auto research pipeline v2.1"
+    commit_msg = f"feat(research): auto-ingest video {video_id} via auto research pipeline v2.2"
     subprocess.check_call(["git", "commit", "-m", commit_msg], cwd=ROOT)
     
     commit_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     print(f"  - ローカルコミット完了: {commit_sha[:7]} ({commit_msg})")
 
+    # Verification flags
+    github_push_success = False
+    remote_head_matched = False
+    remote_research_readback_matched = False
+    remote_registry_readback_matched = False
     remote_head = "UNKNOWN"
     research_md_path = f"research/{today_str}-{video_id}-gemini-notebook.md"
+
     if not no_push:
         subprocess.check_call(["git", "push", "origin", current_branch], cwd=ROOT)
+        github_push_success = True
         print(f"  - リモートPush完了: origin/{current_branch}")
 
         # Real remote readback using git ls-remote
@@ -542,25 +674,45 @@ def run_pipeline(
         ).strip()
         if ls_remote_out:
             remote_head = ls_remote_out.split()[0]
-        if remote_head != commit_sha:
+        remote_head_matched = (remote_head == commit_sha)
+        if not remote_head_matched:
             raise RuntimeError(f"読み戻し不一致エラー: ローカルHEAD({commit_sha[:7]}) と 実際のリモートHEAD({remote_head[:7]}) が一致しません。")
         print(f"  - 実際のリモートHEAD読み戻し確認完了 (Remote HEAD: {remote_head[:7]})")
 
-        # Remote file content readback (Verify actual content on origin)
+        # Remote Research Markdown content readback & SHA-256 comparison
         try:
             remote_md_sample = subprocess.check_output(
                 ["git", "show", f"origin/{current_branch}:{research_md_path}"],
                 cwd=ROOT,
                 text=True,
             )
-            if video_id not in remote_md_sample or "okf_version" not in remote_md_sample:
-                raise RuntimeError(f"リモート研究ノート本文検証失敗: {research_md_path}")
-            print(f"  - リモート研究ノート本文読み戻し成功: {research_md_path}")
+            local_md_sample = (ROOT / research_md_path).read_text(encoding="utf-8")
+            if compute_sha256(remote_md_sample) == compute_sha256(local_md_sample):
+                remote_research_readback_matched = True
+                print(f"  - リモート研究ノート本文SHA-256一致検証成功: {research_md_path}")
+            else:
+                print(f"  - [WARNING] リモート研究ノート本文SHA-256不一致")
         except subprocess.CalledProcessError as cpe:
-            raise RuntimeError(f"リモート上の研究ノートファイル読み戻しに失敗しました: {cpe}")
+            print(f"  - [WARNING] リモート研究ノート本文読み戻し失敗: {cpe}")
+
+        # Remote registry.json content readback & SHA-256 comparison
+        try:
+            remote_reg_sample = subprocess.check_output(
+                ["git", "show", f"origin/{current_branch}:registry.json"],
+                cwd=ROOT,
+                text=True,
+            )
+            local_reg_sample = (ROOT / "registry.json").read_text(encoding="utf-8")
+            if compute_sha256(remote_reg_sample) == compute_sha256(local_reg_sample):
+                remote_registry_readback_matched = True
+                print(f"  - リモートregistry.json本文SHA-256一致検証成功")
+            else:
+                print(f"  - [WARNING] リモートregistry.json本文SHA-256不一致")
+        except subprocess.CalledProcessError as cpe:
+            print(f"  - [WARNING] リモートregistry.json読み戻し失敗: {cpe}")
 
     # 7. QA System self-verification via official answer_question API
-    print("[7/7] 自然言語QA検索エンジンでの動作実証中...")
+    print("[7/8] 自然言語QA検索エンジンでの動作実証中...")
     qa_res = query_research.answer_question(f"{vd.get('title')[:30]} について教えて", root=ROOT)
     matched_records = qa_res.get("step2_matched_records", [])
     top_rec = matched_records[0] if matched_records else {}
@@ -573,17 +725,35 @@ def run_pipeline(
     else:
         print(f"  - [WARNING] QA検索不一致: 期待値 '{video_id}' vs 検出第1位 '{top_vid}' (スコア: {qa_score})")
 
-    # 8. Notebook Auto Ingest (Google Drive dedicated source sync & CDP probe)
-    print("[8/8] Gemini Notebook連携処理 (Google Drive専用同期フォルダ配置 & CDPプローブ)...")
-    nb_res = notebook_auto_ingest.ingest_to_notebook(
+    # 8. Notebook Auto Ingest & Live Readback
+    print("[8/8] Gemini Notebook自動ソース登録・実画面Readback検証中...")
+    nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
         video_id=video_id,
         video_url=f"https://www.youtube.com/watch?v={video_id}",
         video_title=vd.get("title", f"YouTube Video {video_id}"),
         research_md_path=ROOT / research_md_path,
+        mock_cdp=mock_cdp,
     )
-    print(f"  - Notebook連携ステータス: {nb_res.get('status')}")
+    nb_rb = nb_res.get("readback", {})
+    notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
+    notebook_research_readback = bool(nb_rb.get("research_note_found"))
 
-    final_status = "SUCCESS" if (qa_verified or no_push) else "PARTIAL_QA_MISMATCH"
+    # Final Strict SUCCESS Evaluation (11 Mandatory Conditions)
+    final_status, fail_reasons = evaluate_final_status(
+        real_content_acquired=(len(player_data.get("captions", {})) > 0 or len(vd.get("shortDescription", "")) > 0),
+        engine_used=engine_used,
+        model_used=model_used,
+        research_note_generated=research_note_generated,
+        github_push_success=github_push_success,
+        remote_head_matched=remote_head_matched,
+        remote_research_readback_matched=remote_research_readback_matched,
+        remote_registry_readback_matched=remote_registry_readback_matched,
+        notebook_youtube_readback=notebook_youtube_readback,
+        notebook_research_readback=notebook_research_readback,
+        qa_verified=qa_verified,
+        no_push=no_push,
+    )
+
     print("=" * 70)
     print(f"[{final_status}] 完全自動化研究パイプライン 完了")
     print(f"動画ID: {video_id}")
@@ -591,6 +761,10 @@ def run_pipeline(
     print(f"台帳総数: {catalog_res.get('total_video_records')} 本")
     print(f"Notebook用Markdown: {research_md_path}")
     print(f"Drive Notebook同期先: {nb_res.get('drive_sync', {}).get('target_dir')}")
+    if fail_reasons:
+        print("未達項目・制限事項:")
+        for r in fail_reasons:
+            print(f"  - {r}")
     print("=" * 70)
 
     return {
@@ -602,12 +776,15 @@ def run_pipeline(
         "research_path": research_md_path,
         "drive_saved": drive_saved_path,
         "qa_verified": qa_verified,
+        "engine_used": engine_used,
+        "model_used": model_used,
         "notebook_ingest": nb_res,
+        "fail_reasons": fail_reasons,
     }
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AI技術研究室 完全自動化研究パイプライン v2.1")
+    parser = argparse.ArgumentParser(description="AI技術研究室 完全自動化研究パイプライン v2.2")
     parser.add_argument("url", help="YouTube動画URL (例: https://www.youtube.com/watch?v=...)")
     parser.add_argument("--drive-inbox", help="Google Drive受信トレイのカスタムパス", default=None)
     parser.add_argument("--dry-run", action="store_true", help="保存・コミット・Push・外部APIをスキップしてプレビュー生成")
@@ -616,6 +793,7 @@ def main():
     parser.add_argument("--gemini-model", help=f"Geminiモデル名 (デフォルト: {DEFAULT_GEMINI_MODEL})", default=DEFAULT_GEMINI_MODEL)
     parser.add_argument("--enable-live-gemini", action="store_true", help="Gemini APIのLIVE実行を明示的に許可する（デフォルトは安全のため無効）")
     parser.add_argument("--relay-via-drive", action="store_true", help="ローカルGit Pushを行わずDrive配置によるGASリレーを優先する")
+    parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
     args = parser.parse_args()
 
     inbox_p = Path(args.drive_inbox) if args.drive_inbox else None
@@ -628,6 +806,7 @@ def main():
         gemini_model=args.gemini_model,
         enable_live_gemini=args.enable_live_gemini,
         relay_via_drive=args.relay_via_drive,
+        mock_cdp=args.mock_cdp,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("status") in ("SUCCESS", "ALREADY_REGISTERED", "DRY_RUN_COMPLETE", "DRIVE_RELAY_DISPATCHED") else 1
