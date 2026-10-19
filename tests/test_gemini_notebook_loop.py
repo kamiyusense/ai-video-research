@@ -4891,6 +4891,56 @@ process.stdout.write(JSON.stringify(res));
         self.assertTrue(res_mock.get("is_mock"), "Mock実行時はis_mockがTrueであること")
         self.assertEqual(res_mock.get("execution_mode"), "MOCK", "Mock実行時はexecution_modeがMOCKであること")
 
+    def test_legacy_youtube_plus_note_only_yields_partial_status(self):
+        """旧式の「YouTube URL＋研究ノート」だけが成功した場合は PARTIAL_2_SOURCE_OKF_PENDING となることを検証する。"""
+        import notebook_auto_ingest as nai
+        import auto_research_pipeline as arp
+
+        vid = "legacyYtNoteOnly123"
+        url = f"https://www.youtube.com/watch?v={vid}"
+        title = "旧式YouTube＋研究ノートのみの動画"
+        dummy_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+
+        # 1. notebook_auto_ingest での判定検証:
+        # YouTube URLソースと研究ノートソースのみが存在し、字幕原文OKFが存在しない場合
+        mock_sources = [
+            f"https://www.youtube.com/watch?v={vid}",
+            f"AI_VIDEO_RESEARCH_NOTE:{vid}",
+        ]
+        res_nb = nai.ingest_and_verify_notebook(
+            video_id=vid,
+            video_url=url,
+            video_title=title,
+            research_md_path=dummy_md,
+            mock_cdp=True,
+            mock_sources=mock_sources,
+            allow_add=False,  # 追加せず既存ソースのみで評価
+        )
+        self.assertEqual(res_nb.get("status"), "PARTIAL_2_SOURCE_OKF_PENDING", "YouTube URL＋研究ノートのみの場合は PARTIAL_2_SOURCE_OKF_PENDING であること")
+        self.assertEqual(res_nb.get("readback", {}).get("status"), "PARTIAL_2_SOURCE_OKF_PENDING")
+        self.assertFalse(res_nb.get("is_2_source_okf_verified"), "2ソースOKF完成とは認めないこと")
+        self.assertFalse(res_nb.get("is_full_success"))
+
+        # 2. auto_research_pipeline の evaluate_final_status での判定検証:
+        status, reasons = arp.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,    # YouTube URLソースあり
+            notebook_research_readback=True,   # 研究ノートソースあり
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=False,    # 字幕原文OKF未検証
+            notebook_transcript_readback=False,
+        )
+        self.assertEqual(status, "PARTIAL_2_SOURCE_OKF_PENDING", "パイプライン評価でも PARTIAL_2_SOURCE_OKF_PENDING であること")
+        self.assertTrue(any("字幕原文OKF" in r for r in reasons))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
