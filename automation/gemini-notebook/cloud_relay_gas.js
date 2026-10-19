@@ -1671,6 +1671,8 @@ function renderResearchMarkdown_(v, checkedAt) {
   const titleDisplay = rawTitle.startsWith("【研究カード】")
     ? rawTitle
     : "【研究カード】 " + rawTitle;
+  const logicalId = clean_(v.logical_id || ("youtube:" + vid + ":research"));
+  const transcriptLogicalId = clean_(v.transcript_logical_id || ("youtube:" + vid + ":transcript"));
 
   let lines = renderOkfFrontmatter_(v, checkedAt);
   lines = lines.concat([
@@ -1679,6 +1681,13 @@ function renderResearchMarkdown_(v, checkedAt) {
     "",
     "> [!IMPORTANT]",
     "> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。",
+    "",
+    "> [!NOTE]",
+    "> **資料識別・Notebook UI参照案内**:",
+    "> - **動画ID**: `" + vid + "`",
+    "> - **資料論理ID**: `" + logicalId + "`",
+    "> - **対応字幕原文論理ID**: `" + transcriptLogicalId + "`",
+    "> - **UI制限事項**: NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する字幕原文を参照する場合は、上記『対応字幕原文論理ID (`" + transcriptLogicalId + "`)』または『動画ID (`" + vid + "`)』をもとに、Notebookのソース一覧から検索・特定してください。",
     "",
     "## 独自要約",
     clean_(v.summary_ja),
@@ -1731,6 +1740,7 @@ function renderDeltaSection_(v, checkedAt) {
     "## 差分更新 (" + checkedAt + " / " + changesStr + ")",
     "",
     "- checked_at: " + checkedAt,
+    "- video_id: `" + vid + "`",
     "- source_scope: " + clean_(v.source_scope),
     "- logical_id: `" + logicalId + "`",
     "- transcript_logical_id: `" + transcriptLogicalId + "`",
@@ -1739,6 +1749,7 @@ function renderDeltaSection_(v, checkedAt) {
     "- original_url: " + v.url,
     "- canonical_url: " + canon,
     "- primary_source_notebook_id: " + nbSrc,
+    "- notebook_ui_note: NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様です。対応資料は logical_id / transcript_logical_id / video_id で検索・特定してください。",
   ];
   if (v.notebook_open_link) {
     lines.push("- notebook_open_link: " + clean_(v.notebook_open_link));

@@ -441,6 +441,21 @@ class TestNotebookAutoIngest(unittest.TestCase):
         self.assertNotIn('notebook_open_link', content_fictional)
         self.assertNotIn('javascript:', content_fictional)
 
+    def test_ui_navigation_limitation_and_id_cross_reference(self):
+        """Notebook UI上でリンククリック不可でも、動画IDと論理IDの双方で対応関係を特定・参照でき、制限が明記されること。"""
+        content = notebook_auto_ingest.build_transcript_okf_content(
+            video_id="vidRef123",
+            video_url="https://www.youtube.com/watch?v=vidRef123",
+            video_title="UI参照テスト",
+            cues=[{"start": 0.0, "duration": 1.0, "text": "テスト"}],
+        )
+        self.assertIn("- **動画ID**: `vidRef123`", content)
+        self.assertIn("- **資料論理ID**: `youtube:vidRef123:transcript`", content)
+        self.assertIn("- **対応研究ノート論理ID**: `youtube:vidRef123:research`", content)
+        self.assertIn("NotebookLMのUI上ではソース間直接リンクのクリックジャンプができない仕様です", content)
+        self.assertIn("対応研究ノート論理ID (`youtube:vidRef123:research`)", content)
+        self.assertIn("動画ID (`vidRef123`)", content)
+
 
 if __name__ == "__main__":
     unittest.main()

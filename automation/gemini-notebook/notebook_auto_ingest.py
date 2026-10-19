@@ -373,11 +373,15 @@ def build_transcript_okf_content(
         lines.append(f"<!-- NOTEBOOK_OPEN_LINK: {valid_open_link} -->")
         lines.append(f"- **Notebook実リンク**: [{valid_open_link}]({valid_open_link})")
     lines.extend([
+        f"- **動画ID**: `{video_id}`",
+        f"- **資料論理ID**: `{transcript_logical_id}`",
+        f"- **対応研究ノート論理ID**: `{research_logical_id}`",
         f"- **元YouTube URL**: {video_url}",
         f"- **動画URL**: {video_url}",
         f"- **総Cue数**: {cue_count} 件",
         f"- **検証状態**: {status}",
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
+        f"- **Notebook UI制限・参照案内**: NotebookLMのUI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する研究ノートを参照する場合は、上記『対応研究ノート論理ID (`{research_logical_id}`)』または『動画ID (`{video_id}`)』をもとに、Notebookのソース一覧から検索・特定してください。",
         "",
         "## 字幕発話タイムライン (取得全量)",
         "",

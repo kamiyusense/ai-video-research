@@ -1244,6 +1244,8 @@ def render(v, checked_at):
     vid = v["video_id"]
     raw_title = clean(v["title"])
     title_display = raw_title if raw_title.startswith("【研究カード】") else f"【研究カード】 {raw_title}"
+    logical_id = clean(v.get("logical_id") or f"youtube:{vid}:research")
+    transcript_logical_id = clean(v.get("transcript_logical_id") or f"youtube:{vid}:transcript")
 
     lines = render_okf_frontmatter(v, checked_at)
     lines += [
@@ -1252,6 +1254,13 @@ def render(v, checked_at):
         "",
         "> [!IMPORTANT]",
         "> **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。",
+        "",
+        "> [!NOTE]",
+        "> **資料識別・Notebook UI参照案内**:",
+        f"> - **動画ID**: `{vid}`",
+        f"> - **資料論理ID**: `{logical_id}`",
+        f"> - **対応字幕原文論理ID**: `{transcript_logical_id}`",
+        f"> - **UI制限事項**: NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する字幕原文を参照する場合は、上記『対応字幕原文論理ID (`{transcript_logical_id}`)』または『動画ID (`{vid}`)』をもとに、Notebookのソース一覧から検索・特定してください。",
         "",
         "## 独自要約",
         clean(v["summary_ja"]),
@@ -1302,6 +1311,7 @@ def render_delta_section(v, checked_at):
         f"## 差分更新 ({checked_at} / {changes_str})",
         "",
         "- checked_at: " + checked_at,
+        "- video_id: `" + vid + "`",
         "- source_scope: " + clean(v["source_scope"]),
         "- logical_id: `" + logical_id + "`",
         "- transcript_logical_id: `" + transcript_logical_id + "`",
@@ -1310,6 +1320,7 @@ def render_delta_section(v, checked_at):
         "- original_url: " + v["url"],
         "- canonical_url: " + canon,
         "- primary_source_notebook_id: " + nb_src,
+        "- notebook_ui_note: NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様です。対応資料は logical_id / transcript_logical_id / video_id で検索・特定してください。",
     ]
     if v.get("notebook_open_link"):
         lines.append("- notebook_open_link: " + clean(v["notebook_open_link"]))

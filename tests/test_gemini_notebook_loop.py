@@ -4072,6 +4072,11 @@ process.stdout.write(JSON.stringify(gas.CONTRACT_SPEC_V1));
         self.assertIn('transcript_status: "FULL_VERIFIED"', py_rendered)
         self.assertIn('status: "CONFIRMED"', py_rendered)
         self.assertIn('evidence: "08:16荷札と照合"', py_rendered)
+        self.assertIn('> **資料識別・Notebook UI参照案内**:', py_rendered)
+        self.assertIn('> - **動画ID**: `dQw4w9WgXcQ`', py_rendered)
+        self.assertIn('> - **資料論理ID**: `youtube:dQw4w9WgXcQ:research`', py_rendered)
+        self.assertIn('> - **対応字幕原文論理ID**: `youtube:dQw4w9WgXcQ:transcript`', py_rendered)
+        self.assertIn('NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様です', py_rendered)
 
         node_render_script = f"""
 const gas = require({json.dumps(gas_path)});
