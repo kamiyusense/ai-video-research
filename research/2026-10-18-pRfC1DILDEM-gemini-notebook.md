@@ -101,4 +101,4 @@ Claude Codeの実例 : 初期はTypeScript製ローカルベクトルDBでRAGを
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。
 
 ## 関連する既存研究・課題との接続
-- [youtube:u3ka_AAb8qE:research](research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md) (COMPLEMENTS): OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある | status: CONFIRMED | evidence: 13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造
+- [youtube:u3ka_AAb8qE:research](2026-10-19-u3ka_AAb8qE-gemini-notebook.md) (COMPLEMENTS): OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある | status: CONFIRMED | evidence: 13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造

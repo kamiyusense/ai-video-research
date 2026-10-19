@@ -66,7 +66,7 @@ OKFは「書類の置き方改革（地図作り）」であり、RAG（質問�
 - OKFとRAGは対立するものではなく、書類整理と検索エンジンの関係として相互補完する | REPORTED_BY_AUTHOR | time: [09:35](https://www.youtube.com/watch?v=u3ka_AAb8qE&t=575s) | official: UNKNOWN | time_source: TIMESTAMPED_CAPTIONS
 
 ## 関連する既存研究・課題との接続
-- [youtube:pRfC1DILDEM:research](research/2026-10-18-pRfC1DILDEM-gemini-notebook.md) (COMPLEMENTS): RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある | status: CONFIRMED | evidence: 08:16荷札とpRfC1DILDEMの13:16言及
+- [youtube:pRfC1DILDEM:research](2026-10-18-pRfC1DILDEM-gemini-notebook.md) (COMPLEMENTS): RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある | status: CONFIRMED | evidence: 08:16荷札とpRfC1DILDEMの13:16言及
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

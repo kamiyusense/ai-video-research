@@ -7438,7 +7438,7 @@
           "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
           "status": "CONFIRMED",
           "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
-          "target_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+          "target_path": "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
         }
       ],
       "backlinks": [
@@ -7638,7 +7638,7 @@
           "note": "RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある",
           "status": "CONFIRMED",
           "evidence": "08:16荷札とpRfC1DILDEMの13:16言及",
-          "target_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+          "target_path": "2026-10-18-pRfC1DILDEM-gemini-notebook.md"
         }
       ],
       "backlinks": [

@@ -1192,7 +1192,7 @@ def build_knowledge_network(records, registry_entries=None):
 
             # パス解決
             resolved_target_path = rel.get("target_path")
-            if not resolved_target_path:
+            if not resolved_target_path or not (resolved_target_path.startswith("research/") or resolved_target_path.startswith("proposals/")):
                 if target_vid and target_vid in paths_by_vid:
                     resolved_target_path = paths_by_vid[target_vid]
                 elif raw_target in paths_by_lid:
