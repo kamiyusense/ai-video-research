@@ -1625,6 +1625,7 @@ function renderOkfFrontmatter_(v, checkedAt) {
     "video_id: " + JSON.stringify(vid),
     "canonical_url: " + JSON.stringify(canon),
     "original_url: " + JSON.stringify(v.url),
+    "url: " + JSON.stringify(canon),
     "publication_date: " + JSON.stringify(clean_(v.published_at || "UNKNOWN")),
     "checked_at: " + JSON.stringify(checkedAt),
     "source_scope: " + JSON.stringify(clean_(v.source_scope)),
@@ -1716,6 +1717,7 @@ function renderResearchMarkdown_(v, checkedAt) {
 
 function renderDeltaSection_(v, checkedAt) {
   const vid = v.video_id;
+  const canon = canonicalYoutubeUrl_(vid);
   const changesStr = v.changes.join(", ");
   const nbSrc = clean_(v.notebook_source_id || "UNKNOWN");
   const logicalId = clean_(v.logical_id || ("youtube:" + vid + ":research"));
@@ -1731,6 +1733,8 @@ function renderDeltaSection_(v, checkedAt) {
     "- transcript_logical_id: `" + transcriptLogicalId + "`",
     "- related_transcript_id: `" + transcriptLogicalId + "`",
     "- transcript_status: " + transcriptStatus,
+    "- original_url: " + v.url,
+    "- canonical_url: " + canon,
     "- primary_source_notebook_id: " + nbSrc,
     "- Gemini Notebook source (一次資料YouTube動画): " + nbSrc,
     "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",

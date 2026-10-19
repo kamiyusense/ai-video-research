@@ -346,9 +346,13 @@ class TestNotebookAutoIngest(unittest.TestCase):
         self.assertIn('research_logical_id: "youtube:abc123xyz:research"', content)
         self.assertIn('related_research_id: "youtube:abc123xyz:research"', content)
         self.assertIn('resource: "https://www.youtube.com/watch?v=abc123xyz"', content)
+        self.assertIn('url: "https://www.youtube.com/watch?v=abc123xyz"', content)
+        self.assertIn('canonical_url: "https://www.youtube.com/watch?v=abc123xyz"', content)
+        self.assertIn('original_url: "https://www.youtube.com/watch?v=abc123xyz"', content)
         self.assertIn('type: "TRANSCRIPT"', content)
         self.assertIn('transcript_status: "UNVERIFIED"', content)
         self.assertIn('<!-- RELATED_RESEARCH_ID: youtube:abc123xyz:research -->', content)
+        self.assertIn('- **元YouTube URL**: https://www.youtube.com/watch?v=abc123xyz', content)
         self.assertIn('- **[00:00]** (0.0s) こんにちは世界', content)
         self.assertIn('- **[00:02]** (2.5s) テスト字幕です', content)
 

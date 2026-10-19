@@ -1208,6 +1208,7 @@ def render_okf_frontmatter(v, checked_at):
         f"video_id: {json.dumps(vid, ensure_ascii=False)}",
         f"canonical_url: {json.dumps(canon, ensure_ascii=False)}",
         f"original_url: {json.dumps(v['url'], ensure_ascii=False)}",
+        f"url: {json.dumps(canon, ensure_ascii=False)}",
         f"publication_date: {json.dumps(clean(v.get('published_at') or 'UNKNOWN'), ensure_ascii=False)}",
         f"checked_at: {json.dumps(checked_at, ensure_ascii=False)}",
         f"source_scope: {json.dumps(clean(v['source_scope']), ensure_ascii=False)}",
@@ -1288,6 +1289,7 @@ def render(v, checked_at):
 def render_delta_section(v, checked_at):
     """Render an append-only delta section for UPDATED or CONFLICT records."""
     vid = v["video_id"]
+    canon = canonical_youtube_url(vid)
     changes_str = ", ".join(v["changes"])
     nb_src = clean(v.get("notebook_source_id") or "UNKNOWN")
     logical_id = clean(v.get("logical_id") or f"youtube:{vid}:research")
@@ -1303,6 +1305,8 @@ def render_delta_section(v, checked_at):
         "- transcript_logical_id: `" + transcript_logical_id + "`",
         "- related_transcript_id: `" + transcript_logical_id + "`",
         "- transcript_status: " + transcript_status,
+        "- original_url: " + v["url"],
+        "- canonical_url: " + canon,
         "- primary_source_notebook_id: " + nb_src,
         "- Gemini Notebook source (一次資料YouTube動画): " + nb_src,
         "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
