@@ -997,7 +997,8 @@ SUCCESS_CLI_STATUSES = (
 
 def main(args_list: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="AI技術研究室 完全自動化研究パイプライン v2.2")
-    parser.add_argument("url", help="YouTube動画URL (例: https://www.youtube.com/watch?v=...)")
+    parser.add_argument("url", nargs="?", default=None, help="YouTube動画URL (例: https://www.youtube.com/watch?v=...)")
+    parser.add_argument("--url", dest="url_opt", default=None, help="YouTube動画URL (オプション形式)")
     parser.add_argument("--drive-inbox", help="Google Drive受信トレイのカスタムパス", default=None)
     parser.add_argument("--dry-run", action="store_true", help="保存・コミット・Push・外部APIをスキップしてプレビュー生成")
     parser.add_argument("--no-push", action="store_true", help="コミットまで行いリモートPushはスキップ")
@@ -1009,9 +1010,13 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--include-youtube-url", action="store_true", help="YouTube URLソースもNotebookへ追加登録する（デフォルトは字幕原文OKF＋研究ノートOKFの純粋2ソース登録原則）")
     args = parser.parse_args(args_list)
 
+    target_url = args.url or args.url_opt
+    if not target_url:
+        parser.error("YouTube動画URLを指定してください (位置引数または --url)")
+
     inbox_p = Path(args.drive_inbox) if args.drive_inbox else None
     res = run_pipeline(
-        args.url,
+        target_url,
         drive_inbox=inbox_p,
         dry_run=args.dry_run,
         no_push=args.no_push,

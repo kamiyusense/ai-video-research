@@ -383,6 +383,23 @@ class TestAutoResearchPipeline(unittest.TestCase):
         # YouTube URL is NOT registered by default, confirming pure 2-source OKF
         self.assertNotIn("YOUTUBE_URL_INSERTED", nb_res.get("actions_taken", []))
 
+    def test_main_url_argument_positional_and_flag(self):
+        """CLI 引数として位置引数と --url オプションの両方が受け入れられること。"""
+        from unittest.mock import patch
+        # 1. Test dry-run with positional URL
+        with patch("auto_research_pipeline.run_pipeline") as mock_run:
+            mock_run.return_value = {"status": "DRY_RUN_COMPLETE"}
+            code1 = auto_research_pipeline.main(["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "--dry-run"])
+            self.assertEqual(code1, 0)
+            self.assertEqual(mock_run.call_args[0][0], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+
+        # 2. Test dry-run with --url flag
+        with patch("auto_research_pipeline.run_pipeline") as mock_run:
+            mock_run.return_value = {"status": "DRY_RUN_COMPLETE"}
+            code2 = auto_research_pipeline.main(["--url", "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "--dry-run"])
+            self.assertEqual(code2, 0)
+            self.assertEqual(mock_run.call_args[0][0], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+
 
 if __name__ == "__main__":
     unittest.main()
