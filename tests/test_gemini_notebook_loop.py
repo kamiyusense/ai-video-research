@@ -4322,6 +4322,7 @@ process.stdout.write(gas.renderResearchMarkdown(v, "2026-10-19"));
                         "target_id": "vid_existing_confirmed",
                         "relation": "COMPLEMENTS",
                         "status": "CONFIRMED",
+                        "evidence": "動画本編 05:20 にて直接言及",
                     },
                     {
                         "target_id": "vid_existing_candidate",
@@ -4332,6 +4333,7 @@ process.stdout.write(gas.renderResearchMarkdown(v, "2026-10-19"));
                         "target_id": "vid_non_existent",
                         "relation": "COMPLEMENTS",
                         "status": "CONFIRMED",
+                        "evidence": "動画本編 12:45 にて直接言及",
                     },
                 ],
             },
@@ -4570,10 +4572,18 @@ process.stdout.write(JSON.stringify(res));
         self.assertEqual(net.get("missing_reverse_links"), [])
         self.assertGreaterEqual(net.get("bidirectional_links_count"), 30)
 
-        # 2. 主要ハブ資料のバックリンクが正しく集約されていること
+        # 2. 類似キーワード推論リンクと確定リンクの峻別（類似キーワードだけで確定させない契約）
+        self.assertEqual(net.get("confirmed_links"), 2)  # 一次証拠付き基準例のみ確定
+        self.assertGreaterEqual(net.get("candidate_links"), 58)  # キーワード推論リンクはすべてCANDIDATEとして保持
+
+        # 3. 主要ハブ資料のバックリンクが正しく集約され、未検証候補として保持されていること
         backlinks = net.get("backlinks", {})
         self.assertIn("lC5jxpYmatE", backlinks)
         self.assertGreaterEqual(len(backlinks["lC5jxpYmatE"]), 10)
+        # キーワード推論由来のバックリンクが CANDIDATE として記録されていること
+        lc5_bl = [b for b in backlinks["lC5jxpYmatE"] if b.get("from_video_id") == "26MGuVIJh4A"]
+        self.assertTrue(len(lc5_bl) == 1 and lc5_bl[0]["status"] == "CANDIDATE")
+
         self.assertIn("ZjUJ-35acaU", backlinks)
         self.assertGreaterEqual(len(backlinks["ZjUJ-35acaU"]), 10)
         self.assertIn("Vr3JkAT9mo8", backlinks)
@@ -4581,11 +4591,11 @@ process.stdout.write(JSON.stringify(res));
         self.assertIn("BStkW1HTfmk", backlinks)
         self.assertGreaterEqual(len(backlinks["BStkW1HTfmk"]), 4)
 
-        # 3. 基準例（pRfC1DILDEM と u3ka_AAb8qE）の双方向 COMPLEMENTS 整合性
+        # 4. 基準例（pRfC1DILDEM と u3ka_AAb8qE）の双方向 COMPLEMENTS かつ CONFIRMED 整合性
         p_to_u = [e for e in net["edges"] if e["source_video_id"] == "pRfC1DILDEM" and e["target_video_id"] == "u3ka_AAb8qE"]
         u_to_p = [e for e in net["edges"] if e["source_video_id"] == "u3ka_AAb8qE" and e["target_video_id"] == "pRfC1DILDEM"]
-        self.assertTrue(len(p_to_u) == 1 and p_to_u[0]["relation"] == "COMPLEMENTS")
-        self.assertTrue(len(u_to_p) == 1 and u_to_p[0]["relation"] == "COMPLEMENTS")
+        self.assertTrue(len(p_to_u) == 1 and p_to_u[0]["relation"] == "COMPLEMENTS" and p_to_u[0]["status"] == "CONFIRMED")
+        self.assertTrue(len(u_to_p) == 1 and u_to_p[0]["relation"] == "COMPLEMENTS" and u_to_p[0]["status"] == "CONFIRMED")
 
 
 if __name__ == "__main__":

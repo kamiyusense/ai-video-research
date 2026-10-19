@@ -66,7 +66,7 @@
 この文書は研究室の未採用アイデア。既存の `kamiyusense/multi-ai-council-phase0`、Symphony、Jules、Work、Claude Routines等を変更しない。自動通知・課題収集・バックグラウンド研究・実機検証も実行していない。将来のAIがこの文書を読むには該当リポジトリ・ブランチの参照権限と、ファイルの読み取りが必要。
 
 ## 本提案を参照する研究記録（逆リンク / Backlinks）
-- [youtube:26MGuVIJh4A:research](../research/2026-10-17-26MGuVIJh4A-gemini-notebook.md) (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完 | status: CONFIRMED | evidence: 26MGuVIJh4A
-- [youtube:NCQZiT0e59g:research](../research/2026-10-17-NCQZiT0e59g-gemini-notebook.md) (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完 | status: CONFIRMED | evidence: NCQZiT0e59g
-- [youtube:X9Zk68AII4A:research](../research/2026-10-17-X9Zk68AII4A-gemini-notebook.md) (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完 | status: CONFIRMED | evidence: X9Zk68AII4A
+- [youtube:26MGuVIJh4A:research](../research/2026-10-17-26MGuVIJh4A-gemini-notebook.md) (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:NCQZiT0e59g:research](../research/2026-10-17-NCQZiT0e59g-gemini-notebook.md) (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:X9Zk68AII4A:research](../research/2026-10-17-X9Zk68AII4A-gemini-notebook.md) (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 

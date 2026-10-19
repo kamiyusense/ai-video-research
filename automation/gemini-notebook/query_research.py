@@ -977,7 +977,7 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
             raw_note = m_rel.group("note").strip()
             target_id = (m_rel.group("target_id") or m_rel.group("target_link_text") or "").strip()
             target_path = (m_rel.group("target_path") or "").strip()
-            rel_status = "CONFIRMED"
+            rel_status = "CANDIDATE"
             rel_evidence = None
             if " | status: " in raw_note:
                 parts = raw_note.split(" | status: ")
@@ -985,14 +985,21 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                 rem = parts[1]
                 if " | evidence: " in rem:
                     st_part, ev_part = rem.split(" | evidence: ", 1)
-                    rel_status = st_part.strip()
+                    rel_status = st_part.strip().upper()
                     rel_evidence = ev_part.strip()
                 else:
-                    rel_status = rem.strip()
+                    rel_status = rem.strip().upper()
             elif " | evidence: " in raw_note:
                 parts = raw_note.split(" | evidence: ")
                 raw_note = parts[0].strip()
                 rel_evidence = parts[1].strip()
+
+            # 類似キーワードだけで関連確定させない厳格ルール:
+            # CONFIRMED は、動画本編や一次資料内の具体的な証拠（時刻や章・直接言及）がある場合のみ許可。
+            # 証拠なし・未確認(UNKNOWN)・キーワード一致等は CANDIDATE / UNKNOWN として区別する。
+            if rel_status == "CONFIRMED":
+                if not rel_evidence or rel_evidence.upper() in ("UNKNOWN", "NONE") or rel_evidence.startswith("キーワード一致"):
+                    rel_status = "CANDIDATE"
 
             rel_dict = {
                 "target_id": target_id,
@@ -1141,6 +1148,7 @@ def build_knowledge_network(records, registry_entries=None):
     total_links = 0
     confirmed_links = 0
     candidate_links = 0
+    unknown_links = 0
     unresolved_links = 0
     self_link_warnings = []
     nodes = []
@@ -1206,13 +1214,24 @@ def build_knowledge_network(records, registry_entries=None):
             elif not target_exists:
                 resolved_status = "UNRESOLVED"
                 unresolved_links += 1
-            else:
-                if status == "CANDIDATE":
+            elif status == "UNKNOWN":
+                resolved_status = "UNKNOWN"
+                unknown_links += 1
+            elif status == "CANDIDATE":
+                resolved_status = "CANDIDATE"
+                candidate_links += 1
+            elif status == "CONFIRMED":
+                # 類似キーワードだけで関連確定させない厳格ルール:
+                # CONFIRMED であっても一次証拠（時刻や章・直接言及）がなければ CANDIDATE に格下げ
+                if not evidence or str(evidence).upper() in ("UNKNOWN", "NONE") or str(evidence).startswith("キーワード一致"):
                     resolved_status = "CANDIDATE"
                     candidate_links += 1
                 else:
                     resolved_status = "CONFIRMED"
                     confirmed_links += 1
+            else:
+                resolved_status = "CANDIDATE"
+                candidate_links += 1
 
             edge = {
                 "source_video_id": vid,
@@ -1279,6 +1298,7 @@ def build_knowledge_network(records, registry_entries=None):
         "total_links": total_links,
         "confirmed_links": confirmed_links,
         "candidate_links": candidate_links,
+        "unknown_links": unknown_links,
         "unresolved_links": unresolved_links,
         "self_link_warnings": self_link_warnings,
         "isolated_nodes_count": len(isolated_vids),
@@ -2146,6 +2166,7 @@ def answer_question(query, root=ROOT, top_k=5):
             "total_network_links": network.get("total_links", 0),
             "confirmed_links": network.get("confirmed_links", 0),
             "candidate_links": network.get("candidate_links", 0),
+            "unknown_links": network.get("unknown_links", 0),
             "unresolved_links": network.get("unresolved_links", 0),
             "isolated_nodes_count": network.get("isolated_nodes_count", 0),
             "bidirectional_links_count": network.get("bidirectional_links_count", 0),
@@ -2273,7 +2294,7 @@ def format_qa_response_markdown(qa_res):
             f"| 総研究記録数 | {cat_data.get('total_records', 0)} 件 | `research/*.md` + `notes/*.md` |",
             f"| 登録動画数 | {cat_data.get('total_video_records', 0)} 本 | 一意のYouTube動画IDを持つ記録 |",
             f"| 時刻確認済み章数 | {cat_data.get('total_verified_chapters', 0)} 区間 | 再生位置URL (&t=XXs) 付き |",
-            f"| OKF関連リンク総数 | {cat_data.get('total_network_links', 0)} 本 | 確認済み: {cat_data.get('confirmed_links', 0)} / 候補: {cat_data.get('candidate_links', 0)} / 未解決: {cat_data.get('unresolved_links', 0)} |",
+            f"| OKF関連リンク総数 | {cat_data.get('total_network_links', 0)} 本 | 一次証拠確認済み: {cat_data.get('confirmed_links', 0)} / 類似推論候補: {cat_data.get('candidate_links', 0)} / 未検証: {cat_data.get('unknown_links', 0)} / 未解決: {cat_data.get('unresolved_links', 0)} |",
             f"| 双方向リンク数（逆リンク整合） | {cat_data.get('bidirectional_links_count', 0)} 組 | 双方から参照が成立しているペア数（欠落: {cat_data.get('unidirectional_links_count', 0)} 件） |",
             f"| 孤立ノード数 | {cat_data.get('isolated_nodes_count', 0)} 件 | 相互リンク未設定の記録 |",
             "",

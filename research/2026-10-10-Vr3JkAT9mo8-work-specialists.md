@@ -52,10 +52,10 @@
 - YouTube概要欄の公式チャプター（一次照合参照用）: `00:00` AIに毎回同じ説明していませんか？ / `02:02` この動画のゴール / `04:22` Step1：スターターキットをセットアップする / `07:53` Step2：最初のセッションを始める / `09:30` Step3：右腕AIと実際に仕事をする / `11:21` Step4：日々の運用で右腕AIを育てる / `13:02` 応用編：専門担当AIに仕事を分担させる / `16:17` さらに便利な使い方：スマホ連携・リマインド / `18:08` まとめ：今日から始める3ステップ
 
 ## 関連する既存研究・課題との接続（被参照 / Backlinks）
-- [youtube:BStkW1HTfmk:research](2026-10-10-BStkW1HTfmk-obsidian-preliminary.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: BStkW1HTfmk
-- [youtube:Eh75KT85Y40:research](2026-10-17-Eh75KT85Y40-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: Eh75KT85Y40
-- [youtube:JXmk7hmbS3c:research](2026-10-17-JXmk7hmbS3c-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: JXmk7hmbS3c
-- [youtube:sodTFSuV4zY:research](2026-10-17-sodTFSuV4zY-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: sodTFSuV4zY
-- [youtube:XckM9eFa_vg:research](2026-10-17-XckM9eFa_vg-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: XckM9eFa_vg
+- [youtube:BStkW1HTfmk:research](2026-10-10-BStkW1HTfmk-obsidian-preliminary.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:Eh75KT85Y40:research](2026-10-17-Eh75KT85Y40-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:JXmk7hmbS3c:research](2026-10-17-JXmk7hmbS3c-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:sodTFSuV4zY:research](2026-10-17-sodTFSuV4zY-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:XckM9eFa_vg:research](2026-10-17-XckM9eFa_vg-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 
 
