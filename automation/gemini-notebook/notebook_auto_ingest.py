@@ -1223,7 +1223,9 @@ def ingest_and_verify_notebook(
                 "message": str(ex),
             }
 
-    print(f"[3/3] Notebook Readback検証結果: {readback_res.get('status')}")
+    mode_label = "MOCK SIMULATION" if mock_cdp else "LIVE CDP"
+    print(f"[3/3] Notebook Readback検証結果 ({mode_label}): {readback_res.get('status')}")
+    print(f"  - 実行モード: {mode_label} (is_mock={bool(mock_cdp)})")
     print(f"  - YouTubeソース検出: {readback_res.get('youtube_source_found')}")
     print(f"  - 研究ノート検出: {readback_res.get('research_note_found')} (Index: {readback_res.get('research_note_item_index')})")
     print(f"  - 字幕原文OKF検出: {readback_res.get('transcript_source_found')} (Index: {readback_res.get('transcript_item_index')})")
@@ -1233,9 +1235,15 @@ def ingest_and_verify_notebook(
         print(f"  - 実行したUI追加アクション: {actions_taken}")
 
     is_2_source_okf = readback_res.get("is_2_source_okf_verified", False)
+    # Anti-false-pass guard:
+    # 1. Drive sync alone is NOT sufficient.
+    # 2. Chrome tab detection alone is NOT sufficient.
+    # 3. Double counting of same item is NOT sufficient.
+    # 4. Independent distinct elements (n != t) verified from DOM is strictly mandatory.
     is_full_success = (
         drive_res.get("status") == "DRIVE_SYNC_SUCCESS"
         and is_2_source_okf
+        and readback_res.get("independent_sources_distinct", False)
     )
 
     if is_full_success and is_2_source_okf:
@@ -1247,6 +1255,8 @@ def ingest_and_verify_notebook(
 
     return {
         "status": final_status,
+        "execution_mode": "MOCK" if mock_cdp else "LIVE_CDP",
+        "is_mock": bool(mock_cdp),
         "notebook_id": NOTEBOOK_ID,
         "notebook_url": NOTEBOOK_URL,
         "drive_sync": drive_res,

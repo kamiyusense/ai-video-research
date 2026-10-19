@@ -28,6 +28,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "automation" / "gemini-notebook"))
 MODULE_PATH = ROOT / "automation" / "gemini-notebook" / "receipt_to_research.py"
 QUERY_MODULE_PATH = ROOT / "automation" / "gemini-notebook" / "query_research.py"
 
@@ -4818,9 +4819,82 @@ process.stdout.write(JSON.stringify(res));
         self.assertFalse(independence_res.get("is_2_source_okf_verified"), "同一の1要素だけでは2ソース独立判定を拒否すること")
         self.assertFalse(independence_res.get("independent_sources_distinct"))
 
+    def test_anti_false_pass_guards_drive_tab_mock_and_double_counting(self):
+        """Drive配置のみ、Chromeタブ検出のみ、同一要素二重カウント、Mockの混同による偽PASSを厳格に拒否することを検証する。"""
+        import notebook_auto_ingest as nai
+
+        vid = "antiFalsePass999"
+        url = f"https://www.youtube.com/watch?v={vid}"
+        title = "偽PASS防止検証動画"
+        dummy_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+
+        # 1. Driveファイル配置成功のみでのPASS拒否:
+        # allow_add=False かつ空ソースリストの場合、Drive同期は成功してもNotebook読み戻しは未検出となる
+        res_drive_only = nai.ingest_and_verify_notebook(
+            video_id=vid,
+            video_url=url,
+            video_title=title,
+            research_md_path=dummy_md,
+            mock_cdp=True,
+            mock_sources=[],
+            allow_add=False,
+        )
+        self.assertEqual(res_drive_only.get("drive_sync", {}).get("status"), "DRIVE_SYNC_SUCCESS", "Drive同期は成功")
+        self.assertFalse(res_drive_only.get("is_full_success"), "Drive同期のみではフル成功にしてはならない")
+        self.assertFalse(res_drive_only.get("is_2_source_okf_verified"), "Drive同期のみでは2ソースOKF立証にしてはならない")
+        self.assertNotEqual(res_drive_only.get("status"), "SUCCESS_2_SOURCE_OKF", "Drive同期のみでSUCCESS_2_SOURCE_OKFにしてはならない")
+
+        # 2. Chrome/Notebookタブ検出のみでのPASS拒否:
+        # ソースが見つからない場合のステータスは NOTEBOOK_READBACK_NOT_FOUND となり、PASSにしてはならない
+        rb_empty = nai.readback_notebook_sources_via_cdp(
+            client=nai.CDPClient(),
+            tab={"title": "Google Gemini", "url": "https://gemini.google.com/notebook/dummy"},
+            video_id=vid,
+            video_title=title,
+        )
+        # CDPClient未接続時はREADBACK_PARSE_ERRORまたはNOT_FOUNDとなり、決してPASSにならないこと
+        self.assertFalse(rb_empty.get("is_2_source_okf_verified"), "タブ検出のみで中身がなければ2ソース検証を拒否すること")
+        self.assertNotEqual(rb_empty.get("status"), "SUCCESS_2_SOURCE_OKF")
+
+        # 3. 同一要素の二重カウントによるPASS拒否:
+        items_combined = [
+            {"index": 0, "text": f"AI_VIDEO_RESEARCH_NOTE:{vid} AI_VIDEO_TRANSCRIPT_RAW:{vid} 結合カード"}
+        ]
+        res_eval = nai.evaluate_2_source_okf_independence(items_combined, vid, title)
+        self.assertFalse(res_eval.get("is_2_source_okf_verified"), "同一要素の二重カウントは2ソース検証を拒否すること")
+        self.assertFalse(res_eval.get("independent_sources_distinct"))
+        self.assertEqual(res_eval.get("independent_sources_count"), 1, "同一要素のみの場合は独立カウントは1にとどまり2にはならない")
+        # 実際にingest_and_verify_notebookで評価された場合もis_full_successがFalseであること
+        mock_combined_sources = [f"AI_VIDEO_RESEARCH_NOTE:{vid} AI_VIDEO_TRANSCRIPT_RAW:{vid} 結合カード"]
+        res_combined = nai.ingest_and_verify_notebook(
+            video_id=vid,
+            video_url=url,
+            video_title=title,
+            research_md_path=dummy_md,
+            mock_cdp=True,
+            mock_sources=mock_combined_sources,
+            allow_add=False,
+        )
+        self.assertFalse(res_combined.get("is_full_success"), "同一要素二重カウント時はフル成功にしてはならない")
+        self.assertNotEqual(res_combined.get("status"), "SUCCESS_2_SOURCE_OKF")
+
+        # 4. Mock結果の明確な区別（is_mock=True, execution_mode="MOCK"）:
+        res_mock = nai.ingest_and_verify_notebook(
+            video_id=vid,
+            video_url=url,
+            video_title=title,
+            research_md_path=dummy_md,
+            mock_cdp=True,
+            mock_sources=[],
+            allow_add=True,
+        )
+        self.assertTrue(res_mock.get("is_mock"), "Mock実行時はis_mockがTrueであること")
+        self.assertEqual(res_mock.get("execution_mode"), "MOCK", "Mock実行時はexecution_modeがMOCKであること")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
 
 
 
