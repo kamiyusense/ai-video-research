@@ -36,13 +36,14 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
 
 | 項目 | 状態・証拠 |
 |---|---|
-| 非公開GitHub | `kamiyusense/ai-video-research`、default `main`。非default `feature/gemini-notebook-research-loop-20261016` に研究システムの開発内容。現在HEADは必ず再確認する |
-| 第1号のGitHub LIVE保存 | 2026-10-18、動画 `pRfC1DILDEM` をGASで保存してreadback。研究ノート [RAG研究](../research/2026-10-18-pRfC1DILDEM-gemini-notebook.md) が存在し、策定時の `registry.json` は29動画。ただしGAS Script Propertiesの現在値はこのGitHubだけでは証明できない |
+| 非公開GitHub | `kamiyusense/ai-video-research`、default `main`。非default `feature/gemini-notebook-research-loop-20261016` に研究システムの開発内容。現在HEADは `97515c9`（u3ka_AAb8qE 取り込みコミット） |
+| 第1号のGitHub LIVE保存 | 2026-10-18、動画 `pRfC1DILDEM` をGASで保存してreadback。研究ノート [RAG研究](../research/2026-10-18-pRfC1DILDEM-gemini-notebook.md) が存在。 |
+| 第2号（OKF動画）のGitHub保存 | 2026-10-19、動画 `u3ka_AAb8qE` をローカル受渡しreceiptから適用完了。研究ノート [OKF研究](../research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md) が存在。最新の `registry.json` は30動画。 |
 | 重複防止 | 同件のDRY_RUN重複回避がユーザー提供ログで確認され、GitHub側同一動画1件を確認した。LIVE再送不要 |
 | Notebookの内容 | ユーザー/Gemini報告: 45ソース（YouTube19＋Markdown等26）→研究Markdownを追加して46ソース。原YouTubeソース存在はGemini報告。原文字起こしの完全性、独立字幕テキストの存在、Notebook研究カード固有IDの読み戻しは未検証/UNKNOWN |
 | RAG動画の研究ノート | GitHubの記録は独自要約・22区間等であり字幕全文ではない。独立映像視聴未実施、厳密な時刻検証はUNKNOWN |
-| OKF参考動画 | https://www.youtube.com/watch?v=u3ka_AAb8qE 。ユーザーは約20分の時刻付き字幕をチャットに提供。映像実見は未実施。GitHubの正本登録やNotebook登録を勝手に完了扱いしない |
-| OKF⇔RAGの関係 | `COMPLEMENTS` 候補: OKFは知識の整理・リンク、RAG研究は質問型に応じた探索/集計/時系列/全体分析。根拠を確認してリンク確定 |
+| OKF参考動画 | https://www.youtube.com/watch?v=u3ka_AAb8qE 。OKF v0.2正式YAMLフロントマター、2章タイムライン、公式資料照合、pRfC1DILDEMへの相互リンクを含む研究ノートとしてGitHubへ正式登録済み（`97515c9`）。Notebook側への手動追加はユーザー操作案内中 |
+| OKF⇔RAGの関係 | `COMPLEMENTS` 確定リンク: OKF研究（u3ka_AAb8qE）からRAG研究（pRfC1DILDEM）へのMarkdownリンク付き接続を確認済み |
 | 手元の実装 | `automation/gemini-notebook/GEMINI_TASK.md`、`cloud_relay_gas.js`、`intake_receipt.py`、`receipt_to_research.py`、`query_research.py`、`state/`、`registry.json` 等を再利用。改修時は最新の実装を読んで判断 |
 | 第2段階の文書・PR | `docs/V1_PRODUCTION_PLAYBOOK.md` や現在PR #10の差分には省力化が書かれているが、仕様記述やテストのPASSをNotebook/GASのLIVE成功と混同しない。以前の「GitHub→Notebook」工程を最新の必須アーキテクチャに格上げしない |
 | 既存の広域ロードマップ | `RESEARCH_ROADMAP.md` は汎用AI技術の研究テーマ計画。今回の実装順序は `docs/OKF_KNOWLEDGE_ROADMAP.md` が優先する。両方を維持 |
@@ -60,17 +61,16 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
    - **Phase 5 (既存資産の非破壊移行)**: `BACKWARD_COMPATIBLE_VERIFIED`。既存29動画・263章資産の下位互換を完全維持（未移行28動画はハイブリッド透過パース）。
    - **Phase 6 (質問回答品質の検証・最終整合性是正)**: `TEST_PASSED`。5分類ルーター、条件付き決定論的件数集計（RAG/OKF/字幕5状態等）、時系列ソート区別（公開日/確認日）、1ホップ探索免責表示、Markdownリンク化パリティ、OKFフロントマターtype欠落FAIL検査、字幕証拠判定を実装。全44テストPASS。
 2. **次はPhase 7（最速実機稼働実証・1本の完全通過）**:
-   - ステータス: `READY_FOR_LIVE_RUN`（コード・テスト・受渡しJSON準備完了、実機LIVE実行はユーザー操作・承認待ち）。
-   - **対象動画**: 既存のRAG動画 `pRfC1DILDEM` または OKF動画 `u3ka_AAb8qE` を優先再利用。
-   - **実行手順**:
-     1. Geminiで取得可能な元資料を取得（字幕全文またはYouTube動画ソース）。
-     2. Notebookに元資料を登録（独立テキストまたはYouTube URLソース）。
-     3. GeminiでOKF形式の研究ノートを生成（字幕完全性が未確認でも `transcript_status: UNVERIFIED` として停止せず進行）。
-     4. Notebookに研究ノートを独立登録。
-     5. 生成された `research_receipt_v1` JSONをGoogle Drive受信フォルダへ配置。
-     6. GAS `runCloudRelayLoop` を実行し、GitHub非default作業ブランチへLIVE保存（要承認）。
-     7. NotebookとGitHubの保存結果を読み戻し確認。
-     8. 保存資料について自然言語質問し、研究内容が参照・回答できることを確認。
+   - ステータス: `GITHUB_INGESTED / QA_VERIFIED`（`u3ka_AAb8qE` をGitHubへ取り込みコミット `97515c9` 完了、全44テストPASS、自然言語QAでの参照確認完了。実機Notebookへのソース登録はユーザー操作案内中）。
+   - **対象動画**: OKF動画 `u3ka_AAb8qE`（第2号として取り込み完了）および RAG動画 `pRfC1DILDEM`（第1号）。
+   - **実行状況**:
+     1. Geminiで取得可能な元資料を取得（字幕テキストまたはYouTube動画ソース）：`DONE`（ローカルreceipt作成済み）。
+     2. Notebookに元資料を登録（独立テキストまたはYouTube URLソース）：`PENDING_USER_ACTION`（Notebookへ登録案内中）。
+     3. GeminiでOKF形式の研究ノートを生成：`DONE`（`research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md` 生成済み）。
+     4. Notebookに研究ノートを登録：`PENDING_USER_ACTION`（Markdown登録案内中）。
+     5. 受渡しJSONのGitHub適用：`DONE`（`receipt_to_research.py --apply` により `registry.json` 30動画、`video_knowledge_catalog.json` 更新完了）。
+     6. GitHub非default作業ブランチへPush・readback：`DONE`（コミット `97515c9`）。
+     7. 保存資料について自然言語質問し、研究内容が参照・回答できることを確認：`DONE`（`query_research.py --query "OKFに関する動画は何本ありますか？"` で第1位スコア、章タイムライン、公式資料、RAG動画との補完関係を正常回答確認済み）。
    - **判定基準**: Notebookへ独立字幕全文を登録できない場合でも、利用可能なYouTubeソースと研究ノートの保存・参照ができるなら実用成功と認める（ただし未達成の字幕独立保存を成功扱いにはしない）。客観的正しさの証明は保存の必須条件にせず、質問回答時に最新情報と照合する方式を採用する。
 
 ## 4. 安全停止条件（再確認）
