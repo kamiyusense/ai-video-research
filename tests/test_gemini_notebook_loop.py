@@ -4701,6 +4701,70 @@ process.stdout.write(JSON.stringify(res));
         self.assertTrue(res.get("is_full_success"))
         self.assertEqual(rb.get("status"), "SUCCESS_2_SOURCE_OKF")
 
+    def test_idempotent_diff_ingest_skips_existing_and_adds_only_missing(self):
+        """同じ動画について登録済みのソースがある場合、重複を避け不足しているソースのみを追加することを検証する。"""
+        import notebook_auto_ingest as nai
+
+        dummy_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        test_cues = [(0.0, 10.0, "テスト発話")]
+
+        # Case A: 研究ノートOKFのみ登録済み -> 字幕原文OKFのみを追加（研究ノートは重複追加しない）
+        vid_a = "diffVidA111"
+        res_a = nai.ingest_and_verify_notebook(
+            video_id=vid_a,
+            video_url=f"https://www.youtube.com/watch?v={vid_a}",
+            video_title="研究ノート登録済み動画",
+            research_md_path=dummy_md,
+            cues=test_cues,
+            mock_cdp=True,
+            mock_sources=[f"AI_VIDEO_RESEARCH_NOTE:{vid_a}"],
+            add_youtube_source=False,
+        )
+        actions_a = res_a.get("actions_taken", [])
+        self.assertNotIn("COPIED_TEXT_NOTE_INSERTED", actions_a, "研究ノートの重複追加は回避されること")
+        self.assertIn("TRANSCRIPT_OKF_INSERTED", actions_a, "不足していた字幕原文OKFのみが追加されること")
+        self.assertEqual(len(actions_a), 1)
+        self.assertTrue(res_a.get("is_2_source_okf_verified"))
+
+        # Case B: 字幕原文OKFのみ登録済み -> 研究ノートOKFのみを追加（字幕原文は重複追加しない）
+        vid_b = "diffVidB222"
+        res_b = nai.ingest_and_verify_notebook(
+            video_id=vid_b,
+            video_url=f"https://www.youtube.com/watch?v={vid_b}",
+            video_title="字幕原文登録済み動画",
+            research_md_path=dummy_md,
+            cues=test_cues,
+            mock_cdp=True,
+            mock_sources=[f"AI_VIDEO_TRANSCRIPT_RAW:{vid_b}"],
+            add_youtube_source=False,
+        )
+        actions_b = res_b.get("actions_taken", [])
+        self.assertIn("COPIED_TEXT_NOTE_INSERTED", actions_b, "不足していた研究ノートOKFのみが追加されること")
+        self.assertNotIn("TRANSCRIPT_OKF_INSERTED", actions_b, "字幕原文OKFの重複追加は回避されること")
+        self.assertEqual(len(actions_b), 1)
+        self.assertTrue(res_b.get("is_2_source_okf_verified"))
+
+        # Case C: 全ソース（研究ノートOKF＋字幕原文OKF）登録済み -> 追加操作ゼロで安全終了（No-Op）
+        vid_c = "diffVidC333"
+        res_c = nai.ingest_and_verify_notebook(
+            video_id=vid_c,
+            video_url=f"https://www.youtube.com/watch?v={vid_c}",
+            video_title="全ソース登録済み動画",
+            research_md_path=dummy_md,
+            cues=test_cues,
+            mock_cdp=True,
+            mock_sources=[
+                f"AI_VIDEO_RESEARCH_NOTE:{vid_c}",
+                f"AI_VIDEO_TRANSCRIPT_RAW:{vid_c}",
+            ],
+            add_youtube_source=False,
+        )
+        actions_c = res_c.get("actions_taken", [])
+        self.assertEqual(actions_c, [], "全ソース登録済みの場合は追加操作ゼロ（No-Op）であること")
+        self.assertTrue(res_c.get("is_2_source_okf_verified"))
+        self.assertTrue(res_c.get("is_full_success"))
+        self.assertEqual(res_c.get("readback", {}).get("status"), "SUCCESS_2_SOURCE_OKF")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
