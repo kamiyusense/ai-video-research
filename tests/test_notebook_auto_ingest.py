@@ -33,12 +33,13 @@ class TestNotebookAutoIngest(unittest.TestCase):
                 target_dir=tmp_path / "sync_target",
             )
             self.assertEqual(res["status"], "DRIVE_SYNC_SUCCESS")
-            self.assertEqual(len(res["synced_files"]), 2)
+            self.assertEqual(len(res["synced_files"]), 3)
             
             files = [Path(f["path"]) for f in res["synced_files"]]
             self.assertTrue(all(f.exists() for f in files))
             self.assertTrue(any(f.name.endswith("_youtube_source.txt") for f in files))
             self.assertTrue(any(f.name.endswith("_research_note.md") for f in files))
+            self.assertTrue(any(f.name.endswith("_transcript_okf.md") for f in files))
 
     def test_ingest_and_verify_readback_pass(self):
         """Mock mode: Both YouTube and Research Note present results in is_full_success=True."""
@@ -259,6 +260,47 @@ class TestNotebookAutoIngest(unittest.TestCase):
             )
             self.assertEqual(res["readback"]["status"], "BLOCKED_INITIAL_GOOGLE_LOGIN")
             self.assertFalse(res["is_full_success"])
+
+
+    def test_2_source_okf_evaluation(self):
+        """字幕原文OKFと研究ノートOKFの独立存在を検出して is_2_source_okf_verified=True になること。"""
+        items = [
+            {"index": 0, "text": "YouTube Video testVid999"},
+            {"index": 1, "text": "AI_VIDEO_RESEARCH_NOTE:testVid999"},
+            {"index": 2, "text": "AI_VIDEO_TRANSCRIPT_RAW:testVid999"},
+        ]
+        res = notebook_auto_ingest.evaluate_2_source_okf_independence(items, "testVid999", "Test Video 999")
+        self.assertTrue(res["youtube_found"])
+        self.assertTrue(res["research_note_found"])
+        self.assertTrue(res["transcript_source_found"])
+        self.assertTrue(res["is_2_source_okf_verified"])
+        self.assertEqual(res["research_note_item_index"], 1)
+        self.assertEqual(res["transcript_item_index"], 2)
+
+    def test_ingest_and_verify_2_source_okf_success(self):
+        """Mock mode: 字幕原文OKFと研究ノートOKFが揃っている場合 SUCCESS_2_SOURCE_OKF になること。"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            fake_md = tmp_path / "note.md"
+            fake_md.write_text("dummy note", encoding="utf-8")
+
+            res = notebook_auto_ingest.ingest_and_verify_notebook(
+                video_id="okfVid123",
+                video_url="https://www.youtube.com/watch?v=okfVid123",
+                video_title="OKF Video",
+                research_md_path=fake_md,
+                mock_cdp=True,
+                mock_sources=[
+                    "AI_VIDEO_RESEARCH_NOTE:okfVid123",
+                    "AI_VIDEO_TRANSCRIPT_RAW:okfVid123",
+                ],
+                drive_dir=tmp_path / "drive_sync",
+            )
+            self.assertEqual(res["status"], "SUCCESS_2_SOURCE_OKF")
+            self.assertTrue(res["is_full_success"])
+            self.assertTrue(res["is_2_source_okf_verified"])
+            self.assertTrue(res["readback"]["research_note_found"])
+            self.assertTrue(res["readback"]["transcript_source_found"])
 
 
 if __name__ == "__main__":

@@ -371,6 +371,7 @@ def build_research_receipt(
     source_scope = f"YouTubeメタデータ（長:{length_sec}s, 投稿:{author}）" + (f", 字幕実発話{len(cues)}件 [{engine_used}]" if cues else f", 字幕なし [{engine_used}]")
 
     has_real_captions = (len(cues) > 0 and transcript_status != "NOT_ACQUIRED")
+    formatted_raw_cues = [{"start": c[0], "end": c[1], "text": c[2]} for c in cues]
 
     receipt = {
         "schema_version": "research_receipt_v1",
@@ -379,6 +380,7 @@ def build_research_receipt(
         "notebook_readback": "UNKNOWN",
         "github_dedup_status": "PASS",
         "real_captions_acquired": has_real_captions,
+        "raw_cues": formatted_raw_cues,
         "videos": [
             {
                 "video_id": video_id,
@@ -409,15 +411,30 @@ def run_notebook_registration_only(
     video_title: str = "YouTube Video",
     mock_cdp: bool = False,
     mock_sources: Optional[List[str]] = None,
+    cues: Optional[List[Any]] = None,
 ) -> Dict[str, Any]:
     """Resume notebook registration for videos already committed to GitHub."""
     print(f"\n[RESUME NOTEBOOK INGEST] GitHub登録済み動画 '{video_id}' のNotebook登録状態を確認・再開します。")
     v_url = f"https://www.youtube.com/watch?v={video_id}"
+
+    # If cues not provided, fetch captions to support Transcript OKF source
+    if cues is None and not mock_cdp:
+        try:
+            player_data = verify_timestamps.fetch_player(video_id)
+            if player_data:
+                _, fetched_cues, _ = fetch_actual_captions(player_data)
+                if fetched_cues:
+                    cues = fetched_cues
+                    print(f"  - [RESUME] 実字幕cuesを取得しました ({len(cues)}件)")
+        except Exception as ex:
+            print(f"  - [WARNING] 字幕再取得に失敗しました: {ex}")
+
     nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
         video_id=video_id,
         video_url=v_url,
         video_title=video_title,
         research_md_path=research_md_path,
+        cues=cues,
         mock_cdp=mock_cdp,
         mock_sources=mock_sources,
     )
@@ -437,10 +454,12 @@ def evaluate_final_status(
     notebook_research_readback: bool,
     qa_verified: bool,
     no_push: bool,
+    is_2_source_okf_verified: bool = False,
+    notebook_transcript_readback: bool = False,
 ) -> Tuple[str, List[str]]:
     """Strictly evaluate whether execution is a full SUCCESS or PARTIAL/FAILED.
     
-    Full SUCCESS requires ALL 11 conditions to be True.
+    Full SUCCESS_2_SOURCE_OKF requires ALL 11 conditions PLUS 2-Source OKF independence.
     """
     reasons = []
 
@@ -470,6 +489,8 @@ def evaluate_final_status(
         reasons.append("自然言語QA検索による第1位検出未検証")
 
     if not reasons:
+        if is_2_source_okf_verified:
+            return "SUCCESS_2_SOURCE_OKF", []
         return "SUCCESS", []
 
     # Map to specific PARTIAL status
@@ -543,20 +564,25 @@ def run_pipeline(
                 mock_cdp=mock_cdp,
             )
             actions = nb_res.get("actions_taken", [])
+            is_2_source = nb_res.get("is_2_source_okf_verified", False)
             if nb_res.get("is_full_success") and not actions:
-                print(f"[NOTEBOOK_ALREADY_CONFIRMED] Notebook実画面に2ソースが既に存在することを確認しました。追加処理をスキップし安全停止します。")
+                status_name = "SUCCESS_2_SOURCE_OKF" if is_2_source else "ALREADY_REGISTERED"
+                print(f"[NOTEBOOK_ALREADY_CONFIRMED] Notebook実画面に全必要ソースが既に存在することを確認しました ({status_name})。追加処理をスキップし安全停止します。")
                 return {
-                    "status": "ALREADY_REGISTERED",
+                    "status": status_name,
                     "video_id": video_id,
                     "notebook_ingest": nb_res,
+                    "is_2_source_okf_verified": is_2_source,
                     "details": dedup_res,
                 }
             elif nb_res.get("is_full_success"):
-                print(f"[RESUMED_NOTEBOOK_INGEST] 不足していたNotebookソースの追加と再読み戻しに成功しました。")
+                status_name = "SUCCESS_2_SOURCE_OKF" if is_2_source else "RESUMED_NOTEBOOK_INGEST"
+                print(f"[RESUMED_NOTEBOOK_INGEST] 不足していたNotebookソースの追加と再読み戻しに成功しました ({status_name})。")
                 return {
-                    "status": "RESUMED_NOTEBOOK_INGEST",
+                    "status": status_name,
                     "video_id": video_id,
                     "notebook_ingest": nb_res,
+                    "is_2_source_okf_verified": is_2_source,
                     "details": dedup_res,
                 }
             else:
@@ -564,6 +590,7 @@ def run_pipeline(
                     "status": "RESUMED_NOTEBOOK_INGEST_PARTIAL",
                     "video_id": video_id,
                     "notebook_ingest": nb_res,
+                    "is_2_source_okf_verified": is_2_source,
                     "details": dedup_res,
                 }
 
@@ -761,18 +788,24 @@ def run_pipeline(
 
     # 8. Notebook Auto Ingest & Live Readback
     print("[8/8] Gemini Notebook自動ソース登録・実画面Readback検証中...")
+    raw_cues_data = receipt.get("raw_cues", [])
+    cues_for_ingest = [(c["start"], c["end"], c["text"]) for c in raw_cues_data] if raw_cues_data else None
+
     nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
         video_id=video_id,
         video_url=f"https://www.youtube.com/watch?v={video_id}",
         video_title=vd.get("title", f"YouTube Video {video_id}"),
         research_md_path=ROOT / research_md_path,
+        cues=cues_for_ingest,
         mock_cdp=mock_cdp,
     )
     nb_rb = nb_res.get("readback", {})
     notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
     notebook_research_readback = bool(nb_rb.get("research_note_found"))
+    notebook_transcript_readback = bool(nb_rb.get("transcript_source_found"))
+    is_2_source_okf_verified = bool(nb_res.get("is_2_source_okf_verified"))
 
-    # Final Strict SUCCESS Evaluation (11 Mandatory Conditions)
+    # Final Strict SUCCESS Evaluation (11 Mandatory Conditions + 2-Source OKF)
     final_status, fail_reasons = evaluate_final_status(
         real_content_acquired=bool(receipt.get("real_captions_acquired", False)),
         engine_used=engine_used,
@@ -786,6 +819,8 @@ def run_pipeline(
         notebook_research_readback=notebook_research_readback,
         qa_verified=qa_verified,
         no_push=no_push,
+        is_2_source_okf_verified=is_2_source_okf_verified,
+        notebook_transcript_readback=notebook_transcript_readback,
     )
 
     print("=" * 70)
@@ -795,6 +830,7 @@ def run_pipeline(
     print(f"台帳総数: {catalog_res.get('total_video_records')} 本")
     print(f"Notebook用Markdown: {research_md_path}")
     print(f"Drive Notebook同期先: {nb_res.get('drive_sync', {}).get('target_dir')}")
+    print(f"2ソースOKF完全立証: {is_2_source_okf_verified}")
     if fail_reasons:
         print("未達項目・制限事項:")
         for r in fail_reasons:
@@ -813,11 +849,13 @@ def run_pipeline(
         "engine_used": engine_used,
         "model_used": model_used,
         "notebook_ingest": nb_res,
+        "is_2_source_okf_verified": is_2_source_okf_verified,
         "fail_reasons": fail_reasons,
     }
 
 
 SUCCESS_CLI_STATUSES = (
+    "SUCCESS_2_SOURCE_OKF",
     "SUCCESS",
     "ALREADY_REGISTERED",
     "RESUMED_NOTEBOOK_INGEST",
