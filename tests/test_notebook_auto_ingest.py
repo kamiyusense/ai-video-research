@@ -197,6 +197,69 @@ class TestNotebookAutoIngest(unittest.TestCase):
             self.assertEqual(res_both["status"], "NOTEBOOK_REGISTRATION_VERIFIED")
             self.assertEqual(len(res_both["actions_taken"]), 0, "No actions should be taken when both exist")
 
+    def test_cli_launch_chrome_without_video_id(self):
+        """--launch-chrome が video_id なしで引数解析を通ること。"""
+        parser = notebook_auto_ingest.build_parser()
+        args = parser.parse_args(["--launch-chrome"])
+        self.assertTrue(args.launch_chrome)
+        self.assertIsNone(args.video_id)
+
+    def test_cli_regular_mode_requires_video_id(self):
+        """通常登録モードで video_id なしは安全にエラーとなること。"""
+        with self.assertRaises(SystemExit):
+            notebook_auto_ingest.main([])
+
+    def test_auto_launch_chrome_called_when_port_closed(self):
+        """CDPポートCLOSED時に専用Chrome自動起動処理が呼び出されること。"""
+        calls = []
+        orig_launch = notebook_auto_ingest.launch_dedicated_chrome
+        orig_is_open = notebook_auto_ingest.CDPClient.is_port_open
+
+        try:
+            notebook_auto_ingest.launch_dedicated_chrome = lambda **k: (calls.append("LAUNCHED"), {"status": "CHROME_LAUNCHED", "pid": 9999})[1]
+            # Simulate: closed at first, then open
+            port_states = [False, True]
+            notebook_auto_ingest.CDPClient.is_port_open = lambda s, **k: port_states.pop(0) if port_states else True
+
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_path = Path(tmp_dir)
+                fake_md = tmp_path / "note.md"
+                fake_md.write_text("dummy", encoding="utf-8")
+
+                # mock_cdp=False to trigger auto launch check
+                res = notebook_auto_ingest.ingest_and_verify_notebook(
+                    video_id="testAutoLaunch",
+                    video_url="https://www.youtube.com/watch?v=testAutoLaunch",
+                    video_title="Auto Launch Test",
+                    research_md_path=fake_md,
+                    mock_cdp=False,
+                    auto_launch_chrome=True,
+                    drive_dir=tmp_path / "drive_sync",
+                )
+                self.assertIn("LAUNCHED", calls, "launch_dedicated_chrome must be called when port is closed")
+        finally:
+            notebook_auto_ingest.launch_dedicated_chrome = orig_launch
+            notebook_auto_ingest.CDPClient.is_port_open = orig_is_open
+
+    def test_blocked_initial_google_login(self):
+        """初回未ログイン状態は BLOCKED_INITIAL_GOOGLE_LOGIN 扱いになること。"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            fake_md = tmp_path / "note.md"
+            fake_md.write_text("dummy", encoding="utf-8")
+
+            res = notebook_auto_ingest.ingest_and_verify_notebook(
+                video_id="testLogin",
+                video_url="https://www.youtube.com/watch?v=testLogin",
+                video_title="Login Test",
+                research_md_path=fake_md,
+                mock_cdp=True,
+                mock_blocked_login=True,
+                drive_dir=tmp_path / "drive_sync",
+            )
+            self.assertEqual(res["readback"]["status"], "BLOCKED_INITIAL_GOOGLE_LOGIN")
+            self.assertFalse(res["is_full_success"])
+
 
 if __name__ == "__main__":
     unittest.main()

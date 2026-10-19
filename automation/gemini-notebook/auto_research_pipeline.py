@@ -812,7 +812,16 @@ def run_pipeline(
     }
 
 
-def main():
+SUCCESS_CLI_STATUSES = (
+    "SUCCESS",
+    "ALREADY_REGISTERED",
+    "RESUMED_NOTEBOOK_INGEST",
+    "DRY_RUN_COMPLETE",
+    "DRIVE_RELAY_DISPATCHED",
+)
+
+
+def main(args_list: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="AI技術研究室 完全自動化研究パイプライン v2.2")
     parser.add_argument("url", help="YouTube動画URL (例: https://www.youtube.com/watch?v=...)")
     parser.add_argument("--drive-inbox", help="Google Drive受信トレイのカスタムパス", default=None)
@@ -823,7 +832,7 @@ def main():
     parser.add_argument("--enable-live-gemini", action="store_true", help="Gemini APIのLIVE実行を明示的に許可する（デフォルトは安全のため無効）")
     parser.add_argument("--relay-via-drive", action="store_true", help="ローカルGit Pushを行わずDrive配置によるGASリレーを優先する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
-    args = parser.parse_args()
+    args = parser.parse_args(args_list)
 
     inbox_p = Path(args.drive_inbox) if args.drive_inbox else None
     res = run_pipeline(
@@ -838,7 +847,7 @@ def main():
         mock_cdp=args.mock_cdp,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
-    return 0 if res.get("status") in ("SUCCESS", "ALREADY_REGISTERED", "DRY_RUN_COMPLETE", "DRIVE_RELAY_DISPATCHED") else 1
+    return 0 if res.get("status") in SUCCESS_CLI_STATUSES else 1
 
 
 if __name__ == "__main__":

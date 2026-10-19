@@ -290,6 +290,26 @@ class TestAutoResearchPipeline(unittest.TestCase):
         self.assertIn("COPIED_TEXT_NOTE_INSERTED", nb_res.get("actions_taken", []))
         self.assertNotIn("YOUTUBE_URL_INSERTED", nb_res.get("actions_taken", []))
 
+    def test_cli_exit_code_resumed_notebook_ingest_is_zero(self):
+        """RESUMED_NOTEBOOK_INGESTはCLI終了コード0を返すこと。"""
+        orig_run = auto_research_pipeline.run_pipeline
+        try:
+            auto_research_pipeline.run_pipeline = lambda *a, **kw: {"status": "RESUMED_NOTEBOOK_INGEST", "is_full_success": True}
+            exit_code = auto_research_pipeline.main(["https://www.youtube.com/watch?v=u3ka_AAb8qE"])
+            self.assertEqual(exit_code, 0)
+        finally:
+            auto_research_pipeline.run_pipeline = orig_run
+
+    def test_cli_exit_code_resumed_notebook_ingest_partial_is_nonzero(self):
+        """RESUMED_NOTEBOOK_INGEST_PARTIALはCLI終了コード非0(1)を返すこと。"""
+        orig_run = auto_research_pipeline.run_pipeline
+        try:
+            auto_research_pipeline.run_pipeline = lambda *a, **kw: {"status": "RESUMED_NOTEBOOK_INGEST_PARTIAL", "is_full_success": False}
+            exit_code = auto_research_pipeline.main(["https://www.youtube.com/watch?v=u3ka_AAb8qE"])
+            self.assertEqual(exit_code, 1)
+        finally:
+            auto_research_pipeline.run_pipeline = orig_run
+
 
 if __name__ == "__main__":
     unittest.main()

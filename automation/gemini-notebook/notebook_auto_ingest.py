@@ -616,6 +616,8 @@ def ingest_and_verify_notebook(
     mock_cdp: bool = False,
     mock_sources: Optional[List[str]] = None,
     allow_add: bool = True,
+    auto_launch_chrome: bool = True,
+    mock_blocked_login: bool = False,
     drive_dir: Path = DEFAULT_NOTEBOOK_SOURCES_DIR,
 ) -> Dict[str, Any]:
     """Execute complete notebook ingestion workflow: pre-readback, conditional UI ingest & post-readback."""
@@ -638,6 +640,21 @@ def ingest_and_verify_notebook(
     # 2. CDP Probe and Live DOM Interaction
     client = CDPClient()
     cdp_available = mock_cdp or client.is_port_open()
+
+    # Automatically launch dedicated Chrome if port is closed
+    if not mock_cdp and not cdp_available and auto_launch_chrome:
+        print(f"[2/3] Chrome CDPポート (Port {DEFAULT_CDP_PORT}) が閉じています。専用Chromeを自動起動します...")
+        launch_res = launch_dedicated_chrome()
+        if launch_res.get("status") == "CHROME_LAUNCHED":
+            print(f"  - 専用Chrome自動起動成功 (PID: {launch_res.get('pid')})。ポート開放を待機中...")
+            for _ in range(20):
+                time.sleep(0.5)
+                if client.is_port_open():
+                    cdp_available = True
+                    break
+        else:
+            print(f"  - [WARNING] 専用Chrome自動起動失敗: {launch_res.get('message')}")
+
     print(f"[2/3] Chrome CDPポートプローブ (Port {DEFAULT_CDP_PORT}): {'OPEN' if cdp_available else 'CLOSED'}")
 
     actions_taken = []
@@ -649,84 +666,116 @@ def ingest_and_verify_notebook(
     }
 
     if mock_cdp:
-        # Mock mode for deterministic testing
-        current_sources = list(mock_sources) if mock_sources is not None else []
-        items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
-        yt_found, note_found, _, _ = evaluate_sources_independence(items, video_id, video_title)
+        if mock_blocked_login:
+            readback_res = {
+                "status": "BLOCKED_INITIAL_GOOGLE_LOGIN",
+                "youtube_source_found": False,
+                "research_note_found": False,
+                "message": "専用Chromeで初回Googleログインが必要です（Mock）。",
+            }
+        else:
+            # Mock mode for deterministic testing
+            current_sources = list(mock_sources) if mock_sources is not None else []
+            items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
+            yt_found, note_found, _, _ = evaluate_sources_independence(items, video_id, video_title)
 
-        # Ingest missing sources if allowed
-        if allow_add:
-            if not yt_found:
-                current_sources.append(f"https://www.youtube.com/watch?v={video_id}")
-                actions_taken.append("YOUTUBE_URL_INSERTED")
-            if not note_found:
-                current_sources.append(f"AI_VIDEO_RESEARCH_NOTE:{video_id}")
-                actions_taken.append("COPIED_TEXT_NOTE_INSERTED")
+            # Ingest missing sources if allowed
+            if allow_add:
+                if not yt_found:
+                    current_sources.append(f"https://www.youtube.com/watch?v={video_id}")
+                    actions_taken.append("YOUTUBE_URL_INSERTED")
+                if not note_found:
+                    current_sources.append(f"AI_VIDEO_RESEARCH_NOTE:{video_id}")
+                    actions_taken.append("COPIED_TEXT_NOTE_INSERTED")
 
-        # Post-readback
-        post_items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
-        yt_found_post, note_found_post, yt_idx, note_idx = evaluate_sources_independence(post_items, video_id, video_title)
-        
-        status = "NOTEBOOK_READBACK_PASS" if (yt_found_post and note_found_post) else (
-            "NOTEBOOK_READBACK_PARTIAL" if (yt_found_post or note_found_post) else "NOTEBOOK_READBACK_NOT_FOUND"
-        )
-        readback_res = {
-            "status": status,
-            "youtube_source_found": yt_found_post,
-            "research_note_found": note_found_post,
-            "youtube_item_index": yt_idx,
-            "research_note_item_index": note_idx,
-            "detected_source_count": len(post_items),
-            "sources_sample": current_sources[:10],
-            "actions_taken": actions_taken,
-        }
+            # Post-readback
+            post_items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
+            yt_found_post, note_found_post, yt_idx, note_idx = evaluate_sources_independence(post_items, video_id, video_title)
+            
+            status = "NOTEBOOK_READBACK_PASS" if (yt_found_post and note_found_post) else (
+                "NOTEBOOK_READBACK_PARTIAL" if (yt_found_post or note_found_post) else "NOTEBOOK_READBACK_NOT_FOUND"
+            )
+            readback_res = {
+                "status": status,
+                "youtube_source_found": yt_found_post,
+                "research_note_found": note_found_post,
+                "youtube_item_index": yt_idx,
+                "research_note_item_index": note_idx,
+                "detected_source_count": len(post_items),
+                "sources_sample": current_sources[:10],
+                "actions_taken": actions_taken,
+            }
     elif cdp_available:
         try:
+            tabs = client.list_tabs()
+            # Detect Google login screen
+            login_tab = next(
+                (t for t in tabs if "accounts.google.com" in t.get("url", "") or "ログイン" in t.get("title", "") or "Sign in" in t.get("title", "")),
+                None
+            )
             notebook_tab = client.find_notebook_tab(NOTEBOOK_ID)
-            if notebook_tab:
-                print(f"  - NotebookLMタブ検出: {notebook_tab.get('title')}")
-                
-                # Step A: Pre-readback
-                pre_rb = readback_notebook_sources_via_cdp(client, notebook_tab, video_id, video_title)
-                yt_already = pre_rb.get("youtube_source_found", False)
-                note_already = pre_rb.get("research_note_found", False)
 
-                if allow_add:
-                    # Step B: Add missing YouTube source if not present
-                    if not yt_already:
-                        print(f"  - [CDP ACTION] YouTube URLソースを追加します: {video_url}")
-                        yt_add_res = add_youtube_source_via_cdp(client, notebook_tab, video_id, video_url)
-                        actions_taken.append({"action": "ADD_YOUTUBE", "result": yt_add_res})
-                        time.sleep(2.0)
-                    else:
-                        print("  - [CDP SKIP] YouTube URLソースは既に登録済みです。")
-
-                    # Step C: Add missing Research Note if not present
-                    if not note_already:
-                        print(f"  - [CDP ACTION] 研究ノート(Copied text)を追加します: AI_VIDEO_RESEARCH_NOTE:{video_id}")
-                        note_content = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
-                        note_add_res = add_copied_text_source_via_cdp(
-                            client=client,
-                            tab=notebook_tab,
-                            video_id=video_id,
-                            note_content=note_content,
-                        )
-                        actions_taken.append({"action": "ADD_RESEARCH_NOTE", "result": note_add_res})
-                        time.sleep(2.0)
-                    else:
-                        print("  - [CDP SKIP] 研究ノートソースは既に登録済みです。")
+            if not notebook_tab and login_tab:
+                print("  - [BLOCKED] Googleアカウントの初回ログイン画面が検出されました。Notebookへアクセスできません。")
+                readback_res = {
+                    "status": "BLOCKED_INITIAL_GOOGLE_LOGIN",
+                    "youtube_source_found": False,
+                    "research_note_found": False,
+                    "message": "専用Chromeで初回Googleログインが必要です。手動ログイン完了後に再実行してください。",
+                }
+            elif notebook_tab:
+                tab_url = notebook_tab.get("url", "")
+                if "accounts.google.com" in tab_url:
+                    print("  - [BLOCKED] NotebookタブがGoogleログイン画面へリダイレクトされています。")
+                    readback_res = {
+                        "status": "BLOCKED_INITIAL_GOOGLE_LOGIN",
+                        "youtube_source_found": False,
+                        "research_note_found": False,
+                        "message": "Notebookタブがログイン画面へリダイレクトされています。手動ログインが必要です。",
+                    }
                 else:
-                    print("  - [CDP SKIP] allow_add=False のため追加操作をスキップします。")
+                    print(f"  - NotebookLMタブ検出: {notebook_tab.get('title')}")
+                    # Step A: Pre-readback
+                    pre_rb = readback_notebook_sources_via_cdp(client, notebook_tab, video_id, video_title)
+                    yt_already = pre_rb.get("youtube_source_found", False)
+                    note_already = pre_rb.get("research_note_found", False)
 
-                # Step D: Post-readback
-                if actions_taken:
-                    time.sleep(1.0)
-                    readback_res = readback_notebook_sources_via_cdp(client, notebook_tab, video_id, video_title)
-                else:
-                    readback_res = pre_rb
+                    if allow_add:
+                        # Step B: Add missing YouTube source if not present
+                        if not yt_already:
+                            print(f"  - [CDP ACTION] YouTube URLソースを追加します: {video_url}")
+                            yt_add_res = add_youtube_source_via_cdp(client, notebook_tab, video_id, video_url)
+                            actions_taken.append({"action": "ADD_YOUTUBE", "result": yt_add_res})
+                            time.sleep(2.0)
+                        else:
+                            print("  - [CDP SKIP] YouTube URLソースは既に登録済みです。")
 
-                readback_res["actions_taken"] = actions_taken
-                print(f"  - Notebook実画面Readbackステータス: {readback_res.get('status')}")
+                        # Step C: Add missing Research Note if not present
+                        if not note_already:
+                            print(f"  - [CDP ACTION] 研究ノート(Copied text)を追加します: AI_VIDEO_RESEARCH_NOTE:{video_id}")
+                            note_content = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
+                            note_add_res = add_copied_text_source_via_cdp(
+                                client=client,
+                                tab=notebook_tab,
+                                video_id=video_id,
+                                note_content=note_content,
+                            )
+                            actions_taken.append({"action": "ADD_RESEARCH_NOTE", "result": note_add_res})
+                            time.sleep(2.0)
+                        else:
+                            print("  - [CDP SKIP] 研究ノートソースは既に登録済みです。")
+                    else:
+                        print("  - [CDP SKIP] allow_add=False のため追加操作をスキップします。")
+
+                    # Step D: Post-readback
+                    if actions_taken:
+                        time.sleep(1.0)
+                        readback_res = readback_notebook_sources_via_cdp(client, notebook_tab, video_id, video_title)
+                    else:
+                        readback_res = pre_rb
+
+                    readback_res["actions_taken"] = actions_taken
+                    print(f"  - Notebook実画面Readbackステータス: {readback_res.get('status')}")
             else:
                 readback_res = {
                     "status": "NOTEBOOK_TAB_NOT_FOUND",
@@ -766,20 +815,29 @@ def ingest_and_verify_notebook(
     }
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
+    """Build command line argument parser."""
     parser = argparse.ArgumentParser(description="Gemini Notebook 自動登録・読み戻しモジュール v3.0")
-    parser.add_argument("video_id", help="登録対象のYouTube動画ID")
+    parser.add_argument("video_id", nargs="?", default=None, help="登録対象のYouTube動画ID (--launch-chrome時は省略可)")
     parser.add_argument("--url", help="YouTube動画URL", default=None)
     parser.add_argument("--title", help="動画タイトル", default="YouTube動画")
     parser.add_argument("--research-md", help="研究ノートMarkdownファイルのパス", default=None)
     parser.add_argument("--launch-chrome", action="store_true", help="専用プロファイルでChromeを起動する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
-    args = parser.parse_args()
+    return parser
+
+
+def main(args_list: Optional[List[str]] = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(args_list)
 
     if args.launch_chrome:
         res = launch_dedicated_chrome()
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0
+
+    if not args.video_id:
+        parser.error("登録処理には video_id が必要です（--launch-chrome 時は不要）")
 
     v_url = args.url or f"https://www.youtube.com/watch?v={args.video_id}"
     md_p = Path(args.research_md) if args.research_md else Path(f"research/{args.video_id}.md")
