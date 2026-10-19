@@ -319,6 +319,16 @@ def build_transcript_okf_content(
     cues_list = cues or []
     cue_count = len(cues_list)
 
+    clean_source_id = str(notebook_source_id).strip() if notebook_source_id else "UNKNOWN"
+    if not clean_source_id or clean_source_id.upper() in ("", "NONE", "NULL"):
+        clean_source_id = "UNKNOWN"
+
+    valid_open_link = (
+        str(notebook_open_link).strip()
+        if notebook_open_link and str(notebook_open_link).strip().startswith(("https://", "http://"))
+        else None
+    )
+
     lines = [
         "---",
         'okf_version: "0.2"',
@@ -332,10 +342,10 @@ def build_transcript_okf_content(
         f'url: "{video_url}"',
         f'canonical_url: "{video_url}"',
         f'original_url: "{video_url}"',
-        f'notebook_source_id: "{notebook_source_id or "UNKNOWN"}"',
+        f'notebook_source_id: "{clean_source_id}"',
     ]
-    if notebook_open_link:
-        lines.append(f'notebook_open_link: "{notebook_open_link}"')
+    if valid_open_link:
+        lines.append(f'notebook_open_link: "{valid_open_link}"')
     lines.extend([
         f'language: "{language}"',
         f'acquired_at: "{today}"',
@@ -357,11 +367,11 @@ def build_transcript_okf_content(
         f"<!-- RESOURCE: {video_url} -->",
         f"<!-- CANONICAL_URL: {video_url} -->",
         f"<!-- ORIGINAL_URL: {video_url} -->",
-        f"<!-- NOTEBOOK_SOURCE_ID: {notebook_source_id or 'UNKNOWN'} -->",
+        f"<!-- NOTEBOOK_SOURCE_ID: {clean_source_id} -->",
     ])
-    if notebook_open_link:
-        lines.append(f"<!-- NOTEBOOK_OPEN_LINK: {notebook_open_link} -->")
-        lines.append(f"- **Notebook実リンク**: [{notebook_open_link}]({notebook_open_link})")
+    if valid_open_link:
+        lines.append(f"<!-- NOTEBOOK_OPEN_LINK: {valid_open_link} -->")
+        lines.append(f"- **Notebook実リンク**: [{valid_open_link}]({valid_open_link})")
     lines.extend([
         f"- **元YouTube URL**: {video_url}",
         f"- **動画URL**: {video_url}",
@@ -494,8 +504,15 @@ def evaluate_2_source_okf_independence(
         if idx is not None and 0 <= idx < len(items):
             item_val = items[idx]
             if isinstance(item_val, dict):
-                sid = item_val.get("source_id") or item_val.get("data_source_id") or item_val.get("id") or "UNKNOWN"
-                link = item_val.get("open_link") or item_val.get("href")
+                raw_sid = item_val.get("source_id") or item_val.get("data_source_id") or item_val.get("id")
+                sid = str(raw_sid).strip() if raw_sid else "UNKNOWN"
+                if not sid:
+                    sid = "UNKNOWN"
+                raw_link = item_val.get("open_link") or item_val.get("href")
+                link = str(raw_link).strip() if raw_link else None
+                # Refuse non-HTTP or fictional links
+                if link and not (link.startswith("https://") or link.startswith("http://")):
+                    link = None
                 return sid, link
         return "UNKNOWN", None
 

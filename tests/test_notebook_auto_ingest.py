@@ -413,6 +413,34 @@ class TestNotebookAutoIngest(unittest.TestCase):
         self.assertEqual(res_plain["transcript_source_id"], "UNKNOWN")
         self.assertIsNone(res_plain["transcript_open_link"])
 
+    def test_never_fabricate_unknown_source_id_or_link(self):
+        """未確認・空・不正なIDやURLが渡されても架空リンクを一切生成せずUNKNOWNを保つこと。"""
+        # Case A: Empty/None values
+        content_none = notebook_auto_ingest.build_transcript_okf_content(
+            video_id="vidSafe1",
+            video_url="https://www.youtube.com/watch?v=vidSafe1",
+            video_title="安全検証1",
+            cues=[],
+            notebook_source_id=None,
+            notebook_open_link=None,
+        )
+        self.assertIn('notebook_source_id: "UNKNOWN"', content_none)
+        self.assertNotIn('notebook_open_link', content_none)
+        self.assertNotIn('Notebook実リンク', content_none)
+
+        # Case B: Non-HTTP or fictional relative link
+        content_fictional = notebook_auto_ingest.build_transcript_okf_content(
+            video_id="vidSafe2",
+            video_url="https://www.youtube.com/watch?v=vidSafe2",
+            video_title="安全検証2",
+            cues=[],
+            notebook_source_id="   ",
+            notebook_open_link="javascript:void(0)",
+        )
+        self.assertIn('notebook_source_id: "UNKNOWN"', content_fictional)
+        self.assertNotIn('notebook_open_link', content_fictional)
+        self.assertNotIn('javascript:', content_fictional)
+
 
 if __name__ == "__main__":
     unittest.main()
