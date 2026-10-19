@@ -960,12 +960,14 @@ def run_pipeline(
         "model_used": model_used,
         "notebook_ingest": nb_res,
         "is_2_source_okf_verified": is_2_source_okf_verified,
+        "is_full_success": (final_status == "SUCCESS_2_SOURCE_OKF"),
         "fail_reasons": fail_reasons,
     }
 
 
 SUCCESS_CLI_STATUSES = (
     "SUCCESS_2_SOURCE_OKF",
+    "SUCCESS",  # 後方互換性維持
     "ALREADY_REGISTERED",
     "RESUMED_NOTEBOOK_INGEST",
     "DRY_RUN_COMPLETE",
