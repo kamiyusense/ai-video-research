@@ -336,6 +336,8 @@ def build_research_receipt(
             print("  - [DRY RUN] 外部API呼出しを行わず、ローカル字幕解析エンジンを適用します。")
         elif not enable_live_gemini:
             print("  - [INFO] 外部LIVE未指定（--enable-live-geminiなし）: ローカル字幕テキスト抽出エンジンを適用します。")
+        elif not gemini_api_key:
+            print("  - [WARNING] --enable-live-gemini が指定されましたが GEMINI_API_KEY が未設定です。ローカル字幕解析エンジンにフォールバックします。")
         ai_analysis = analyze_with_local_transcript_engine(title, author, length_sec, cues, desc, starts)
         engine_used = ai_analysis.get("analysis_engine", engine_used)
         model_used = "NONE"
@@ -661,7 +663,8 @@ def run_pipeline(
 
     # 5. Rebuild knowledge catalog via official query_research API and verify file
     print("[5/8] 知識カタログ再構築中 (video_knowledge_catalog.json)...")
-    catalog_res, cat_path = query_research.build_video_knowledge_catalog(root=ROOT)
+    cat_path = ROOT / "automation" / "gemini-notebook" / "state" / "video_knowledge_catalog.json"
+    catalog_res, _ = query_research.build_video_knowledge_catalog(root=ROOT, write_path=cat_path)
     if not cat_path.exists() or cat_path.stat().st_size == 0:
         raise RuntimeError(f"知識カタログの保存に失敗しました: {cat_path}")
     print(f"  - カタログ登録総数: {catalog_res.get('total_records')} (動画数: {catalog_res.get('total_video_records')})")
