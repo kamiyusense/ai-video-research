@@ -935,6 +935,12 @@ def run_pipeline(
     print(f"Notebook用Markdown: {research_md_path}")
     print(f"Drive Notebook同期先: {nb_res.get('drive_sync', {}).get('target_dir')}")
     print(f"2ソースOKF完全立証: {is_2_source_okf_verified}")
+    if final_status == "SUCCESS_2_SOURCE_OKF":
+        print("状態区分: 正式完成 (SUCCESS_2_SOURCE_OKF) - 研究ノートOKFと字幕原文OKFの2ソース独立実在を完全立証")
+    elif final_status == "PARTIAL_2_SOURCE_OKF_PENDING":
+        print("状態区分: 暫定状態 (PARTIAL_2_SOURCE_OKF_PENDING) - 旧式（YouTube URL＋研究ノート）のみ確認。正式完成には字幕原文OKFの独立登録が必須")
+    else:
+        print(f"状態区分: 部分完了・未確認 ({final_status})")
     if fail_reasons:
         print("未達項目・制限事項:")
         for r in fail_reasons:

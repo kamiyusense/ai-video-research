@@ -1248,10 +1248,13 @@ def ingest_and_verify_notebook(
 
     if is_full_success and is_2_source_okf:
         final_status = "SUCCESS_2_SOURCE_OKF"
+        print("  - [状態区分] 正式完成 (SUCCESS_2_SOURCE_OKF): 研究ノートOKFと字幕原文OKFの2ソース独立実在を完全立証。")
     elif readback_res.get("youtube_source_found") and readback_res.get("research_note_found"):
         final_status = "PARTIAL_2_SOURCE_OKF_PENDING"
+        print("  - [状態区分] 暫定状態 (PARTIAL_2_SOURCE_OKF_PENDING): 旧式（YouTube URL＋研究ノート）のみ確認。正式完成 (SUCCESS_2_SOURCE_OKF) には字幕原文OKFの独立登録が必須です。")
     else:
         final_status = "NOTEBOOK_SYNC_PENDING_READBACK"
+        print(f"  - [状態区分] 保留状態 ({final_status}): Notebook読み戻し未完了または不足ソースあり。")
 
     return {
         "status": final_status,
