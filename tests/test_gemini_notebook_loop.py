@@ -5089,6 +5089,165 @@ process.stdout.write(JSON.stringify(res));
         self.assertTrue(any("相互論理リンク" in r for r in reasons))
 
 
+class TestTwelveAcceptanceCriteriaContract(unittest.TestCase):
+    """12大受入条件（ロードマップ合致・受入契約）の完全自動検証テストスイート。"""
+
+    def setUp(self):
+        self.vid = "u3ka_AAb8qE"
+        self.v_url = f"https://www.youtube.com/watch?v={self.vid}"
+        self.rag_path = ROOT / "research" / "2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+        self.okf_path = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+
+    def test_item1_transcript_and_research_are_distinct_okf_documents(self):
+        """1. 原文と研究ノートが別のOKF資料になること。"""
+        import notebook_auto_ingest as nai
+        tr_text = nai.build_transcript_okf_content(self.vid, self.v_url, "タイトル")
+        res_text = self.okf_path.read_text(encoding="utf-8")
+        self.assertIn('type: "TRANSCRIPT"', tr_text)
+        self.assertIn('type: "RESEARCH_NOTE"', res_text)
+        self.assertNotEqual(tr_text, res_text)
+
+    def test_item2_canonical_url_exists_in_both_documents(self):
+        """2. 両方に元YouTube URLが存在すること。"""
+        import notebook_auto_ingest as nai
+        tr_text = nai.build_transcript_okf_content(self.vid, self.v_url, "タイトル")
+        res_text = self.okf_path.read_text(encoding="utf-8")
+        self.assertIn(f'resource: "{self.v_url}"', tr_text)
+        self.assertIn(f'resource: "{self.v_url}"', res_text)
+
+    def test_item3_raw_transcript_is_unmodified_verbatim(self):
+        """3. 取得した原字幕が改変されていないこと。"""
+        import notebook_auto_ingest as nai
+        raw_cues = [
+            {"start": 10.0, "end": 15.0, "text": "改変してはならない発話A"},
+            {"start": 20.0, "end": 25.0, "text": "そのまま保持する発話B"},
+        ]
+        tr_text = nai.build_transcript_okf_content(self.vid, self.v_url, "タイトル", cues=raw_cues)
+        self.assertIn("改変してはならない発話A", tr_text)
+        self.assertIn("そのまま保持する発話B", tr_text)
+        self.assertIn("発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。", tr_text)
+
+    def test_item4_acquired_cue_count_matches_output_transcript(self):
+        """4. 取得したcue数と出力字幕原文が一致すること。"""
+        import notebook_auto_ingest as nai
+        cues = [
+            {"start": 1.0, "end": 2.0, "text": "cue1"},
+            {"start": 3.0, "end": 4.0, "text": "cue2"},
+            {"start": 5.0, "end": 6.0, "text": "cue3"},
+        ]
+        tr_text = nai.build_transcript_okf_content(self.vid, self.v_url, "タイトル", cues=cues)
+        self.assertIn("cue_count: 3", tr_text)
+        self.assertIn("- **総Cue数**: 3 件", tr_text)
+        self.assertEqual(tr_text.count("- **[00:"), 3)
+
+    def test_item5_mutual_logical_links_between_transcript_and_research(self):
+        """5. 字幕と研究ノートの相互リンクがあること。"""
+        import notebook_auto_ingest as nai
+        tr_text = nai.build_transcript_okf_content(self.vid, self.v_url, "タイトル")
+        res_text = self.okf_path.read_text(encoding="utf-8")
+        self.assertIn(f'research_logical_id: "youtube:{self.vid}:research"', tr_text)
+        self.assertIn(f'transcript_logical_id: "youtube:{self.vid}:transcript"', res_text)
+
+    def test_item6_youtube_url_only_does_not_yield_success(self):
+        """6. YouTube URLソースだけでは正式SUCCESSにならないこと。"""
+        import notebook_auto_ingest as nai
+        res_nb = nai.ingest_and_verify_notebook(
+            video_id=self.vid,
+            video_url=self.v_url,
+            video_title="タイトル",
+            research_md_path=self.okf_path,
+            mock_cdp=True,
+            mock_sources=[self.v_url, f"AI_VIDEO_RESEARCH_NOTE:{self.vid}"],
+            allow_add=False,
+        )
+        self.assertEqual(res_nb.get("status"), "PARTIAL_2_SOURCE_OKF_PENDING")
+        self.assertFalse(res_nb.get("is_2_source_okf_verified"))
+
+    def test_item7_related_candidate_links_resolve_safely(self):
+        """7. 関連候補のリンク先が正しく解決できること（実在先はリンク、未登録はバッククォート）。"""
+        res_text = self.okf_path.read_text(encoding="utf-8")
+        self.assertIn("[youtube:pRfC1DILDEM:research](2026-10-18-pRfC1DILDEM-gemini-notebook.md)", res_text)
+        self.assertNotIn("404", res_text)
+
+    def test_item8_no_confirmed_without_evidence(self):
+        """8. 根拠なしにCONFIRMEDにしないこと。"""
+        res_text = self.okf_path.read_text(encoding="utf-8")
+        for line in res_text.splitlines():
+            if "status: CONFIRMED" in line:
+                self.assertIn("evidence:", line, "CONFIRMEDの行には必ずevidenceが存在すること")
+
+    def test_item9_no_duplicate_registration_in_existing_notebook(self):
+        """9. 既存Notebookでソースを重複登録しないこと（差分追加・スキップ）。"""
+        import notebook_auto_ingest as nai
+        res_nb = nai.ingest_and_verify_notebook(
+            video_id=self.vid,
+            video_url=self.v_url,
+            video_title="タイトル",
+            research_md_path=self.okf_path,
+            mock_cdp=True,
+            mock_sources=[
+                f"AI_VIDEO_RESEARCH_NOTE:{self.vid}",
+                f"AI_VIDEO_TRANSCRIPT_RAW:{self.vid}",
+            ],
+            allow_add=True,
+        )
+        self.assertEqual(res_nb.get("actions_taken", []), [])
+        self.assertEqual(res_nb.get("status"), "SUCCESS_2_SOURCE_OKF")
+
+    def test_item10_single_source_registered_does_not_yield_success(self):
+        """10. 2ソースの片方が未登録なら正式SUCCESSにならないこと。"""
+        import notebook_auto_ingest as nai
+        res_note_only = nai.ingest_and_verify_notebook(
+            video_id=self.vid,
+            video_url=self.v_url,
+            video_title="タイトル",
+            research_md_path=self.okf_path,
+            mock_cdp=True,
+            mock_sources=[f"AI_VIDEO_RESEARCH_NOTE:{self.vid}"],
+            allow_add=False,
+        )
+        self.assertFalse(res_note_only.get("is_2_source_okf_verified"))
+        self.assertNotEqual(res_note_only.get("status"), "SUCCESS_2_SOURCE_OKF")
+
+        res_tr_only = nai.ingest_and_verify_notebook(
+            video_id=self.vid,
+            video_url=self.v_url,
+            video_title="タイトル",
+            research_md_path=self.okf_path,
+            mock_cdp=True,
+            mock_sources=[f"AI_VIDEO_TRANSCRIPT_RAW:{self.vid}"],
+            allow_add=False,
+        )
+        self.assertFalse(res_tr_only.get("is_2_source_okf_verified"))
+        self.assertNotEqual(res_tr_only.get("status"), "SUCCESS_2_SOURCE_OKF")
+
+    def test_item11_full_transcript_never_committed_to_github(self):
+        """11. 字幕全文がGitHub管理対象に混入しないこと（保存禁止ルールの徹底）。"""
+        for md in (ROOT / "research").glob("*.md"):
+            content = md.read_text(encoding="utf-8")
+            self.assertNotIn("AI_VIDEO_TRANSCRIPT_RAW", content, f"{md.name} に字幕原文IDが混入していないこと")
+            self.assertNotIn("## 字幕発話タイムライン (取得全量)", content, f"{md.name} に字幕全文が混入していないこと")
+
+    def test_item12_backward_compatibility_with_legacy_data_preserved(self):
+        """12. 旧データとの互換性が壊れていないこと。"""
+        import auto_research_pipeline as arp
+        status, reasons = arp.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+        )
+        self.assertIn(status, ["SUCCESS_2_SOURCE_OKF", "PARTIAL_2_SOURCE_OKF_PENDING"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 
