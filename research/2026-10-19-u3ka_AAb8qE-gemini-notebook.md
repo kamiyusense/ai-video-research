@@ -16,6 +16,7 @@ publication_date: "2026-08-20"
 checked_at: "2026-10-19"
 source_scope: "ユーザー提供字幕（主要タイムスタンプ付き区間 08:16〜16:33）およびYouTube動画情報を分析"
 transcript_logical_id: "youtube:u3ka_AAb8qE:transcript"
+related_transcript_id: "youtube:u3ka_AAb8qE:transcript"
 transcript_status: "UNVERIFIED"
 primary_source_notebook_id: "UNKNOWN"
 document_type: "AI技術研究室 構造化研究カード（二次分析資料）"
@@ -25,7 +26,7 @@ github_to_notebook_sync: "NOT_SYNCED_FROM_GITHUB"
 changes:
   - "NEW"
 related_records:
-  - target_id: "youtube:pRfC1DILDEM"
+  - target_id: "youtube:pRfC1DILDEM:research"
     relation: "COMPLEMENTS"
     note: "RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある"
     status: "CONFIRMED"
@@ -36,6 +37,13 @@ related_records:
 
 > [!IMPORTANT]
 > **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。
+
+> [!NOTE]
+> **資料識別・Notebook UI参照案内**:
+> - **動画ID**: `u3ka_AAb8qE`
+> - **資料論理ID**: `youtube:u3ka_AAb8qE:research`
+> - **対応字幕原文論理ID**: `youtube:u3ka_AAb8qE:transcript`
+> - **UI制限事項**: NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する字幕原文を参照する場合は、上記『対応字幕原文論理ID (`youtube:u3ka_AAb8qE:transcript`)』または『動画ID (`u3ka_AAb8qE`)』をもとに、Notebookのソース一覧から検索・特定してください。
 
 ## 独自要約
 オープンナレッジフォーマット（OKF v0.2）に基づく文書構造化手法を解説。資料先頭の標準荷札、1件1ファイルの資料分割、意味付けされた双方向リンクによる知識ネットワーク構築。
@@ -58,7 +66,7 @@ OKFは「書類の置き方改革（地図作り）」であり、RAG（質問�
 - OKFとRAGは対立するものではなく、書類整理と検索エンジンの関係として相互補完する | REPORTED_BY_AUTHOR | time: [09:35](https://www.youtube.com/watch?v=u3ka_AAb8qE&t=575s) | official: UNKNOWN | time_source: TIMESTAMPED_CAPTIONS
 
 ## 関連する既存研究・課題との接続
-- [youtube:pRfC1DILDEM](research/2026-10-18-pRfC1DILDEM-gemini-notebook.md) (COMPLEMENTS): RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある | status: CONFIRMED | evidence: 08:16荷札とpRfC1DILDEMの13:16言及
+- [youtube:pRfC1DILDEM:research](research/2026-10-18-pRfC1DILDEM-gemini-notebook.md) (COMPLEMENTS): RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある | status: CONFIRMED | evidence: 08:16荷札とpRfC1DILDEMの13:16言及
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

@@ -16,6 +16,7 @@ publication_date: "2026-09-02"
 checked_at: "2026-10-18"
 source_scope: "Gemini報告: YouTube字幕 00:00〜14:23 を取得して分析。映像・画面未確認。ChatGPT独立確認なし。Notebook登録・読戻しはGemini自己申告。"
 transcript_logical_id: "youtube:pRfC1DILDEM:transcript"
+related_transcript_id: "youtube:pRfC1DILDEM:transcript"
 transcript_status: "UNVERIFIED"
 primary_source_notebook_id: "25c0f62e-99aa-48bc-9486-357a350c76f5"
 document_type: "AI技術研究室 構造化研究カード（二次分析資料）"
@@ -28,7 +29,7 @@ related_records:
   - target_id: "youtube:u3ka_AAb8qE:research"
     relation: "COMPLEMENTS"
     note: "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある"
-    status: "CANDIDATE"
+    status: "CONFIRMED"
     evidence: "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造"
 ---
 
@@ -36,6 +37,13 @@ related_records:
 
 > [!IMPORTANT]
 > **文書区分**: 本ドキュメントは一次資料（YouTube字幕）を基に構造化分析した「AI技術研究室 研究カード」です。Notebook内の一次資料YouTube動画そのものではありません。回答引用時は「一次資料（動画）」と「本研究カード（構造化分析）」を明確に区別してください。
+
+> [!NOTE]
+> **資料識別・Notebook UI参照案内**:
+> - **動画ID**: `pRfC1DILDEM`
+> - **資料論理ID**: `youtube:pRfC1DILDEM:research`
+> - **対応字幕原文論理ID**: `youtube:pRfC1DILDEM:transcript`
+> - **UI制限事項**: NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する字幕原文を参照する場合は、上記『対応字幕原文論理ID (`youtube:pRfC1DILDEM:transcript`)』または『動画ID (`pRfC1DILDEM`)』をもとに、Notebookのソース一覧から検索・特定してください。
 
 ## 独自要約
 RAG（検索拡張生成）が抱える構造的限界（数・時系列・全体サマリーに答えられない欠陥）を整理し、質問を「①探し物」「②数える」「③並べる・いつの時点か」「④全体」の4つに仕分け、RAGは探し物のみに限定して専用の道具（セマンティックレイヤー付きSQL、バイテンポラル履歴管理、階層型要約）へ振り分ける設計を提示。さらに500ページ未満のプロンプト丸ごと渡しや、Claude CodeのようにベクトルDBを捨ててオンデマンド探索（grep/glob）に倒す『仕組みを作らない選択』を解説。
@@ -92,5 +100,5 @@ Claude Codeの実例 : 初期はTypeScript製ローカルベクトルDBでRAGを
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。
 
-## 関連研究・資料リンク
-- `youtube:u3ka_AAb8qE:research` (COMPLEMENTS): OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある | status: CANDIDATE | evidence: 13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造
+## 関連する既存研究・課題との接続
+- [youtube:u3ka_AAb8qE:research](research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md) (COMPLEMENTS): OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある | status: CONFIRMED | evidence: 13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造

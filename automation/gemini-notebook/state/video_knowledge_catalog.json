@@ -1,6 +1,6 @@
 {
   "schema_version": "video_knowledge_catalog_v1",
-  "generated_at": "2026-10-19",
+  "generated_at": "2026-10-20",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
   "total_records": 34,
@@ -7436,8 +7436,9 @@
           "target_id": "youtube:u3ka_AAb8qE:research",
           "relation": "COMPLEMENTS",
           "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
-          "status": "CANDIDATE",
-          "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造"
+          "status": "CONFIRMED",
+          "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
+          "target_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
         }
       ],
       "backlinks": [
@@ -7632,7 +7633,7 @@
       ],
       "related_records": [
         {
-          "target_id": "youtube:pRfC1DILDEM",
+          "target_id": "youtube:pRfC1DILDEM:research",
           "relation": "COMPLEMENTS",
           "note": "RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある",
           "status": "CONFIRMED",
@@ -7648,7 +7649,7 @@
           "relation": "COMPLEMENTS",
           "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
           "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
-          "status": "CANDIDATE"
+          "status": "CONFIRMED"
         }
       ]
     },
@@ -7684,8 +7685,8 @@
     "schema_version": "okf_knowledge_network_v1",
     "total_nodes": 34,
     "total_links": 36,
-    "confirmed_links": 30,
-    "candidate_links": 1,
+    "confirmed_links": 31,
+    "candidate_links": 0,
     "unresolved_links": 5,
     "self_link_warnings": [
       {
@@ -8159,7 +8160,7 @@
         "target_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
         "relation": "COMPLEMENTS",
         "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
-        "status": "CANDIDATE",
+        "status": "CONFIRMED",
         "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
         "is_self_link": false,
         "target_exists": true
@@ -8167,7 +8168,7 @@
       {
         "source_video_id": "u3ka_AAb8qE",
         "source_logical_id": "youtube:u3ka_AAb8qE:research",
-        "target_id": "youtube:pRfC1DILDEM",
+        "target_id": "youtube:pRfC1DILDEM:research",
         "target_video_id": "pRfC1DILDEM",
         "target_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
         "relation": "COMPLEMENTS",
@@ -8503,7 +8504,7 @@
           "relation": "COMPLEMENTS",
           "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
           "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
-          "status": "CANDIDATE"
+          "status": "CONFIRMED"
         }
       ],
       "pRfC1DILDEM": [
