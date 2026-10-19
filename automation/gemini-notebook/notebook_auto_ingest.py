@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""AI技術研究室 | Gemini Notebook 自動登録・読み戻しモジュール (notebook_auto_ingest.py v3.0).
+"""AI技術研究室 | Gemini Notebook 自動登録・読み戻しモジュール (2-Source OKF) v3.2.
 
 目的:
 対象Notebook (https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7) に対し、
-1. 元YouTube動画（YouTube URLソース）
-2. 独自研究ノート（Copied text または Markdown）
-を自動登録し、登録結果を実際のNotebook画面から読み戻して検証する。
+docs/OKF_KNOWLEDGE_ROADMAP.md v1.1「1動画2ソースMVP完成契約」に準拠して:
+1. 字幕原文OKFソース（Copied text: youtube:<video_id>:transcript）
+2. 独自研究ノートOKFソース（Copied text: youtube:<video_id>:research）
+の2つの独立したOKF論理資料を自動登録し、登録結果を実際のNotebook画面から読み戻して検証する。
+※YouTube動画URLソースは追加参考（オプション）であり、基本2ソース枠には含めない。
 
 設計:
 - [専用Chromeプロファイル] 既存の通常Chromeを破壊せず、専用ディレクトリ
   `%LOCALAPPDATA%/ai-video-research/chrome-notebook-profile` を使用してポート9222で起動。
   初回のみユーザーが通常ログインし、以後はそのセッションを永続再利用。
 - [純粋Python WebSocket/CDPクライアント] 外部pip依存なしでCDP JSON-RPCを直接操作。
-- [DOM自動操作] ソース追加モーダルを開き、YouTube URL投入および研究ノート投入を実行。
-- [Readback検証] ソース一覧を走査し、YouTubeソースおよび研究ノートの存在・識別子を検証。
-- [冪等性・二重登録防止] 同一動画が既にソース一覧に存在する場合は追加をスキップ。
+- [DOM自動操作] ソース追加モーダルを開き、研究ノートOKFおよび字幕原文OKFの2ソース投入を実行。
+- [Readback検証] ソース一覧を走査し、字幕原文OKFおよび研究ノートOKFの独立存在・識別子を検証。
+- [冪等性・二重登録防止] 同一動画の各ソースが既にソース一覧に存在する場合は追加をスキップ。
 - [Google Drive同期連携] Drive側専用フォルダへの自動配置も引き続き併用。
 """
 from __future__ import annotations
@@ -974,7 +976,7 @@ def ingest_and_verify_notebook(
     drive_dir: Path = DEFAULT_NOTEBOOK_SOURCES_DIR,
     cues: Optional[List[Dict[str, Any]]] = None,
     transcript_content: Optional[str] = None,
-    add_youtube_source: bool = True,
+    add_youtube_source: bool = False,
 ) -> Dict[str, Any]:
     """Execute complete notebook ingestion workflow: pre-readback, conditional UI ingest & post-readback."""
     print("=" * 60)
@@ -1259,7 +1261,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--research-md", help="研究ノートMarkdownファイルのパス", default=None)
     parser.add_argument("--transcript-file", help="字幕原文Markdown/テキストファイルのパス", default=None)
     parser.add_argument("--transcript-text", help="字幕原文テキスト", default=None)
-    parser.add_argument("--skip-youtube-url", action="store_true", help="YouTube URLソース追加をスキップし2ソースのみ登録")
+    parser.add_argument("--include-youtube-url", action="store_true", help="追加参考としてYouTube URLソースもNotebookへ登録する（通常は2ソースOKFのみ）")
     parser.add_argument("--launch-chrome", action="store_true", help="専用プロファイルでChromeを起動する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
     return parser
@@ -1292,7 +1294,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
         video_title=args.title,
         research_md_path=md_p,
         transcript_content=tr_content,
-        add_youtube_source=not args.skip_youtube_url,
+        add_youtube_source=args.include_youtube_url,
         mock_cdp=args.mock_cdp,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
