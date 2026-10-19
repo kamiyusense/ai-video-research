@@ -98,7 +98,7 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
       - `key_topics`: 検索用キーワード配列（最大8個、各60文字以内）
     - `related_records`（任意・推奨、最大10件）: 既存の研究や未解決課題との関連ネットワーク。各要素は：
       - `target_id`: 対象ID（例: `"youtube:lC5jxpYmatE"`, `"youtube:pRfC1DILDEM:research"`, `"P006-U02"`）
-      - `relation`: `"EXTENDS"` / `"UPDATES"` / `"COMPLEMENTS"` / `"CONTRADICTS"` / `"RESOLVES_BACKLOG"`
+      - `relation`: `"COMPLEMENTS"`（相互補完：別視点から補い合い全体像を形成） / `"EXTENDS"`（発展拡張：先行技術を基礎として深化・発展） / `"UPDATES"`（更新改定：新仕様・新版・前提条件の更新） / `"CONTRADICTS"`（矛盾対立：相反する主張・結論・設計哲学） / `"RESOLVES_BACKLOG"`（未解決課題解消）
       - `note`: 関係性の説明（1〜250文字）
       - `status`: `"CONFIRMED"` / `"CANDIDATE"` / `"UNRESOLVED"`（**厳格判定ルール**: リンク先の研究がGitHub正本・Notebookに既に登録済みかつ検証完了している場合のみ `"CONFIRMED"`。未登録の過去動画や調査候補宛ては必ず `"CANDIDATE"` または `"UNRESOLVED"` とし、未登録先をCONFIRMEDと捏造してはならない）
       - `evidence`: 関係の根拠・該当時刻（任意、例: `"08:16荷札と13:16OKF言及"`）

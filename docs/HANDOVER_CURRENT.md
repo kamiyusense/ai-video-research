@@ -44,7 +44,7 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
 | Notebookの内容 | ユーザー/Gemini報告: 45ソース（YouTube19＋Markdown等26）→研究Markdownを追加して46ソース。原YouTubeソース存在はGemini報告。原文字起こしの完全性、独立字幕テキストの存在、Notebook研究カード固有IDの読み戻しは未検証/UNKNOWN |
 | RAG動画の研究ノート | GitHubの記録は独自要約・22区間等であり字幕全文ではない。独立映像視聴未実施、厳密な時刻検証はUNKNOWN |
 | OKF参考動画 | https://www.youtube.com/watch?v=u3ka_AAb8qE 。OKF v0.2正式YAMLフロントマター、2章タイムライン、公式資料照合、pRfC1DILDEMへの相互リンクを含む研究ノートとしてGitHubへ正式登録済み（`97515c9`）。Notebook側への手動追加はユーザー操作案内中 |
-| OKF⇔RAGの関係 | `COMPLEMENTS` 確定リンク: OKF研究（u3ka_AAb8qE）からRAG研究（pRfC1DILDEM）へのMarkdownリンク付き接続を確認済み |
+| OKF⇔RAGの関係 | `COMPLEMENTS` 双方向確定リンク: OKF研究（u3ka_AAb8qE）とRAG研究（pRfC1DILDEM）が相互に `status: CONFIRMED` かつ実在Markdownリンクで接続された基準例（ゴールデンスタンダード）として確立済み |
 | 手元の実装 | `automation/gemini-notebook/GEMINI_TASK.md`、`cloud_relay_gas.js`、`intake_receipt.py`、`receipt_to_research.py`、`query_research.py`、`state/`、`registry.json` 等を再利用。改修時は最新の実装を読んで判断 |
 | 第2段階の文書・PR | `docs/V1_PRODUCTION_PLAYBOOK.md` や現在PR #10の差分には省力化が書かれているが、仕様記述やテストのPASSをNotebook/GASのLIVE成功と混同しない。以前の「GitHub→Notebook」工程を最新の必須アーキテクチャに格上げしない |
 | 既存の広域ロードマップ | `RESEARCH_ROADMAP.md` は汎用AI技術の研究テーマ計画。今回の実装順序は `docs/OKF_KNOWLEDGE_ROADMAP.md` が優先する。両方を維持 |
@@ -56,8 +56,8 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
 1. **現在の開発フェーズ状況 (2026-10-19 独立検品是正版)**:
    - **Phase 0 (方針固定)**: `DONE` (`9ae89e5`)。
    - **Phase 1 (OKF契約確定)**: `CODE_UPDATED / SPEC_ALIGNED`。公式OKF v0.2（SPEC.md）準拠の正式YAMLフロントマター（必須type・title・description・resource・tags等）を出力。字幕全文保存禁止ルールを遵守。
-   - **Phase 2 (既存2動画での検証)**: `MOCK_VERIFIED / JS_PY_PARITY_100%`。`pRfC1DILDEM` は正式OKFフロントマター形式へ移行済み。未登録の `u3ka_AAb8qE` への関連リンクは `status: CANDIDATE` / `UNRESOLVED` に是正し、確定リンクから除外。PythonとGASのレンダリングパリティ100%一致。
-   - **Phase 3 (Gemini研究タスク統合)**: `CODE_UPDATED`。`GEMINI_TASK.md` v0.7へOKF荷札・字幕保護・未登録先CANDIDATE厳格ルールを明文化。
+   - **Phase 2 (既存2動画での検証)**: `GOLDEN_STANDARD_VERIFIED / JS_PY_PARITY_100%`。`pRfC1DILDEM` と `u3ka_AAb8qE` の双方が `COMPLEMENTS`（相互補完・`CONFIRMED`）として相互リンク・UI参照案内・論理ID完備の基準例として確立。PythonとGASのレンダリングパリティ100%一致。
+   - **Phase 3 (Gemini研究タスク統合)**: `CODE_UPDATED`。`GEMINI_TASK.md` v0.7追従・4大関係ラベル（COMPLEMENTS, EXTENDS, UPDATES, CONTRADICTS）の判定基準・未登録先CANDIDATE厳格ルールを明文化。
    - **Phase 4 (保存経路・索引整備)**: `CODE_UPDATED`。`cloud_relay_gas.js` および `query_research.py` で confirmed/candidate/unresolved リンクを独立集計。
    - **Phase 5 (既存資産の非破壊移行)**: `BACKWARD_COMPATIBLE_VERIFIED`。既存29動画・263章資産の下位互換を完全維持（未移行28動画はハイブリッド透過パース）。
    - **Phase 6 (質問回答品質の検証・最終整合性是正)**: `TEST_PASSED`。5分類ルーター、条件付き決定論的件数集計（RAG/OKF/字幕5状態等）、時系列ソート区別（公開日/確認日）、1ホップ探索免責表示、Markdownリンク化パリティ、OKFフロントマターtype欠落FAIL検査、字幕証拠判定を実装。全44テストPASS。
