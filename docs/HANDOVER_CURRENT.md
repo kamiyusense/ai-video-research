@@ -62,17 +62,17 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
    - **Phase 5 (既存資産の非破壊移行・逆リンク整備)**: `BACKWARD_COMPATIBLE_VERIFIED / BACKLINKS_PARITY_COMPLETE`。既存29動画・263章資産の下位互換を完全維持（未移行28動画はハイブリッド透過パース）。主要ハブ5件への逆リンク整備により、全30ペア・60本の有向エッジにおける逆リンク欠落0件・完全双方向整合性を達成。リポジトリ内全140件のMarkdown相対リンク実在確認完了。
    - **Phase 6 (質問回答品質の検証・最終整合性是正)**: `TEST_PASSED`。5分類ルーター、条件付き決定論的件数集計（RAG/OKF/字幕5状態等）、時系列ソート区別（公開日/確認日）、1ホップ探索免責表示、Markdownリンク化パリティ、OKFフロントマターtype欠落FAIL検査、字幕証拠判定、および逆リンク双方向性アサーションを実装。全85テストPASS。
 2. **次はPhase 7（最速実機稼働実証・1本の完全通過）**:
-   - ステータス: `GITHUB_INGESTED / QA_VERIFIED`（`u3ka_AAb8qE` をGitHubへ取り込みコミット `97515c9` 完了、全44テストPASS、自然言語QAでの参照確認完了。実機Notebookへのソース登録はユーザー操作案内中）。
+   - ステータス: `2_SOURCE_OKF_INGEST_READY`（`u3ka_AAb8qE` を対象に、既存実装 `build_transcript_okf_content` および `notebook_auto_ingest.py` を再利用し、必須2ソース『字幕原文OKF (`AI_VIDEO_TRANSCRIPT_RAW:u3ka_AAb8qE`)』＋『研究ノートOKF (`AI_VIDEO_RESEARCH_NOTE:u3ka_AAb8qE`)』の登録・読み戻し完全立証仕様へ移行完了。全88テストPASS）。
    - **対象動画**: OKF動画 `u3ka_AAb8qE`（第2号として取り込み完了）および RAG動画 `pRfC1DILDEM`（第1号）。
    - **実行状況**:
-     1. Geminiで取得可能な元資料を取得（字幕テキストまたはYouTube動画ソース）：`DONE`（ローカルreceipt作成済み）。
-     2. Notebookに元資料を登録（独立テキストまたはYouTube URLソース）：`PENDING_USER_ACTION`（Notebookへ登録案内中）。
+     1. Geminiで取得可能な元資料を取得（字幕テキスト）：`DONE`（ローカルreceiptおよびタイムスタンプ付き区間データ作成済み）。
+     2. Notebookに字幕原文OKFを登録（必須2ソース 1/2: Copied text `AI_VIDEO_TRANSCRIPT_RAW:u3ka_AAb8qE`）：`READY / PENDING_USER_LIVE_CDP`（既存実装 `build_transcript_okf_content` により生成・Drive配置対応済み）。
      3. GeminiでOKF形式の研究ノートを生成：`DONE`（`research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md` 生成済み）。
-     4. Notebookに研究ノートを登録：`PENDING_USER_ACTION`（Markdown登録案内中）。
+     4. Notebookに研究ノートOKFを登録（必須2ソース 2/2: Copied text `AI_VIDEO_RESEARCH_NOTE:u3ka_AAb8qE`）：`READY / PENDING_USER_LIVE_CDP`（Markdown登録対応済み）。
      5. 受渡しJSONのGitHub適用：`DONE`（`receipt_to_research.py --apply` により `registry.json` 30動画、`video_knowledge_catalog.json` 更新完了）。
      6. GitHub非default作業ブランチへPush・readback：`DONE`（コミット `97515c9`）。
      7. 保存資料について自然言語質問し、研究内容が参照・回答できることを確認：`DONE`（`query_research.py --query "OKFに関する動画は何本ありますか？"` で第1位スコア、章タイムライン、公式資料、RAG動画との補完関係を正常回答確認済み）。
-   - **判定基準**: Notebookへ独立字幕原文OKFを登録できない場合は、利用可能なURLソース＋研究ノートによる試験結果を `PARTIAL_2_SOURCE_OKF_PENDING` として扱う（本書の歴史的Phase7実行状況は旧暫定試験の記録）。2資料とも元URLと相互論理リンクを持ち、Notebook別ソースの実登録/readbackが確認できた場合のみ正式完成として評価する。客観的正しさの証明は保存の必須条件にせず、質問回答時に最新情報と照合する方式を採用する。
+   - **判定基準**: 必須2ソース（字幕原文OKF ＋ 研究ノートOKF）が別々のNotebookソースとして独立確認された場合のみ `SUCCESS_2_SOURCE_OKF` として評価。YouTube URLソースは追加参考（オプトイン）とし2ソース枠を圧迫させない。字幕原文OKFが未登録の場合は `PARTIAL_2_SOURCE_OKF_PENDING` とする。客観的正しさの証明は保存の必須条件にせず、質問回答時に最新情報と照合する方式を採用する。
 
 ## 4. 安全停止条件（再確認）
 

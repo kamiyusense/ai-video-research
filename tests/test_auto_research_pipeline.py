@@ -346,6 +346,43 @@ class TestAutoResearchPipeline(unittest.TestCase):
         finally:
             auto_research_pipeline.run_pipeline = orig_run
 
+    def test_okf_research_u3ka_2_source_ingestion_and_readback(self):
+        """OKF研究(u3ka_AAb8qE)のソースを既存実装を再利用して字幕原文OKFと研究ノートOKFの必須2ソースにすること。"""
+        import notebook_auto_ingest
+        res_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        self.assertTrue(res_md.exists(), "u3ka_AAb8qE research note must exist")
+
+        # 1. Reuse existing build_transcript_okf_content for Transcript OKF
+        cues = [
+            {"start": 496.0, "duration": 52.0, "text": "資料冒頭のYAMLフロントマターによる荷札・メタデータ識別原則"},
+            {"start": 575.0, "duration": 36.0, "text": "資料間を意味付きリンク（COMPLEMENTS等）で結ぶ双方向参照設計"},
+        ]
+        tr_text = notebook_auto_ingest.build_transcript_okf_content(
+            video_id="u3ka_AAb8qE",
+            video_url="https://www.youtube.com/watch?v=u3ka_AAb8qE",
+            video_title="【OKF実践】AI時代の知識管理とオープンナレッジフォーマット v0.2",
+            cues=cues,
+        )
+        self.assertIn('logical_id: "youtube:u3ka_AAb8qE:transcript"', tr_text)
+        self.assertIn('related_research_id: "youtube:u3ka_AAb8qE:research"', tr_text)
+        self.assertIn('<!-- ID: AI_VIDEO_TRANSCRIPT_RAW:u3ka_AAb8qE -->', tr_text)
+
+        # 2. Ingest 2-source OKF using existing pipeline module
+        nb_res = auto_research_pipeline.run_notebook_registration_only(
+            video_id="u3ka_AAb8qE",
+            research_md_path=res_md,
+            video_title="【OKF実践】AI時代の知識管理とオープンナレッジフォーマット v0.2",
+            mock_cdp=True,
+            cues=cues,
+        )
+        self.assertEqual(nb_res["status"], "SUCCESS_2_SOURCE_OKF")
+        self.assertTrue(nb_res["is_full_success"])
+        self.assertTrue(nb_res["is_2_source_okf_verified"])
+        self.assertTrue(nb_res["readback"]["research_note_found"])
+        self.assertTrue(nb_res["readback"]["transcript_source_found"])
+        # YouTube URL is NOT registered by default, confirming pure 2-source OKF
+        self.assertNotIn("YOUTUBE_URL_INSERTED", nb_res.get("actions_taken", []))
+
 
 if __name__ == "__main__":
     unittest.main()
