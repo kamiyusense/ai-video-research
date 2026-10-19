@@ -329,6 +329,29 @@ class TestNotebookAutoIngest(unittest.TestCase):
         )
         self.assertNotIn("youtube:u3ka_AAb8qE", [r["target_id"] for r in rels_self])
 
+    def test_build_transcript_okf_content(self):
+        """字幕原文OKFのYAMLフロントマターおよびコメントヘッダーに所定のプロパティが含まれること。"""
+        cues = [
+            {"start": 0.0, "duration": 2.5, "text": "こんにちは世界"},
+            {"start": 2.5, "duration": 3.0, "text": "テスト字幕です"},
+        ]
+        content = notebook_auto_ingest.build_transcript_okf_content(
+            video_id="abc123xyz",
+            video_url="https://www.youtube.com/watch?v=abc123xyz",
+            video_title="テスト動画タイトル",
+            cues=cues,
+            language="ja",
+        )
+        self.assertIn('logical_id: "youtube:abc123xyz:transcript"', content)
+        self.assertIn('research_logical_id: "youtube:abc123xyz:research"', content)
+        self.assertIn('related_research_id: "youtube:abc123xyz:research"', content)
+        self.assertIn('resource: "https://www.youtube.com/watch?v=abc123xyz"', content)
+        self.assertIn('type: "TRANSCRIPT"', content)
+        self.assertIn('transcript_status: "UNVERIFIED"', content)
+        self.assertIn('<!-- RELATED_RESEARCH_ID: youtube:abc123xyz:research -->', content)
+        self.assertIn('- **[00:00]** (0.0s) こんにちは世界', content)
+        self.assertIn('- **[00:02]** (2.5s) テスト字幕です', content)
+
 
 if __name__ == "__main__":
     unittest.main()
