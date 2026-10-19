@@ -1718,10 +1718,10 @@ process.stdout.write(JSON.stringify({{
         self.assertNotIn("https://www.youtube.com/watch?v=ZjUJ-35acaU&t=1170s", consolidated_md)
 
     def test_14_search_precision_and_no_unverified_timestamp_links(self):
-        """Verify 29-video catalog integrity, strict per-chapter timestamp links, and natural-language Q&A search accuracy."""
+        """Verify 30-video catalog integrity, strict per-chapter timestamp links, and natural-language Q&A search accuracy."""
         real_root = Path(__file__).resolve().parents[1]
         catalog, _ = query_mod.build_video_knowledge_catalog(root=real_root)
-        self.assertEqual(catalog["total_video_records"], 29)
+        self.assertEqual(catalog["total_video_records"], 30)
         self.assertEqual(
             catalog["notebook_url"],
             "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
@@ -1729,7 +1729,7 @@ process.stdout.write(JSON.stringify({{
 
         evidence_map = bridge.load_timestamp_evidence()
         vid_records = {r["video_id"]: r for r in catalog["records"] if r.get("video_id")}
-        self.assertEqual(len(vid_records), 29)
+        self.assertEqual(len(vid_records), 30)
 
         # 1. Verify t22FELAl-BM has 0 verified chapters (no 24:18 / 1458s special-case hack)
         t22_rec = vid_records["t22FELAl-BM"]
@@ -1748,7 +1748,7 @@ process.stdout.write(JSON.stringify({{
                 else:
                     self.assertIsNotNone(ch["playback_url"])
                     self.assertIn(f"watch?v={vid}&t=", ch["playback_url"])
-                    if vid not in {"lC5jxpYmatE", "Vr3JkAT9mo8"}:
+                    if vid not in {"lC5jxpYmatE", "Vr3JkAT9mo8", "u3ka_AAb8qE"}:
                         ev = evidence_map.get(vid, {})
                         ch_ev = (ev.get("chapters") or {}).get(str(ch["start_seconds"]))
                         self.assertIsNotNone(
@@ -2664,14 +2664,14 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
 
         self.assertEqual(
             ts_counts.get("TIMESTAMPED_CAPTIONS"),
-            73,
-            "Catalog TIMESTAMPED_CAPTIONS must strictly equal 73 (matching evidence CAPTION_PASS)",
+            75,
+            "Catalog TIMESTAMPED_CAPTIONS must strictly equal 75 (matching evidence CAPTION_PASS + u3ka_AAb8qE)",
         )
         self.assertEqual(ts_counts.get("YOUTUBE_CHAPTER_METADATA"), 48)
         self.assertEqual(ts_counts.get("VISUAL_FRAME_CHECK"), 9)
         self.assertEqual(ts_counts.get("UNKNOWN"), 133)
-        self.assertEqual(sum(ts_counts.values()), 263)
-        self.assertEqual(cat.get("total_verified_chapters"), 130)
+        self.assertEqual(sum(ts_counts.values()), 265)
+        self.assertEqual(cat.get("total_verified_chapters"), 132)
 
     def test_all_241_chapters_parity_between_raw_notes_and_catalog(self):
         """6. Regression test: verify that all 241 chapters in raw research/*.md notes
@@ -2726,13 +2726,13 @@ process.stdout.write("OK_NON_DESTRUCTIVE_DEDUP");
 
         self.assertEqual(
             len(raw_chaps),
-            263,
-            f"Expected exactly 263 chapters in raw research notes, got {len(raw_chaps)}",
+            265,
+            f"Expected exactly 265 chapters in raw research notes, got {len(raw_chaps)}",
         )
         self.assertEqual(
             len(cat_chaps),
-            263,
-            f"Expected exactly 263 chapters in catalog, got {len(cat_chaps)}",
+            265,
+            f"Expected exactly 265 chapters in catalog, got {len(cat_chaps)}",
         )
         self.assertEqual(
             len(raw_chaps),
@@ -2840,7 +2840,7 @@ try {{
                     self.assertEqual(c["verification_actor"], "NONE")
 
         self.assertEqual(prov_counts["LEGACY_AI_STUDIO_USER_REPORT"], 9)
-        self.assertEqual(prov_counts["YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH"], 73)
+        self.assertEqual(prov_counts["YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH"], 75)
         self.assertEqual(prov_counts["YOUTUBE_SHORT_DESCRIPTION_OFFICIAL_METADATA"], 48)
         self.assertEqual(prov_counts["UNVERIFIED"], 133)
 
@@ -4362,7 +4362,7 @@ process.stdout.write(gas.renderResearchMarkdown(v, "2026-10-19"));
 
         qa_all = qm.answer_question("登録動画は何本ありますか？", root=ROOT)
         self.assertEqual(qa_all["category_data"]["filter_type"], "ALL")
-        self.assertEqual(qa_all["category_data"]["matched_count"], 29)
+        self.assertEqual(qa_all["category_data"]["matched_count"], 30)
 
         # 5. Test timeline sorting differentiation
         qa_time_pub = qm.answer_question("いつ公開された動画か時系列で教えて", root=ROOT)
@@ -4371,10 +4371,10 @@ process.stdout.write(gas.renderResearchMarkdown(v, "2026-10-19"));
         qa_time_chk = qm.answer_question("研究室で調査した日時のタイムライン", root=ROOT)
         self.assertEqual(qa_time_chk["category_data"]["sort_by"], "CHECKED_AT")
 
-        # 6. Test backward compatibility for existing 29 video notes (28 legacy + 1 OKF migrated)
+        # 6. Test backward compatibility for existing 30 video notes (28 legacy + 2 OKF)
         cat, parsed = qm.build_video_knowledge_catalog(root=ROOT)
-        self.assertEqual(cat["total_video_records"], 29)
-        self.assertEqual(cat["total_verified_chapters"], 130)
+        self.assertEqual(cat["total_video_records"], 30)
+        self.assertEqual(cat["total_verified_chapters"], 132)
         # Verify pRfC1DILDEM has OKF v0.2 and 22 chapters intact
         prf_rec = next(r for r in parsed if r.get("video_id") == "pRfC1DILDEM")
         self.assertEqual(prf_rec["okf_version"], "0.2")

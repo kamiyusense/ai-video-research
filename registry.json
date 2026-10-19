@@ -325,6 +325,16 @@
       "research_date": "2026-10-18",
       "status": "GEMINI_REPORTED; NOTEBOOK_READBACK_SELF_REPORTED_ONLY; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
       "evidence": "GEMINI_RESEARCH_RECEIPT"
+    },
+    {
+      "record_id": "youtube:u3ka_AAb8qE",
+      "video_id": "u3ka_AAb8qE",
+      "canonical_url": "https://www.youtube.com/watch?v=u3ka_AAb8qE",
+      "research_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
+      "source_scope": "ユーザー提供字幕（主要タイムスタンプ付き区間 08:16〜16:33）およびYouTube動画情報を分析",
+      "research_date": "2026-10-19",
+      "status": "GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT"
     }
   ]
 }

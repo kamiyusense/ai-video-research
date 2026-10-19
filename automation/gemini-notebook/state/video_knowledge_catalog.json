@@ -3,9 +3,9 @@
   "generated_at": "2026-10-19",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 32,
-  "total_video_records": 29,
-  "total_verified_chapters": 130,
+  "total_records": 33,
+  "total_video_records": 30,
+  "total_verified_chapters": 132,
   "records": [
     {
       "record_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
@@ -7440,7 +7440,128 @@
           "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造"
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "u3ka_AAb8qE",
+          "from_logical_id": "youtube:u3ka_AAb8qE:research",
+          "target_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある",
+          "evidence": "08:16荷札とpRfC1DILDEMの13:16言及",
+          "status": "CONFIRMED"
+        }
+      ]
+    },
+    {
+      "record_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
+      "video_id": "u3ka_AAb8qE",
+      "title": "【研究カード】 【OKF実践】AI時代の知識管理とオープンナレッジフォーマット v0.2",
+      "canonical_url": "https://www.youtube.com/watch?v=u3ka_AAb8qE",
+      "publication_date": "2026-08-20",
+      "checked_at": "2026-10-19",
+      "logical_id": "youtube:u3ka_AAb8qE:research",
+      "transcript_logical_id": "youtube:u3ka_AAb8qE:transcript",
+      "transcript_status": "UNVERIFIED",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "動画研究"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "ユーザー提供字幕（主要タイムスタンプ付き区間 08:16〜16:33）およびYouTube動画情報を分析",
+      "summary_ja": "オープンナレッジフォーマット（OKF v0.2）に基づく文書構造化手法を解説。資料先頭の標準荷札、1件1ファイルの資料分割、意味付けされた双方向リンクによる知識ネットワーク構築。",
+      "detailed_findings_ja": "[詳細技術知識・再利用ノート]\n【OKF v0.2の中核概念】\n1. 荷札（YAMLフロントマター）: 資料の冒頭に type, title, description, resource, tags 等の統一メタデータを付与し、人間とAIの両方が即座に資料の性質を把握できる。\n2. 1件1ファイル原則: 巨大なドキュメントを分割し、1つの概念や研究を1ファイルに収めることで、AIの検索精度と再利用性を最大化する。\n3. 意味付けされたリンク（typed relations）: 単なるURL参照ではなく、COMPLEMENTS, EXTENDS, UPDATES 等の関係種別を明記して相互接続する。\n\n【RAGとの役割分担】\nOKFは「書類の置き方改革（地図作り）」であり、RAG（質問振り分け表・歩行設計）と組み合わせることで真価を発揮する。",
+      "failure_and_limits_ja": "[限界]\nGemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。",
+      "official_verification_ja": "[主張・一次資料・時刻]\n- OKF v0.2では資料先頭にYAMLフロントマター（荷札）を配置し、必須メタデータを標準化する | CONFIRMED_DOC | time: [08:16](https://www.youtube.com/watch?v=u3ka_AAb8qE&t=496s) | official: https://github.com/GoogleCloudPlatform/open-knowledge-format | time_source: TIMESTAMPED_CAPTIONS\n- OKFとRAGは対立するものではなく、書類整理と検索エンジンの関係として相互補完する | REPORTED_BY_AUTHOR | time: [09:35](https://www.youtube.com/watch?v=u3ka_AAb8qE&t=575s) | official: UNKNOWN | time_source: TIMESTAMPED_CAPTIONS",
+      "chapters": [
+        {
+          "segment_id": "CH-01",
+          "title": "荷札（メタデータによる資料識別）",
+          "summary_ja": "資料冒頭のYAMLフロントマターによるメタデータ識別原則を解説。",
+          "start_seconds": 496,
+          "end_seconds": 548,
+          "start_mmss": "08:16",
+          "end_mmss": "09:08",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "timestamp_basis": "TIMESTAMPED_CAPTIONS",
+          "verification_result": "CHAPTER_TIMELINE",
+          "provenance": "YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH",
+          "verification_scope": "YouTube字幕生データとの2語以上直接一致（発話確認済み・内容全体の網羅性は非保証）",
+          "verification_actor": "INDEPENDENT_CAPTION_VERIFIER",
+          "key_topics": [
+            "OKF",
+            "YAMLフロントマター",
+            "メタデータ"
+          ],
+          "playback_url": "https://www.youtube.com/watch?v=u3ka_AAb8qE&t=496s"
+        },
+        {
+          "segment_id": "CH-02",
+          "title": "リンク（関係の意味付けと双方向参照）",
+          "summary_ja": "資料間を意味付きリンク（COMPLEMENTS等）で結び、双方向参照を可能にする設計。",
+          "start_seconds": 575,
+          "end_seconds": 611,
+          "start_mmss": "09:35",
+          "end_mmss": "10:11",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "timestamp_basis": "TIMESTAMPED_CAPTIONS",
+          "verification_result": "CHAPTER_TIMELINE",
+          "provenance": "YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH",
+          "verification_scope": "YouTube字幕生データとの2語以上直接一致（発話確認済み・内容全体の網羅性は非保証）",
+          "verification_actor": "INDEPENDENT_CAPTION_VERIFIER",
+          "key_topics": [
+            "Links",
+            "関係種別",
+            "Graph"
+          ],
+          "playback_url": "https://www.youtube.com/watch?v=u3ka_AAb8qE&t=575s"
+        }
+      ],
+      "claims": [
+        {
+          "text": "OKF v0.2では資料先頭にYAMLフロントマター（荷札）を配置し、必須メタデータを標準化する",
+          "status": "CONFIRMED_DOC",
+          "timestamp_seconds": 496,
+          "timestamp_mmss": "08:16",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "playback_url": "https://www.youtube.com/watch?v=u3ka_AAb8qE&t=496s",
+          "official_url": "https://github.com/GoogleCloudPlatform/open-knowledge-format"
+        },
+        {
+          "text": "OKFとRAGは対立するものではなく、書類整理と検索エンジンの関係として相互補完する",
+          "status": "REPORTED_BY_AUTHOR",
+          "timestamp_seconds": 575,
+          "timestamp_mmss": "09:35",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "playback_url": "https://www.youtube.com/watch?v=u3ka_AAb8qE&t=575s",
+          "official_url": null
+        }
+      ],
+      "related_records": [
+        {
+          "target_id": "youtube:pRfC1DILDEM",
+          "relation": "COMPLEMENTS",
+          "note": "RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある",
+          "status": "CONFIRMED",
+          "evidence": "08:16荷札とpRfC1DILDEMの13:16言及",
+          "target_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+        }
+      ],
+      "backlinks": [
+        {
+          "from_video_id": "pRfC1DILDEM",
+          "from_logical_id": "youtube:pRfC1DILDEM:research",
+          "target_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
+          "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
+          "status": "CANDIDATE"
+        }
+      ]
     },
     {
       "record_path": "notes/verified-tooling.md",
@@ -7472,11 +7593,11 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 32,
-    "total_links": 35,
-    "confirmed_links": 29,
-    "candidate_links": 0,
-    "unresolved_links": 6,
+    "total_nodes": 33,
+    "total_links": 36,
+    "confirmed_links": 30,
+    "candidate_links": 1,
+    "unresolved_links": 5,
     "self_link_warnings": [
       {
         "source_video_id": "BStkW1HTfmk",
@@ -7945,13 +8066,26 @@
         "source_logical_id": "youtube:pRfC1DILDEM:research",
         "target_id": "youtube:u3ka_AAb8qE:research",
         "target_video_id": "u3ka_AAb8qE",
-        "target_path": null,
+        "target_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
         "relation": "COMPLEMENTS",
         "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
-        "status": "UNRESOLVED",
+        "status": "CANDIDATE",
         "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
         "is_self_link": false,
-        "target_exists": false
+        "target_exists": true
+      },
+      {
+        "source_video_id": "u3ka_AAb8qE",
+        "source_logical_id": "youtube:u3ka_AAb8qE:research",
+        "target_id": "youtube:pRfC1DILDEM",
+        "target_video_id": "pRfC1DILDEM",
+        "target_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある",
+        "status": "CONFIRMED",
+        "evidence": "08:16荷札とpRfC1DILDEMの13:16言及",
+        "is_self_link": false,
+        "target_exists": true
       }
     ],
     "backlinks": {
@@ -8275,11 +8409,22 @@
         {
           "from_video_id": "pRfC1DILDEM",
           "from_logical_id": "youtube:pRfC1DILDEM:research",
-          "target_path": null,
+          "target_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
           "relation": "COMPLEMENTS",
           "note": "OKF（書類の置き方改革＝地図作り）とRAG（質問振り分け表＝歩行設計）が相互補完関係にある",
           "evidence": "13:16過去回OKFとの接続言及およびu3ka_AAb8qEの08:16荷札・09:35リンク構造",
-          "status": "UNRESOLVED"
+          "status": "CANDIDATE"
+        }
+      ],
+      "pRfC1DILDEM": [
+        {
+          "from_video_id": "u3ka_AAb8qE",
+          "from_logical_id": "youtube:u3ka_AAb8qE:research",
+          "target_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "RAG探索設計（pRfC1DILDEM）とOKF知識体系が相互補完関係にある",
+          "evidence": "08:16荷札とpRfC1DILDEMの13:16言及",
+          "status": "CONFIRMED"
         }
       ]
     }
