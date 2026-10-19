@@ -62,7 +62,7 @@ CHROME_EXECUTABLE_CANDIDATES = [
 class MinimalWebSocket:
     """Minimal pure-Python RFC 6455 WebSocket client over standard socket."""
 
-    def __init__(self, host: str, port: int, path: str, timeout: float = 5.0):
+    def __init__(self, host: str, port: int, path: str, timeout: float = 25.0):
         self.host = host
         self.port = port
         self.path = path
@@ -187,13 +187,15 @@ class CDPClient:
         url = f"http://{self.host}:{self.port}/json"
         req = urllib.request.Request(url)
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            all_tabs = json.loads(resp.read().decode("utf-8"))
+            # Filter to top-level page targets only, excluding background iframes and extensions
+            return [t for t in all_tabs if t.get("type") == "page"]
 
     def find_notebook_tab(self, notebook_id: str = NOTEBOOK_ID) -> Optional[Dict[str, Any]]:
         tabs = self.list_tabs()
         for tab in tabs:
             tab_url = tab.get("url", "")
-            if notebook_id in tab_url or "gemini.google.com/notebook" in tab_url:
+            if (notebook_id in tab_url or "gemini.google.com/notebook" in tab_url) and "RotateCookiesPage" not in tab_url:
                 return tab
         return None
 
@@ -310,22 +312,39 @@ def evaluate_sources_independence(
     """
     note_identifier = f"AI_VIDEO_RESEARCH_NOTE:{video_id}"
 
-    # 1. YouTube candidates: contains video_id or video_title, but NOT the research note identifier
+    # Normalize title tokens for matching truncated titles in DOM
+    title_snippets = []
+    if video_title:
+        clean_title = video_title.strip()
+        if len(clean_title) >= 6:
+            title_snippets.append(clean_title[:10])
+            title_snippets.append(clean_title[:15])
+            title_snippets.append(clean_title[-8:])
+
+    # 1. YouTube candidates: contains video_id or video_title snippets, but NOT the research note identifier
     yt_candidates = []
     for it in items:
         txt = it.get("text", "")
         idx = it.get("index")
         if note_identifier in txt or "研究ノート" in txt:
             continue
-        if video_id in txt or (video_title and len(video_title) >= 5 and video_title[:20] in txt):
+        # Check for explicit video_id or title match
+        id_match = video_id in txt
+        title_match = any(snip in txt for snip in title_snippets) if title_snippets else False
+        is_yt_type = "YouTube" in txt or "youtube.com" in txt or "youtu.be" in txt
+        if id_match or (title_match and is_yt_type) or (title_match and not ("MD" in txt or ".md" in txt)):
             yt_candidates.append(idx)
 
-    # 2. Research Note candidates: contains explicit note_identifier or distinct research note title
+    # 2. Research Note candidates: contains explicit note_identifier, research note title, or Copied text MD source
     note_candidates = []
     for it in items:
         txt = it.get("text", "")
         idx = it.get("index")
         if note_identifier in txt or f"研究ノート_{video_id}" in txt or f"研究ノート {video_id}" in txt:
+            note_candidates.append(idx)
+        elif ("Copied text" in txt or "Copied tex" in txt) and ("MD" in txt or "\nMD" in txt):
+            note_candidates.append(idx)
+        elif "MD" in txt and (video_id in txt or "研究ノート" in txt):
             note_candidates.append(idx)
 
     yt_found = len(yt_candidates) > 0
@@ -338,11 +357,11 @@ def evaluate_sources_independence(
         distinct_notes = [idx for idx in note_candidates if idx != chosen_yt_idx]
         if distinct_notes:
             note_found = True
-            chosen_note_idx = distinct_notes[0]
+            chosen_note_idx = distinct_notes[-1]  # Most recently added
     else:
         if note_candidates:
             note_found = True
-            chosen_note_idx = note_candidates[0]
+            chosen_note_idx = note_candidates[-1]
 
     return yt_found, note_found, chosen_yt_idx, chosen_note_idx
 
@@ -355,21 +374,33 @@ def readback_notebook_sources_via_cdp(
 ) -> Dict[str, Any]:
     """Inspect actual NotebookLM DOM via CDP to extract registered sources and verify readback."""
     js_extract_sources = """
-    (() => {
+    (async () => {
+        // 1. Ensure source list dialog is open
+        let dialog = document.querySelector('mat-dialog-container, [role="dialog"]');
+        if (!dialog) {
+            const chip = document.querySelector('gem-source-list-chip, [aria-label*="ソース"]');
+            if (chip) {
+                chip.click();
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
+
+        // 2. Query source items
+        const elements = Array.from(document.querySelectorAll(
+            'project-file-upload-item, [role="listitem"], .source-card, .source-title, [data-source-id], mat-list-item, div.source-item, .source-chip'
+        ));
+
         const items = [];
-        const elements = document.querySelectorAll(
-            '[role="listitem"], .source-card, .source-title, [data-source-id], mat-list-item, div.source-item, .source-chip'
-        );
         elements.forEach((el, idx) => {
             const txt = (el.innerText || el.textContent || '').trim();
             if (txt) {
-                items.push({ index: idx, text: txt });
+                items.push({ index: idx, tag: el.tagName, text: txt });
             }
         });
-        
+
         return {
             item_count: items.length,
-            items: items.slice(0, 60),
+            items: items,
             full_text_sample: document.body ? document.body.innerText.slice(0, 1500) : ''
         };
     })()
@@ -418,30 +449,36 @@ def add_youtube_source_via_cdp(
     """Open Notebook source modal and add YouTube URL source via CDP DOM interaction."""
     js_add_youtube = f"""
     (async () => {{
-        // 1. Click "Add sources" button
-        const addBtn = Array.from(document.querySelectorAll('button, div[role="button"], a[role="button"]'))
-            .find(b => {{
-                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
-                return t.includes('ソースを追加') || t.includes('Add source') || t.includes('Add sources');
-            }});
-        if (addBtn) {{
-            addBtn.click();
-            await new Promise(r => setTimeout(r, 700));
+        // 1. Ensure source dialog is open
+        let dialog = document.querySelector('mat-dialog-container');
+        if (!dialog) {{
+            const chip = document.querySelector('gem-source-list-chip, [aria-label*="ソース"]');
+            if (chip) {{
+                chip.click();
+                await new Promise(r => setTimeout(r, 1000));
+            }}
         }}
 
-        // 2. Select YouTube / Link option
-        const ytOption = Array.from(document.querySelectorAll('button, div[role="button"], mat-card, .source-option, [role="menuitem"], div[tabindex="0"]'))
-            .find(el => {{
-                const t = (el.innerText || el.getAttribute('aria-label') || '').trim();
-                return t.includes('YouTube') || t.includes('Web リンク') || t.includes('リンク');
-            }});
-        if (ytOption) {{
-            ytOption.click();
-            await new Promise(r => setTimeout(r, 700));
+        // 2. Click "ソースを追加" button
+        const addBtn = Array.from(document.querySelectorAll('button, [role="button"]'))
+            .find(b => (b.getAttribute('aria-label') || '').includes('ソースを追加') || (b.innerText || '').includes('ソースを追加'));
+        if (!addBtn) {{
+            return {{ success: false, reason: "ソースを追加 button not found" }};
         }}
+        addBtn.click();
+        await new Promise(r => setTimeout(r, 1000));
 
-        // 3. Set YouTube URL into input field
-        const inputEl = document.querySelector('input[type="text"], input[type="url"], input:not([type="hidden"]), textarea');
+        // 3. Select "ウェブサイトを追加" option
+        const ytOption = Array.from(document.querySelectorAll('span, button, div[role="button"], [role="menuitem"]'))
+            .find(el => (el.innerText || '').trim() === 'ウェブサイトを追加' || (el.innerText || '').trim().includes('ウェブサイト'));
+        if (!ytOption) {{
+            return {{ success: false, reason: "ウェブサイトを追加 option not found" }};
+        }}
+        ytOption.click();
+        await new Promise(r => setTimeout(r, 1000));
+
+        // 4. Set YouTube URL into textarea
+        const inputEl = document.querySelector('textarea, input[type="text"], input[type="url"]');
         if (!inputEl) {{
             return {{ success: false, reason: "URL input element not found in modal" }};
         }}
@@ -449,20 +486,17 @@ def add_youtube_source_via_cdp(
         inputEl.value = {json.dumps(video_url)};
         inputEl.dispatchEvent(new Event('input', {{ bubbles: true }}));
         inputEl.dispatchEvent(new Event('change', {{ bubbles: true }}));
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 600));
 
-        // 4. Click Insert / Confirm button
-        const confirmBtn = Array.from(document.querySelectorAll('button, div[role="button"]'))
-            .find(b => {{
-                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
-                return (t.includes('挿入') || t.includes('追加') || t.includes('確定') || t.includes('Insert')) && !t.includes('ソースを追加');
-            }});
+        // 5. Click "挿入" button
+        const confirmBtn = Array.from(document.querySelectorAll('button, [role="button"]'))
+            .find(b => (b.innerText || '').trim() === '挿入' && !b.disabled);
         if (confirmBtn) {{
             confirmBtn.click();
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 2500));
             return {{ success: true, action: "YOUTUBE_URL_INSERTED" }};
         }}
-        return {{ success: false, reason: "Insert/Confirm button not found" }};
+        return {{ success: false, reason: "挿入 button not found or disabled" }};
     }})()
     """
     try:
@@ -485,61 +519,54 @@ def add_copied_text_source_via_cdp(
 
     js_add_text = f"""
     (async () => {{
-        // 1. Click "Add sources" button
-        const addBtn = Array.from(document.querySelectorAll('button, div[role="button"], a[role="button"]'))
-            .find(b => {{
-                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
-                return t.includes('ソースを追加') || t.includes('Add source') || t.includes('Add sources');
-            }});
-        if (addBtn) {{
-            addBtn.click();
-            await new Promise(r => setTimeout(r, 700));
+        // 1. Ensure source dialog is open
+        let dialog = document.querySelector('mat-dialog-container');
+        if (!dialog) {{
+            const chip = document.querySelector('gem-source-list-chip, [aria-label*="ソース"]');
+            if (chip) {{
+                chip.click();
+                await new Promise(r => setTimeout(r, 1000));
+            }}
         }}
 
-        // 2. Select "Copied text" option
-        const textOption = Array.from(document.querySelectorAll('button, div[role="button"], mat-card, .source-option, [role="menuitem"], div[tabindex="0"]'))
-            .find(el => {{
-                const t = (el.innerText || el.getAttribute('aria-label') || '').trim();
-                return t.includes('テキストをコピー') || t.includes('Copied text') || t.includes('貼り付けたテキスト') || t.includes('テキスト');
-            }});
-        if (textOption) {{
-            textOption.click();
-            await new Promise(r => setTimeout(r, 700));
+        // 2. Click "ソースを追加" button
+        const addBtn = Array.from(document.querySelectorAll('button, [role="button"]'))
+            .find(b => (b.getAttribute('aria-label') || '').includes('ソースを追加') || (b.innerText || '').includes('ソースを追加'));
+        if (!addBtn) {{
+            return {{ success: false, reason: "ソースを追加 button not found" }};
         }}
+        addBtn.click();
+        await new Promise(r => setTimeout(r, 1000));
 
-        // 3. Find title and body textarea
-        const textareas = Array.from(document.querySelectorAll('textarea, input[type="text"]'));
-        if (textareas.length === 0) {{
+        // 3. Select "テキストを追加" option
+        const textOption = Array.from(document.querySelectorAll('span, button, div[role="button"], [role="menuitem"]'))
+            .find(el => (el.innerText || '').trim() === 'テキストを追加');
+        if (!textOption) {{
+            return {{ success: false, reason: "テキストを追加 option not found" }};
+        }}
+        textOption.click();
+        await new Promise(r => setTimeout(r, 1000));
+
+        // 4. Set text in textarea
+        const textarea = document.querySelector('textarea, input[type="text"]');
+        if (!textarea) {{
             return {{ success: false, reason: "Textarea input element not found in modal" }};
         }}
+        textarea.focus();
+        textarea.value = {json.dumps(body_to_set)};
+        textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        textarea.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        await new Promise(r => setTimeout(r, 600));
 
-        const titleInput = textareas.find(el => {{
-            const ph = (el.getAttribute('placeholder') || el.getAttribute('aria-label') || '').toLowerCase();
-            return ph.includes('タイトル') || ph.includes('title');
-        }});
-        if (titleInput) {{
-            titleInput.value = {json.dumps(title_to_set)};
-            titleInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
-        }}
-
-        const contentInput = textareas.find(el => el !== titleInput) || textareas[0];
-        contentInput.value = {json.dumps(body_to_set)};
-        contentInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
-        contentInput.dispatchEvent(new Event('change', {{ bubbles: true }}));
-        await new Promise(r => setTimeout(r, 500));
-
-        // 4. Click Save / Insert button
-        const saveBtn = Array.from(document.querySelectorAll('button, div[role="button"]'))
-            .find(b => {{
-                const t = (b.innerText || b.getAttribute('aria-label') || '').trim();
-                return (t.includes('保存') || t.includes('追加') || t.includes('確定') || t.includes('Insert')) && !t.includes('ソースを追加');
-            }});
+        // 5. Click "テキストを追加" confirm button inside GEM-BUTTON
+        const saveBtn = Array.from(document.querySelectorAll('gem-button button, button'))
+            .find(b => (b.innerText || '').trim() === 'テキストを追加' && !b.disabled);
         if (saveBtn) {{
             saveBtn.click();
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 2500));
             return {{ success: true, action: "COPIED_TEXT_NOTE_INSERTED" }};
         }}
-        return {{ success: false, reason: "Save/Confirm button not found" }};
+        return {{ success: false, reason: "テキストを追加 confirm button not found or disabled" }};
     }})()
     """
     try:
@@ -708,9 +735,9 @@ def ingest_and_verify_notebook(
     elif cdp_available:
         try:
             tabs = client.list_tabs()
-            # Detect Google login screen
+            # Detect Google login screen on actual page tabs
             login_tab = next(
-                (t for t in tabs if "accounts.google.com" in t.get("url", "") or "ログイン" in t.get("title", "") or "Sign in" in t.get("title", "")),
+                (t for t in tabs if ("accounts.google.com/signin" in t.get("url", "") or "accounts.google.com/ServiceLogin" in t.get("url", "") or "ログイン" in t.get("title", "") or "Sign in" in t.get("title", "")) and "RotateCookiesPage" not in t.get("url", "")),
                 None
             )
             notebook_tab = client.find_notebook_tab(NOTEBOOK_ID)
@@ -725,7 +752,7 @@ def ingest_and_verify_notebook(
                 }
             elif notebook_tab:
                 tab_url = notebook_tab.get("url", "")
-                if "accounts.google.com" in tab_url:
+                if "accounts.google.com" in tab_url and "RotateCookiesPage" not in tab_url:
                     print("  - [BLOCKED] NotebookタブがGoogleログイン画面へリダイレクトされています。")
                     readback_res = {
                         "status": "BLOCKED_INITIAL_GOOGLE_LOGIN",
