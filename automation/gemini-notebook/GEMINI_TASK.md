@@ -99,9 +99,9 @@ https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
     - `related_records`（任意・推奨、最大10件）: 既存の研究や未解決課題との関連ネットワーク。各要素は：
       - `target_id`: 対象ID（例: `"youtube:lC5jxpYmatE"`, `"youtube:pRfC1DILDEM:research"`, `"P006-U02"`）
       - `relation`: `"COMPLEMENTS"`（相互補完：別視点から補い合い全体像を形成） / `"EXTENDS"`（発展拡張：先行技術を基礎として深化・発展） / `"UPDATES"`（更新改定：新仕様・新版・前提条件の更新） / `"CONTRADICTS"`（矛盾対立：相反する主張・結論・設計哲学） / `"RESOLVES_BACKLOG"`（未解決課題解消）
-      - `note`: 関係性の説明（1〜250文字）
+      - `note`: 具体的な関連理由（1〜250文字、なぜこの関係なのかを明記・保存必須）
+      - `evidence`: 出典・一次根拠（動画内の該当時刻・章・発言箇所・公式URL等を明記・保存必須。未確認時は "UNKNOWN" と明記）
       - `status`: `"CONFIRMED"` / `"CANDIDATE"` / `"UNRESOLVED"`（**厳格判定ルール**: リンク先の研究がGitHub正本・Notebookに既に登録済みかつ検証完了している場合のみ `"CONFIRMED"`。未登録の過去動画や調査候補宛ては必ず `"CANDIDATE"` または `"UNRESOLVED"` とし、未登録先をCONFIRMEDと捏造してはならない）
-      - `evidence`: 関係の根拠・該当時刻（任意、例: `"08:16荷札と13:16OKF言及"`）
     - **OKF v0.2 正式フロントマター準拠**: 生成されるMarkdown研究カードは、Google Cloud公式OKF v0.2仕様（SPEC.md）に準拠した正式YAMLフロントマター（先頭 `---` ... `---`、必須非空 `type: "RESEARCH_NOTE"`, `resource`, `description`, `tags` 等）を出力する。
 - `next_topics`: 次回優先すべき研究テーマ（最大3〜10件、各300字以内）
 - `unknowns`: 未確認事項・ブロック要因（最大20件、各500字以内）
