@@ -335,6 +335,16 @@
       "research_date": "2026-10-19",
       "status": "GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
       "evidence": "GEMINI_RESEARCH_RECEIPT"
+    },
+    {
+      "record_id": "youtube:CnkEROU7fZw",
+      "video_id": "CnkEROU7fZw",
+      "canonical_url": "https://www.youtube.com/watch?v=CnkEROU7fZw",
+      "research_path": "research/2026-10-19-CnkEROU7fZw-gemini-notebook.md",
+      "source_scope": "YouTubeメタデータ（長:702s, 投稿:海外Yパパラジオ　世界を読み解く）, 字幕実発話240件 [LOCAL_TRANSCRIPT_EXTRACTION]",
+      "research_date": "2026-10-19",
+      "status": "GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT"
     }
   ]
 }

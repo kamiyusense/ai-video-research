@@ -8,7 +8,7 @@
 
 - 対象リポジトリ: `kamiyusense/ai-video-research` (private)
 - 補助知識庫 (Gemini Notebook): https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
-- GitHub側エクスポート更新日: 2026-10-18
+- GitHub側エクスポート更新日: 2026-10-19
 - リモートブランチ照合鮮度: `FRESH_FETCHED`
 - Notebook側への逆同期状態: `NOT_SYNCED_FROM_GITHUB`
 
@@ -23,6 +23,7 @@
 | `3bLrrkA1nlQ` | PRELIMINARY_RESEARCH_RECORDED; ORIGINAL_VIDEO_UNKNOWN; LIVE_NOT_RUN | origin/research/cognitive-drift-series-20261010, origin/research/video08-notebooklm-youtube-extension-20261010 (registry.json) | `research/2026-10-10-3bLrrkA1nlQ-html-plan-preliminary.md` |
 | `BStkW1HTfmk` | VIDEO_CONTENT_PENDING; OFFICIAL_ONLY_RESEARCH; OBSIDIAN_INSTALL_NOT_RUN | current_branch (registry.json) | `research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md` |
 | `BvbkOQWgAw8` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-BvbkOQWgAw8-gemini-notebook.md` |
+| `CnkEROU7fZw` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-19-CnkEROU7fZw-gemini-notebook.md` |
 | `D0B-l7A69nI` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-D0B-l7A69nI-gemini-notebook.md` |
 | `Eh75KT85Y40` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-Eh75KT85Y40-gemini-notebook.md` |
 | `GVB8VfuNeJQ` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-GVB8VfuNeJQ-gemini-notebook.md` |
@@ -48,6 +49,7 @@
 | `pRfC1DILDEM` | GEMINI_REPORTED; NOTEBOOK_READBACK_SELF_REPORTED_ONLY; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-18-pRfC1DILDEM-gemini-notebook.md` |
 | `sodTFSuV4zY` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-sodTFSuV4zY-gemini-notebook.md` |
 | `t22FELAl-BM` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-t22FELAl-BM-gemini-notebook.md` |
+| `u3ka_AAb8qE` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md` |
 | `y2xCGyURl7Q` | GEMINI_REPORTED; NOTEBOOK_READBACK_UNKNOWN; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE | current_branch (registry.json) | `research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md` |
 
 ## 2. 優先研究テーマ・次回調査キュー (`next_topics`)

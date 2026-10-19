@@ -3,9 +3,9 @@
   "generated_at": "2026-10-19",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 33,
-  "total_video_records": 30,
-  "total_verified_chapters": 132,
+  "total_records": 34,
+  "total_video_records": 31,
+  "total_verified_chapters": 134,
   "records": [
     {
       "record_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
@@ -7453,6 +7453,95 @@
       ]
     },
     {
+      "record_path": "research/2026-10-19-CnkEROU7fZw-gemini-notebook.md",
+      "video_id": "CnkEROU7fZw",
+      "title": "【研究カード】 【AI実務中級】プロンプト脱却。AIへの指示は「型」と「自動化」で行うべし。プロンプトから抜け出そう",
+      "canonical_url": "https://www.youtube.com/watch?v=CnkEROU7fZw",
+      "publication_date": "2026-06-24",
+      "checked_at": "2026-10-19",
+      "logical_id": "youtube:CnkEROU7fZw:research",
+      "transcript_logical_id": "youtube:CnkEROU7fZw:transcript",
+      "transcript_status": "UNVERIFIED",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "動画研究"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "YouTubeメタデータ（長:702s, 投稿:海外Yパパラジオ　世界を読み解く）, 字幕実発話240件 [LOCAL_TRANSCRIPT_EXTRACTION]",
+      "summary_ja": "海外Yパパラジオ　世界を読み解くによる「【AI実務中級】プロンプト脱却。AIへの指示は「型」と「自動化」で行うべし。プロンプトから抜け出そう」。実字幕（240行）からローカルテキスト抽出。発話抜粋: 00:00〜: AIのプロンプトのコツみたいな記事あり ますよね。ああいうの正直100個読んで も多分あなたのAIの使い方ってそんなに  / 05:55〜: 決め打ちでいいんです。そこは考えない。 考えるのは今日はどの料理にするかみたい [音楽]な本当に選ぶ意味があるところ だ",
+      "detailed_findings_ja": "[詳細技術知識・再利用ノート]\n【動画基本情報】\n- 投稿者: 海外Yパパラジオ　世界を読み解く / 動画長: 702秒\n- 解析方式: ローカル字幕テキスト抽出（非AI要約）\n- 字幕取得状況: UNVERIFIED（実字幕行数: 240行）\n\n【実字幕からの抽出知見・抜粋】\n- 00:00〜: AIのプロンプトのコツみたいな記事あり ますよね。ああいうの正直100個読んで も多分あなたのAIの使い方ってそんなに\n- 05:55〜: 決め打ちでいいんです。そこは考えない。 考えるのは今日はどの料理にするかみたい [音楽]な本当に選ぶ意味があるところ だ\n\n【注意点】\n- 本研究ノートはYouTubeから実際に取得した実字幕テキストから決定論的に抽出したものです。AI推論による要約ではありません。",
+      "failure_and_limits_ja": "[限界]\nGemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。",
+      "official_verification_ja": "[主張・一次資料・時刻]\n- 動画内実発話（00:00）: 「AIのプロンプトのコツみたいな記事あり ますよね。ああいうの正直100個読んで も多分あなたのAIの使い方ってそんなに 変わらないんですよ。僕も結構読んだん ですけどその場ではなる...」 | REPORTED_BY_AUTHOR | time: [00:00](https://www.youtube.com/watch?v=CnkEROU7fZw&t=0s) | official: UNKNOWN | time_source: TIMESTAMPED_CAPTIONS\n- 動画内実発話（05:55）: 「決め打ちでいいんです。そこは考えない。 考えるのは今日はどの料理にするかみたい [音楽]な本当に選ぶ意味があるところ だけでいい。 それで料理が決まったら魚のさき方はそれ に応じて...」 | REPORTED_BY_AUTHOR | time: [05:55](https://www.youtube.com/watch?v=CnkEROU7fZw&t=355s) | official: UNKNOWN | time_source: TIMESTAMPED_CAPTIONS",
+      "chapters": [
+        {
+          "segment_id": "CH-01",
+          "title": "区間 00:00〜05:58 実字幕発話抜粋",
+          "summary_ja": "実字幕発話抜粋: AIのプロンプトのコツみたいな記事あり ますよね。ああいうの正直100個読んで も多分あなたのAIの使い方ってそんなに 変わらないんですよ。僕も結構読んだん ですけどその場ではなる...",
+          "start_seconds": 0,
+          "end_seconds": 358,
+          "start_mmss": "00:00",
+          "end_mmss": "05:58",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "timestamp_basis": "TIMESTAMPED_CAPTIONS",
+          "verification_result": "CHAPTER_TIMELINE",
+          "provenance": "YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH",
+          "verification_scope": "YouTube字幕生データとの2語以上直接一致（発話確認済み・内容全体の網羅性は非保証）",
+          "verification_actor": "INDEPENDENT_CAPTION_VERIFIER",
+          "key_topics": [
+            "AI"
+          ],
+          "playback_url": "https://www.youtube.com/watch?v=CnkEROU7fZw&t=0s"
+        },
+        {
+          "segment_id": "CH-02",
+          "title": "区間 05:55〜11:44 実字幕発話抜粋",
+          "summary_ja": "実字幕発話抜粋: 決め打ちでいいんです。そこは考えない。 考えるのは今日はどの料理にするかみたい [音楽]な本当に選ぶ意味があるところ だけでいい。 それで料理が決まったら魚のさき方はそれ に応じて...",
+          "start_seconds": 355,
+          "end_seconds": 704,
+          "start_mmss": "05:55",
+          "end_mmss": "11:44",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "timestamp_basis": "TIMESTAMPED_CAPTIONS",
+          "verification_result": "CHAPTER_TIMELINE",
+          "provenance": "YOUTUBE_TIMEDTEXT_DIRECT_DETERMINISTIC_TOKEN_MATCH",
+          "verification_scope": "YouTube字幕生データとの2語以上直接一致（発話確認済み・内容全体の網羅性は非保証）",
+          "verification_actor": "INDEPENDENT_CAPTION_VERIFIER",
+          "key_topics": [
+            "AI",
+            "設計"
+          ],
+          "playback_url": "https://www.youtube.com/watch?v=CnkEROU7fZw&t=355s"
+        }
+      ],
+      "claims": [
+        {
+          "text": "動画内実発話（00:00）: 「AIのプロンプトのコツみたいな記事あり ますよね。ああいうの正直100個読んで も多分あなたのAIの使い方ってそんなに 変わらないんですよ。僕も結構読んだん ですけどその場ではなる...」",
+          "status": "REPORTED_BY_AUTHOR",
+          "timestamp_seconds": 0,
+          "timestamp_mmss": "00:00",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "playback_url": "https://www.youtube.com/watch?v=CnkEROU7fZw&t=0s",
+          "official_url": null
+        },
+        {
+          "text": "動画内実発話（05:55）: 「決め打ちでいいんです。そこは考えない。 考えるのは今日はどの料理にするかみたい [音楽]な本当に選ぶ意味があるところ だけでいい。 それで料理が決まったら魚のさき方はそれ に応じて...」",
+          "status": "REPORTED_BY_AUTHOR",
+          "timestamp_seconds": 355,
+          "timestamp_mmss": "05:55",
+          "timestamp_source": "TIMESTAMPED_CAPTIONS",
+          "playback_url": "https://www.youtube.com/watch?v=CnkEROU7fZw&t=355s",
+          "official_url": null
+        }
+      ],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
       "video_id": "u3ka_AAb8qE",
       "title": "【研究カード】 【OKF実践】AI時代の知識管理とオープンナレッジフォーマット v0.2",
@@ -7593,7 +7682,7 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 33,
+    "total_nodes": 34,
     "total_links": 36,
     "confirmed_links": 30,
     "candidate_links": 1,
@@ -7610,13 +7699,14 @@
         "reason": "SELF_LINK_DETECTED"
       }
     ],
-    "isolated_nodes_count": 5,
+    "isolated_nodes_count": 6,
     "isolated_video_ids": [
       "gD6UZ4wG8OM",
       "j3Cyvbfn9_k",
       "JMoByqOlftc",
       "W35UQZL2w7E",
-      "YrTVpJ1ebUk"
+      "YrTVpJ1ebUk",
+      "CnkEROU7fZw"
     ],
     "edges": [
       {
