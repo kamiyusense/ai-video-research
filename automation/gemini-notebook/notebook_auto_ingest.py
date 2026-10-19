@@ -309,6 +309,8 @@ def build_transcript_okf_content(
     raw_text: Optional[str] = None,
     language: str = "ja",
     status: str = "UNVERIFIED",
+    notebook_source_id: Optional[str] = "UNKNOWN",
+    notebook_open_link: Optional[str] = None,
 ) -> str:
     """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -330,6 +332,11 @@ def build_transcript_okf_content(
         f'url: "{video_url}"',
         f'canonical_url: "{video_url}"',
         f'original_url: "{video_url}"',
+        f'notebook_source_id: "{notebook_source_id or "UNKNOWN"}"',
+    ]
+    if notebook_open_link:
+        lines.append(f'notebook_open_link: "{notebook_open_link}"')
+    lines.extend([
         f'language: "{language}"',
         f'acquired_at: "{today}"',
         f"cue_count: {cue_count}",
@@ -350,6 +357,12 @@ def build_transcript_okf_content(
         f"<!-- RESOURCE: {video_url} -->",
         f"<!-- CANONICAL_URL: {video_url} -->",
         f"<!-- ORIGINAL_URL: {video_url} -->",
+        f"<!-- NOTEBOOK_SOURCE_ID: {notebook_source_id or 'UNKNOWN'} -->",
+    ])
+    if notebook_open_link:
+        lines.append(f"<!-- NOTEBOOK_OPEN_LINK: {notebook_open_link} -->")
+        lines.append(f"- **Notebook実リンク**: [{notebook_open_link}]({notebook_open_link})")
+    lines.extend([
         f"- **元YouTube URL**: {video_url}",
         f"- **動画URL**: {video_url}",
         f"- **総Cue数**: {cue_count} 件",
@@ -358,7 +371,7 @@ def build_transcript_okf_content(
         "",
         "## 字幕発話タイムライン (取得全量)",
         "",
-    ]
+    ])
 
     if cues_list:
         for c in cues_list:
@@ -477,6 +490,19 @@ def evaluate_2_source_okf_independence(
         and chosen_note_idx != chosen_transcript_idx
     )
 
+    def _extract_meta(idx):
+        if idx is not None and 0 <= idx < len(items):
+            item_val = items[idx]
+            if isinstance(item_val, dict):
+                sid = item_val.get("source_id") or item_val.get("data_source_id") or item_val.get("id") or "UNKNOWN"
+                link = item_val.get("open_link") or item_val.get("href")
+                return sid, link
+        return "UNKNOWN", None
+
+    yt_sid, yt_link = _extract_meta(chosen_yt_idx)
+    note_sid, note_link = _extract_meta(chosen_note_idx)
+    tr_sid, tr_link = _extract_meta(chosen_transcript_idx)
+
     return {
         "youtube_found": yt_found,
         "research_note_found": note_found,
@@ -484,6 +510,12 @@ def evaluate_2_source_okf_independence(
         "youtube_item_index": chosen_yt_idx,
         "research_note_item_index": chosen_note_idx,
         "transcript_item_index": chosen_transcript_idx,
+        "youtube_source_id": yt_sid,
+        "research_note_source_id": note_sid,
+        "transcript_source_id": tr_sid,
+        "youtube_open_link": yt_link,
+        "research_note_open_link": note_link,
+        "transcript_open_link": tr_link,
         "is_2_source_okf_verified": is_2_source_okf,
     }
 
@@ -535,7 +567,16 @@ def readback_notebook_sources_via_cdp(
         elements.forEach((el, idx) => {
             const txt = (el.innerText || el.textContent || '').trim();
             if (txt) {
-                items.push({ index: idx, tag: el.tagName, text: txt });
+                const a = el.querySelector('a');
+                const href = a ? a.href : (el.getAttribute('href') || null);
+                const dataId = el.getAttribute('data-source-id') || el.getAttribute('data-id') || el.id || null;
+                items.push({
+                    index: idx,
+                    tag: el.tagName,
+                    text: txt,
+                    source_id: dataId,
+                    open_link: href
+                });
             }
         });
 
@@ -583,6 +624,12 @@ def readback_notebook_sources_via_cdp(
             "youtube_item_index": okf_res["youtube_item_index"],
             "research_note_item_index": okf_res["research_note_item_index"],
             "transcript_item_index": okf_res["transcript_item_index"],
+            "youtube_source_id": okf_res.get("youtube_source_id", "UNKNOWN"),
+            "research_note_source_id": okf_res.get("research_note_source_id", "UNKNOWN"),
+            "transcript_source_id": okf_res.get("transcript_source_id", "UNKNOWN"),
+            "youtube_open_link": okf_res.get("youtube_open_link"),
+            "research_note_open_link": okf_res.get("research_note_open_link"),
+            "transcript_open_link": okf_res.get("transcript_open_link"),
             "detected_source_count": data.get("item_count", 0),
             "sources_sample": [it.get("text", "") for it in items[:10]],
         }

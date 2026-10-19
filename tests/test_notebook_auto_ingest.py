@@ -355,6 +355,63 @@ class TestNotebookAutoIngest(unittest.TestCase):
         self.assertIn('- **元YouTube URL**: https://www.youtube.com/watch?v=abc123xyz', content)
         self.assertIn('- **[00:00]** (0.0s) こんにちは世界', content)
         self.assertIn('- **[00:02]** (2.5s) テスト字幕です', content)
+        # Default when unknown
+        self.assertIn('notebook_source_id: "UNKNOWN"', content)
+        self.assertNotIn('notebook_open_link', content)
+
+    def test_build_transcript_okf_content_with_notebook_id_and_link(self):
+        """判明したNotebook固有ソースIDおよび実際に開けるリンクが記録されること。"""
+        content = notebook_auto_ingest.build_transcript_okf_content(
+            video_id="vidLinkTest",
+            video_url="https://www.youtube.com/watch?v=vidLinkTest",
+            video_title="リンク検証動画",
+            cues=[],
+            notebook_source_id="src_uuid_777",
+            notebook_open_link="https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7?source=src_uuid_777",
+        )
+        self.assertIn('notebook_source_id: "src_uuid_777"', content)
+        self.assertIn('notebook_open_link: "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7?source=src_uuid_777"', content)
+        self.assertIn('<!-- NOTEBOOK_SOURCE_ID: src_uuid_777 -->', content)
+        self.assertIn('<!-- NOTEBOOK_OPEN_LINK: https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7?source=src_uuid_777 -->', content)
+        self.assertIn('- **Notebook実リンク**: [https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7?source=src_uuid_777](https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7?source=src_uuid_777)', content)
+
+    def test_evaluate_2_source_okf_extracts_source_id_and_link(self):
+        """DOMから抽出したソース要素のIDおよびリンクが正しく認識され、未検出時はUNKNOWNになること。"""
+        items_with_meta = [
+            {
+                "index": 0,
+                "text": "YouTube Video vidMeta123",
+                "source_id": "yt_src_001",
+                "open_link": "https://www.youtube.com/watch?v=vidMeta123",
+            },
+            {
+                "index": 1,
+                "text": "AI_VIDEO_RESEARCH_NOTE:vidMeta123",
+                "source_id": "note_src_002",
+                "open_link": "https://gemini.google.com/notebook/test?src=note_src_002",
+            },
+            {
+                "index": 2,
+                "text": "AI_VIDEO_TRANSCRIPT_RAW:vidMeta123",
+                "source_id": "tr_src_003",
+                "open_link": "https://gemini.google.com/notebook/test?src=tr_src_003",
+            },
+        ]
+        res = notebook_auto_ingest.evaluate_2_source_okf_independence(items_with_meta, "vidMeta123", "Meta Video")
+        self.assertEqual(res["youtube_source_id"], "yt_src_001")
+        self.assertEqual(res["research_note_source_id"], "note_src_002")
+        self.assertEqual(res["transcript_source_id"], "tr_src_003")
+        self.assertEqual(res["transcript_open_link"], "https://gemini.google.com/notebook/test?src=tr_src_003")
+
+        # Unknown case
+        items_plain = [
+            {"index": 0, "text": "AI_VIDEO_RESEARCH_NOTE:vidMeta456"},
+            {"index": 1, "text": "AI_VIDEO_TRANSCRIPT_RAW:vidMeta456"},
+        ]
+        res_plain = notebook_auto_ingest.evaluate_2_source_okf_independence(items_plain, "vidMeta456", "Plain Video")
+        self.assertEqual(res_plain["research_note_source_id"], "UNKNOWN")
+        self.assertEqual(res_plain["transcript_source_id"], "UNKNOWN")
+        self.assertIsNone(res_plain["transcript_open_link"])
 
 
 if __name__ == "__main__":

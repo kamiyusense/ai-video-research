@@ -1220,8 +1220,10 @@ def render_okf_frontmatter(v, checked_at):
         f"notebook_readback: {json.dumps(v['notebook_readback'], ensure_ascii=False)}",
         'github_verification: "NOT_RUN"',
         'github_to_notebook_sync: "NOT_SYNCED_FROM_GITHUB"',
-        "changes:",
     ]
+    if v.get("notebook_open_link"):
+        lines.append(f"notebook_open_link: {json.dumps(clean(v['notebook_open_link']), ensure_ascii=False)}")
+    lines.append("changes:")
     for chg in v.get("changes", []):
         lines.append(f"  - {json.dumps(chg, ensure_ascii=False)}")
     if v.get("related_records"):
@@ -1308,6 +1310,10 @@ def render_delta_section(v, checked_at):
         "- original_url: " + v["url"],
         "- canonical_url: " + canon,
         "- primary_source_notebook_id: " + nb_src,
+    ]
+    if v.get("notebook_open_link"):
+        lines.append("- notebook_open_link: " + clean(v["notebook_open_link"]))
+    lines += [
         "- Gemini Notebook source (一次資料YouTube動画): " + nb_src,
         "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
         "- okf_version: 0.2",

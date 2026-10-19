@@ -1637,8 +1637,11 @@ function renderOkfFrontmatter_(v, checkedAt) {
     "notebook_readback: " + JSON.stringify(v.notebook_readback),
     'github_verification: "NOT_RUN"',
     'github_to_notebook_sync: "NOT_SYNCED_FROM_GITHUB"',
-    "changes:",
   ];
+  if (v.notebook_open_link) {
+    lines.push("notebook_open_link: " + JSON.stringify(clean_(v.notebook_open_link)));
+  }
+  lines.push("changes:");
   const changes = Array.isArray(v.changes) ? v.changes : [];
   for (let i = 0; i < changes.length; i++) {
     lines.push("  - " + JSON.stringify(changes[i]));
@@ -1736,6 +1739,11 @@ function renderDeltaSection_(v, checkedAt) {
     "- original_url: " + v.url,
     "- canonical_url: " + canon,
     "- primary_source_notebook_id: " + nbSrc,
+  ];
+  if (v.notebook_open_link) {
+    lines.push("- notebook_open_link: " + clean_(v.notebook_open_link));
+  }
+  lines = lines.concat([
     "- Gemini Notebook source (一次資料YouTube動画): " + nbSrc,
     "- document_type: AI技術研究室 構造化研究カード（二次分析資料）",
     "- okf_version: 0.2",
@@ -1745,7 +1753,7 @@ function renderDeltaSection_(v, checkedAt) {
     "",
     "### 差分要約",
     clean_(v.summary_ja),
-  ];
+  ]);
   if (Array.isArray(v.chapters) && v.chapters.length > 0) {
     lines = lines.concat([
       "",
