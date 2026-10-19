@@ -100,3 +100,14 @@ Chrome拡張機能「YouTube to NotebookLM」によるYouTube動画の高速イ�
 
 ### 追加・更新された関連研究・課題接続
 - `youtube:ZjUJ-35acaU` (UPDATES): 既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合
+- [youtube:2-8cXaRHlqI:research](2026-10-17-2-8cXaRHlqI-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: 2-8cXaRHlqI
+- [youtube:BvbkOQWgAw8:research](2026-10-17-BvbkOQWgAw8-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: BvbkOQWgAw8
+- [youtube:D0B-l7A69nI:research](2026-10-17-D0B-l7A69nI-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: D0B-l7A69nI
+- [youtube:GVB8VfuNeJQ:research](2026-10-17-GVB8VfuNeJQ-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: GVB8VfuNeJQ
+- [youtube:Mg0pYFVAuWQ:research](2026-10-17-Mg0pYFVAuWQ-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: Mg0pYFVAuWQ
+- [youtube:MnzEE0fLxBs:research](2026-10-17-MnzEE0fLxBs-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: MnzEE0fLxBs
+- [youtube:NCQZiT0e59g:research](2026-10-17-NCQZiT0e59g-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: NCQZiT0e59g
+- [youtube:RZLAP2CLUM8:research](2026-10-17-RZLAP2CLUM8-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: RZLAP2CLUM8
+- [youtube:y2xCGyURl7Q:research](2026-10-17-y2xCGyURl7Q-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: y2xCGyURl7Q
+- [youtube:ZY7YuYHLlIQ:research](2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CONFIRMED | evidence: ZY7YuYHLlIQ
+

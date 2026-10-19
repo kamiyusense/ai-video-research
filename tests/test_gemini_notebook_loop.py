@@ -4554,6 +4554,39 @@ process.stdout.write(JSON.stringify(res));
         # テーブル内に Markdown リンクが含まれること
         self.assertIn("](research/", md_text)
 
+    def test_backlink_integrity_and_bidirectional_parity(self):
+        """逆リンク（Backlinks）の完全性・双方向性・欠落ゼロを検証する。"""
+        import sys
+        sys_path_entry = str(ROOT / "automation" / "gemini-notebook")
+        if sys_path_entry not in sys.path:
+            sys.path.insert(0, sys_path_entry)
+        import query_research as qm
+
+        cat, records = qm.build_video_knowledge_catalog(root=ROOT)
+        net = qm.build_knowledge_network(records)
+
+        # 1. 逆リンク欠落が 0 件であること（完全な双方向整合性）
+        self.assertEqual(net.get("unidirectional_links_count"), 0)
+        self.assertEqual(net.get("missing_reverse_links"), [])
+        self.assertGreaterEqual(net.get("bidirectional_links_count"), 30)
+
+        # 2. 主要ハブ資料のバックリンクが正しく集約されていること
+        backlinks = net.get("backlinks", {})
+        self.assertIn("lC5jxpYmatE", backlinks)
+        self.assertGreaterEqual(len(backlinks["lC5jxpYmatE"]), 10)
+        self.assertIn("ZjUJ-35acaU", backlinks)
+        self.assertGreaterEqual(len(backlinks["ZjUJ-35acaU"]), 10)
+        self.assertIn("Vr3JkAT9mo8", backlinks)
+        self.assertGreaterEqual(len(backlinks["Vr3JkAT9mo8"]), 5)
+        self.assertIn("BStkW1HTfmk", backlinks)
+        self.assertGreaterEqual(len(backlinks["BStkW1HTfmk"]), 4)
+
+        # 3. 基準例（pRfC1DILDEM と u3ka_AAb8qE）の双方向 COMPLEMENTS 整合性
+        p_to_u = [e for e in net["edges"] if e["source_video_id"] == "pRfC1DILDEM" and e["target_video_id"] == "u3ka_AAb8qE"]
+        u_to_p = [e for e in net["edges"] if e["source_video_id"] == "u3ka_AAb8qE" and e["target_video_id"] == "pRfC1DILDEM"]
+        self.assertTrue(len(p_to_u) == 1 and p_to_u[0]["relation"] == "COMPLEMENTS")
+        self.assertTrue(len(u_to_p) == 1 and u_to_p[0]["relation"] == "COMPLEMENTS")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

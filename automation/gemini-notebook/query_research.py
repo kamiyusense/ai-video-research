@@ -1256,6 +1256,23 @@ def build_knowledge_network(records, registry_entries=None):
         if r.get("video_id") and r["video_id"] not in connected_vids
     ]
 
+    # 双方向リンク・逆リンク整合性の集計
+    edge_pairs = set()
+    for e in resolved_edges:
+        if not e.get("is_self_link") and e.get("target_exists"):
+            s_vid = e.get("source_video_id")
+            t_vid = e.get("target_video_id")
+            if s_vid and t_vid:
+                edge_pairs.add((s_vid, t_vid))
+
+    bidirectional_pairs = set()
+    missing_reverse_links = []
+    for s_vid, t_vid in sorted(edge_pairs):
+        if (t_vid, s_vid) in edge_pairs:
+            bidirectional_pairs.add(tuple(sorted([s_vid, t_vid])))
+        else:
+            missing_reverse_links.append({"source_video_id": s_vid, "target_video_id": t_vid})
+
     return {
         "schema_version": "okf_knowledge_network_v1",
         "total_nodes": len(nodes),
@@ -1266,9 +1283,13 @@ def build_knowledge_network(records, registry_entries=None):
         "self_link_warnings": self_link_warnings,
         "isolated_nodes_count": len(isolated_vids),
         "isolated_video_ids": isolated_vids,
+        "bidirectional_links_count": len(bidirectional_pairs),
+        "unidirectional_links_count": len(missing_reverse_links),
+        "missing_reverse_links": missing_reverse_links,
         "edges": resolved_edges,
         "backlinks": dict(backlinks),
     }
+
 
 
 def build_video_knowledge_catalog(root=ROOT, write_path=None):
@@ -2127,6 +2148,8 @@ def answer_question(query, root=ROOT, top_k=5):
             "candidate_links": network.get("candidate_links", 0),
             "unresolved_links": network.get("unresolved_links", 0),
             "isolated_nodes_count": network.get("isolated_nodes_count", 0),
+            "bidirectional_links_count": network.get("bidirectional_links_count", 0),
+            "unidirectional_links_count": network.get("unidirectional_links_count", 0),
         }
     elif category == "CATEGORY_C_TIMELINE":
         sort_by = intent_info.get("category_param", "CHECKED_AT")
@@ -2251,6 +2274,7 @@ def format_qa_response_markdown(qa_res):
             f"| 登録動画数 | {cat_data.get('total_video_records', 0)} 本 | 一意のYouTube動画IDを持つ記録 |",
             f"| 時刻確認済み章数 | {cat_data.get('total_verified_chapters', 0)} 区間 | 再生位置URL (&t=XXs) 付き |",
             f"| OKF関連リンク総数 | {cat_data.get('total_network_links', 0)} 本 | 確認済み: {cat_data.get('confirmed_links', 0)} / 候補: {cat_data.get('candidate_links', 0)} / 未解決: {cat_data.get('unresolved_links', 0)} |",
+            f"| 双方向リンク数（逆リンク整合） | {cat_data.get('bidirectional_links_count', 0)} 組 | 双方から参照が成立しているペア数（欠落: {cat_data.get('unidirectional_links_count', 0)} 件） |",
             f"| 孤立ノード数 | {cat_data.get('isolated_nodes_count', 0)} 件 | 相互リンク未設定の記録 |",
             "",
             "---",

@@ -86,3 +86,16 @@
 - YouTube一次メタデータ照合: タイトル一致（「【ガチ勢への道】ガチ便利なAIテクニックを正しいカタチで身につけろ！」）、投稿者一致（「AI仙人【AI歴10年・ガチADHD男】」）、公開日一致（`2026-10-02`）、動画実測長一致（`56:31` / `3391s`）。
 - 概要欄チャプター有無: YouTube動画概要欄に公式チャプター記載なし（既存記録の7区間はSpark字幕レポートおよびGoogle AI Studio指定4区間報告に基づく確認範囲を維持）。
 
+## 関連する既存研究・課題との接続（被参照 / Backlinks）
+- [youtube:26MGuVIJh4A:research](2026-10-17-26MGuVIJh4A-gemini-notebook.md) (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張 | status: CONFIRMED | evidence: 26MGuVIJh4A
+- [youtube:NCQZiT0e59g:research](2026-10-17-NCQZiT0e59g-gemini-notebook.md) (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張 | status: CONFIRMED | evidence: NCQZiT0e59g
+- [youtube:X9Zk68AII4A:research](2026-10-17-X9Zk68AII4A-gemini-notebook.md) (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張 | status: CONFIRMED | evidence: X9Zk68AII4A
+- [youtube:cneFa24EFEk:research](2026-10-17-cneFa24EFEk-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CONFIRMED | evidence: cneFa24EFEk
+- [youtube:JXmk7hmbS3c:research](2026-10-17-JXmk7hmbS3c-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CONFIRMED | evidence: JXmk7hmbS3c
+- [youtube:sodTFSuV4zY:research](2026-10-17-sodTFSuV4zY-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CONFIRMED | evidence: sodTFSuV4zY
+- [youtube:t22FELAl-BM:research](2026-10-17-t22FELAl-BM-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CONFIRMED | evidence: t22FELAl-BM
+- [youtube:y2xCGyURl7Q:research](2026-10-17-y2xCGyURl7Q-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CONFIRMED | evidence: y2xCGyURl7Q
+- [youtube:ZgMrRA1Czlc:research](2026-10-17-ZgMrRA1Czlc-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CONFIRMED | evidence: ZgMrRA1Czlc
+- [youtube:ZY7YuYHLlIQ:research](2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CONFIRMED | evidence: ZY7YuYHLlIQ
+
+

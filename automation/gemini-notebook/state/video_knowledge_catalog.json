@@ -212,11 +212,44 @@
           "evidence": null
         },
         {
-          "target_id": "youtube:Vr3JkAT9mo8",
+          "target_id": "youtube:Vr3JkAT9mo8:research",
           "relation": "COMPLEMENTS",
           "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
           "status": "CONFIRMED",
-          "evidence": null
+          "evidence": "BStkW1HTfmk",
+          "target_path": "2026-10-10-Vr3JkAT9mo8-work-specialists.md"
+        },
+        {
+          "target_id": "youtube:2-8cXaRHlqI:research",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "status": "CONFIRMED",
+          "evidence": "2-8cXaRHlqI",
+          "target_path": "2026-10-17-2-8cXaRHlqI-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:JXmk7hmbS3c:research",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "status": "CONFIRMED",
+          "evidence": "JXmk7hmbS3c",
+          "target_path": "2026-10-17-JXmk7hmbS3c-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:RZLAP2CLUM8:research",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "status": "CONFIRMED",
+          "evidence": "RZLAP2CLUM8",
+          "target_path": "2026-10-17-RZLAP2CLUM8-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:XckM9eFa_vg:research",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "status": "CONFIRMED",
+          "evidence": "XckM9eFa_vg",
+          "target_path": "2026-10-17-XckM9eFa_vg-gemini-notebook.md"
         }
       ],
       "backlinks": [
@@ -228,6 +261,15 @@
           "note": "既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合",
           "evidence": null,
           "status": "SELF_LINK"
+        },
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "BStkW1HTfmk",
+          "status": "CONFIRMED"
         },
         {
           "from_video_id": "2-8cXaRHlqI",
@@ -456,7 +498,88 @@
           "official_url": "https://learn.chatgpt.com/docs/computer-use"
         }
       ],
-      "related_records": [],
+      "related_records": [
+        {
+          "target_id": "youtube:26MGuVIJh4A:research",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "status": "CONFIRMED",
+          "evidence": "26MGuVIJh4A",
+          "target_path": "2026-10-17-26MGuVIJh4A-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:NCQZiT0e59g:research",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "status": "CONFIRMED",
+          "evidence": "NCQZiT0e59g",
+          "target_path": "2026-10-17-NCQZiT0e59g-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:X9Zk68AII4A:research",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "status": "CONFIRMED",
+          "evidence": "X9Zk68AII4A",
+          "target_path": "2026-10-17-X9Zk68AII4A-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:cneFa24EFEk:research",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "status": "CONFIRMED",
+          "evidence": "cneFa24EFEk",
+          "target_path": "2026-10-17-cneFa24EFEk-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:JXmk7hmbS3c:research",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "status": "CONFIRMED",
+          "evidence": "JXmk7hmbS3c",
+          "target_path": "2026-10-17-JXmk7hmbS3c-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:sodTFSuV4zY:research",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "status": "CONFIRMED",
+          "evidence": "sodTFSuV4zY",
+          "target_path": "2026-10-17-sodTFSuV4zY-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:t22FELAl-BM:research",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "status": "CONFIRMED",
+          "evidence": "t22FELAl-BM",
+          "target_path": "2026-10-17-t22FELAl-BM-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:y2xCGyURl7Q:research",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "status": "CONFIRMED",
+          "evidence": "y2xCGyURl7Q",
+          "target_path": "2026-10-17-y2xCGyURl7Q-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:ZgMrRA1Czlc:research",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "status": "CONFIRMED",
+          "evidence": "ZgMrRA1Czlc",
+          "target_path": "2026-10-17-ZgMrRA1Czlc-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:ZY7YuYHLlIQ:research",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "status": "CONFIRMED",
+          "evidence": "ZY7YuYHLlIQ",
+          "target_path": "2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md"
+        }
+      ],
       "backlinks": [
         {
           "from_video_id": "26MGuVIJh4A",
@@ -721,7 +844,48 @@
         }
       ],
       "claims": [],
-      "related_records": [],
+      "related_records": [
+        {
+          "target_id": "youtube:BStkW1HTfmk:research",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "status": "CONFIRMED",
+          "evidence": "BStkW1HTfmk",
+          "target_path": "2026-10-10-BStkW1HTfmk-obsidian-preliminary.md"
+        },
+        {
+          "target_id": "youtube:Eh75KT85Y40:research",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "status": "CONFIRMED",
+          "evidence": "Eh75KT85Y40",
+          "target_path": "2026-10-17-Eh75KT85Y40-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:JXmk7hmbS3c:research",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "status": "CONFIRMED",
+          "evidence": "JXmk7hmbS3c",
+          "target_path": "2026-10-17-JXmk7hmbS3c-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:sodTFSuV4zY:research",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "status": "CONFIRMED",
+          "evidence": "sodTFSuV4zY",
+          "target_path": "2026-10-17-sodTFSuV4zY-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:XckM9eFa_vg:research",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "status": "CONFIRMED",
+          "evidence": "XckM9eFa_vg",
+          "target_path": "2026-10-17-XckM9eFa_vg-gemini-notebook.md"
+        }
+      ],
       "backlinks": [
         {
           "from_video_id": "BStkW1HTfmk",
@@ -729,7 +893,7 @@
           "target_path": "research/2026-10-10-Vr3JkAT9mo8-work-specialists.md",
           "relation": "COMPLEMENTS",
           "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
-          "evidence": null,
+          "evidence": "BStkW1HTfmk",
           "status": "CONFIRMED"
         },
         {
@@ -1043,6 +1207,86 @@
           "note": "既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合",
           "status": "CONFIRMED",
           "evidence": null
+        },
+        {
+          "target_id": "youtube:2-8cXaRHlqI:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "2-8cXaRHlqI",
+          "target_path": "2026-10-17-2-8cXaRHlqI-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:BvbkOQWgAw8:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "BvbkOQWgAw8",
+          "target_path": "2026-10-17-BvbkOQWgAw8-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:D0B-l7A69nI:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "D0B-l7A69nI",
+          "target_path": "2026-10-17-D0B-l7A69nI-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:GVB8VfuNeJQ:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "GVB8VfuNeJQ",
+          "target_path": "2026-10-17-GVB8VfuNeJQ-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:Mg0pYFVAuWQ:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "Mg0pYFVAuWQ",
+          "target_path": "2026-10-17-Mg0pYFVAuWQ-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:MnzEE0fLxBs:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "MnzEE0fLxBs",
+          "target_path": "2026-10-17-MnzEE0fLxBs-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:NCQZiT0e59g:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "NCQZiT0e59g",
+          "target_path": "2026-10-17-NCQZiT0e59g-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:RZLAP2CLUM8:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "RZLAP2CLUM8",
+          "target_path": "2026-10-17-RZLAP2CLUM8-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:y2xCGyURl7Q:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "y2xCGyURl7Q",
+          "target_path": "2026-10-17-y2xCGyURl7Q-gemini-notebook.md"
+        },
+        {
+          "target_id": "youtube:ZY7YuYHLlIQ:research",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "status": "CONFIRMED",
+          "evidence": "ZY7YuYHLlIQ",
+          "target_path": "2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md"
         }
       ],
       "backlinks": [
@@ -1420,7 +1664,26 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-2-8cXaRHlqI-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "2-8cXaRHlqI",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-2-8cXaRHlqI-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "2-8cXaRHlqI",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-26MGuVIJh4A-gemini-notebook.md",
@@ -1800,7 +2063,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-26MGuVIJh4A-gemini-notebook.md",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "evidence": "26MGuVIJh4A",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-BvbkOQWgAw8-gemini-notebook.md",
@@ -2011,7 +2284,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-BvbkOQWgAw8-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "BvbkOQWgAw8",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-cneFa24EFEk-gemini-notebook.md",
@@ -2218,7 +2501,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-cneFa24EFEk-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "cneFa24EFEk",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-D0B-l7A69nI-gemini-notebook.md",
@@ -2441,7 +2734,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-D0B-l7A69nI-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "D0B-l7A69nI",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-Eh75KT85Y40-gemini-notebook.md",
@@ -2796,7 +3099,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-Eh75KT85Y40-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "Eh75KT85Y40",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-gD6UZ4wG8OM-gemini-notebook.md",
@@ -3141,7 +3454,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-GVB8VfuNeJQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "GVB8VfuNeJQ",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-j3Cyvbfn9_k-gemini-notebook.md",
@@ -3878,7 +4201,35 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "JXmk7hmbS3c",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "JXmk7hmbS3c",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "JXmk7hmbS3c",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-Mg0pYFVAuWQ-gemini-notebook.md",
@@ -4062,7 +4413,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-Mg0pYFVAuWQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "Mg0pYFVAuWQ",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-MnzEE0fLxBs-gemini-notebook.md",
@@ -4242,7 +4603,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-MnzEE0fLxBs-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "MnzEE0fLxBs",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
@@ -4659,7 +5030,26 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "evidence": "NCQZiT0e59g",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "NCQZiT0e59g",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
@@ -4847,7 +5237,26 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "RZLAP2CLUM8",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "RZLAP2CLUM8",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
@@ -5078,7 +5487,26 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "sodTFSuV4zY",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "sodTFSuV4zY",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-t22FELAl-BM-gemini-notebook.md",
@@ -5289,7 +5717,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-t22FELAl-BM-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "t22FELAl-BM",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-W35UQZL2w7E-gemini-notebook.md",
@@ -5643,7 +6081,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-X9Zk68AII4A-gemini-notebook.md",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "evidence": "X9Zk68AII4A",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
@@ -6073,7 +6521,26 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "XckM9eFa_vg",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "XckM9eFa_vg",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
@@ -6288,7 +6755,26 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "y2xCGyURl7Q",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "y2xCGyURl7Q",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-YrTVpJ1ebUk-gemini-notebook.md",
@@ -6770,7 +7256,17 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-ZgMrRA1Czlc-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "ZgMrRA1Czlc",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
@@ -6981,7 +7477,26 @@
           "evidence": null
         }
       ],
-      "backlinks": []
+      "backlinks": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "ZY7YuYHLlIQ",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "ZY7YuYHLlIQ",
+          "status": "CONFIRMED"
+        }
+      ]
     },
     {
       "record_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
@@ -7684,8 +8199,8 @@
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
     "total_nodes": 34,
-    "total_links": 36,
-    "confirmed_links": 31,
+    "total_links": 65,
+    "confirmed_links": 60,
     "candidate_links": 0,
     "unresolved_links": 5,
     "self_link_warnings": [
@@ -7709,6 +8224,9 @@
       "YrTVpJ1ebUk",
       "CnkEROU7fZw"
     ],
+    "bidirectional_links_count": 30,
+    "unidirectional_links_count": 0,
+    "missing_reverse_links": [],
     "edges": [
       {
         "source_video_id": "BStkW1HTfmk",
@@ -7726,13 +8244,260 @@
       {
         "source_video_id": "BStkW1HTfmk",
         "source_logical_id": "youtube:BStkW1HTfmk:research",
-        "target_id": "youtube:Vr3JkAT9mo8",
+        "target_id": "youtube:Vr3JkAT9mo8:research",
         "target_video_id": "Vr3JkAT9mo8",
         "target_path": "research/2026-10-10-Vr3JkAT9mo8-work-specialists.md",
         "relation": "COMPLEMENTS",
         "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
         "status": "CONFIRMED",
-        "evidence": null,
+        "evidence": "BStkW1HTfmk",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "BStkW1HTfmk",
+        "source_logical_id": "youtube:BStkW1HTfmk:research",
+        "target_id": "youtube:2-8cXaRHlqI:research",
+        "target_video_id": "2-8cXaRHlqI",
+        "target_path": "research/2026-10-17-2-8cXaRHlqI-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+        "status": "CONFIRMED",
+        "evidence": "2-8cXaRHlqI",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "BStkW1HTfmk",
+        "source_logical_id": "youtube:BStkW1HTfmk:research",
+        "target_id": "youtube:JXmk7hmbS3c:research",
+        "target_video_id": "JXmk7hmbS3c",
+        "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+        "status": "CONFIRMED",
+        "evidence": "JXmk7hmbS3c",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "BStkW1HTfmk",
+        "source_logical_id": "youtube:BStkW1HTfmk:research",
+        "target_id": "youtube:RZLAP2CLUM8:research",
+        "target_video_id": "RZLAP2CLUM8",
+        "target_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+        "status": "CONFIRMED",
+        "evidence": "RZLAP2CLUM8",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "BStkW1HTfmk",
+        "source_logical_id": "youtube:BStkW1HTfmk:research",
+        "target_id": "youtube:XckM9eFa_vg:research",
+        "target_video_id": "XckM9eFa_vg",
+        "target_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+        "status": "CONFIRMED",
+        "evidence": "XckM9eFa_vg",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:26MGuVIJh4A:research",
+        "target_video_id": "26MGuVIJh4A",
+        "target_path": "research/2026-10-17-26MGuVIJh4A-gemini-notebook.md",
+        "relation": "EXTENDS",
+        "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+        "status": "CONFIRMED",
+        "evidence": "26MGuVIJh4A",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:NCQZiT0e59g:research",
+        "target_video_id": "NCQZiT0e59g",
+        "target_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
+        "relation": "EXTENDS",
+        "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+        "status": "CONFIRMED",
+        "evidence": "NCQZiT0e59g",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:X9Zk68AII4A:research",
+        "target_video_id": "X9Zk68AII4A",
+        "target_path": "research/2026-10-17-X9Zk68AII4A-gemini-notebook.md",
+        "relation": "EXTENDS",
+        "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+        "status": "CONFIRMED",
+        "evidence": "X9Zk68AII4A",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:cneFa24EFEk:research",
+        "target_video_id": "cneFa24EFEk",
+        "target_path": "research/2026-10-17-cneFa24EFEk-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+        "status": "CONFIRMED",
+        "evidence": "cneFa24EFEk",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:JXmk7hmbS3c:research",
+        "target_video_id": "JXmk7hmbS3c",
+        "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+        "status": "CONFIRMED",
+        "evidence": "JXmk7hmbS3c",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:sodTFSuV4zY:research",
+        "target_video_id": "sodTFSuV4zY",
+        "target_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+        "status": "CONFIRMED",
+        "evidence": "sodTFSuV4zY",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:t22FELAl-BM:research",
+        "target_video_id": "t22FELAl-BM",
+        "target_path": "research/2026-10-17-t22FELAl-BM-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+        "status": "CONFIRMED",
+        "evidence": "t22FELAl-BM",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:y2xCGyURl7Q:research",
+        "target_video_id": "y2xCGyURl7Q",
+        "target_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+        "status": "CONFIRMED",
+        "evidence": "y2xCGyURl7Q",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:ZgMrRA1Czlc:research",
+        "target_video_id": "ZgMrRA1Czlc",
+        "target_path": "research/2026-10-17-ZgMrRA1Czlc-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+        "status": "CONFIRMED",
+        "evidence": "ZgMrRA1Czlc",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "lC5jxpYmatE",
+        "source_logical_id": "youtube:lC5jxpYmatE:research",
+        "target_id": "youtube:ZY7YuYHLlIQ:research",
+        "target_video_id": "ZY7YuYHLlIQ",
+        "target_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+        "status": "CONFIRMED",
+        "evidence": "ZY7YuYHLlIQ",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "Vr3JkAT9mo8",
+        "source_logical_id": "youtube:Vr3JkAT9mo8:research",
+        "target_id": "youtube:BStkW1HTfmk:research",
+        "target_video_id": "BStkW1HTfmk",
+        "target_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
+        "relation": "COMPLEMENTS",
+        "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+        "status": "CONFIRMED",
+        "evidence": "BStkW1HTfmk",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "Vr3JkAT9mo8",
+        "source_logical_id": "youtube:Vr3JkAT9mo8:research",
+        "target_id": "youtube:Eh75KT85Y40:research",
+        "target_video_id": "Eh75KT85Y40",
+        "target_path": "research/2026-10-17-Eh75KT85Y40-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+        "status": "CONFIRMED",
+        "evidence": "Eh75KT85Y40",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "Vr3JkAT9mo8",
+        "source_logical_id": "youtube:Vr3JkAT9mo8:research",
+        "target_id": "youtube:JXmk7hmbS3c:research",
+        "target_video_id": "JXmk7hmbS3c",
+        "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+        "status": "CONFIRMED",
+        "evidence": "JXmk7hmbS3c",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "Vr3JkAT9mo8",
+        "source_logical_id": "youtube:Vr3JkAT9mo8:research",
+        "target_id": "youtube:sodTFSuV4zY:research",
+        "target_video_id": "sodTFSuV4zY",
+        "target_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+        "status": "CONFIRMED",
+        "evidence": "sodTFSuV4zY",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "Vr3JkAT9mo8",
+        "source_logical_id": "youtube:Vr3JkAT9mo8:research",
+        "target_id": "youtube:XckM9eFa_vg:research",
+        "target_video_id": "XckM9eFa_vg",
+        "target_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+        "status": "CONFIRMED",
+        "evidence": "XckM9eFa_vg",
         "is_self_link": false,
         "target_exists": true
       },
@@ -7747,6 +8512,136 @@
         "status": "SELF_LINK",
         "evidence": null,
         "is_self_link": true,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:2-8cXaRHlqI:research",
+        "target_video_id": "2-8cXaRHlqI",
+        "target_path": "research/2026-10-17-2-8cXaRHlqI-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "2-8cXaRHlqI",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:BvbkOQWgAw8:research",
+        "target_video_id": "BvbkOQWgAw8",
+        "target_path": "research/2026-10-17-BvbkOQWgAw8-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "BvbkOQWgAw8",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:D0B-l7A69nI:research",
+        "target_video_id": "D0B-l7A69nI",
+        "target_path": "research/2026-10-17-D0B-l7A69nI-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "D0B-l7A69nI",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:GVB8VfuNeJQ:research",
+        "target_video_id": "GVB8VfuNeJQ",
+        "target_path": "research/2026-10-17-GVB8VfuNeJQ-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "GVB8VfuNeJQ",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:Mg0pYFVAuWQ:research",
+        "target_video_id": "Mg0pYFVAuWQ",
+        "target_path": "research/2026-10-17-Mg0pYFVAuWQ-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "Mg0pYFVAuWQ",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:MnzEE0fLxBs:research",
+        "target_video_id": "MnzEE0fLxBs",
+        "target_path": "research/2026-10-17-MnzEE0fLxBs-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "MnzEE0fLxBs",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:NCQZiT0e59g:research",
+        "target_video_id": "NCQZiT0e59g",
+        "target_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "NCQZiT0e59g",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:RZLAP2CLUM8:research",
+        "target_video_id": "RZLAP2CLUM8",
+        "target_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "RZLAP2CLUM8",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:y2xCGyURl7Q:research",
+        "target_video_id": "y2xCGyURl7Q",
+        "target_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "y2xCGyURl7Q",
+        "is_self_link": false,
+        "target_exists": true
+      },
+      {
+        "source_video_id": "ZjUJ-35acaU",
+        "source_logical_id": "youtube:ZjUJ-35acaU:research",
+        "target_id": "youtube:ZY7YuYHLlIQ:research",
+        "target_video_id": "ZY7YuYHLlIQ",
+        "target_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
+        "relation": "COMPLEMENTS",
+        "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+        "status": "CONFIRMED",
+        "evidence": "ZY7YuYHLlIQ",
+        "is_self_link": false,
         "target_exists": true
       },
       {
@@ -8191,6 +9086,15 @@
           "status": "SELF_LINK"
         },
         {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "BStkW1HTfmk",
+          "status": "CONFIRMED"
+        },
+        {
           "from_video_id": "2-8cXaRHlqI",
           "from_logical_id": "youtube:2-8cXaRHlqI:research",
           "target_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
@@ -8234,7 +9138,7 @@
           "target_path": "research/2026-10-10-Vr3JkAT9mo8-work-specialists.md",
           "relation": "COMPLEMENTS",
           "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
-          "evidence": null,
+          "evidence": "BStkW1HTfmk",
           "status": "CONFIRMED"
         },
         {
@@ -8271,6 +9175,241 @@
           "relation": "COMPLEMENTS",
           "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
           "evidence": null,
+          "status": "CONFIRMED"
+        }
+      ],
+      "2-8cXaRHlqI": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-2-8cXaRHlqI-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "2-8cXaRHlqI",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-2-8cXaRHlqI-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "2-8cXaRHlqI",
+          "status": "CONFIRMED"
+        }
+      ],
+      "JXmk7hmbS3c": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "JXmk7hmbS3c",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "JXmk7hmbS3c",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "JXmk7hmbS3c",
+          "status": "CONFIRMED"
+        }
+      ],
+      "RZLAP2CLUM8": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "RZLAP2CLUM8",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "RZLAP2CLUM8",
+          "status": "CONFIRMED"
+        }
+      ],
+      "XckM9eFa_vg": [
+        {
+          "from_video_id": "BStkW1HTfmk",
+          "from_logical_id": "youtube:BStkW1HTfmk:research",
+          "target_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完",
+          "evidence": "XckM9eFa_vg",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "XckM9eFa_vg",
+          "status": "CONFIRMED"
+        }
+      ],
+      "26MGuVIJh4A": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-26MGuVIJh4A-gemini-notebook.md",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "evidence": "26MGuVIJh4A",
+          "status": "CONFIRMED"
+        }
+      ],
+      "NCQZiT0e59g": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "evidence": "NCQZiT0e59g",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "NCQZiT0e59g",
+          "status": "CONFIRMED"
+        }
+      ],
+      "X9Zk68AII4A": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-X9Zk68AII4A-gemini-notebook.md",
+          "relation": "EXTENDS",
+          "note": "課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張",
+          "evidence": "X9Zk68AII4A",
+          "status": "CONFIRMED"
+        }
+      ],
+      "cneFa24EFEk": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-cneFa24EFEk-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "cneFa24EFEk",
+          "status": "CONFIRMED"
+        }
+      ],
+      "sodTFSuV4zY": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "sodTFSuV4zY",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "sodTFSuV4zY",
+          "status": "CONFIRMED"
+        }
+      ],
+      "t22FELAl-BM": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-t22FELAl-BM-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "t22FELAl-BM",
+          "status": "CONFIRMED"
+        }
+      ],
+      "y2xCGyURl7Q": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "y2xCGyURl7Q",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "y2xCGyURl7Q",
+          "status": "CONFIRMED"
+        }
+      ],
+      "ZgMrRA1Czlc": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-ZgMrRA1Czlc-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "ZgMrRA1Czlc",
+          "status": "CONFIRMED"
+        }
+      ],
+      "ZY7YuYHLlIQ": [
+        {
+          "from_video_id": "lC5jxpYmatE",
+          "from_logical_id": "youtube:lC5jxpYmatE:research",
+          "target_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Skill・ハーネス・権限分離・トークン節約の実務構成を補完",
+          "evidence": "ZY7YuYHLlIQ",
+          "status": "CONFIRMED"
+        },
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "ZY7YuYHLlIQ",
+          "status": "CONFIRMED"
+        }
+      ],
+      "Eh75KT85Y40": [
+        {
+          "from_video_id": "Vr3JkAT9mo8",
+          "from_logical_id": "youtube:Vr3JkAT9mo8:research",
+          "target_path": "research/2026-10-17-Eh75KT85Y40-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完",
+          "evidence": "Eh75KT85Y40",
           "status": "CONFIRMED"
         }
       ],
@@ -8372,6 +9511,61 @@
           "relation": "COMPLEMENTS",
           "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
           "evidence": null,
+          "status": "CONFIRMED"
+        }
+      ],
+      "BvbkOQWgAw8": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-BvbkOQWgAw8-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "BvbkOQWgAw8",
+          "status": "CONFIRMED"
+        }
+      ],
+      "D0B-l7A69nI": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-D0B-l7A69nI-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "D0B-l7A69nI",
+          "status": "CONFIRMED"
+        }
+      ],
+      "GVB8VfuNeJQ": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-GVB8VfuNeJQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "GVB8VfuNeJQ",
+          "status": "CONFIRMED"
+        }
+      ],
+      "Mg0pYFVAuWQ": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-Mg0pYFVAuWQ-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "Mg0pYFVAuWQ",
+          "status": "CONFIRMED"
+        }
+      ],
+      "MnzEE0fLxBs": [
+        {
+          "from_video_id": "ZjUJ-35acaU",
+          "from_logical_id": "youtube:ZjUJ-35acaU:research",
+          "target_path": "research/2026-10-17-MnzEE0fLxBs-gemini-notebook.md",
+          "relation": "COMPLEMENTS",
+          "note": "Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完",
+          "evidence": "MnzEE0fLxBs",
           "status": "CONFIRMED"
         }
       ],

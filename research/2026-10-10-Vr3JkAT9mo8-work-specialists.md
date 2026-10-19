@@ -51,3 +51,11 @@
 - YouTube一次メタデータ照合: タイトル一致（「ChatGPT Work でAIを「担当制」にしたら、仕事の効率が上がった。「右腕AI」を構築する全手順【20分で完全解説】」）、投稿者一致（「Leo Tohyama / AIコーチ」）、公開日一次確定（`2026-07-28`、旧記載の「2026年7月（詳細日付UNKNOWN）」を補完）、動画実測長（`20:22` / `1222s`、旧記載の00:00〜20:21と±1秒で一致）。
 - YouTube概要欄の公式チャプター（一次照合参照用）: `00:00` AIに毎回同じ説明していませんか？ / `02:02` この動画のゴール / `04:22` Step1：スターターキットをセットアップする / `07:53` Step2：最初のセッションを始める / `09:30` Step3：右腕AIと実際に仕事をする / `11:21` Step4：日々の運用で右腕AIを育てる / `13:02` 応用編：専門担当AIに仕事を分担させる / `16:17` さらに便利な使い方：スマホ連携・リマインド / `18:08` まとめ：今日から始める3ステップ
 
+## 関連する既存研究・課題との接続（被参照 / Backlinks）
+- [youtube:BStkW1HTfmk:research](2026-10-10-BStkW1HTfmk-obsidian-preliminary.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: BStkW1HTfmk
+- [youtube:Eh75KT85Y40:research](2026-10-17-Eh75KT85Y40-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: Eh75KT85Y40
+- [youtube:JXmk7hmbS3c:research](2026-10-17-JXmk7hmbS3c-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: JXmk7hmbS3c
+- [youtube:sodTFSuV4zY:research](2026-10-17-sodTFSuV4zY-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: sodTFSuV4zY
+- [youtube:XckM9eFa_vg:research](2026-10-17-XckM9eFa_vg-gemini-notebook.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CONFIRMED | evidence: XckM9eFa_vg
+
+
