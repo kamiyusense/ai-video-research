@@ -1573,10 +1573,17 @@ function formatRelatedRecordsLines_(relatedRecords) {
   const list = Array.isArray(relatedRecords) ? relatedRecords : [];
   for (let i = 0; i < list.length; i++) {
     const rel = list[i];
+    const tid = clean_(rel.target_id);
+    const targetPath = clean_(rel.target_path || rel.path || "");
+    const status = rel.status ? String(rel.status) : "";
+    let targetRepr = "`" + tid + "`";
+    if (targetPath && status.toUpperCase() !== "UNRESOLVED" && status.toUpperCase() !== "CANDIDATE") {
+      targetRepr = "[" + tid + "](" + targetPath + ")";
+    }
     let line =
-      "- `" +
-      clean_(rel.target_id) +
-      "` (" +
+      "- " +
+      targetRepr +
+      " (" +
       rel.relation +
       "): " +
       clean_(rel.note);
@@ -3643,6 +3650,7 @@ if (typeof module !== "undefined" && module.exports) {
     scanForbiddenKeys: scanForbiddenKeys_,
     validateReceipt: validateReceipt_,
     renderResearchMarkdown: renderResearchMarkdown_,
+    formatRelatedRecordsLines: formatRelatedRecordsLines_,
     renderDeltaSection: renderDeltaSection_,
     extractVideoIdsFromMarkdownText: extractVideoIdsFromMarkdownText_,
     validateLoopStateSchema: validateLoopStateSchema_,

@@ -4385,6 +4385,169 @@ process.stdout.write(gas.renderResearchMarkdown(v, "2026-10-19"));
         self.assertIsNone(leg_rec["okf_version"])
         self.assertGreater(len(leg_rec["chapters"]), 0)
 
+    def test_final_integrity_and_okf_alignment(self):
+        """Phase 6.5 / 実機試験前最終整合性検証:
+        1. validate_okf_frontmatter による type 欠落・空欄FAIL検査
+        2. verify_transcript_status による証拠条件判定（FULL_VERIFIEDの厳格性、フォールバック）
+        3. extract_aggregate_filter における OKF_TOPIC と OKF_FORMAT の分離集計
+        4. format_related_records_lines および formatRelatedRecordsLines_ のMarkdownリンクパリティ
+        5. build_knowledge_network の target_path 解決と QA Markdown のリンク表示
+        """
+        import sys
+        sys_path_entry = str(ROOT / "automation" / "gemini-notebook")
+        if sys_path_entry not in sys.path:
+            sys.path.insert(0, sys_path_entry)
+        import query_research as qm
+        import receipt_to_research as rtr
+
+        # 1. OKF フロントマター形式検査 (validate_okf_frontmatter)
+        # type 欠落
+        ok, errs = qm.validate_okf_frontmatter({
+            "title": "Title",
+            "description": "Desc",
+            "resource": "https://example.com",
+            "tags": ["AI"],
+            "okf_version": "0.2",
+        })
+        self.assertFalse(ok)
+        self.assertTrue(any("Required field 'type'" in e for e in errs))
+
+        # type 空白
+        ok_empty, errs_empty = qm.validate_okf_frontmatter({
+            "type": "   ",
+            "title": "Title",
+            "description": "Desc",
+            "resource": "https://example.com",
+            "tags": ["AI"],
+            "okf_version": "0.2",
+        })
+        self.assertFalse(ok_empty)
+        self.assertTrue(any("Required field 'type'" in e for e in errs_empty))
+
+        # 正常なフロントマター
+        ok_valid, errs_valid = qm.validate_okf_frontmatter({
+            "type": "RESEARCH_NOTE",
+            "title": "Title",
+            "description": "Desc",
+            "resource": "https://example.com",
+            "tags": ["AI技術研究室"],
+            "okf_version": "0.2",
+        })
+        self.assertTrue(ok_valid)
+        self.assertEqual(len(errs_valid), 0)
+
+        # 2. 字幕検証ステータス (verify_transcript_status)
+        # 全文検証（証拠完備）
+        st1 = qm.verify_transcript_status(
+            "FULL_VERIFIED", "PASS", "src-12345", "00:00〜14:23（全区間）"
+        )
+        self.assertEqual(st1, "FULL_VERIFIED")
+
+        # 自己申告FULL_VERIFIEDだがNotebookソースIDなし → UNVERIFIED
+        st2 = qm.verify_transcript_status(
+            "FULL_VERIFIED", "PASS", "UNKNOWN", "00:00〜14:23（全区間）"
+        )
+        self.assertEqual(st2, "UNVERIFIED")
+
+        # 自己申告FULL_VERIFIEDだがreadbackがPASSでない → UNVERIFIED
+        st3 = qm.verify_transcript_status(
+            "FULL_VERIFIED", "UNKNOWN", "src-12345", "00:00〜14:23（全区間）"
+        )
+        self.assertEqual(st3, "UNVERIFIED")
+
+        # 自己申告FULL_VERIFIEDだが区間が部分的 → PARTIAL_VERIFIED
+        st4 = qm.verify_transcript_status(
+            "FULL_VERIFIED", "PASS", "src-12345", "03:10〜05:20"
+        )
+        self.assertEqual(st4, "PARTIAL_VERIFIED")
+
+        # 部分検証
+        st5 = qm.verify_transcript_status("PARTIAL_VERIFIED", "PASS", "src-12345", "一部区間")
+        self.assertEqual(st5, "PARTIAL_VERIFIED")
+
+        # 未取得
+        st6 = qm.verify_transcript_status("NOT_ACQUIRED", "PASS", "src-12345", "")
+        self.assertEqual(st6, "NOT_ACQUIRED")
+
+        # 3. 集計フィルタの分離 (OKF_TOPIC vs OKF_FORMAT, 字幕ステータス5値)
+        flt_topic, _ = qm.extract_aggregate_filter("OKFに関する動画は何本ありますか？", "okfに関する動画は何本ありますか？")
+        self.assertEqual(flt_topic, "OKF_TOPIC")
+
+        flt_format, _ = qm.extract_aggregate_filter("OKF形式の研究カードは何件ありますか？", "okf形式の研究カードは何件ありますか？")
+        self.assertEqual(flt_format, "OKF_FORMAT")
+
+        flt_full, _ = qm.extract_aggregate_filter("全文検証済みの字幕は何本ありますか？", "全文検証済みの字幕は何本ありますか？")
+        self.assertEqual(flt_full, "TRANSCRIPT_FULL_VERIFIED")
+
+        flt_part, _ = qm.extract_aggregate_filter("部分検証済みの字幕は何件ありますか？", "部分検証済みの字幕は何件ありますか？")
+        self.assertEqual(flt_part, "TRANSCRIPT_PARTIAL_VERIFIED")
+
+        flt_unver, _ = qm.extract_aggregate_filter("未検証の字幕は何件ありますか？", "未検証の字幕は何件ありますか？")
+        self.assertEqual(flt_unver, "TRANSCRIPT_UNVERIFIED")
+
+        flt_notacq, _ = qm.extract_aggregate_filter("未取得の字幕は何件ありますか？", "未取得の字幕は何件ありますか？")
+        self.assertEqual(flt_notacq, "TRANSCRIPT_NOT_ACQUIRED")
+
+        # 4. Markdownリンク化パリティ (Python & GAS)
+        test_rels = [
+            {
+                "target_id": "youtube:pRfC1DILDEM",
+                "relation": "COMPLEMENTS",
+                "note": "RAG探索とOKF知識体系の補完",
+                "status": "CONFIRMED",
+                "target_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
+                "evidence": "RAG探索設計",
+            },
+            {
+                "target_id": "youtube:u3ka_AAb8qE",
+                "relation": "RELATES_TO",
+                "note": "未登録OKF動画の候補",
+                "status": "CANDIDATE",
+                "target_path": "",
+                "evidence": "字幕提供のみ",
+            },
+        ]
+        py_lines = rtr.format_related_records_lines(test_rels)
+        self.assertIn("[youtube:pRfC1DILDEM](research/2026-10-18-pRfC1DILDEM-gemini-notebook.md)", py_lines[0])
+        self.assertIn("`youtube:u3ka_AAb8qE`", py_lines[1])
+        self.assertNotIn("[youtube:u3ka_AAb8qE]", py_lines[1])
+
+        # GAS Node.js parity
+        gas_path = str(ROOT / "automation" / "gemini-notebook" / "cloud_relay_gas.js").replace("\\", "/")
+        node_script = f"""
+const gas = require({json.dumps(gas_path)});
+const rels = {json.dumps(test_rels)};
+const res = gas.formatRelatedRecordsLines(rels);
+process.stdout.write(JSON.stringify(res));
+"""
+        proc = subprocess.run(
+            ["node", "-e", node_script],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+        gas_lines = json.loads(proc.stdout.strip())
+        self.assertEqual(py_lines, gas_lines)
+
+        # 5. build_knowledge_network による target_path 解決
+        cat, records = qm.build_video_knowledge_catalog(root=ROOT)
+        network = qm.build_knowledge_network(records)
+        # pRfC1DILDEM からの confirmed リンクに target_path が設定されていること
+        p_edges = [e for e in network["edges"] if e["source_video_id"] == "pRfC1DILDEM"]
+        for e in p_edges:
+            if e["status"] == "CONFIRMED":
+                self.assertIsNotNone(e.get("target_path"))
+                self.assertTrue(e["target_path"].startswith("research/") or e["target_path"].startswith("proposals/"))
+
+        # QA 回答出力の Markdown リンク検証
+        qa_topic = qm.answer_question("OKFに関する動画は何本ありますか？", root=ROOT)
+        md_text = qm.format_qa_response_markdown(qa_topic)
+        self.assertIn("台帳集計結果", md_text)
+        self.assertIn("OKF_TOPIC", md_text)
+        # テーブル内に Markdown リンクが含まれること
+        self.assertIn("](research/", md_text)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

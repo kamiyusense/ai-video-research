@@ -58,7 +58,7 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
    - **Phase 3 (Gemini研究タスク統合)**: `CODE_UPDATED`。`GEMINI_TASK.md` v0.7へOKF荷札・字幕保護・未登録先CANDIDATE厳格ルールを明文化。
    - **Phase 4 (保存経路・索引整備)**: `CODE_UPDATED`。`cloud_relay_gas.js` および `query_research.py` で confirmed/candidate/unresolved リンクを独立集計。
    - **Phase 5 (既存資産の非破壊移行)**: `BACKWARD_COMPATIBLE_VERIFIED`。既存29動画・263章資産の下位互換を完全維持（未移行28動画はハイブリッド透過パース）。
-   - **Phase 6 (質問回答品質の検証)**: `TEST_PASSED`。5分類ルーター、条件付き決定論的件数集計（RAG/OKF/字幕状態等）、時系列ソート区別（公開日/確認日）、1ホップ探索免責表示を実装。全43テストPASS。
+   - **Phase 6 (質問回答品質の検証・最終整合性是正)**: `TEST_PASSED`。5分類ルーター、条件付き決定論的件数集計（RAG/OKF/字幕5状態等）、時系列ソート区別（公開日/確認日）、1ホップ探索免責表示、Markdownリンク化パリティ、OKFフロントマターtype欠落FAIL検査、字幕証拠判定を実装。全44テストPASS。
 2. **次はPhase 7（実機省力化運用・Gemini Task v0.7試験）**:
    - ステータス: `WAITING_APPROVAL`（実機Notebook登録状況はUNKNOWN、実機GAS LIVE実行は未承認）。
    - ユーザーがGemini Task v0.7を使って新規動画を調査し、生成された `research_receipt_v1` をGoogle Driveへ配置。

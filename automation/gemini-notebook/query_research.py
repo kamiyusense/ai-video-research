@@ -57,7 +57,7 @@ LEGACY_TABLE_ROW_NO_ID_RE = re.compile(
 )
 
 RELATED_RECORD_LINE_RE = re.compile(
-    r"^\s*-\s*`(?P<target_id>[^`]+)`\s*\((?P<relation>[A-Z_]+)\):\s*(?P<note>.+?)\s*$"
+    r"^\s*-\s*(?:`(?P<target_id>[^`]+)`|\[(?P<target_link_text>[^\]]+)\]\((?P<target_path>[^)]+)\))\s*\((?P<relation>[A-Z_]+)\):\s*(?P<note>.+?)\s*$"
 )
 
 # 質問の意図分類ルール
@@ -496,6 +496,81 @@ def parse_yaml_frontmatter(text):
     return data, body
 
 
+def validate_okf_frontmatter(fm_data):
+    """Google Cloud公式OKF v0.2仕様（SPEC.md）に準拠したフロントマターの形式検査。
+    Returns: (is_valid: bool, errors: list[str])
+    """
+    errors = []
+    if not isinstance(fm_data, dict):
+        return False, ["Frontmatter must be a JSON/YAML dictionary"]
+
+    # 必須非空 type
+    okf_type = fm_data.get("type")
+    if not okf_type or not str(okf_type).strip():
+        errors.append("Required field 'type' is missing, empty, or whitespace")
+
+    # 必須非空 title
+    title = fm_data.get("title")
+    if not title or not str(title).strip():
+        errors.append("Required field 'title' is missing, empty, or whitespace")
+
+    # 必須非空 description
+    desc = fm_data.get("description")
+    if not desc or not str(desc).strip():
+        errors.append("Required field 'description' is missing, empty, or whitespace")
+
+    # 必須非空 resource
+    resource = fm_data.get("resource")
+    if not resource or not str(resource).strip():
+        errors.append("Required field 'resource' is missing, empty, or whitespace")
+
+    # 必須 tags (非空リスト)
+    tags = fm_data.get("tags")
+    if not isinstance(tags, list) or len(tags) == 0:
+        errors.append("Required field 'tags' must be a non-empty list")
+
+    # okf_version: "0.2"
+    okf_ver = fm_data.get("okf_version")
+    if not okf_ver or str(okf_ver).strip() not in ("0.2", "0.2.0"):
+        errors.append("Field 'okf_version' must be '0.2'")
+
+    return len(errors) == 0, errors
+
+
+def verify_transcript_status(raw_status, notebook_readback, primary_source_notebook_id, source_scope):
+    """字幕原文の検証状態（transcript_status）を証拠条件に基づいて判定する。
+    自己申告FULL_VERIFIEDであっても、証拠（Notebook独立ソースID、読戻しPASS、全区間取得）が
+    不足している場合や実機Notebook未検証の場合はFULL_VERIFIEDと認めず UNVERIFIED / UNKNOWN とする。
+    """
+    clean_st = str(raw_status or "").strip().upper()
+    nb_src = str(primary_source_notebook_id or "").strip()
+    readback = str(notebook_readback or "").strip().upper()
+    scope = str(source_scope or "").strip()
+
+    # 証拠判定
+    has_valid_source_id = bool(nb_src and nb_src not in ("UNKNOWN", "NONE", ""))
+    has_readback_pass = (readback == "PASS")
+    covers_full = any(k in scope for k in ("00:00〜", "全編", "全文", "全区間", "0:00〜", "14:23"))
+
+    if clean_st in ("FULL_VERIFIED", "VERIFIED", "CONFIRMED"):
+        if has_valid_source_id and has_readback_pass and covers_full:
+            return "FULL_VERIFIED"
+        elif has_valid_source_id and has_readback_pass:
+            return "PARTIAL_VERIFIED"
+        else:
+            return "UNVERIFIED"
+    elif clean_st == "PARTIAL_VERIFIED":
+        if has_valid_source_id:
+            return "PARTIAL_VERIFIED"
+        return "UNVERIFIED"
+    elif clean_st in ("NOT_ACQUIRED", "NOT_FOUND"):
+        return "NOT_ACQUIRED"
+    elif clean_st in ("UNVERIFIED", "UNKNOWN", ""):
+        return "UNVERIFIED" if clean_st == "UNVERIFIED" else "UNKNOWN"
+
+    return "UNKNOWN"
+
+
 def split_markdown_sections(md_text):
     """Markdown本文を見出し (## / ###) ごとの辞書に分割する。"""
     sections = {"_header": []}
@@ -516,6 +591,10 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
     text = md_path.read_text(encoding="utf-8")
     fm_data, body_text = parse_yaml_frontmatter(text)
     is_okf_frontmatter = fm_data is not None
+    is_okf_valid = False
+    okf_validation_errors = []
+    if is_okf_frontmatter:
+        is_okf_valid, okf_validation_errors = validate_okf_frontmatter(fm_data)
     sections = split_markdown_sections(body_text if is_okf_frontmatter else text)
 
     # タイトル取得
@@ -590,13 +669,42 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         if m_tlid:
             transcript_logical_id = m_tlid.group(1).strip()
 
-    transcript_status = "UNKNOWN"
+    raw_transcript_status = "UNKNOWN"
     if is_okf_frontmatter and fm_data.get("transcript_status"):
-        transcript_status = str(fm_data["transcript_status"]).strip()
+        raw_transcript_status = str(fm_data["transcript_status"]).strip()
     else:
         m_tstat = re.search(r"^\s*-\s*transcript_status:\s*(.+?)\s*$", text, re.MULTILINE)
         if m_tstat:
-            transcript_status = m_tstat.group(1).strip()
+            raw_transcript_status = m_tstat.group(1).strip()
+
+    notebook_readback = "UNKNOWN"
+    if is_okf_frontmatter and fm_data.get("notebook_readback"):
+        notebook_readback = str(fm_data["notebook_readback"]).strip()
+    else:
+        m_rb = re.search(r"^\s*-\s*(?:Gemini readback|notebook_readback)(?:\s*\([^)]*\))?:\s*(.+?)\s*$", text, re.MULTILINE)
+        if m_rb:
+            notebook_readback = m_rb.group(1).strip()
+
+    # source_scope
+    source_scope = ""
+    if is_okf_frontmatter and fm_data.get("source_scope"):
+        source_scope = str(fm_data["source_scope"]).strip()
+    if not source_scope and registry_entry and registry_entry.get("source_scope"):
+        source_scope = registry_entry["source_scope"]
+    if not source_scope:
+        for pat in (
+            r"^\s*-\s*source_scope:\s*(.+?)\s*$",
+            r"^\s*-\s*記録方法:\s*(.+?)\s*$",
+            r"^\s*-\s*取得の範囲:\s*(.+?)\s*$",
+        ):
+            m_sc = re.search(pat, text, re.MULTILINE)
+            if m_sc:
+                source_scope = m_sc.group(1).strip()
+                break
+
+    transcript_status = verify_transcript_status(
+        raw_transcript_status, notebook_readback, notebook_source_id, source_scope
+    )
 
     # publication_date & checked_at
     publication_date = "UNKNOWN"
@@ -638,23 +746,6 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
     tags = []
     if is_okf_frontmatter and isinstance(fm_data.get("tags"), list):
         tags = fm_data["tags"]
-
-    # source_scope
-    source_scope = ""
-    if is_okf_frontmatter and fm_data.get("source_scope"):
-        source_scope = str(fm_data["source_scope"]).strip()
-    if not source_scope and registry_entry and registry_entry.get("source_scope"):
-        source_scope = registry_entry["source_scope"]
-    if not source_scope:
-        for pat in (
-            r"^\s*-\s*source_scope:\s*(.+?)\s*$",
-            r"^\s*-\s*記録方法:\s*(.+?)\s*$",
-            r"^\s*-\s*取得の範囲:\s*(.+?)\s*$",
-        ):
-            m_sc = re.search(pat, text, re.MULTILINE)
-            if m_sc:
-                source_scope = m_sc.group(1).strip()
-                break
 
     # 要約セクション
     summary_ja = ""
@@ -884,6 +975,8 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         m_rel = RELATED_RECORD_LINE_RE.match(line)
         if m_rel:
             raw_note = m_rel.group("note").strip()
+            target_id = (m_rel.group("target_id") or m_rel.group("target_link_text") or "").strip()
+            target_path = (m_rel.group("target_path") or "").strip()
             rel_status = "CONFIRMED"
             rel_evidence = None
             if " | status: " in raw_note:
@@ -901,15 +994,16 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
                 raw_note = parts[0].strip()
                 rel_evidence = parts[1].strip()
 
-            related_records.append(
-                {
-                    "target_id": m_rel.group("target_id").strip(),
-                    "relation": m_rel.group("relation").strip(),
-                    "note": raw_note,
-                    "status": rel_status,
-                    "evidence": rel_evidence,
-                }
-            )
+            rel_dict = {
+                "target_id": target_id,
+                "relation": m_rel.group("relation").strip(),
+                "note": raw_note,
+                "status": rel_status,
+                "evidence": rel_evidence,
+            }
+            if target_path:
+                rel_dict["target_path"] = target_path
+            related_records.append(rel_dict)
 
     # OKFフロントマター内の related_records があればマージ（未重複のもの）
     if is_okf_frontmatter and isinstance(fm_data.get("related_records"), list):
@@ -918,15 +1012,16 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
             if isinstance(fm_rel, dict) and fm_rel.get("target_id"):
                 tid = str(fm_rel["target_id"]).strip()
                 if tid not in existing_targets:
-                    related_records.append(
-                        {
-                            "target_id": tid,
-                            "relation": str(fm_rel.get("relation", "RELATES_TO")).strip(),
-                            "note": str(fm_rel.get("note", "")).strip(),
-                            "status": str(fm_rel.get("status", "CANDIDATE")).strip(),
-                            "evidence": str(fm_rel.get("evidence", "")).strip() if fm_rel.get("evidence") else None,
-                        }
-                    )
+                    fm_dict = {
+                        "target_id": tid,
+                        "relation": str(fm_rel.get("relation", "RELATES_TO")).strip(),
+                        "note": str(fm_rel.get("note", "")).strip(),
+                        "status": str(fm_rel.get("status", "CANDIDATE")).strip(),
+                        "evidence": str(fm_rel.get("evidence", "")).strip() if fm_rel.get("evidence") else None,
+                    }
+                    if fm_rel.get("target_path"):
+                        fm_dict["target_path"] = str(fm_rel["target_path"]).strip()
+                    related_records.append(fm_dict)
                     existing_targets.add(tid)
 
     # 既存Markdown内の公式照合番号付きリスト (例: `1. **Claude Code Skills**: https://...`) も抽出
@@ -972,6 +1067,9 @@ def parse_research_markdown_file(md_path, root=ROOT, registry_entry=None):
         "transcript_status": transcript_status,
         "okf_version": okf_version,
         "okf_type": okf_type,
+        "is_okf_valid": is_okf_valid,
+        "okf_validation_errors": okf_validation_errors,
+        "notebook_readback": notebook_readback,
         "tags": tags,
         "notebook_source_id": notebook_source_id,
         "source_scope": source_scope,
@@ -1007,24 +1105,36 @@ def build_knowledge_network(records, registry_entries=None):
     known_logical_ids = set()
     known_paths = set()
     records_by_vid = {}
+    paths_by_vid = {}
+    paths_by_lid = {}
 
     for r in records:
         vid = r.get("video_id")
+        rpath = r.get("record_path")
+        lid = r.get("logical_id")
         if vid:
             known_vids.add(vid)
             records_by_vid[vid] = r
-        if r.get("logical_id"):
-            known_logical_ids.add(r["logical_id"])
-        if r.get("record_path"):
-            known_paths.add(r["record_path"])
+            if rpath:
+                paths_by_vid[vid] = rpath
+        if lid:
+            known_logical_ids.add(lid)
+            if rpath:
+                paths_by_lid[lid] = rpath
+        if rpath:
+            known_paths.add(rpath)
 
     if registry_entries:
         for entry in registry_entries:
             if isinstance(entry, dict):
-                if entry.get("video_id"):
-                    known_vids.add(entry["video_id"])
-                if entry.get("research_path"):
-                    known_paths.add(entry["research_path"])
+                evid = entry.get("video_id")
+                epath = entry.get("research_path")
+                if evid:
+                    known_vids.add(evid)
+                    if epath and evid not in paths_by_vid:
+                        paths_by_vid[evid] = epath
+                if epath:
+                    known_paths.add(epath)
 
     backlinks = defaultdict(list)
     resolved_edges = []
@@ -1080,6 +1190,16 @@ def build_knowledge_network(records, registry_entries=None):
                 or (raw_target in known_paths)
             )
 
+            # パス解決
+            resolved_target_path = rel.get("target_path")
+            if not resolved_target_path:
+                if target_vid and target_vid in paths_by_vid:
+                    resolved_target_path = paths_by_vid[target_vid]
+                elif raw_target in paths_by_lid:
+                    resolved_target_path = paths_by_lid[raw_target]
+                elif raw_target in known_paths:
+                    resolved_target_path = raw_target
+
             if is_self:
                 resolved_status = "SELF_LINK"
                 unresolved_links += 1
@@ -1099,6 +1219,7 @@ def build_knowledge_network(records, registry_entries=None):
                 "source_logical_id": lid,
                 "target_id": raw_target,
                 "target_video_id": target_vid,
+                "target_path": resolved_target_path,
                 "relation": relation,
                 "note": note,
                 "status": resolved_status,
@@ -1113,6 +1234,7 @@ def build_knowledge_network(records, registry_entries=None):
                     {
                         "from_video_id": vid,
                         "from_logical_id": lid,
+                        "target_path": resolved_target_path,
                         "relation": relation,
                         "note": note,
                         "evidence": evidence,
@@ -1229,15 +1351,23 @@ def build_video_knowledge_catalog(root=ROOT, write_path=None):
 
 
 def extract_aggregate_filter(query, q_lower):
-    """CATEGORY_B_AGGREGATE において質問文から絞り込み条件（RAG, OKF, 字幕状態等）を抽出する。"""
+    """CATEGORY_B_AGGREGATE において質問文から絞り込み条件（RAG, OKF_TOPIC, OKF_FORMAT, 字幕状態等）を抽出する。"""
     if any(k in q_lower for k in ("rag", "検索拡張生成")):
         return "RAG", "RAG関連研究の件数集計"
-    elif any(k in q_lower for k in ("okf", "open knowledge format", "研究カード")):
-        return "OKF", "OKF形式研究の件数集計"
-    elif any(k in q_lower for k in ("字幕検証済み", "字幕確認済み", "字幕あり")):
-        return "TRANSCRIPT_VERIFIED", "字幕原文が検証済みの研究件数集計"
-    elif any(k in q_lower for k in ("未検証", "字幕未検証", "unknown")):
-        return "TRANSCRIPT_UNVERIFIED", "字幕原文が未検証/UNKNOWNの研究件数集計"
+    elif any(k in q_lower for k in ("okf形式", "okfフォーマット", "okfカード", "okf仕様", "okfフロントマター", "研究カード形式")):
+        return "OKF_FORMAT", "OKF形式で記述された研究ノート・文書件数集計"
+    elif any(k in q_lower for k in ("okf", "open knowledge format")):
+        return "OKF_TOPIC", "OKF技術そのものを扱った研究動画件数集計"
+    elif any(k in q_lower for k in ("全文検証", "全編検証", "フル検証", "完全検証", "full_verified")):
+        return "TRANSCRIPT_FULL_VERIFIED", "字幕原文が全文検証済み（FULL_VERIFIED）の研究件数集計"
+    elif any(k in q_lower for k in ("部分検証", "一部検証", "区間検証", "partial_verified")):
+        return "TRANSCRIPT_PARTIAL_VERIFIED", "字幕原文が部分検証済み（PARTIAL_VERIFIED）の研究件数集計"
+    elif any(k in q_lower for k in ("未取得", "字幕なし", "字幕未取得", "not_acquired")):
+        return "TRANSCRIPT_NOT_ACQUIRED", "字幕原文が未取得（NOT_ACQUIRED）の研究件数集計"
+    elif any(k in q_lower for k in ("字幕検証済み", "字幕確認済み", "字幕あり", "検証済み字幕")):
+        return "TRANSCRIPT_VERIFIED", "字幕原文が検証済み（全文/部分）の研究件数集計"
+    elif any(k in q_lower for k in ("未検証", "字幕未検証", "unverified")):
+        return "TRANSCRIPT_UNVERIFIED", "字幕原文が未検証（UNVERIFIED）の研究件数集計"
     elif any(k in q_lower for k in ("タイムライン検証", "時刻確認済み", "再生位置", "チャプター検証")):
         return "VERIFIED_CHAPTERS", "再生時刻確認済み区間を持つ研究件数集計"
     return "ALL", "全体集計"
@@ -1940,14 +2070,35 @@ def answer_question(query, root=ROOT, top_k=5):
             if filter_type == "RAG":
                 if "rag" in v_text or "検索拡張生成" in v_text:
                     filtered_records.append(r)
-            elif filter_type == "OKF":
-                if r.get("okf_version") or "okf" in v_text or "知識形式" in v_text or "研究カード" in v_text:
+            elif filter_type == "OKF_TOPIC":
+                # OKF技術そのものを扱った動画（タイトル、要約、タグでOKFを主対象とする。単なるOKF形式カードは除外）
+                has_okf_tag = any(t.lower() in ("okf", "open-knowledge-format", "open_knowledge_format") for t in r.get("tags", []))
+                in_title = any(k in r.get("title", "").lower() for k in ("okf", "open knowledge format"))
+                summary_lower = r.get("summary_ja", "").lower()
+                in_summary = ("okf" in summary_lower or "open knowledge format" in summary_lower) and not all(k in summary_lower for k in ("okf形式",))
+                if has_okf_tag or in_title or in_summary:
+                    filtered_records.append(r)
+            elif filter_type in ("OKF_FORMAT", "OKF"):
+                # OKF形式で記述された研究ノート・文書
+                if r.get("okf_version") or r.get("is_okf_valid") or r.get("okf_type"):
+                    filtered_records.append(r)
+            elif filter_type == "TRANSCRIPT_FULL_VERIFIED":
+                if str(r.get("transcript_status", "")).upper() == "FULL_VERIFIED":
+                    filtered_records.append(r)
+            elif filter_type == "TRANSCRIPT_PARTIAL_VERIFIED":
+                if str(r.get("transcript_status", "")).upper() == "PARTIAL_VERIFIED":
                     filtered_records.append(r)
             elif filter_type == "TRANSCRIPT_VERIFIED":
-                if str(r.get("transcript_status", "")).upper() in ("VERIFIED", "CONFIRMED"):
+                if str(r.get("transcript_status", "")).upper() in ("FULL_VERIFIED", "PARTIAL_VERIFIED", "VERIFIED", "CONFIRMED"):
                     filtered_records.append(r)
             elif filter_type == "TRANSCRIPT_UNVERIFIED":
-                if str(r.get("transcript_status", "")).upper() in ("UNVERIFIED", "UNKNOWN", ""):
+                if str(r.get("transcript_status", "")).upper() == "UNVERIFIED":
+                    filtered_records.append(r)
+            elif filter_type == "TRANSCRIPT_NOT_ACQUIRED":
+                if str(r.get("transcript_status", "")).upper() in ("NOT_ACQUIRED", "NOT_FOUND"):
+                    filtered_records.append(r)
+            elif filter_type == "TRANSCRIPT_UNKNOWN":
+                if str(r.get("transcript_status", "")).upper() in ("UNKNOWN", ""):
                     filtered_records.append(r)
             elif filter_type == "VERIFIED_CHAPTERS":
                 if any(ch.get("playback_url") for ch in r.get("chapters", [])):
@@ -2089,7 +2240,8 @@ def format_qa_response_markdown(qa_res):
                 "|---|---|---|---|",
             ]
             for mv in cat_data.get("matched_videos", []):
-                lines.append(f"| `{mv['video_id']}` | {mv['title'][:32]} | `{mv['transcript_status']}` | `{mv['record_path']}` |")
+                rec_link = f"[{mv['record_path']}]({mv['record_path']})" if mv.get("record_path") else "UNKNOWN"
+                lines.append(f"| `{mv['video_id']}` | {mv['title'][:32]} | `{mv['transcript_status']}` | {rec_link} |")
             lines += ["", "---", "### 総合台帳サマリー:", ""]
 
         lines += [
@@ -2117,8 +2269,9 @@ def format_qa_response_markdown(qa_res):
             "|---|---|---|---|---|",
         ]
         for t in cat_data["timeline"]:
+            rec_link = f"[{t['record_path']}]({t['record_path']})" if t.get("record_path") else "UNKNOWN"
             lines.append(
-                f"| `{t['video_id']}` | {t['title'][:32]} | `{t['checked_at']}` | `{t['publication_date']}` | `{t['record_path']}` |"
+                f"| `{t['video_id']}` | {t['title'][:32]} | `{t['checked_at']}` | `{t['publication_date']}` | {rec_link} |"
             )
         lines += ["", "---", ""]
 
@@ -2132,8 +2285,16 @@ def format_qa_response_markdown(qa_res):
         ]
         for r in synth_rel:
             ev_str = f" (根拠: {r['evidence']})" if r.get("evidence") else ""
+            t_vid = r.get("target_video_id") or r.get("target_id") or "UNKNOWN"
+            t_path = r.get("target_path")
+            st = r.get("status", "")
+            if t_path and st not in ("UNRESOLVED", "CANDIDATE", "SELF_LINK"):
+                t_display = f"[{t_vid}]({t_path})"
+            else:
+                t_display = f"`{t_vid}`"
+            s_vid = r.get("source_video_id") or "UNKNOWN"
             lines.append(
-                f"- **`{r['source_video_id']}` ⇔ `{r['target_video_id']}`** [`{r['relation']}` | `{r['status']}`]: {r['note']}{ev_str}"
+                f"- **`{s_vid}` ⇔ {t_display}** [`{r['relation']}` | `{st}`]: {r['note']}{ev_str}"
             )
         lines += ["", "---", ""]
 
@@ -2165,8 +2326,9 @@ def format_qa_response_markdown(qa_res):
     else:
         for idx, rec in enumerate(records[:3], 1):
             vid_label = f"`{rec['video_id']}`" if rec.get("video_id") else "文書研究"
+            rec_link = f"[{rec['record_path']}]({rec['record_path']})" if rec.get("record_path") else "UNKNOWN"
             lines.append(
-                f"### {idx}. {rec['title']} ({vid_label} / `{rec['record_path']}`)"
+                f"### {idx}. {rec['title']} ({vid_label} / {rec_link})"
             )
             if rec.get("summary_ja"):
                 lines.append(f"- **概要要約**: {rec['summary_ja']}")

@@ -1162,18 +1162,23 @@ def format_detailed_findings_lines(detailed_findings_ja):
 def format_related_records_lines(related_records):
     lines = []
     for rel in related_records or []:
-        line = (
-            "- `"
-            + clean(rel["target_id"])
-            + "` ("
-            + rel["relation"]
-            + "): "
-            + clean(rel["note"])
-        )
-        if rel.get("status"):
-            line += " | status: " + str(rel["status"])
-        if rel.get("evidence"):
-            line += " | evidence: " + clean(rel["evidence"])
+        tid = clean(rel["target_id"])
+        target_path = clean(rel.get("target_path") or rel.get("path") or "")
+        rel_type = rel["relation"]
+        note = clean(rel["note"])
+        status = rel.get("status")
+        evidence = rel.get("evidence")
+
+        if target_path and str(status).upper() not in ("UNRESOLVED", "CANDIDATE"):
+            target_repr = f"[{tid}]({target_path})"
+        else:
+            target_repr = f"`{tid}`"
+
+        line = f"- {target_repr} ({rel_type}): {note}"
+        if status:
+            line += " | status: " + str(status)
+        if evidence:
+            line += " | evidence: " + clean(evidence)
         lines.append(line)
     return lines
 
