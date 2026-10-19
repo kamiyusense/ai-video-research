@@ -100,7 +100,7 @@ class TestAutoResearchPipeline(unittest.TestCase):
             qa_verified=True,
             no_push=True,  # no_push flag
         )
-        self.assertNotEqual(status, "SUCCESS")
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(status, "PARTIAL_NO_PUSH")
         self.assertTrue(any("no_push" in r for r in reasons))
 
@@ -120,7 +120,7 @@ class TestAutoResearchPipeline(unittest.TestCase):
             qa_verified=True,
             no_push=False,
         )
-        self.assertNotEqual(status, "SUCCESS")
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(status, "PARTIAL_LOCAL_EXTRACTION")
         self.assertTrue(any("LIVE" in r for r in reasons))
 
