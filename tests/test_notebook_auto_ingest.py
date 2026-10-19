@@ -303,5 +303,32 @@ class TestNotebookAutoIngest(unittest.TestCase):
             self.assertTrue(res["readback"]["transcript_source_found"])
 
 
+    def test_infer_semantic_related_records(self):
+        """動画内容から意味付き関連リンク（CANDIDATE）が客観的根拠付きで動的推論されること。"""
+        import auto_research_pipeline
+
+        # Test Case 1: OKF and RAG keywords present
+        rels = auto_research_pipeline.infer_semantic_related_records(
+            video_id="newVid123",
+            title="OKFによる知識管理とRAG探索の最前線",
+            summary_ja="オープンナレッジ形式(OKF)で資料を構造化し、RAG検索を最適化する手法。",
+            detailed_findings_ja="【詳細】荷札による体系化とベクトル検索のハイブリッド探索。",
+        )
+        target_ids = [r["target_id"] for r in rels]
+        self.assertIn("youtube:u3ka_AAb8qE", target_ids)
+        self.assertIn("youtube:pRfC1DILDEM", target_ids)
+        for r in rels:
+            self.assertEqual(r["status"], "CANDIDATE")
+            self.assertTrue(r["evidence"].startswith("キーワード一致:"))
+
+        # Test Case 2: Self-link prevention
+        rels_self = auto_research_pipeline.infer_semantic_related_records(
+            video_id="u3ka_AAb8qE",
+            title="OKF解説動画",
+            summary_ja="OKFの概要",
+        )
+        self.assertNotIn("youtube:u3ka_AAb8qE", [r["target_id"] for r in rels_self])
+
+
 if __name__ == "__main__":
     unittest.main()

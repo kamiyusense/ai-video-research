@@ -292,6 +292,103 @@ def analyze_with_local_transcript_engine(
     }
 
 
+def infer_semantic_related_records(
+    video_id: str,
+    title: str,
+    summary_ja: str,
+    detailed_findings_ja: str = "",
+    chapters: Optional[List[Dict[str, Any]]] = None,
+) -> List[Dict[str, Any]]:
+    """Dynamically infer meaningful related records based on video knowledge topics with objective evidence.
+    
+    Conforms to docs/OKF_KNOWLEDGE_ROADMAP.md v1.1. Status is always 'CANDIDATE' until confirmed.
+    """
+    ch_text = " ".join(
+        (c.get("title", "") + " " + c.get("summary_ja", "") + " " + " ".join(c.get("key_topics", [])))
+        for c in (chapters or [])
+    )
+    corpus = f"{title} {summary_ja} {detailed_findings_ja} {ch_text}".lower()
+
+    candidates = []
+    seen = set()
+
+    def _add_candidate(target_id: str, relation: str, note: str, evidence: str):
+        if target_id == f"youtube:{video_id}":
+            return  # Exclude self-link
+        key = (target_id, relation)
+        if key not in seen and len(candidates) < 6:
+            seen.add(key)
+            candidates.append({
+                "target_id": target_id,
+                "relation": relation,
+                "note": note,
+                "status": "CANDIDATE",
+                "evidence": evidence,
+            })
+
+    # 1. OKF Knowledge Management & Standardization (u3ka_AAb8qE)
+    okf_kws = [k for k in ["okf", "知識管理", "荷札", "オープンナレッジ", "資料整理", "体系化"] if k in corpus]
+    if okf_kws:
+        _add_candidate(
+            target_id="youtube:u3ka_AAb8qE",
+            relation="EXTENDS",
+            note="OKF（Open Knowledge Format）による知識資料の体系化・荷札・相互リンク設計を拡張・照合",
+            evidence=f"キーワード一致: {', '.join(okf_kws)}",
+        )
+
+    # 2. RAG & Context Engineering (pRfC1DILDEM)
+    rag_kws = [k for k in ["rag", "検索", "コンテキスト", "ベクトル", "ハイブリッド探索", "情報検索"] if k in corpus]
+    if rag_kws:
+        _add_candidate(
+            target_id="youtube:pRfC1DILDEM",
+            relation="COMPLEMENTS",
+            note="RAG（検索拡張生成）による文脈取得・問いに応じた資料探索設計を補完",
+            evidence=f"キーワード一致: {', '.join(rag_kws)}",
+        )
+
+    # 3. Autonomous Loop, Skill & Evaluation (lC5jxpYmatE)
+    harness_kws = [k for k in ["skill", "ハーネス", "computer use", "自律", "評価", "eval", "自己改善", "playwright"] if k in corpus]
+    if harness_kws:
+        _add_candidate(
+            target_id="youtube:lC5jxpYmatE",
+            relation="EXTENDS",
+            note="自律ループ・Skill設計・Computer Use・課題評価アーキテクチャを拡張",
+            evidence=f"キーワード一致: {', '.join(harness_kws)}",
+        )
+
+    # 4. Prompt Decoupling & Structured Automation (CnkEROU7fZw)
+    prompt_kws = [k for k in ["プロンプト脱却", "型", "自動化", "ワークフロー", "プロンプトから抜け出", "固定化"] if k in corpus]
+    if prompt_kws:
+        _add_candidate(
+            target_id="youtube:CnkEROU7fZw",
+            relation="COMPLEMENTS",
+            note="プロンプトへの依存を脱却し「型」と「自動化」による確実なタスク実行設計を補完",
+            evidence=f"キーワード一致: {', '.join(prompt_kws)}",
+        )
+
+    # 5. Multi-Agent & Specialist AI Roles (Vr3JkAT9mo8)
+    agent_kws = [k for k in ["サブエージェント", "マルチエージェント", "分業", "担当制", "右腕", "専門家", "コーディネーター"] if k in corpus]
+    if agent_kws:
+        _add_candidate(
+            target_id="youtube:Vr3JkAT9mo8",
+            relation="COMPLEMENTS",
+            note="専門担当AIによる分業体制・AGENTS.md運用アーキテクチャを補完",
+            evidence=f"キーワード一致: {', '.join(agent_kws)}",
+        )
+
+    # 6. Unresolved Task Backlog Proposal (proposal:P006)
+    backlog_kws = [k for k in ["未解決", "課題", "制約", "限界", "再挑戦", "バックログ"] if k in corpus]
+    if backlog_kws:
+        _add_candidate(
+            target_id="proposal:P006",
+            relation="COMPLEMENTS",
+            note="未解決課題バックログ(P006)に対する新技術適合・再評価アプローチを補完",
+            evidence=f"キーワード一致: {', '.join(backlog_kws)}",
+        )
+
+    return candidates
+
+
 def build_research_receipt(
     video_id: str,
     player_data: Dict[str, Any],
@@ -348,24 +445,13 @@ def build_research_receipt(
     claims = ai_analysis.get("claims", [])
 
     # Related records: Candidate only, NEVER falsely confirmed
-    related_records = []
-    title_and_summary = (title + " " + summary_ja).lower()
-    if "okf" in title_and_summary:
-        related_records.append({
-            "target_id": "youtube:u3ka_AAb8qE",
-            "relation": "EXTENDS",
-            "note": "OKF知識管理の関連動画候補（実機照合前）",
-            "status": "CANDIDATE",
-            "evidence": "OKFキーワード含有",
-        })
-    if "rag" in title_and_summary:
-        related_records.append({
-            "target_id": "youtube:pRfC1DILDEM",
-            "relation": "COMPLEMENTS",
-            "note": "RAG探索設計の関連動画候補（実機照合前）",
-            "status": "CANDIDATE",
-            "evidence": "RAG技術キーワード含有",
-        })
+    related_records = infer_semantic_related_records(
+        video_id=video_id,
+        title=title,
+        summary_ja=summary_ja,
+        detailed_findings_ja=detailed_findings_ja,
+        chapters=chapters,
+    )
 
     today_str = date.today().isoformat()
     source_scope = f"YouTubeメタデータ（長:{length_sec}s, 投稿:{author}）" + (f", 字幕実発話{len(cues)}件 [{engine_used}]" if cues else f", 字幕なし [{engine_used}]")
