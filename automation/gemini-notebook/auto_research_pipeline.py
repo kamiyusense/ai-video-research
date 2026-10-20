@@ -298,95 +298,28 @@ def infer_semantic_related_records(
     summary_ja: str,
     detailed_findings_ja: str = "",
     chapters: Optional[List[Dict[str, Any]]] = None,
+    claims: Optional[List[Dict[str, Any]]] = None,
+    published_at: Optional[str] = None,
+    corpus: Optional[Dict[str, Any]] = None,
+    limit: int = 5,
 ) -> List[Dict[str, Any]]:
-    """Dynamically infer meaningful related records based on video knowledge topics with objective evidence.
-    
-    Conforms to docs/OKF_KNOWLEDGE_ROADMAP.md v1.1. Status is always 'CANDIDATE' until confirmed.
+    """台帳全件を対象に、章・タグ・主張・要約の語の重なりから関連動画の候補（CANDIDATE）を出す。
+
+    R6（docs/OKF_KNOWLEDGE_ROADMAP.md）: 固定の数本×単語一致ではなく related_links.infer_candidates を使う。
+    根拠にした共通語と両ノートの該当箇所を evidence に入れ、自己リンクは除外し、上限 limit 件。
+    CONFIRMED には自動でしない。UPDATES は投稿日時の新旧で向きを決める。
     """
-    ch_text = " ".join(
-        (c.get("title", "") + " " + c.get("summary_ja", "") + " " + " ".join(c.get("key_topics", [])))
-        for c in (chapters or [])
+    import related_links
+
+    if corpus is None:
+        corpus = related_links.load_corpus(ROOT)
+    source = related_links.source_from_fields(
+        video_id, title, summary_ja, detailed_findings_ja, chapters, claims, published_at
     )
-    corpus = f"{title} {summary_ja} {detailed_findings_ja} {ch_text}".lower()
-
-    candidates = []
-    seen = set()
-
-    def _add_candidate(target_id: str, relation: str, note: str, evidence: str):
-        if target_id == f"youtube:{video_id}":
-            return  # Exclude self-link
-        key = (target_id, relation)
-        if key not in seen and len(candidates) < 6:
-            seen.add(key)
-            candidates.append({
-                "target_id": target_id,
-                "relation": relation,
-                "note": note,
-                "status": "CANDIDATE",
-                "evidence": evidence,
-            })
-
-    # 1. OKF Knowledge Management & Standardization (u3ka_AAb8qE)
-    okf_kws = [k for k in ["okf", "知識管理", "荷札", "オープンナレッジ", "資料整理", "体系化"] if k in corpus]
-    if okf_kws:
-        _add_candidate(
-            target_id="youtube:u3ka_AAb8qE",
-            relation="EXTENDS",
-            note="OKF（Open Knowledge Format）による知識資料の体系化・荷札・相互リンク設計を拡張・照合",
-            evidence=f"キーワード一致: {', '.join(okf_kws)}",
-        )
-
-    # 2. RAG & Context Engineering (pRfC1DILDEM)
-    rag_kws = [k for k in ["rag", "検索", "コンテキスト", "ベクトル", "ハイブリッド探索", "情報検索"] if k in corpus]
-    if rag_kws:
-        _add_candidate(
-            target_id="youtube:pRfC1DILDEM",
-            relation="COMPLEMENTS",
-            note="RAG（検索拡張生成）による文脈取得・問いに応じた資料探索設計を補完",
-            evidence=f"キーワード一致: {', '.join(rag_kws)}",
-        )
-
-    # 3. Autonomous Loop, Skill & Evaluation (lC5jxpYmatE)
-    harness_kws = [k for k in ["skill", "ハーネス", "computer use", "自律", "評価", "eval", "自己改善", "playwright"] if k in corpus]
-    if harness_kws:
-        _add_candidate(
-            target_id="youtube:lC5jxpYmatE",
-            relation="EXTENDS",
-            note="自律ループ・Skill設計・Computer Use・課題評価アーキテクチャを拡張",
-            evidence=f"キーワード一致: {', '.join(harness_kws)}",
-        )
-
-    # 4. Prompt Decoupling & Structured Automation (CnkEROU7fZw)
-    prompt_kws = [k for k in ["プロンプト脱却", "型", "自動化", "ワークフロー", "プロンプトから抜け出", "固定化"] if k in corpus]
-    if prompt_kws:
-        _add_candidate(
-            target_id="youtube:CnkEROU7fZw",
-            relation="COMPLEMENTS",
-            note="プロンプトへの依存を脱却し「型」と「自動化」による確実なタスク実行設計を補完",
-            evidence=f"キーワード一致: {', '.join(prompt_kws)}",
-        )
-
-    # 5. Multi-Agent & Specialist AI Roles (Vr3JkAT9mo8)
-    agent_kws = [k for k in ["サブエージェント", "マルチエージェント", "分業", "担当制", "右腕", "専門家", "コーディネーター"] if k in corpus]
-    if agent_kws:
-        _add_candidate(
-            target_id="youtube:Vr3JkAT9mo8",
-            relation="COMPLEMENTS",
-            note="専門担当AIによる分業体制・AGENTS.md運用アーキテクチャを補完",
-            evidence=f"キーワード一致: {', '.join(agent_kws)}",
-        )
-
-    # 6. Unresolved Task Backlog Proposal (proposal:P006)
-    backlog_kws = [k for k in ["未解決", "課題", "制約", "限界", "再挑戦", "バックログ"] if k in corpus]
-    if backlog_kws:
-        _add_candidate(
-            target_id="proposal:P006",
-            relation="COMPLEMENTS",
-            note="未解決課題バックログ(P006)に対する新技術適合・再評価アプローチを補完",
-            evidence=f"キーワード一致: {', '.join(backlog_kws)}",
-        )
-
-    return candidates
+    return [
+        {k: c[k] for k in ("target_id", "relation", "note", "status", "evidence")}
+        for c in related_links.infer_candidates(source, corpus, limit=limit)
+    ]
 
 
 def build_research_receipt(
@@ -451,6 +384,8 @@ def build_research_receipt(
         summary_ja=summary_ja,
         detailed_findings_ja=detailed_findings_ja,
         chapters=chapters,
+        claims=claims,
+        published_at=publish_date,
     )
 
     today_str = date.today().isoformat()

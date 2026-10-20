@@ -337,30 +337,34 @@ class TestNotebookAutoIngest(unittest.TestCase):
 
 
     def test_infer_semantic_related_records(self):
-        """動画内容から意味付き関連リンク（CANDIDATE）が客観的根拠付きで動的推論されること。"""
+        """T11（R6）: 固定4〜5本×単語一致をやめ、台帳全件の研究ノートとの語の重なりから CANDIDATE を出す。
+        旧テスト（OKF/RAG語を入れると u3ka/pRfC が出る・evidence が「キーワード一致:」）は、新しい根拠形式に期待値を更新。"""
         import auto_research_pipeline
 
-        # Test Case 1: OKF and RAG keywords present
         rels = auto_research_pipeline.infer_semantic_related_records(
             video_id="newVid123",
             title="OKFによる知識管理とRAG探索の最前線",
             summary_ja="オープンナレッジ形式(OKF)で資料を構造化し、RAG検索を最適化する手法。",
             detailed_findings_ja="【詳細】荷札による体系化とベクトル検索のハイブリッド探索。",
+            chapters=[{"title": "OKFの荷札とRAGの検索設計", "key_topics": ["OKF", "RAG", "検索"]}],
         )
         target_ids = [r["target_id"] for r in rels]
-        self.assertIn("youtube:u3ka_AAb8qE", target_ids)
-        self.assertIn("youtube:pRfC1DILDEM", target_ids)
+        self.assertIn("youtube:u3ka_AAb8qE:research", target_ids)
+        self.assertIn("youtube:pRfC1DILDEM:research", target_ids)
+        self.assertLessEqual(len(rels), 5)
         for r in rels:
             self.assertEqual(r["status"], "CANDIDATE")
-            self.assertTrue(r["evidence"].startswith("キーワード一致:"))
+            self.assertTrue(r["evidence"].startswith("共通語:"))
+            self.assertIn("本ノート:", r["evidence"])
+            self.assertIn("相手:", r["evidence"])
 
-        # Test Case 2: Self-link prevention
+        # 自己リンクの除外
         rels_self = auto_research_pipeline.infer_semantic_related_records(
             video_id="u3ka_AAb8qE",
             title="OKF解説動画",
             summary_ja="OKFの概要",
         )
-        self.assertNotIn("youtube:u3ka_AAb8qE", [r["target_id"] for r in rels_self])
+        self.assertNotIn("youtube:u3ka_AAb8qE:research", [r["target_id"] for r in rels_self])
 
     def test_build_transcript_okf_content(self):
         """字幕原文OKFのYAMLフロントマターおよびコメントヘッダーに所定のプロパティが含まれること。"""

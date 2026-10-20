@@ -198,7 +198,113 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 
 > **たとえ**: 「動画のURLだけ書いた貼り紙」15枚を、本物の原本（字幕全文）に差し替える段取り表。原本を棚に置いて中身を確かめた貼り紙だけ、はがしてよい印を付ける。はがす作業そのものは、この表ではやらない。
 
+### 手順7: 関連動画リンク（R6）の検査・候補・関連索引（読み取りのみ・dry-run）
+
+2026-10-20 に相棒が了承した「関連動画どうしを根拠つきでつなぐ」仕組みの下見用（T11、PR #14）。**研究ノート・`registry.json` は読むだけで書き換えない。Notebookへの書き込み・削除のコードも無い。**
+
+```
+python3 automation/gemini-notebook/related_links.py validate
+python3 automation/gemini-notebook/related_links.py candidates [--video-id <動画ID>] [--limit 5]
+python3 automation/gemini-notebook/related_links.py index [--with-candidates] [--print-text] [--notebook-id <ID>]
+```
+
+- `validate`: 研究ノート荷札の `related_records` を検査する。宛先が台帳・提案に実在するか／自己リンク／関係ラベルが `COMPLEMENTS・EXTENDS・UPDATES・CONTRADICTS・RESOLVES_BACKLOG` のどれか／`status` が `CANDIDATE`・`CONFIRMED` か／`note`・`evidence` があるか／`CONFIRMED` の `evidence` に時刻（`08:16` など）か出典URLがあるか。逆リンク（相手側にも自分への関係があるか）の有無も数える。
+- `candidates`: 台帳の全動画について、研究ノートの題名・章・タグ・主張・要約の語の重なりから関連の**候補（`CANDIDATE`）**を出す。根拠にした共通語と両ノートの該当箇所を `evidence` に入れる。多くのノートに出る語は使わず、自己リンクは除き、1動画あたり上限5件。`CONFIRMED` にはしない。`UPDATES` は、投稿日時が新しい側から古い側へで、新しい側の題名・章・タグに「新機能・アップデート」などがあるときだけ。
+- `index`: 「関連索引OKF」（`logical_id: index:related`）の本文を組み立て、Notebookの差し替え計画（①新版を追加 →②読み戻し一致を確認 →③そのときだけ旧版を削除）を出す。検査を通らない関係は索引に載せない。`--notebook-id` を付けると既存の関連索引ソースを一覧で探す（読み取りのみ）。削除は相棒の承認後に相棒PCの作業役が行う。
+- パイプライン（`auto_research_pipeline.py`）が新しい動画の研究レシートを作るときの関連候補も、同じ候補生成を使う（固定の4〜5本×単語一致は廃止）。
+
+出力例（2026-10-20 時点の実際の台帳 `registry.json`＋`research/` に対して実行。テスト用の偽データではない。長い項目は省略）:
+
+```
+$ python3 automation/gemini-notebook/related_links.py validate
+{
+  "status": "ATTENTION",
+  "record_count": 65,
+  "notes_with_related_records": 25,
+  "note_count": 31,
+  "error_record_count": 33,
+  "error_counts": {
+    "EVIDENCE_MISSING": 33,
+    "SELF_LINK": 2
+  },
+  "confirmed_count": 2,
+  "confirmed_valid_pairs": [
+    [
+      "youtube:pRfC1DILDEM:research",
+      "youtube:u3ka_AAb8qE:research"
+    ]
+  ],
+  "missing_backlink_count": 0
+}
+
+$ python3 automation/gemini-notebook/related_links.py candidates --video-id GVB8VfuNeJQ
+{
+  "status": "DRY_RUN_CANDIDATES",
+  "note_count": 31,
+  "candidate_count": 147,
+  "new_candidate_count": 118,
+  "files_modified": false,
+  "videos": [
+    {
+      "video_id": "GVB8VfuNeJQ",
+      "title": "間違いなく神神神AI！Gemini Notebookの進化が衝撃的すぎたので全機能・使い方など徹底解説します",
+      "published_at": "2026-08-19",
+      "candidates": [
+        {
+          "target_id": "youtube:MnzEE0fLxBs:research",
+          "relation": "COMPLEMENTS",
+          "status": "CANDIDATE",
+          "note": "自動推定の候補（未確認）：共通の主題「インポート・進化・studio」",
+          "evidence": "共通語: インポート, 進化, studio, notebook ／ 本ノート: 章「Googleドライブ・Docs・Slidesとの直接インポート連携」 ／ …",
+          "score": 15.03,
+          "already_in_note": false,
+          "note_status": null
+        },
+        {
+          "target_id": "youtube:2-8cXaRHlqI:research",
+          "relation": "COMPLEMENTS",
+          "status": "CANDIDATE",
+          "note": "自動推定の候補（未確認）：共通の主題「社内・studio・notebook」",
+          "evidence": "共通語: 社内, studio, notebook ／ 本ノート: 主張「制約・注意点: Workspace契約形態によって一部管理者による拡張機能有効…」 ／…",
+          "score": 10.93,
+          "already_in_note": false,
+          "note_status": null
+        }
+      ]
+    }
+  ]
+}
+
+$ python3 automation/gemini-notebook/related_links.py index --with-candidates
+（索引本文 164件の関係・31動画・約38487字。冒頭だけ）
+---
+okf_version: "0.2"
+type: "RELATED_INDEX"
+title: "【関連索引】AI技術研究室 関連動画リンク一覧"
+logical_id: "index:related"
+generated_at: "2026-10-20T17:04:00Z"
+video_count: 31
+link_count: 164
+confirmed_link_count: 2
+candidate_link_count: 162
+excluded_invalid_count: 33
+tags:
+  - "AI技術研究室"
+  - "関連索引"
+---
+
+# 【関連索引】AI技術研究室 関連動画リンク一覧
+
+ID: index:related
+…
+差し替え計画: ①新版追加 →②読み戻し一致 →③旧版削除（一致後のみ・承認後・UNKNOWN）。writes_executed=False, deletion_executed=False
+```
+
+- 読み方：既存の `CONFIRMED` は `pRfC1DILDEM ↔ u3ka_AAb8qE` の1組だけで、検査も通っている。それ以外の既存の関係33件は `evidence` が無い（31件）または自己リンク（2件）で、検査に引っかかる。**自動候補は確認前の推定で、確定の関連として扱わない。**
+
+> **たとえ**: 「この動画とこの動画は同じ話をしている」という付箋を、根拠のメモ付きで貼っていく仕組み。まず付箋に不備が無いか点検し（validate）、貼る候補を挙げ（candidates）、全部を1冊の一覧表にまとめる（index）。一覧表を図書館の棚に出し直すのは、相棒の許可が出てから。
+
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 
-- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T10時点で212件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
-- **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。 `migrate-plan` も実機未実行（Notebook内YouTubeソースの本文が実際に取れるか・その文字数はUNKNOWN）。
+- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T11時点で231件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
+- **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。 `migrate-plan` と `related_links.py` も実機未実行（Notebook内YouTubeソースの本文が実際に取れるか・その文字数はUNKNOWN）。
