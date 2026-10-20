@@ -8,6 +8,9 @@
 AI技術動画の字幕原文と独自研究を、OKF荷札つきの別資料として保存し、関連研究を意味付きリンクで結び、質問に根拠つきで答えられる継続研究の図書館にする。経路は Gemini → Google Drive → GAS → 非公開GitHub → Notebook。
 当面の最優先はロードマップ6章の **Phase 7「1本の完全通過」**：既存動画 `pRfC1DILDEM` または `u3ka_AAb8qE` で「字幕原文OKF ＋ 研究ノートOKF」を別ソースとしてNotebookへ登録し、事後読み戻しで `SUCCESS_2_SOURCE_OKF` の9条件を実機で満たす。細かな検証改善を理由にこれを止めない。
 
+### ユーザー確定仕様（2026-10-20、最優先）
+`docs/OKF_KNOWLEDGE_ROADMAP.md` v1.2 冒頭「ユーザー確定要件 R1〜R5」に従う。要点：1動画＝字幕全文OKF＋研究ノートOKFの2資料／YouTube URLは両OKFに記載し、URL単体ソースは登録しない／字幕全文は時刻なしを正とする（2026-10-20 22:42 JST 方針転換：人が読みやすいよう発話ごとの時刻は入れない）、時刻リンクは研究ノートの根拠側で示す／両OKFに投稿日時 `published_at`／URLを貼るだけで自動完走し、質問には研究ノートと字幕の両方を参照し、研究ノートの時刻リンクで場面を示して答える。関連動画は根拠付きで相互リンクする（次点、誤リンク防止のため CANDIDATE／CONFIRMED を分ける）。本ファイルの古い記述と食い違う場合はこちらを優先する。
+
 ### 守りルール（2026-10-20 ユーザー確定の最低限8項目）
 1. default branch（main）への直接書き込み・Merge・force pushは、ユーザーがその操作を明示的に許可した時だけ行う。許可が無ければ禁止のまま、非defaultブランチ＋下書きPRまでで止める。
 2. 個人情報・鍵・トークン・Cookieを出力・保存しない。字幕全文をGitHubに保存しない（荷札・ハッシュ・cue数のみ）。
@@ -118,7 +121,7 @@ AIが目標として定めた方針とユーザーの希望に認識のズレを
 
 今後新たに取り込む新規動画（インテーク〜研究〜保存〜Notebook登録）においては、旧来の「YouTube URL ＋ 研究ノート」方式ではなく、**「字幕原文OKF（`AI_VIDEO_TRANSCRIPT_RAW:<video_id>`）」と「研究ノートOKF（`AI_VIDEO_RESEARCH_NOTE:<video_id>`）」の2つの独立資料をNotebookへ登録することを絶対の基本原則とする**。
 
-1. **純粋2ソース登録の徹底**: 新規動画のNotebook登録は、YouTube URLソースをデフォルト除外とし、純粋な「字幕原文OKF（Copied text）」と「研究ノートOKF（Copied text）」の2ソースのみを登録する（2026-10-20 相棒確定 R2: YouTube URL単体のソースは登録しない。オプトインも廃止。URLは両資料の荷札・本文に記載する。旧フラグ `--include-youtube-url` は使わない。詳細は docs/OKF_KNOWLEDGE_ROADMAP.md 冒頭）。
+1. **純粋2ソース登録の徹底**: 新規動画のNotebook登録は、YouTube URLソースをデフォルト除外とし、純粋な「字幕原文OKF（Copied text）」と「研究ノートOKF（Copied text）」の2ソースのみを登録する（YouTube URLは追加参考が必要な場合のみ `--include-youtube-url` でオプトイン可能）。
 2. **300ソース枠の最適化**: 1ノート上限300ソースの環境において、1動画あたり2ソース（最大150動画相当）の消費に厳格に抑え、ソース枠の枯渇を防ぐ。
 3. **完成判定基準（新SUCCESS条件：2-Source OKF完全成功基準）**: 読み戻し（Readback）において、「研究ノートOKF」と「字幕原文OKF」の双方が独立した2つのDOM要素（`Index_note != Index_transcript`）として確認され、動画ID・元URL・相互論理IDの一致、および本文Cue全量の非改変一致が立証された場合のみ `SUCCESS_2_SOURCE_OKF` と判定する。YouTube URL＋研究ノートのみの場合は `PARTIAL_2_SOURCE_OKF_PENDING`（暫定状態）として区別する。また、Drive配置のみ、Chromeタブ検出のみ、Mock結果のみ、同一要素二重カウントによる偽PASS判定は厳禁とする。
 4. **著作権・規約境界**: 字幕全文はGitHubへ保存せず（Notebook/Drive配置のみ）、研究ノートのみをGitHub正本に保存する。
