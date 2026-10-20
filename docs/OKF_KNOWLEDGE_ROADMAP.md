@@ -88,7 +88,7 @@ Notebookへの読み戻しは完全一致にならない（NotebookLMがMarkdown
 | 字幕原文OKF | `pRfC1DILDEM` のみ登録済み（`a32a70ec`、旧形式：Notebook内YouTube本文由来で単語間に空白、`published_at` なし）。新形式15本（時刻なし・`published_at` 入り）は相棒PCで作成済み、登録作業中 |
 | 研究ノートOKF（`【研究ノート】`形式） | `pRfC1DILDEM`（`af697c8c`）、`u3ka_AAb8qE`（`65b634f5`）、`CnkEROU7fZw`（`bfeee73b`）。他の動画は旧形式の `動画研究_…` 資料が研究ノート相当 |
 | `published_at` | 研究ノート側は `pRfC1DILDEM` 以外まだ |
-| 関連動画リンク（R6） | 確定済みで検証に合格するのは `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ。GitHub研究ノートは31本で `related_records` は計65件、検証不合格は33件（根拠なし・自己リンク。既存ノートは書き換えていない）。registry全体からの候補は147件（未登録118件）で、並び順は経験則・人の確認は未実施（`related_links.py` のdry-run） |
+| 関連動画リンク（R6） | 確定済みで検証に合格するのは `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ。GitHub研究ノートは31本で `related_records` は計65件、検証不合格は33件（根拠なし・自己リンク。既存ノートは書き換えていない）。registry全体からの候補は、汎用語だけ・固有語2語未満・該当箇所が対応しない組を外して49件（未登録35件。外す前は147件）で、並び順は経験則・人の確認は未実施（`related_links.py` のdry-run） |
 | 自動化（R5） | `notebooklm_py_ingest.py` は計画だけのdry-runが実機で動いた（書き込み0件）。本番（`--live`）は未実行。作業ブランチ（PR #14）のコードは、字幕を約60秒ごとの段落（時刻なし）で組み、投稿日 `published_at` を両資料に入れ、`TRANSCRIPT_UNAVAILABLE` で書き込み0のまま止まり、URLソース15件の移行順を `migrate-plan`（読み取りのみ）で出す。これらはオフラインのテスト（Mock）で確認済みで、実機は未実行 |
 | 質問回答の確認 | 未実施 |
 

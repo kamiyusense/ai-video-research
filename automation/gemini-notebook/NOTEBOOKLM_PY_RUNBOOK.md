@@ -204,14 +204,14 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 
 ```
 python3 automation/gemini-notebook/related_links.py validate
-python3 automation/gemini-notebook/related_links.py candidates [--video-id <動画ID>] [--limit 5]
+python3 automation/gemini-notebook/related_links.py candidates [--video-id <動画ID>] [--limit 5] [--summary [--top 20]]
 python3 automation/gemini-notebook/related_links.py repair-plan [--video-id <動画ID>] [--limit 3] [--print-diff | --summary]
 python3 automation/gemini-notebook/related_links.py index [--with-candidates] [--print-text] [--notebook-id <ID>]
 ```
 
 - `validate`: 研究ノート荷札の `related_records` を検査する。宛先が台帳・提案に実在するか／自己リンク／関係ラベルが `COMPLEMENTS・EXTENDS・UPDATES・CONTRADICTS・RESOLVES_BACKLOG` のどれか／`status` が `CANDIDATE`・`CONFIRMED` か／`note`・`evidence` があるか／`CONFIRMED` の `evidence` に時刻（`08:16` など）か出典URLがあるか。逆リンク（相手側にも自分への関係があるか）の有無も数える。
-- `repair-plan`: 検査に通らない `related_records`（根拠なし・自己リンクなど）を、ノートごとに**差分の形で提案するだけ**（研究ノートは書き換えない）。`-` が削除予定、`+` が根拠つき `CANDIDATE` の置換候補、`=` が温存。検査に通る記録（確定済みの `pRfC1DILDEM ↔ u3ka_AAb8qE` を含む）は必ず温存する。`CONFIRMED` で不合格のものは自動で消す案にせず「人の確認」に回す。現registryでは、21本のノートの33件が削除予定、置換候補は1ノート3件までで合計74件（2026-10-20 時点のdry-run）。置換候補の並びは経験則で、人の確認はまだ。`--summary` は差分ではなく人が読める一覧（ノートごとの削除予定／置換候補の件数と、候補ごとの根拠の一文）を出す。実際にノートを直すかどうかは相棒の判断。
-- `candidates`: 台帳の全動画について、研究ノートの題名・章・タグ・主張・要約の語の重なりから関連の**候補（`CANDIDATE`）**を出す。根拠にした共通語と両ノートの該当箇所を `evidence` に入れる。多くのノートに出る語は使わず、自己リンクは除き、1動画あたり上限5件。`CONFIRMED` にはしない。`UPDATES` は、投稿日時が新しい側から古い側へで、新しい側の題名・章・タグに「新機能・アップデート」などがあるときだけ。
+- `repair-plan`: 検査に通らない `related_records`（根拠なし・自己リンクなど）を、ノートごとに**差分の形で提案するだけ**（研究ノートは書き換えない）。`-` が削除予定、`+` が根拠つき `CANDIDATE` の置換候補、`=` が温存。検査に通る記録（確定済みの `pRfC1DILDEM ↔ u3ka_AAb8qE` を含む）は必ず温存する。`CONFIRMED` で不合格のものは自動で消す案にせず「人の確認」に回す。現registryでは、21本のノートの33件が削除予定、置換候補は1ノート3件までで合計27件（T14 の精度条件を入れた後。多くの削除予定には置換候補が付かない。2026-10-20 時点のdry-run）。置換候補の並びは経験則で、人の確認はまだ。`--summary` は差分ではなく人が読める一覧（ノートごとの削除予定／置換候補の件数と、候補ごとの根拠の一文）を出す。実際にノートを直すかどうかは相棒の判断。
+- `candidates`: 台帳の全動画について、研究ノートの題名・章・タグ・主張・要約の語の重なりから関連の**候補（`CANDIDATE`）**を出す。根拠にした共通語と両ノートの該当箇所を `evidence` に入れる。自己リンクは除き、1動画あたり上限5件。`CONFIRMED` にはしない。`UPDATES` は、投稿日時が新しい側から古い側へで、新しい側の題名・章・タグに「新機能・アップデート」などがあるときだけ。**精度の条件（T14）**：①汎用語（モデル・自動・操作・画面・mac・mini・computer・use など、`related_links.py` の `_GENERIC_TERMS` に理由別に載せた語）と、多くのノート（3割5分超）に出る語は根拠に使わない。②共通語は3語以上で、そのうち固有語が2語以上。固有語＝製品名・技術名（英数字で台帳の7本以下）か、3字以上で台帳の3本以下にしか出ない日本語。Claude・Gemini・OpenAI など大手の名前は固有語に数えない。③共通語の該当箇所が、見出し同士（題名・章・タグ）か主張同士で対応していること（片方が要約にしかない、章と主張で食い違う、は出さない）。`--summary` は上位の組を根拠の一文つきで人が読める形にする。
 - `index`: 「関連索引OKF」（`logical_id: index:related`）の本文を組み立て、Notebookの差し替え計画（①新版を追加 →②読み戻し一致を確認 →③そのときだけ旧版を削除）を出す。検査を通らない関係は索引に載せない。`--notebook-id` を付けると既存の関連索引ソースを一覧で探す（読み取りのみ）。削除は相棒の承認後に相棒PCの作業役が行う。
 - パイプライン（`auto_research_pipeline.py`）が新しい動画の研究レシートを作るときの関連候補も、同じ候補生成を使う（固定の4〜5本×単語一致は廃止）。
 
@@ -239,26 +239,26 @@ $ python3 automation/gemini-notebook/related_links.py validate
   "missing_backlink_count": 0
 }
 
-$ python3 automation/gemini-notebook/related_links.py candidates --video-id GVB8VfuNeJQ
+$ python3 automation/gemini-notebook/related_links.py candidates --video-id JXmk7hmbS3c
 {
   "status": "DRY_RUN_CANDIDATES",
   "note_count": 31,
-  "candidate_count": 147,
-  "new_candidate_count": 118,
+  "candidate_count": 49,
+  "new_candidate_count": 35,
   "files_modified": false,
   "videos": [
     {
-      "video_id": "GVB8VfuNeJQ",
-      "title": "間違いなく神神神AI！Gemini Notebookの進化が衝撃的すぎたので全機能・使い方など徹底解説します",
-      "published_at": "2026-08-19",
+      "video_id": "JXmk7hmbS3c",
+      "title": "Claude Codeをインストールしたら必ず準備しときたいこと１０選！",
+      "published_at": "2026-03-31",
       "candidates": [
         {
-          "target_id": "youtube:MnzEE0fLxBs:research",
+          "target_id": "youtube:sodTFSuV4zY:research",
           "relation": "COMPLEMENTS",
           "status": "CANDIDATE",
-          "note": "自動推定の候補（未確認）：共通の主題「インポート・進化・studio」",
-          "evidence": "共通語: インポート, 進化, studio, notebook ／ 本ノート: 章「Googleドライブ・Docs・Slidesとの直接インポート連携」 ／ …",
-          "score": 15.03,
+          "note": "自動推定の候補（未確認）：共通の主題「agents・playwright・cli」",
+          "evidence": "共通語: agents, playwright, cli, mcp, プラグイン ／ 本ノート: 主張「[Gemini公式照合報告(一次URL未添付・要独立確認)] Claude C…」 ／ 相手: 主張「[Gemini公式照合報告(一次URL未添付・要独立確…",
+          "score": 37.81,
           "already_in_note": false,
           "note_status": null
         },
@@ -266,11 +266,41 @@ $ python3 automation/gemini-notebook/related_links.py candidates --video-id GVB8
           "target_id": "youtube:2-8cXaRHlqI:research",
           "relation": "COMPLEMENTS",
           "status": "CANDIDATE",
-          "note": "自動推定の候補（未確認）：共通の主題「社内・studio・notebook」",
-          "evidence": "共通語: 社内, studio, notebook ／ 本ノート: 主張「制約・注意点: Workspace契約形態によって一部管理者による拡張機能有効…」 ／…",
-          "score": 10.93,
+          "note": "自動推定の候補（未確認）：共通の主題「claude.md・cli・mcp」",
+          "evidence": "共通語: claude.md, cli, mcp, obsidian, サブエージェント ／ 本ノート: 章「⑤ CLAUDE.md への行動指針とスキル別エージェントマッピング記載」 ／ 相手: 章「CLAUDE.md 単体記憶の限界とObsidianテーマ…",
+          "score": 24.35,
           "already_in_note": false,
           "note_status": null
+        },
+        {
+          "target_id": "youtube:X9Zk68AII4A:research",
+          "relation": "COMPLEMENTS",
+          "status": "CANDIDATE",
+          "note": "自動推定の候補（未確認）：共通の主題「skill・プラグイン・スキル」",
+          "evidence": "共通語: skill, プラグイン, スキル ／ 本ノート: 章「① スキルクリエイター（Skill Creator）プラグインの導入」 ／ 相手: 章「Skill機能のアーキテクチャとコマンド拡張の仕組み」",
+          "score": 15.77,
+          "already_in_note": false,
+          "note_status": null
+        },
+        {
+          "target_id": "youtube:RZLAP2CLUM8:research",
+          "relation": "COMPLEMENTS",
+          "status": "CANDIDATE",
+          "note": "自動推定の候補（未確認）：共通の主題「pdf・obsidian・cli」",
+          "evidence": "共通語: pdf, obsidian, cli ／ 本ノート: 章「③ Discord MCP接続（生成画像・PDFをスマホへ自動送信・確認）」 ／ 相手: 章「ステップ1：NotebookLMへの複数情報ソース（PDF、Web、YouTu…」",
+          "score": 15.61,
+          "already_in_note": false,
+          "note_status": null
+        },
+        {
+          "target_id": "youtube:BStkW1HTfmk:research",
+          "relation": "COMPLEMENTS",
+          "status": "CANDIDATE",
+          "note": "自動推定の候補（未確認）：共通の主題「claude.md・mcp・obsidian」",
+          "evidence": "共通語: claude.md, mcp, obsidian ／ 本ノート: 章「⑤ CLAUDE.md への行動指針とスキル別エージェントマッピング記載」 ／ 相手: 章「CLAUDE.md / AGENTS.md / MEMORY.md の基本構成…」",
+          "score": 15.33,
+          "already_in_note": true,
+          "note_status": "CANDIDATE"
         }
       ]
     }
@@ -278,7 +308,7 @@ $ python3 automation/gemini-notebook/related_links.py candidates --video-id GVB8
 }
 
 $ python3 automation/gemini-notebook/related_links.py index --with-candidates
-（索引本文 164件の関係・31動画・約38487字。冒頭だけ）
+（索引本文 72件の関係・31動画・約20190字。冒頭だけ）
 ---
 okf_version: "0.2"
 type: "RELATED_INDEX"
@@ -286,9 +316,9 @@ title: "【関連索引】AI技術研究室 関連動画リンク一覧"
 logical_id: "index:related"
 generated_at: "2026-10-20T17:04:00Z"
 video_count: 31
-link_count: 164
+link_count: 72
 confirmed_link_count: 2
-candidate_link_count: 162
+candidate_link_count: 70
 excluded_invalid_count: 33
 tags:
   - "AI技術研究室"
@@ -305,6 +335,88 @@ ID: index:related
 - 読み方：既存の `CONFIRMED` は `pRfC1DILDEM ↔ u3ka_AAb8qE` の1組だけで、検査も通っている。それ以外の既存の関係33件は `evidence` が無い（31件）または自己リンク（2件）で、検査に引っかかる。**自動候補は確認前の推定で、確定の関連として扱わない。**
 
 > **たとえ**: 「この動画とこの動画は同じ話をしている」という付箋を、根拠のメモ付きで貼っていく仕組み。まず付箋に不備が無いか点検し（validate）、貼る候補を挙げ（candidates）、全部を1冊の一覧表にまとめる（index）。一覧表を図書館の棚に出し直すのは、相棒の許可が出てから。
+
+#### 候補の精度（T14・2026-10-20 時点の現registry・dry-run）
+
+| | T14 前 | T14 後 |
+|---|---|---|
+| 候補数（1本あたり上限5件） | 147件（ノート未登録 118件） | 49件（ノート未登録 35件） |
+| 向きを無視した組 | － | 27組 |
+| 評価した向きつきの組（31本×30） | － | 930件 → 通過54件（通らない理由: 固有語が2語未満 26・共通語が3語未満 850） |
+| `pRfC1DILDEM` ↔ `u3ka_AAb8qE` | `pRfC1DILDEM` 側の候補で6位 | 両方向とも1位（共通語 okf・rag・検索） |
+| 弱い例 `JXmk7hmbS3c` ↔ `NCQZiT0e59g`（共通語が「コミュニティ・自動送信・mac・mini・computer・use」） | 出ていた（54.8点で最上位） | 出ない |
+
+`related_links.py candidates --summary --top 20` の出力（スコア上位20組。**人の目での品質確認はまだで、UNKNOWN**。「既存ノートに記載あり」は荷札にすでにある関係）:
+
+```
+【関連動画の候補（自動推定・未確認）】
+候補 49件（ノート未登録 35件、1本あたり上限5件）／向きを無視した組 27組
+評価した向きつきの組 930件 → 通過 54件。通らなかった理由: TOO_FEW_DISTINCTIVE_TERMS 26・TOO_FEW_SHARED_TERMS 850
+以下はスコア上位20組。人の目での品質確認はまだです。
+
+ 1. COMPLEMENTS スコア50.36（既存ノートに記載あり）
+    動画研究06｜ChatGPT Workの「右腕AI」担… [Vr3JkAT9mo8]  ↔  どんなAIが来ても困らない「一生モノのAI」の作り方 [XckM9eFa_vg]
+    根拠: 共通語: resources, agents.md, csv, memory.md, スタ…／本ノート: 章「AGENTS.md / MEMORY.md / Resources の役割…／相手: 章「ステップ1：土台フォルダ作成とスターターキット（CLAUDE.md / MEM…
+ 2. COMPLEMENTS スコア37.81
+    Claude Codeをインストールしたら必ず準備しと… [JXmk7hmbS3c]  ↔  デスクツアーならぬソフトウェアツアー！AIエンジニアが… [sodTFSuV4zY]
+    根拠: 共通語: agents, playwright, cli, mcp, プラグイン／本ノート: 主張「[Gemini公式照合報告(一次URL未添付・要独立確認)] Claud…／相手: 主張「[Gemini公式照合報告(一次URL未添付・要独立確認)] Playwri…
+ 3. COMPLEMENTS スコア37.56（既存ノートに記載あり）
+    動画研究候補07｜AIエージェント×Obsidian（… [BStkW1HTfmk]  ↔  どんなAIが来ても困らない「一生モノのAI」の作り方 [XckM9eFa_vg]
+    根拠: 共通語: agents.md, memory.md, vault, markdown, c…／本ノート: 章「CLAUDE.md / AGENTS.md / MEMORY.md の基本…／相手: 章「モデル乗り換え時の作法（CLAUDE.md ↔ AGENTS.md のリネーム…
+ 4. COMPLEMENTS スコア37.45
+    【天才AI化】ClaudeのフルMAXパワーを出すAI… [2-8cXaRHlqI]  ↔  【情報収集を完全自動化】NotebookLM・Clau… [RZLAP2CLUM8]
+    根拠: 共通語: markdown, 神連携, cli, obsidian, リサーチ／本ノート: 題名「【天才AI化】ClaudeのフルMAXパワーを出すAI神連携はNoteb…／相手: 題名「【情報収集を完全自動化】NotebookLM・Claude Code・Obs…
+ 5. COMPLEMENTS スコア29.05
+    初めてAIに課金するならどれ？ChatGPT・Gemi… [JMoByqOlftc]  ↔  【OpenAI DevDay 2026速報】24時間働… [YrTVpJ1ebUk]
+    根拠: 共通語: dots, plus, 月額, 自律, pro／本ノート: 章「注意点：自律AI「dots」はPlusには含まれずPro（月500ドル）対…／相手: 章「自律型AIアシスタント「dots」の仕組み（専用クラウドPC・4000アプリ接…
+ 6. COMPLEMENTS スコア28.48（既存ノートに記載あり）
+    【天才AI化】ClaudeのフルMAXパワーを出すAI… [2-8cXaRHlqI]  ↔  動画研究候補07｜AIエージェント×Obsidian（… [BStkW1HTfmk]
+    根拠: 共通語: vault, markdown, claude.md, mcp, obsidian／本ノート: 章「CLAUDE.md 単体記憶の限界とObsidianテーマ別分割（LLM …／相手: 章「CLAUDE.md / AGENTS.md / MEMORY.md の基本構成…
+ 7. COMPLEMENTS スコア27.24
+    【天才AI化】ClaudeのフルMAXパワーを出すAI… [2-8cXaRHlqI]  ↔  新しくなった『Gemini Notebook』完全解説… [ZY7YuYHLlIQ]
+    根拠: 共通語: 文字編集不可, 画像出力, studio, notebooklm, スライド／本ノート: 章「Studio機能9種生成の実演」／相手: 章「Studioスライドの罠：画像出力であり文字編集不可の仕様解説」
+ 8. COMPLEMENTS スコア27.09
+    【OpenAI DevDay 2026速報】24時間働… [YrTVpJ1ebUk]  ↔  【検証】AIを選ぶならどれ？ChatGPT・Claud… [j3Cyvbfn9_k]
+    根拠: 共通語: astra, gpt-6.1, sol, pro, openai／本ノート: 章「「GPT-6.1 Sol」の性能と価格（入力2ドル/出力10ドル、総合5位…／相手: 章「普段使いモデル（GPT-6.1 Sol / Sonnet 5.5 / Gemi…
+ 9. COMPLEMENTS スコア25.96（既存ノートに記載あり）
+    倍速は古い!? YouTubeをAIで要約して時短学習… [D0B-l7A69nI]  ↔  動画08：YouTube to NotebookLM … [ZjUJ-35acaU]
+    根拠: 共通語: chrome, 拡張機能, 複数動画, notebooklm, 画面操作／本ノート: 章「方法5：Chrome拡張機能（YouTube Summary with C…／相手: 章「Chrome拡張機能「YouTube to NotebookLM」の概要と単一…
+10. COMPLEMENTS スコア24.35
+    【天才AI化】ClaudeのフルMAXパワーを出すAI… [2-8cXaRHlqI]  ↔  Claude Codeをインストールしたら必ず準備しと… [JXmk7hmbS3c]
+    根拠: 共通語: claude.md, cli, mcp, obsidian, サブエージェント／本ノート: 章「CLAUDE.md 単体記憶の限界とObsidianテーマ別分割（LLM …／相手: 章「⑤ CLAUDE.md への行動指針とスキル別エージェントマッピング記載」
+11. COMPLEMENTS スコア22.56
+    OpenAIの内部モデルが与えられていないウォレットで… [ZgMrRA1Czlc]  ↔  デスクツアーならぬソフトウェアツアー！AIエンジニアが… [sodTFSuV4zY]
+    根拠: 共通語: password, mcp, コンテナ, 秘密鍵, 隔離／本ノート: 主張「制約・注意点: Sepoliaテストネットの無価値トークンであっても目的…／相手: 主張「[Gemini公式照合報告(一次URL未添付・要独立確認)] Playwri…
+12. COMPLEMENTS スコア20.48
+    【天才AI化】ClaudeのフルMAXパワーを出すAI… [2-8cXaRHlqI]  ↔  どんなAIが来ても困らない「一生モノのAI」の作り方 [XckM9eFa_vg]
+    根拠: 共通語: vault, claude.md, obsidian, markdown／本ノート: 章「Obsidian Vault構築と前月差分抽出プロンプト」／相手: 章「ObsidianでのVaultオープンとマークダウン視覚化デモ」
+13. COMPLEMENTS スコア20.19
+    【OpenAI DevDay 2026速報】24時間働… [YrTVpJ1ebUk]  ↔  デスクツアーならぬソフトウェアツアー！AIエンジニアが… [sodTFSuV4zY]
+    根拠: 共通語: codex, コードレビュー, cli, pro, openai／本ノート: 章「「ウルトラファストモード」（Codex最大8倍・API最大6倍）」／相手: タグ「Codex」
+14. COMPLEMENTS スコア19.9（既存ノートに記載あり）
+    【研究カード】 【AI中級】RAGのその先。巨大な資料… [pRfC1DILDEM]  ↔  【研究カード】 【OKF実践】AI時代の知識管理とオー… [u3ka_AAb8qE]
+    根拠: 共通語: okf, rag, 検索／本ノート: 章「過去回「OKF（書類の置き方改革）」との接続（地図作りから地図の歩かせ方へ…／相手: 題名「【研究カード】 【OKF実践】AI時代の知識管理とオープンナレッジフォーマッ…
+15. UPDATES スコア18.34
+    【最強AI】Gemini Notebookを徹底解説し… [MnzEE0fLxBs]  ↔  【天才AI化】ClaudeのフルMAXパワーを出すAI… [2-8cXaRHlqI]
+    根拠: 共通語: studio, notebooklm, powerpoint, スライド, no…／本ノート: 章「UI構成（左：ソース、中央：チャット、右：Studio）」／相手: 章「Studio機能9種生成の実演」／投稿日時: 2026-09-17 → 2026-06-21
+16. COMPLEMENTS スコア17.64
+    【検証】AIを選ぶならどれ？ChatGPT・Claud… [j3Cyvbfn9_k]  ↔  Gemini 4 Argon一般公開とアーキテクチャ解説 [y2xCGyURl7Q]
+    根拠: 共通語: argon, flash, google／本ノート: 章「比較対象モデル一覧（Opus 5.5, Sonnet 5.5, GPT-6…／相手: 章「概要・Gemini 4 Argon一般公開ニュース」
+17. COMPLEMENTS スコア15.88
+    【Chat-GPT Codex】トークン（使用量）をム… [W35UQZL2w7E]  ↔  AIの使用枠がすぐになくなる？ChatGPTとClau… [t22FELAl-BM]
+    根拠: 共通語: prompt, 会話履歴, openai, chatgpt／本ノート: 主張「制約・注意点: 過度な省略はAIの文脈理解度を下げるため、要件定義の核心…／相手: 主張「[Gemini公式照合報告(一次URL未添付・要独立確認)] Anthrop…
+18. COMPLEMENTS スコア15.77
+    Claude Codeをインストールしたら必ず準備しと… [JXmk7hmbS3c]  ↔  【神機能】Claude Codeで『Evalの改善スキ… [X9Zk68AII4A]
+    根拠: 共通語: skill, プラグイン, スキル／本ノート: 章「① スキルクリエイター（Skill Creator）プラグインの導入」／相手: 章「Skill機能のアーキテクチャとコマンド拡張の仕組み」
+19. COMPLEMENTS スコア15.74
+    【最新トレンド】自分より頭良く働き続ける！AI社員の作… [NCQZiT0e59g]  ↔  デスクツアーならぬソフトウェアツアー！AIエンジニアが… [sodTFSuV4zY]
+    根拠: 共通語: codex, mcp, ディスパッチ／本ノート: 章「スマホ画面からのClaude / Codex選択ディスパッチとMac St…／相手: タグ「Codex」
+20. COMPLEMENTS スコア15.61
+    Claude Codeをインストールしたら必ず準備しと… [JXmk7hmbS3c]  ↔  【情報収集を完全自動化】NotebookLM・Clau… [RZLAP2CLUM8]
+    根拠: 共通語: pdf, obsidian, cli／本ノート: 章「③ Discord MCP接続（生成画像・PDFをスマホへ自動送信・確認）」／相手: 章「ステップ1：NotebookLMへの複数情報ソース（PDF、Web、YouTu…
+```
+
+注意: 条件を厳しくした分、本当は関連している組が落ちている可能性がある（例: NotebookLM の使い方を扱う動画どうしで、共通語が汎用語に分類された組）。落ちた組の数は未確認（UNKNOWN）で、`candidate_filter_stats` が理由別の件数だけを数える。
 
 ### 補足: 字幕の段落ごとの時刻目印（任意・既定OFF）
 

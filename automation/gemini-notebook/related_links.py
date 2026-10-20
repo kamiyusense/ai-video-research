@@ -51,6 +51,43 @@ _STOP_TERMS = {
     "連携", "構築", "必須", "配置", "時代", "意味", "登録", "接続", "ステップ", "ポイント", "全機能", "徹底解説",
     "中央", "データ", "学習", "概要", "まとめ", "紹介", "最強", "直結", "判断基準",
 }
+# --- T14: 汎用語の除外（共通語がこれだけの候補を出さないため）。理由別に分けて残す。
+# 汎用語は「どの動画の解説でも使う語」で、主題を表さない。ここに入れた語は語の抽出の段階で捨てる。
+_GENERIC_TERMS = {
+    # 機器・画面・操作まわりの一般語（Mac mini は設置場所の話で、主題ではない）
+    "mac", "mini", "computer", "use", "model", "システム", "操作", "用意", "画面", "ブラウザ", "スマホ", "アプリ", "ツール",
+    "ファイル", "コード", "ルール", "タスク", "セッション", "アカウント", "プラン", "チャット", "フォーマット", "インポート",
+    "テクニック", "サービス", "ソース", "ドキュメント", "ローカル", "フロー", "ユーザー", "コスト", "コンテキスト", "line",
+    "max", "web", "ai", "llm",
+    # 動作・性質を表す一般語（「自動」「生成」「抽出」はどの動画にも出る）
+    "自動", "自動化", "自動生成", "生成", "抽出", "処理", "評価", "比較", "調査", "管理", "蓄積", "投入", "投入時", "導入", "作成",
+    "公開", "消費", "拡張", "提唱", "提示", "注意", "調整", "案内", "即座", "全文", "共通", "質問", "問題", "重要", "重要性",
+    "結論", "不要", "新規", "知識", "時間", "制限", "限界", "複数", "人間", "日常", "個人", "主要", "文章", "成果物", "完全",
+    "進化", "前提", "推論", "思考", "発想", "分解", "ゴール", "合致", "視聴者", "自作", "土台", "一生", "天才", "右腕",
+    "完全解説", "録音", "内部", "完全一致", "仕様", "一致", "公式", "リスク", "保管", "参照", "アップデート", "並列", "画像",
+    "使用量", "社内", "メイン", "サブ", "個人", "実践例", "セットアップ", "エフォート", "フォーマット", "テンプレート",
+    "検証", "正確", "統合", "出力", "仕組", "アーキテクチャ", "ループ", "ソースコード", "レポート", "契約", "利用枠",
+    # 候補の一覧を目で見て拾った一般語（どの解説でも使われ、共通していても関連の根拠にならない）
+    "ガイド", "エンジニア", "リファレンス", "ノウハウ", "実演解説", "網羅", "言及", "理解", "ナレッジ", "公式仕様", "完全自動化",
+    "外部", "分析", "厳密", "役割", "課題", "推奨", "追加", "最大", "最大化", "実証", "開発", "徹底", "権限", "上限", "指示", "対策", "登場",
+    "ワークフロー", "エージェント", "トークン", "モデル", "費用", "更新", "仕様変更", "リアルタイム", "レート", "長大", "実装",
+    # 動画の最後の宣伝・案内に出る定型語（本編の主題ではない）
+    "コミュニティ", "自動送信", "概要欄", "チャンネル登録", "高評価", "プレゼント",
+    # 動画の型・語り口（「公式照合報告」など研究ノートの定型文も含む）
+    "公式照合報告", "一次", "url", "未添付", "要独立確認", "制約", "注意点", "応用", "今後", "未確認事項", "提示", "完全一致",
+}
+# 大手の名前は広すぎるので、共通していても「固有語」には数えない（重みも下げる）。
+_BROAD_BRANDS = {"claude", "gemini", "google", "openai", "chatgpt", "anthropic", "notebook", "code", "api", "pro", "microsoft", "apple", "github"}
+_BROAD_BRAND_WEIGHT = 0.4
+_ASCII_NAME_WEIGHT = 1.5    # 製品名・技術名（agents.md, playwright, obsidian など）は日本語の一般名詞より固有性が高い
+_HEADING_SECTIONS = {"題名", "章", "タグ"}   # 主題を表す見出しの区分
+_CLAIM_SECTIONS = {"主張"}
+MIN_DISTINCTIVE_TERMS = 2
+# 固有語：製品名・技術名（英数字で、台帳の7本以下にしか出ない語）か、3字以上で台帳の3本以下にしか出ない日本語の語。
+# 多くの動画に出る日本語の一般名詞は、汎用語リストに無くても固有語には数えない。
+_STRONG_ASCII_MAX_DF = 7
+_STRONG_ANY_MAX_DF = 3
+
 _UPDATE_CUES = ("新機能", "アップデート", "新バージョン", "刷新", "大幅更新")
 # 区分ごとの重み（題名・章名・タグは主題を表すので重く、要約・主張は軽く）
 _SECTION_WEIGHT = {"題名": 2.0, "章": 2.0, "タグ": 2.0, "主張": 1.0, "要約": 1.0}
@@ -179,20 +216,25 @@ def _terms(text: str) -> List[str]:
     out = []
     for t in _TERM_RE.findall(str(text or "")):
         t = t.lower() if t.isascii() else t
-        if t in _STOP_TERMS or (t.isascii() and len(t) < 3 and t not in ("ai",)):
+        if t in _STOP_TERMS or t in _GENERIC_TERMS or (t.isascii() and len(t) < 3):
             continue
         out.append(t)
     return out
 
 
-def _term_index(doc: Dict[str, Any]) -> Dict[str, Tuple[float, str, str]]:
-    """語 → (最大の区分重み, 区分名, 最初に出た箇所)。"""
-    idx: Dict[str, Tuple[float, str, str]] = {}
+def _term_index(doc: Dict[str, Any]) -> Dict[str, Tuple[float, str, str, Dict[str, str]]]:
+    """語 → (最大の区分重み, その区分名, その箇所, {出てきた区分: 最初の箇所})。"""
+    idx: Dict[str, Tuple[float, str, str, Dict[str, str]]] = {}
     for section, text in doc["pieces"]:
         w = _SECTION_WEIGHT.get(section, 1.0)
         for t in _terms(text):
-            if t not in idx or w > idx[t][0]:
-                idx[t] = (w, section, _clip(text))
+            if t not in idx:
+                idx[t] = (w, section, _clip(text), {section: _clip(text)})
+                continue
+            best_w, best_sec, best_text, places = idx[t]
+            places.setdefault(section, _clip(text))
+            if w > best_w:
+                idx[t] = (w, section, _clip(text), places)
     return idx
 
 
@@ -201,6 +243,70 @@ def _doc_freq(indexes: Dict[str, Dict[str, Any]]) -> Counter:
     for idx in indexes.values():
         df.update(idx.keys())
     return df
+
+
+def _term_weight(term: str) -> float:
+    """語の種類による重み：大手の名前は下げ、製品名・技術名（英数字の固有語）は上げる。"""
+    if term in _BROAD_BRANDS:
+        return _BROAD_BRAND_WEIGHT
+    return _ASCII_NAME_WEIGHT if term.isascii() else 1.0
+
+
+def _is_strong(term: str, doc_freq: int) -> bool:
+    """固有語か（製品名・技術名、または台帳でごく少数のノートにしか出ない語）。"""
+    if term in _BROAD_BRANDS:
+        return False
+    if term.isascii():
+        return doc_freq <= _STRONG_ASCII_MAX_DF
+    # 日本語は短い一般名詞（検索・課題など2字）が多いので、3字以上で、かつごく少数のノートにしか出ない語だけ
+    return len(term) >= 3 and doc_freq <= _STRONG_ANY_MAX_DF
+
+
+def _corresponding_places(src_places: Dict[str, str], tgt_places: Dict[str, str]) -> Optional[Tuple[str, str, str, str]]:
+    """両ノートの該当箇所が対応しているか。見出し同士（題名・章・タグ）か、主張同士のとき (本区分, 本箇所, 相手区分, 相手箇所)。"""
+    for group in (_HEADING_SECTIONS, _CLAIM_SECTIONS):
+        for sec_order in ("章", "題名", "タグ", "主張"):
+            if sec_order in group and sec_order in src_places:
+                other = next((o for o in ("章", "題名", "タグ", "主張") if o in group and o in tgt_places), None)
+                if other:
+                    return sec_order, src_places[sec_order], other, tgt_places[other]
+    return None
+
+
+def evaluate_pair(
+    src_idx: Dict[str, Any], tgt_idx: Dict[str, Any], df: Counter, n_docs: int,
+    min_shared: int = 3, max_df_ratio: float = 0.35, min_score: float = 6.0,
+) -> Dict[str, Any]:
+    """1組の関連度を評価する。通らない理由を reason に入れる（通れば reason は None）。
+
+    通る条件：共通語が min_shared 語以上／そのうち固有語（_is_strong）が2語以上／
+    両ノートの該当箇所が対応している（見出し同士か主張同士）／重み付きスコアが min_score 以上。
+    """
+    max_df = max(2, int(max_df_ratio * n_docs))
+    shared = [t for t in src_idx if t in tgt_idx and df[t] <= max_df]
+    if len(shared) < min_shared:
+        return {"reason": "TOO_FEW_SHARED_TERMS", "shared": shared}
+    distinctive = [t for t in shared if _is_strong(t, df[t])]
+    if len(distinctive) < MIN_DISTINCTIVE_TERMS:
+        return {"reason": "TOO_FEW_DISTINCTIVE_TERMS", "shared": shared}
+    weights = {t: math.log(n_docs / df[t]) * max(src_idx[t][0], tgt_idx[t][0]) * _term_weight(t) for t in shared}
+    ranked = sorted(shared, key=lambda t: (-weights[t], t))
+    anchor = None
+    for t in ranked:
+        if t not in distinctive:
+            continue
+        places = _corresponding_places(src_idx[t][3], tgt_idx[t][3])
+        if places:
+            anchor = (t, places)
+            break
+    if anchor is None:
+        return {"reason": "NO_SECTION_CORRESPONDENCE", "shared": shared}
+    score = sum(weights.values())
+    if score < min_score:
+        return {"reason": "LOW_SCORE", "shared": shared, "score": score}
+    # 表示は固有語を先に並べる
+    ordered = [t for t in ranked if t in distinctive] + [t for t in ranked if t not in distinctive]
+    return {"reason": None, "shared": ordered, "score": score, "anchor": anchor}
 
 
 def infer_candidates(
@@ -213,7 +319,8 @@ def infer_candidates(
 ) -> List[Dict[str, Any]]:
     """台帳全件を対象に、章・タグ・主張・要約の語の重なりから CANDIDATE を出す（CONFIRMED にはしない）。
 
-    多くのノートに出る語（max_df_ratio 超）は主題を表さないので使わない。自己リンクは除外し、上位 limit 件まで。
+    多くのノートに出る語（max_df_ratio 超）と汎用語は主題を表さないので使わない。固有語が2語以上共通し、
+    両ノートの該当箇所が対応している（見出し同士か主張同士）ときだけ出す（evaluate_pair）。自己リンクは除外し、上位 limit 件まで。
     UPDATES は投稿日時が新しい側から古い側へ、更新を示す語（新機能・最新など）が新しい側にあるときだけ。
     """
     others = {vid: d for vid, d in corpus.items() if vid != source["video_id"]}
@@ -223,24 +330,20 @@ def infer_candidates(
     for t in src_idx:
         df[t] += 1
     n_docs = len(indexes) + 1
-    max_df = max(2, int(max_df_ratio * n_docs))
     # 更新を示す語は主題を表す題名・章名・タグにあるときだけ見る（要約・主張の「最新」などは拾わない）
     src_head = " ".join(t for s, t in source["pieces"] if s in ("題名", "章", "タグ"))
     scored = []
     for vid, idx in indexes.items():
-        shared = [t for t in src_idx if t in idx and df[t] <= max_df]
-        if len(shared) < min_shared:
+        ev = evaluate_pair(src_idx, idx, df, n_docs, min_shared, max_df_ratio, min_score)
+        if ev["reason"]:
             continue
-        weights = {t: math.log(n_docs / df[t]) * max(src_idx[t][0], idx[t][0]) for t in shared}
-        score = sum(weights.values())
-        if score < min_score:
-            continue
-        scored.append((score, vid, sorted(shared, key=lambda t: (-weights[t], t))))
+        scored.append((ev["score"], vid, ev))
     scored.sort(key=lambda x: (-x[0], x[1]))
     out = []
-    for score, vid, shared in scored[:limit]:
+    for score, vid, ev in scored[:limit]:
         tgt = others[vid]
-        top = shared[0]
+        shared = ev["shared"]
+        s_sec, s_text, t_sec, t_text = ev["anchor"][1]
         s_pub, t_pub = source.get("published_at"), tgt.get("published_at")
         relation = "COMPLEMENTS"
         if s_pub and t_pub and s_pub > t_pub and any(c in src_head for c in _UPDATE_CUES):
@@ -252,13 +355,28 @@ def infer_candidates(
             "status": "CANDIDATE",
             "note": f"自動推定の候補（未確認）：共通の主題「{terms}」",
             "evidence": (
-                f"共通語: {', '.join(shared[:5])} ／ 本ノート: {src_idx[top][1]}「{src_idx[top][2]}」"
-                f" ／ 相手: {indexes[vid][top][1]}「{indexes[vid][top][2]}」"
+                f"共通語: {', '.join(shared[:5])} ／ 本ノート: {s_sec}「{s_text}」"
+                f" ／ 相手: {t_sec}「{t_text}」"
                 + (f" ／ 投稿日時: {s_pub} → {t_pub}" if relation == "UPDATES" else "")
             )[:600],
             "score": round(score, 2),
         })
     return out
+
+
+def candidate_filter_stats(corpus: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    """全ての向きつきの組（A→B）を評価して、通った数と通らなかった理由の内訳を数える（件数の前後比較用）。"""
+    indexes = {vid: _term_index(d) for vid, d in corpus.items()}
+    counts: Counter = Counter()
+    for vid, src_idx in indexes.items():
+        others = {v: i for v, i in indexes.items() if v != vid}
+        df = _doc_freq(others)
+        for t in src_idx:
+            df[t] += 1
+        for oidx in others.values():
+            counts[evaluate_pair(src_idx, oidx, df, len(others) + 1)["reason"] or "PASS"] += 1
+    return {"pairs_evaluated": sum(counts.values()), "pass": counts.get("PASS", 0),
+            "rejected": {k: v for k, v in sorted(counts.items()) if k != "PASS"}}
 
 
 def source_from_fields(
@@ -307,6 +425,35 @@ def candidates_for_corpus(corpus: Dict[str, Dict[str, Any]], limit: int = DEFAUL
         "files_modified": False,
         "videos": rows,
     }
+
+
+def format_candidate_summary(rep: Dict[str, Any], corpus: Dict[str, Dict[str, Any]], top: int = 20) -> str:
+    """候補を、スコアの高い順に1組1行ずつ人が読める形にする（向きの違う同じ組は高い方だけ）。人の確認前の推定。"""
+    stats = candidate_filter_stats(corpus)
+    best: Dict[frozenset, Tuple[float, str, Dict[str, Any]]] = {}
+    for v in rep["videos"]:
+        for c in v["candidates"]:
+            key = frozenset((v["video_id"], target_video_id(c["target_id"])))
+            if key not in best or c["score"] > best[key][0]:
+                best[key] = (c["score"], v["video_id"], c)
+    ranked = sorted(best.values(), key=lambda x: (-x[0], x[1]))
+    lines = [
+        "【関連動画の候補（自動推定・未確認）】",
+        f"候補 {rep['candidate_count']}件（ノート未登録 {rep['new_candidate_count']}件、1本あたり上限{DEFAULT_CANDIDATE_LIMIT}件）／向きを無視した組 {len(ranked)}組",
+        f"評価した向きつきの組 {stats['pairs_evaluated']}件 → 通過 {stats['pass']}件。通らなかった理由: "
+        + "・".join(f"{k} {v}" for k, v in stats["rejected"].items()),
+        f"以下はスコア上位{min(top, len(ranked))}組。人の目での品質確認はまだです。",
+        "",
+    ]
+    for i, (score, vid, c) in enumerate(ranked[:top], 1):
+        tv = target_video_id(c["target_id"])
+        a, b = _clip(corpus[vid]["title"], 28), _clip((corpus.get(tv) or {}).get("title") or tv, 28)
+        parts = [_clip(x, 46) for x in c["evidence"].split(" ／ ")]
+        mark = "（既存ノートに記載あり）" if c.get("already_in_note") else ""
+        lines.append(f"{i:>2}. {c['relation']} スコア{score}{mark}")
+        lines.append(f"    {a} [{vid}]  ↔  {b} [{tv}]")
+        lines.append("    根拠: " + "／".join(parts))
+    return "\n".join(lines) + "\n"
 
 
 # ---------------------------------------------------------------- 2.5 修復計画（差分の提案だけ）
@@ -541,6 +688,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     c = sub.add_parser("candidates", help="台帳全件について関連候補（CANDIDATE）を出す")
     c.add_argument("--video-id")
     c.add_argument("--limit", type=int, default=DEFAULT_CANDIDATE_LIMIT)
+    c.add_argument("--summary", action="store_true", help="JSONではなく、スコア上位の組を根拠の一文つきで人が読める形に出す")
+    c.add_argument("--top", type=int, default=20, help="--summary で出す組の数")
     r = sub.add_parser("repair-plan", help="検証に通らない related_records の削除予定と置換候補を差分で出す（書き換えない）")
     r.add_argument("--video-id")
     r.add_argument("--limit", type=int, default=DEFAULT_REPAIR_LIMIT, help="1ノートあたりの置換候補の上限")
@@ -557,6 +706,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         rep = validate_related_records(corpus, ROOT)
     elif args.cmd == "candidates":
         rep = candidates_for_corpus(corpus, limit=args.limit)
+        if args.summary:
+            print(format_candidate_summary(rep, corpus, top=args.top), end="")
+            return 0
         if args.video_id:
             rep["videos"] = [v for v in rep["videos"] if v["video_id"] == args.video_id]
     elif args.cmd == "repair-plan":

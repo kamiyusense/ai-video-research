@@ -125,13 +125,15 @@ class TestCandidates(unittest.TestCase):
         self.assertTrue(c["note"].startswith("自動推定の候補（未確認）"))
 
     def test_self_link_is_excluded_and_limit_applies(self):
-        many = [doc(f"M{i:010d}", f"荷札{i}", pieces=[("題名", "荷札のメタデータ原則とフロントマター運用"), ("章", "ナレッジフォーマット")])
-                for i in range(9)]
+        # 9本それぞれが本ノートと固有語（製品名）を3語ずつ共有する。多くの動画に出る語は固有語に数えない（T14）ので、語は1本ずつ別にする
+        src = doc(A, "元", pieces=[("題名", " ".join(f"tool{i}x tool{i}y tool{i}z" for i in range(9)))])
+        many = [doc(f"M{i:010d}", f"m{i}", pieces=[("題名", f"tool{i}x tool{i}y tool{i}z")]) for i in range(9)]
         filler = [doc(f"F{i:010d}", f"f{i}", pieces=[("題名", f"料理のレシピ{i}")]) for i in range(30)]
-        corpus = corpus_of(self.src, *many, *filler)
-        out = rl.infer_candidates(self.src, corpus, limit=3)
+        corpus = corpus_of(src, *many, *filler)
+        out = rl.infer_candidates(src, corpus, limit=3)
         self.assertEqual(len(out), 3)
         self.assertNotIn(f"youtube:{A}:research", [c["target_id"] for c in out])
+        self.assertEqual(len(rl.infer_candidates(src, corpus, limit=20)), 9)
         # 自分自身のコピーが台帳にあっても自己リンクにならない
         self.assertNotIn(f"youtube:{A}:research", [c["target_id"] for c in rl.infer_candidates(self.src, corpus_of(self.src, self.close))])
 
@@ -178,10 +180,100 @@ class TestCandidates(unittest.TestCase):
                 self.assertEqual(c["status"], "CANDIDATE")
                 self.assertNotEqual(target := rl.target_video_id(c["target_id"]), v["video_id"], target)
                 self.assertTrue(c["evidence"].startswith("共通語:"))
-        # 既存の確認済みペアは候補にも出て、荷札の関係・statusをそのまま見せる
-        rag = next(v for v in wide["videos"] if v["video_id"] == "pRfC1DILDEM")  # 上位5件には入らないので、広めの上限で見る
+        # 既存の確認済みペアは候補の上位3以内に出て、荷札の関係・statusをそのまま見せる
+        rag = next(v for v in rep["videos"] if v["video_id"] == "pRfC1DILDEM")
+        top3 = [c["target_id"] for c in rag["candidates"][:3]]
+        self.assertIn("youtube:u3ka_AAb8qE:research", top3)
         pair = next(c for c in rag["candidates"] if c["target_id"] == "youtube:u3ka_AAb8qE:research")
         self.assertEqual((pair["already_in_note"], pair["note_status"], pair["relation"]), (True, "CONFIRMED", "COMPLEMENTS"))
+
+
+class TestCandidatePrecision(unittest.TestCase):
+    """T14: 汎用語だけ・固有語2語未満・該当箇所が対応しない候補は出さない。回帰の正解セットは registry の実データ."""
+
+    GENERIC = "モデル 自動 操作 画面 ワークフロー エージェント システム 用意 computer"
+
+    def cands(self, src, *others, pad=12):
+        filler = [doc(f"P{i:010d}", f"p{i}", pieces=[("題名", f"料理のレシピ{i}")]) for i in range(pad)]
+        return rl.infer_candidates(src, corpus_of(src, *others, *filler))
+
+    def test_generic_words_alone_never_make_a_candidate(self):
+        a = doc(A, "a", pieces=[("題名", self.GENERIC), ("章", self.GENERIC)])
+        b = doc(B, "b", pieces=[("題名", self.GENERIC), ("章", self.GENERIC)])
+        self.assertEqual(self.cands(a, b), [])
+
+    def test_big_brand_names_alone_are_not_distinctive(self):
+        a = doc(A, "a", pieces=[("題名", "claude gemini openai chatgpt google anthropic")])
+        b = doc(B, "b", pieces=[("題名", "claude gemini openai chatgpt google anthropic")])
+        self.assertEqual(self.cands(a, b), [])
+
+    def test_fewer_than_two_distinctive_terms_is_not_enough(self):
+        # 固有語は playwright の1語だけ。残りは汎用語・大手の名前
+        a = doc(A, "a", pieces=[("題名", f"playwright claude openai {self.GENERIC}")])
+        b = doc(B, "b", pieces=[("題名", f"playwright claude openai {self.GENERIC}")])
+        self.assertEqual(self.cands(a, b), [])
+        b2 = doc(B, "b", pieces=[("題名", f"playwright obsidian claude openai")])
+        a2 = doc(A, "a", pieces=[("題名", f"playwright obsidian claude openai")])
+        self.assertEqual([c["target_id"] for c in self.cands(a2, b2)], [f"youtube:{B}:research"])
+
+    def test_places_must_correspond_heading_to_heading_or_claim_to_claim(self):
+        terms = "playwright obsidian agentsmd"
+        heading = doc(A, "a", pieces=[("章", terms)])
+        claim = doc(B, "b", pieces=[("主張", terms)])
+        self.assertEqual(self.cands(heading, claim), [])       # 章と主張：対応しない
+        self.assertEqual(self.cands(claim, heading), [])
+        summary = doc(C, "c", pieces=[("要約", terms)])
+        self.assertEqual(self.cands(heading, summary), [])     # 要約にだけある語は根拠にしない
+        claim2 = doc(C, "c", pieces=[("主張", terms)])
+        self.assertEqual(len(self.cands(claim, claim2)), 1)    # 主張どうしは対応する
+        tag = doc(C, "c", pieces=[("タグ", terms)])
+        self.assertEqual(len(self.cands(heading, tag)), 1)     # 見出し（章・題名・タグ）どうしは対応する
+
+    def test_filter_stats_count_every_ordered_pair_and_reason(self):
+        a = doc(A, "a", pieces=[("題名", "playwright obsidian agentsmd")])
+        b = doc(B, "b", pieces=[("題名", "playwright obsidian agentsmd")])
+        c = doc(C, "c", pieces=[("題名", self.GENERIC)])
+        stats = rl.candidate_filter_stats(corpus_of(a, b, c, *[doc(f"P{i:010d}", "p", pieces=[("題名", f"料理{i}レシピ")]) for i in range(10)]))
+        self.assertEqual(stats["pairs_evaluated"], 13 * 12)
+        self.assertEqual(stats["pass"], 2)
+        self.assertEqual(sum(stats["rejected"].values()) + stats["pass"], stats["pairs_evaluated"])
+
+    def test_real_registry_golden_pair_is_top3_both_ways_and_weak_example_is_gone(self):
+        corpus = rl.load_corpus(ROOT)
+        rep = rl.candidates_for_corpus(corpus, limit=30)   # 広い上限でも弱い例が出ないこと
+        by = {v["video_id"]: [c["target_id"] for c in v["candidates"]] for v in rep["videos"]}
+        self.assertIn("youtube:u3ka_AAb8qE:research", by["pRfC1DILDEM"][:3])
+        self.assertIn("youtube:pRfC1DILDEM:research", by["u3ka_AAb8qE"][:3])
+        # 弱い例：共通語が「コミュニティ・自動送信・mac・mini・computer・use」の組は出ない
+        self.assertNotIn("youtube:NCQZiT0e59g:research", by["JXmk7hmbS3c"])
+        self.assertNotIn("youtube:JXmk7hmbS3c:research", by["NCQZiT0e59g"])
+        # 件数は T14 前（147件、上限5）より減る
+        self.assertLess(rl.candidates_for_corpus(corpus)["candidate_count"], 147)
+
+    def test_cli_summary_lists_top_pairs_with_evidence_and_modifies_nothing(self):
+        import io
+        from contextlib import redirect_stdout
+        before = (ROOT / "registry.json").read_bytes()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = rl.main(["candidates", "--summary", "--top", "5"])
+        out = buf.getvalue()
+        self.assertEqual(rc, 0)
+        self.assertTrue(out.startswith("【関連動画の候補（自動推定・未確認）】"))
+        self.assertIn("人の目での品質確認はまだです", out)
+        self.assertEqual(out.count("    根拠: 共通語:"), 5)
+        self.assertEqual(sum(1 for ln in out.splitlines() if ln[:3].strip().rstrip(".").isdigit()), 5)
+        self.assertNotIn('"files_modified"', out)
+        self.assertEqual((ROOT / "registry.json").read_bytes(), before)
+
+    def test_no_remaining_real_candidate_uses_a_generic_word_as_evidence(self):
+        corpus = rl.load_corpus(ROOT)
+        for v in rl.candidates_for_corpus(corpus)["videos"]:
+            for c in v["candidates"]:
+                shared = c["evidence"].split(" ／ ")[0].removeprefix("共通語: ").split(", ")
+                generic = [t for t in shared if t in rl._GENERIC_TERMS]
+                self.assertEqual(generic, [], (v["video_id"], c["target_id"]))
+                self.assertGreaterEqual(len(shared), 3)
 
 
 class TestRelatedIndexOkf(unittest.TestCase):
