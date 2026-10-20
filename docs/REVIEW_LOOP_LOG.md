@@ -28,7 +28,14 @@
 
 ## 次のタスク（作業役向け）
 
-（T1〜T5完了。次は相棒の承認待ち5（u3ka_AAb8qE の字幕原文を `--live` で追加）。承認が出たら、相棒PCで health → dry-run → `--live` → 事後読み戻し → health を手順書どおりに実行し、検品役が読み戻し値で判定する）
+**T6: ユーザー確定仕様（2026-10-20）に合わせる：字幕の時刻リンク・投稿日時・URL単体ソース廃止**（仕様は `docs/OKF_KNOWLEDGE_ROADMAP.md` 冒頭「ユーザー確定仕様」）
+- 対象: `notebook_auto_ingest.py`（`build_transcript_okf_content`）、`notebooklm_py_ingest.py`、`auto_research_pipeline.py`、関連テスト
+- やること:
+  1. 字幕OKFの各cue行を `- [HH:MM:SS](https://www.youtube.com/watch?v=<id>&t=<秒>s) <発話テキスト>` にする（発話テキストは改変しない。秒は切り捨ての整数）。荷札に `published_at`（取得できなければ `"UNKNOWN"`）を追加。cueが無いときは `transcript_status: "TIMESTAMPS_MISSING"`。
+  2. `notebooklm_py_ingest.py` に字幕取得を足す：既存の `auto_research_pipeline.fetch_actual_captions` と `verify_timestamps.fetch_player` / `fetch_watch_publish_date` を再利用して、実行するPCからYouTubeの時刻つき字幕と投稿日時を取る（新しいツールのインストールはしない）。取れなければNotebook内本文へのフォールバックはやめ、`TRANSCRIPT_TIMESTAMPS_UNAVAILABLE` で書き込み0で止める（時刻なし字幕は正式に登録しない）。研究ノート本文に `published_at` が無ければ荷札に1行足してから登録する。
+  3. YouTube URL単体ソースの登録経路を廃止：`--include-youtube-url` を削除（指定されたらエラーで止める）、`add_youtube_source` 経路は常に無効。
+  4. テスト（オフライン・偽HTTP）：cue行の形式とURL秒数、発話テキスト非改変、`published_at` の記録と `UNKNOWN`、字幕が取れない時の停止と書き込み0、`--include-youtube-url` 指定時のエラー。既存テスト非破壊（新仕様で意味が変わるテストは、理由を書いて期待値を更新。削除・スキップは禁止）。
+- 禁止: 実Notebook接続・書き込み、Gemini呼び出し。
 
 ## ユーザー判断の記録
 
@@ -42,7 +49,9 @@
 
 | # | 何を | なぜ止めたか | 承認されたら進むこと |
 |---|---|---|---|
-| 5 | u3ka_AAb8qE の字幕原文OKFを、新しい自動登録道具で実Notebookへ追加する（T5修正後に `--live`） | 新しいNotebook書き込み（守りルール5）。前回の許可はpRfC1DILDEM分のみ | OKF動画も字幕原文＋研究ノートの2ソースになる |
+| 5 | u3ka_AAb8qE の字幕原文OKFを実Notebookへ追加（**T6完了後に時刻つき字幕で**。2026-10-20 ユーザー確定仕様により、時刻なし版の追加は取りやめ） | 新しいNotebook書き込み（守りルール5） | OKF動画も字幕原文＋研究ノートの2ソースになる |
+| 6 | 既存のYouTube URL単体ソース15件を削除するか | ユーザー確定仕様では「URL単体ソースは登録しない」。削除は承認制 | Notebookが仕様どおり2資料方式に揃う |
+| 7 | pRfC1DILDEM の時刻なし字幕OKF `a32a70ec` を時刻つき版に置き換えるか（削除を含む） | 削除は承認制 | RAG動画で時刻リンク付きの根拠が示せる |
 
 （以下は完了済みの旧リスト）
 
