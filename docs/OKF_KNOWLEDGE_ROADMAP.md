@@ -146,7 +146,7 @@ YouTube URLソースは新規登録しない（R2）。過去に登録済みのU
 | G1 | 旧記述「YouTube URLはオプトイン」がR2（URL単体ソース禁止）と矛盾 | 本文書の該当箇所を「登録しない」に修正 | DONE（本改訂） |
 | G2 | 字幕OKFの組み立て（`build_transcript_okf_content`）と実機登録済み `a32a70ec` に `published_at` が無い（R4） | 組み立て関数・`notebooklm_py_ingest.py`・研究ノートの荷札に `published_at` を必須化（取得元はYouTube視聴ページ）。健康診断で欠落・`UNKNOWN` を ATTENTION 報告 | コードDONE（PR #14 T6・T8・T10）／`a32a70ec` の差し替えは承認待ち |
 | G3 | 当初「字幕に時刻リンク必須」と解釈していた | 2026-10-20 相棒決定で**時刻なしを正**に変更（R3）。字幕はYouTubeのcueを取得し、時刻を外して連結・段落化 | 方針確定／15本分の時刻なし版は作成済み／コードDONE（PR #14 T10） |
-| G4 | 自動登録の計画が字幕本文を「NotebookのYouTube URLソース」から取る前提（R2の新規動画では使えない） | 新規動画はYouTube字幕の直接取得（youtube-transcript-api → timedtext）。既存動画でURLソース本文と YouTube字幕のどちらを先に使うかは要確認（現コードはURLソース本文が先） | コードDONE（PR #14 T6・T10）／順番は要確認 |
+| G4 | 自動登録の計画が字幕本文を「NotebookのYouTube URLソース」から取る前提（R2の新規動画では使えない） | 取得元の順は「渡されたcue → YouTube字幕（youtube-transcript-api → timedtext）→ Notebook内YouTubeソース本文（単語の間に空白が入る読みにくい版なので最後の手段。`acquisition_method` に明記）」（2026-10-20 検品役決定） | コードDONE（PR #14 T6・T10） |
 | G5 | `<!-- ID: ... -->` などHTMLコメントはNotebookの読み戻しで消える | 識別子は本文に見える1行（例 `ID: AI_VIDEO_TRANSCRIPT_RAW:<id>`）でも持つ | 差し替え版で対応済み・登録待ち |
 | G6 | 既存YouTube URLソース15件がR2と矛盾 | 2026-10-20 相棒決定：字幕原文OKFを登録・読み戻し確認した動画から順に削除してよい。順番の計画は `migrate-plan`（削除の実行コードは持たない） | 字幕OKF 15本作成済み・Notebookログイン待ち |
 | G8 | R6（関連動画どうしのリンク）が実質1組（`pRfC1DILDEM` ↔ `u3ka_AAb8qE` の `COMPLEMENTS`）だけ。GitHub研究ノート33件中 `related_records` ありは2件 | 研究ノートに `related_records`（関係ラベル・理由・根拠・CANDIDATE/CONFIRMED）を追加し逆リンクも揃える。古い情報は `UPDATES`＋`published_at` で新しい方を優先 | TODO |

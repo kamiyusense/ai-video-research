@@ -16,7 +16,8 @@ docs/OKF_KNOWLEDGE_ROADMAP.md v1.1「1動画2ソースMVP完成契約」に沿�
 3. 足りない方だけ組み立てる（字幕原文は build_transcript_okf_content を再利用）。
    2026-10-20 22:42 JST 相棒の方針転換（docs/OKF_KNOWLEDGE_ROADMAP.md R3）: 字幕全文は時刻なしを正とし、
    発話を段落にまとめた本文にする（場面の時刻リンクは研究ノート側）。字幕の取得元は
-   渡されたcue → Notebook内YouTubeソースの本文（fulltext）→ YouTube字幕（youtube-transcript-api→timedtext）の順。
+   渡されたcue → YouTube字幕（youtube-transcript-api→timedtext）→ Notebook内YouTubeソースの本文（fulltext。
+   単語の間に空白が入り読みにくいため最後の手段、acquisition_method に明記）の順。
    どれも取れなければ書き込み0で TRANSCRIPT_UNAVAILABLE。両OKFに published_at を記録する。
 4. 既定は dry-run（計画のみ）。live=True かつ notebook_id 指定時だけ add_text する。
 5. 書き込み結果が不明（例外・ID無し）でも再送しない。一覧の読み戻しで有無を確認する。
@@ -411,7 +412,7 @@ def run_ingest(
 ) -> Dict[str, Any]:
     """1動画2ソースの不足分を登録する。live=False（既定）では書き込みを一切行わない。
 
-    字幕の取得元は cues → Notebook内YouTubeソースの本文 → fetch_transcript（YouTube字幕）の順。
+    字幕の取得元は cues → fetch_transcript（YouTube字幕）→ Notebook内YouTubeソースの本文（最後の手段）の順。
     published_at が無く fetch_transcript があれば、それで投稿日時を取る。
     """
     result: Dict[str, Any] = {"video_id": video_id, "live": live, "writes": [], "notes": []}
@@ -445,18 +446,18 @@ def run_ingest(
 
     acquisition_method = ACQ_TIMEDTEXT
     raw_text: Optional[str] = None
-    if need_transcript and not cues and pre.get("youtube_source_id"):
-        # 既存動画：Notebook内YouTubeソースの本文（時刻なし）を字幕全文に使う（22:42 方針転換で正式扱い）
-        raw_text = (client.get_fulltext(pre["youtube_source_id"]) or "").strip() or None
-        if raw_text:
-            acquisition_method = ACQ_NOTEBOOK_FULLTEXT
-    if fetch_transcript and ((need_transcript and not cues and not raw_text) or not published_at):
+    if fetch_transcript and ((need_transcript and not cues) or not published_at):
         fetched = fetch_transcript(video_id) or {}
-        if need_transcript and not cues and not raw_text:
+        if need_transcript and not cues:
             cues = fetched.get("cues") or None
             acquisition_method = fetched.get("acquisition_method") or ACQ_TIMEDTEXT
         if not published_at:
             published_at = fetched.get("published_at")
+    if need_transcript and not cues and pre.get("youtube_source_id"):
+        # 最後の手段：Notebook内YouTubeソースの本文（単語の間に空白が入る読みにくい版）。取得元は荷札に明記する
+        raw_text = (client.get_fulltext(pre["youtube_source_id"]) or "").strip() or None
+        if raw_text:
+            acquisition_method = ACQ_NOTEBOOK_FULLTEXT
     result["published_at"] = published_at or "UNKNOWN"
 
     planned: Dict[str, Dict[str, str]] = {}
@@ -665,8 +666,10 @@ def plan_url_source_migration(
         item: Dict[str, Any] = {"youtube_source_id": yt.get("id"), "youtube_title": title, "video_id": vid or "UNKNOWN"}
         fulltext = (client.get_fulltext(str(yt.get("id"))) or "").strip()
         item["transcript_source_order"] = [
-            {"method": ACQ_NOTEBOOK_FULLTEXT, "source_id": yt.get("id"), "available": bool(fulltext), "chars": len(fulltext)},
             {"method": ACQ_TRANSCRIPT_API, "available": "UNKNOWN（実行PCで取得して確認）"},
+            {"method": ACQ_TIMEDTEXT, "available": "UNKNOWN（実行PCで取得して確認）"},
+            {"method": ACQ_NOTEBOOK_FULLTEXT, "source_id": yt.get("id"), "available": bool(fulltext), "chars": len(fulltext),
+             "note": "最後の手段（単語の間に空白が入る読みにくい版）"},
         ]
         if not vid:
             item.update(status="VIDEO_ID_UNKNOWN", existing={}, to_add=[], delete_after_readback=[],

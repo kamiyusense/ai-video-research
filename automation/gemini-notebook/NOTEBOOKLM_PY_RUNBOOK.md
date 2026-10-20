@@ -59,7 +59,7 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
   - `AMBIGUOUS_EXISTING_SOURCES`: 見分けがつかないので止まった。
   - `TRANSCRIPT_UNAVAILABLE`: 字幕全文がどこからも取れなかった（Notebook内YouTubeソースの本文・YouTube字幕とも無し）ので、何も書かずに止まった。
   - `AUTH_EXPIRED_HALT`: ログイン切れ。
-- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければ、①Notebook内にその動画のYouTubeソースがあればその本文、②無ければ実行しているPCからYouTubeの字幕（youtube-transcript-api → 既存のYouTube字幕取得の順）を使う。投稿日時は実行PCからYouTubeの視聴ページで取る。**2026-10-20 22:42 JST の方針転換**で字幕全文は時刻なしが正になり、本文は発話を段落にまとめた読みやすい形（発話そのものは変えない）。場面の時刻リンクは研究ノート側に付く。字幕全文・研究ノートの両方の荷札に `published_at`（取れなければ `UNKNOWN`）、字幕全文の荷札に取得元 `acquisition_method` と `cue_count` が入る。
+- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければ、①実行しているPCからYouTubeの字幕（youtube-transcript-api → 既存のYouTube字幕取得の順）、②それも取れずNotebook内にその動画のYouTubeソースがあれば、その本文（単語の間に空白が入る読みにくい版なので最後の手段）を使う。どちらを使ったかは荷札の `acquisition_method` に入る。投稿日時は実行PCからYouTubeの視聴ページで取る。**2026-10-20 22:42 JST の方針転換**で字幕全文は時刻なしが正になり、本文は発話を約1分ごとの段落にまとめた読みやすい形（発話そのものは変えない）。場面の時刻リンクは研究ノート側に付く。字幕全文・研究ノートの両方の荷札に `published_at`（取れなければ `UNKNOWN`）、字幕全文の荷札に取得元 `acquisition_method` と `cue_count` が入る。
 - `--video-title` はNotebookのYouTubeソースを見つけるのに使う。YouTube上のタイトルと同じものを渡す。
 - `--notebook-id` を付けないと、棚を読まずに「両方足す」とだけ出す（`DRY_RUN_PLAN_OFFLINE`）。
 
@@ -135,7 +135,7 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==1.2.2 python automation/gemini-notebook/notebooklm_py_ingest.py migrate-plan --notebook-id e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
 ```
 
-- 棚の type=youtube の資料ごとに、①その動画の字幕全文OKF・研究ノートOKFの有無、②字幕の取得元の順（Notebook内YouTubeソースの本文 → youtube-transcript-api）、③追加予定（題名・logical_id）、④「読み戻し一致の後にだけ」削除してよいURLソースID、を返す。
+- 棚の type=youtube の資料ごとに、①その動画の字幕全文OKF・研究ノートOKFの有無、②字幕の取得元の順（youtube-transcript-api → timedtext → 最後の手段としてNotebook内YouTubeソースの本文）、③追加予定（題名・logical_id）、④「読み戻し一致の後にだけ」削除してよいURLソースID、を返す。
 - 動画IDは、棚の「【研究ノート】題 [ID]」「【字幕原文】題 [ID]」→ GitHubの研究ノート本文の順に、YouTubeソースの題名で探す。見つからなければ `VIDEO_ID_UNKNOWN` として削除予定から外す。
 - `status`: `ADD_THEN_DELETE`（先に字幕全文OKFを足す）／`READY_TO_DELETE_URL_SOURCE`（`published_at` 入りの字幕全文OKFが既にある。削除前に読み戻しをもう一度）／`AMBIGUOUS_EXISTING_SOURCES`／`VIDEO_ID_UNKNOWN`。
 - 既存の字幕全文OKFに `published_at` が無い動画（`pRfC1DILDEM` の `a32a70ec`）は、入り版の追加を `to_add_pending_approval`、旧版を `replace_pending_approval` に出す（置き換え＝削除を含むので相棒の承認待ち。待ちリスト7）。
@@ -157,14 +157,19 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
       "video_id": "u3ka_AAb8qE",
       "transcript_source_order": [
         {
+          "method": "YOUTUBE_TRANSCRIPT_API",
+          "available": "UNKNOWN（実行PCで取得して確認）"
+        },
+        {
+          "method": "YOUTUBE_TIMEDTEXT_API",
+          "available": "UNKNOWN（実行PCで取得して確認）"
+        },
+        {
           "method": "NOTEBOOK_YOUTUBE_SOURCE_FULLTEXT",
           "source_id": "d1fef625-ac11-40f7-b0d4-cfe2ae46c9a2",
           "available": false,
-          "chars": 0
-        },
-        {
-          "method": "YOUTUBE_TRANSCRIPT_API",
-          "available": "UNKNOWN（実行PCで取得して確認）"
+          "chars": 0,
+          "note": "最後の手段（単語の間に空白が入る読みにくい版）"
         }
       ],
       "existing": {
@@ -195,5 +200,5 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 
-- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T10時点で211件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
+- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T10時点で212件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
 - **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。 `migrate-plan` も実機未実行（Notebook内YouTubeソースの本文が実際に取れるか・その文字数はUNKNOWN）。

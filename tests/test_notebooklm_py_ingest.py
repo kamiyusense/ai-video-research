@@ -577,15 +577,29 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         self.assertEqual(res["status"], "TRANSCRIPT_UNAVAILABLE")
         self.assertEqual(c.add_calls, [])
 
-    def test_notebook_fulltext_first_then_fetcher_only_for_published_at(self):
-        """T10: 取得元の順は Notebook内YouTube本文 → YouTube字幕。本文が取れたら字幕は取りに行かず、投稿日時だけ使う。"""
+    def test_youtube_captions_first_then_notebook_fulltext_as_last_resort(self):
+        """T10 検品2周目：取得元の順は 渡されたcue → YouTube字幕 → Notebook内YouTube本文（読みにくい版なので最後の手段）。"""
         c = FakeClient([YT_SOURCE, NOTE_SOURCE])
         res = ing.run_ingest(c, VID, TITLE, NOTE, cues=None, live=True, notebook_id="nb-1",
-                             fetch_transcript=lambda vid: {"cues": [(0.0, 1.0, "使われない")], "published_at": "2026-07-25"})
+                             fetch_transcript=lambda vid: {"cues": [(0.0, 1.0, "YouTube字幕の発話")], "published_at": "2026-07-25",
+                                                           "acquisition_method": ing.ACQ_TRANSCRIPT_API})
         self.assertEqual(res["status"], "SUCCESS_2_SOURCE_OKF")
         body = c.add_calls[0][1]
+        self.assertIn("YouTube字幕の発話", body)
+        self.assertNotIn("動画の文字起こし本文", body)
+        self.assertNotIn("yt-1", c.fulltext_calls)  # YouTube字幕が取れたらNotebook本文は読まない
+        self.assertIn(f'acquisition_method: "{ing.ACQ_TRANSCRIPT_API}"', body)
+        self.assertIn('published_at: "2026-07-25"', body)
+
+    def test_notebook_fulltext_used_only_when_youtube_captions_fail(self):
+        c = FakeClient([YT_SOURCE, NOTE_SOURCE])
+        res = ing.run_ingest(c, VID, TITLE, NOTE, cues=None, live=True, notebook_id="nb-1",
+                             fetch_transcript=lambda vid: {"cues": [], "published_at": "2026-07-25"})
+        self.assertEqual(res["status"], "SUCCESS_2_SOURCE_OKF")
+        self.assertEqual(res["transcript_acquisition_method"], ing.ACQ_NOTEBOOK_FULLTEXT)
+        body = c.add_calls[0][1]
         self.assertIn("動画の文字起こし本文", body)
-        self.assertNotIn("使われない", body)
+        self.assertIn(f'acquisition_method: "{ing.ACQ_NOTEBOOK_FULLTEXT}"', body)
         self.assertIn('published_at: "2026-07-25"', body)
 
     def fake_youtube_http(self, caption_xml, watch_html):
@@ -1170,7 +1184,7 @@ class TestUrlSourceMigrationPlan(unittest.TestCase):
         self.assertIsNone(u3ka["existing"]["transcript_okf"])
         self.assertTrue(u3ka["existing"]["research_note_okf"].startswith("65b634f5"))
         self.assertEqual([o["method"] for o in u3ka["transcript_source_order"]],
-                         [ing.ACQ_NOTEBOOK_FULLTEXT, ing.ACQ_TRANSCRIPT_API])
+                         [ing.ACQ_TRANSCRIPT_API, ing.ACQ_TIMEDTEXT, ing.ACQ_NOTEBOOK_FULLTEXT])
         self.assertEqual(u3ka["to_add"], [{"kind": "transcript", "title": ing.transcript_title("u3ka_AAb8qE", u3ka["youtube_title"]),
                                            "logical_id": "youtube:u3ka_AAb8qE:transcript"}])
         self.assertEqual(u3ka["status"], "ADD_THEN_DELETE")
@@ -1198,8 +1212,8 @@ class TestUrlSourceMigrationPlan(unittest.TestCase):
         rag = next(i for i in rep["items"] if i["video_id"] == "pRfC1DILDEM")
         self.assertEqual(rag["status"], "READY_TO_DELETE_URL_SOURCE")
         self.assertEqual(rag["delete_after_readback"], ["25c0f62e-99aa-48bc-9486-357a350c76f5"])
-        self.assertEqual(rag["transcript_source_order"][0]["chars"], 20)
-        self.assertTrue(rag["transcript_source_order"][0]["available"])
+        self.assertEqual(rag["transcript_source_order"][-1]["chars"], 20)
+        self.assertTrue(rag["transcript_source_order"][-1]["available"])
 
     def test_unknown_video_id_is_not_scheduled_for_deletion(self):
         srcs = real_sources() + [{"id": "yt-zz", "type": "youtube", "title": "どこにも記録の無い動画"}]
