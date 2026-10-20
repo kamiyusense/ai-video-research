@@ -37,6 +37,7 @@
 | 20 | T13 字幕先頭2行（ID・動画URL）・時刻目印の切替配線・repair-plan --summary | 作業役（PR #14 `e074821`） | PASS（1周目・条件付き） | 独立実測252件OK・差分なし、registry.json／research 無変更。repair-plan --summary は読み取りのみで人が読める一覧が出る。時刻目印は既定OFF、`DEFAULT_PARAGRAPH_ANCHORS` 1か所で切替。要改善：置換候補の質がまちまち（共通語が「mac・mini・computer・use」など汎用語だけの候補あり）→T14。UNKNOWN：先頭2行の実機読み戻し・相棒PCの15本との行並び一致は未照合 |
 | 21 | T14 関連候補の精度向上 | 作業役（PR #14 `eade1e0`） | PASS（1周目・条件付き） | 独立実測260件OK・差分なし。候補147→49件（未登録118→35）、汎用語・大手名だけの候補は出さない。上位8組を目で確認：主題は合っている（例：dots、GPT-6.1 Sol、vault/CLAUDE.md）。pRfC↔u3ka は1位。UNKNOWN：落ちた組に本当は関連のものがある可能性、汎用語リストは31本向けの手作業、人の確認は未実施 |
 | 22 | T15 段落先頭の時刻目印を既定ON | 作業役（PR #14 `8a85bde`） | PASS（1周目・条件付き） | 独立実測267件OK・差分なし。`DEFAULT_PARAGRAPH_ANCHORS=True`、実出力で見出し直後に `ID:`／`動画:` 2行・荷札 `transcript_format: PARAGRAPHS_WITH_ANCHORS`。health は目印なし字幕を ATTENTION、migrate-plan は目印なし既存字幕を置き換え対象に、読み戻し正規化は ▶ 消失を吸収。文書は新旧併存なし。UNKNOWN：実機NotebookLMでの▶・URL表示、相棒PC再作成物との見出し文言の一致は未照合 |
+| 23 | T16 目印の書式を実機形式 `[HH:MM:SS] <URL>&t=秒s` に統一・相棒PC側ロードマップ取り込み | 作業役（PR #14 `20b1e32`） | PASS（1周目・条件付き） | 独立実測273件OK・差分なし。衝突マーカー0、ロードマップは v2.0 見出し1つ、ビルダーは新形式のみ出力（▶は読み取り側の許容だけ残す）。UNKNOWN：実Notebookの15本が実際にこの形式かは相棒PC報告のみ、見出し文言・荷札値の突き合わせ未実施→相棒PCで点検ツール（health／migrate-plan・読み取りのみ）を実行して独立確認する |
 
 ## 次のタスク（作業役向け）
 
