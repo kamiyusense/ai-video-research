@@ -27,16 +27,18 @@
 | 10 | T4 修正（2周目） | 作業役（PR #14 `4d6950b`） | PASS | 指摘4点すべて反映を差分で確認（実機dry-run済み・`--live`/health未実行、実CLI確認3コマンド、旧版の add-text 不具合とT5修正、旧 `610789c0` 置き換え済み）。差分はドキュメント3ファイルのみ、158件OK |
 | 11 | T6 ユーザー確定仕様（時刻リンク・投稿日時・URL単体登録廃止） | 作業役（PR #14 `bd515ca`） | NEEDS_FIX（1周目） | コードは良好：独立実測169件OK、cue行は `[HH:MM:SS](…&t=秒s)` で秒は切り捨て・発話は前後空白除去のみ、`published_at` を荷札に記録、時刻なしは登録せず停止、`--include-youtube-url` は拒否。不足：(1) 正とするドキュメント `claude/requirements-alignment-20261020` が未マージ（ロードマップに取り下げ済みの旧v1.2節が残る）、(2) 実機で取得実績のある youtube-transcript-api の取得元が未実装（既存timedtext経路は実機未確認）、(3) Drive経路の字幕OKFに `published_at` が渡らない |
 | 12 | T6 修正（2周目） | 作業役（PR #14 `4419d40`） | PASS | 独立実測171件OK。ロードマップの最上位節は requirements 側の「ユーザー確定要件R1〜R5」1つだけ（重複解消）。字幕取得は youtube-transcript-api → timedtext の順で、取得元を `acquisition_method` に記録。Drive経路の字幕OKFにも `published_at`。youtube-transcript-api 1.2.2 の実データとの属性照合は実機未確認 |
+| 13 | T7 研究ノート時刻リンク化／Drive YouTube参照ファイル廃止 | 作業役（PR #14 `8a90508`） | PASS（1周目） | 独立実測177件OK、テスト後の作業ツリー差分なし。荷札・既存リンク・URL・インラインコードは不変、二重適用で不変を確認。pRfC1DILDEM研究ノートに適用すると47か所が時刻リンク化（GitHubファイルは不変）。Python/GASの出力一致テストPASS |
 
 ## 次のタスク（作業役向け）
 
-**T7: 研究ノートの根拠時刻をリンク化／Drive経路のYouTube参照ファイル廃止（R2・R3）**
-- 対象: `notebooklm_py_ingest.py`、`notebook_auto_ingest.py`、`receipt_to_research.py`（新規研究ノートの生成）、テスト
+**T8: 「URLを貼るだけ」の通し運転にNotebook登録（notebooklm-py）をつなぐ（R5）**
+- 対象: `auto_research_pipeline.py`（`run_pipeline` と CLI）、`receipt_to_research.py`、テスト
 - やること:
-  1. `linkify_timestamps(text, video_id)`：本文中の `MM:SS` / `HH:MM:SS` 形式の時刻（既にリンクになっているもの・URL内・コードブロック内・荷札内は除く）を `[MM:SS](https://www.youtube.com/watch?v=<id>&t=<秒>s)` に置き換える。研究ノートをNotebookへ登録する直前と、`receipt_to_research.py` が新しい研究ノートを書くときに適用する。GitHubの既存研究ノートは書き換えない（Notebook側のコピーだけ）。
-  2. Drive同期の `<id>_youtube_source.txt` の書き出しをやめる（R2：URL単体の資料を作らない）。
-  3. テスト：時刻の置換と秒数、除外ケース（既存リンク・URL・荷札・コードブロック・「12:00開始」のような時刻でない用法は対象外にできなくても、少なくとも既存リンクとURLは壊さない）、二重適用しても変わらない、Drive同期で youtube_source.txt が作られない。既存テスト非破壊。
-- 禁止: 実Notebook接続・書き込み、GitHub既存研究ノートの書き換え。
+  1. `--notebook-backend {cdp,notebooklm-py}` を追加（既定は現状どおり cdp）。`notebooklm-py` のときは、研究ノート生成・GitHub保存のあとに `notebooklm_py_ingest.run_ingest` を呼び、字幕取得（youtube-transcript-api→timedtext）・2ソース不足分の登録・読み戻しまで1回の実行で行う。既定は計画のみ。書き込みは `--live` と `--notebook-id` の両方が必要（既存の安全条件をそのまま引き継ぐ）。
+  2. `receipt_to_research.py` が書く研究ノートの荷札に `published_at`（取得できなければ `"UNKNOWN"`）と `transcript_logical_id` が必ず入るようにする（R4・R1）。
+  3. 実行結果（status・plan・writes・新ソースID）をパイプラインの戻り値に含める。ログイン切れ・字幕取得不可・曖昧は書き込み0で止まり、理由を返す。
+  4. テスト（偽クライアント・偽取得関数・ネット不要）：新規URL→計画（字幕・研究ノートの2件）、既に揃った動画→NO_OP、ログイン切れ→停止、字幕不可→停止、`--live` に `--notebook-id` 無し→停止、研究ノート荷札に `published_at` と `transcript_logical_id`。既存テスト非破壊。
+- 禁止: 実Notebook接続・書き込み、Gemini呼び出し、GitHubへの実push。
 
 ## ユーザー判断の記録
 
