@@ -517,6 +517,10 @@ def run_notebook_registration_only(
         except Exception as ex:
             print(f"  - [WARNING] 字幕再取得に失敗しました: {ex}")
 
+    # If cues still missing, refuse to falsely complete 2-source OKF
+    if not cues and not mock_sources:
+        print("  - [WARNING] 実字幕Cueが未取得です。仮資料での完全SUCCESSは遮断されます (PARTIAL_NO_SUBTITLES)。")
+
     nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
         video_id=video_id,
         video_url=v_url,
@@ -557,10 +561,13 @@ def evaluate_final_status(
     - Drive sync alone is NOT sufficient.
     - Chrome tab detection alone is NOT sufficient.
     - Double counting of same item is NOT sufficient.
-    - Mock execution is flagged as is_mock=True.
+    - Mock execution is flagged as is_mock=True and BLOCKS SUCCESS_2_SOURCE_OKF.
+    - Captionless placeholder is NOT permitted.
     """
     reasons = []
 
+    if is_mock:
+        reasons.append("Mockシミュレーション実行のため実機検証未完了 (is_mock=True)")
     if no_push:
         reasons.append("no_pushフラグが指定されているためGitHubリモート未反映")
     if not github_push_success:
@@ -572,7 +579,7 @@ def evaluate_final_status(
     if not remote_registry_readback_matched:
         reasons.append("リモートregistry.jsonのSHA-256不一致または取得失敗")
     if not real_content_acquired:
-        reasons.append("実動画字幕（cue 1件以上）が未取得")
+        reasons.append("実動画字幕（cue 1件以上）が未取得 (仮資料は不許可)")
     if not has_canonical_url:
         reasons.append("両資料（字幕原文OKF・研究ノートOKF）に元YouTube URLが存在していない")
     if not has_mutual_logical_links:
@@ -596,6 +603,8 @@ def evaluate_final_status(
         return "SUCCESS_2_SOURCE_OKF", []
 
     # Map to specific PARTIAL status
+    if is_mock:
+        return "PARTIAL_MOCK_VERIFIED", reasons
     if not real_content_acquired:
         return "PARTIAL_NO_SUBTITLES", reasons
     if no_push:
@@ -918,12 +927,31 @@ def run_pipeline(
     # Final Strict SUCCESS Evaluation (11 Mandatory Conditions + 2-Source OKF + Metadata Integrity)
     receipt_vids = receipt.get("videos", [])
     first_vid_meta = receipt_vids[0] if receipt_vids else {}
-    has_canonical_url = bool(first_vid_meta.get("url") and "youtube.com/watch?v=" in first_vid_meta.get("url", ""))
+    research_file = ROOT / research_md_path
+    rn_text = research_file.read_text(encoding="utf-8") if research_file.exists() else ""
+    drive_target = Path(nb_res.get("drive_sync", {}).get("target_dir", ""))
+    drive_tr_file = drive_target / f"{video_id}_transcript_okf.md" if drive_target else None
+    tr_text = drive_tr_file.read_text(encoding="utf-8") if (drive_tr_file and drive_tr_file.exists()) else ""
+
+    link_check = notebook_auto_ingest.verify_mutual_okf_links(
+        research_note_text=rn_text,
+        transcript_okf_text=tr_text,
+        video_id=video_id,
+        video_url=f"https://www.youtube.com/watch?v={video_id}",
+    ) if (rn_text and tr_text) else {}
+
+    has_canonical_url = bool(
+        link_check.get("urls_match")
+        or (first_vid_meta.get("url") and "youtube.com/watch?v=" in first_vid_meta.get("url", ""))
+    )
     has_mutual_logical_links = bool(
-        first_vid_meta.get("logical_id")
-        and first_vid_meta.get("transcript_logical_id")
-        and f"youtube:{video_id}:research" in first_vid_meta.get("logical_id", "")
-        and f"youtube:{video_id}:transcript" in first_vid_meta.get("transcript_logical_id", "")
+        link_check.get("mutual_matches")
+        or (
+            first_vid_meta.get("logical_id")
+            and first_vid_meta.get("transcript_logical_id")
+            and f"youtube:{video_id}:research" in first_vid_meta.get("logical_id", "")
+            and f"youtube:{video_id}:transcript" in first_vid_meta.get("transcript_logical_id", "")
+        )
     )
 
     final_status, fail_reasons = evaluate_final_status(

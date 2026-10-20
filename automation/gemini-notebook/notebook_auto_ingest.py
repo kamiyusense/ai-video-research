@@ -357,6 +357,92 @@ def extract_metadata_from_research_md(research_md_path: Optional[Path]) -> Dict[
         return {}
 
 
+def verify_transcript_content_integrity(
+    cues: Optional[List[Any]],
+    transcript_okf_text: str,
+) -> Dict[str, Any]:
+    """Verify integrity between actual caption cues and generated Transcript OKF content.
+    
+    Prevents false claims of full body verification when only titles are present in DOM.
+    """
+    if not cues:
+        return {
+            "has_actual_cues": False,
+            "cues_count": 0,
+            "cues_fully_contained": False,
+            "content_sha256": hashlib.sha256(transcript_okf_text.encode("utf-8")).hexdigest() if transcript_okf_text else None,
+            "body_readback_status": "NOT_ACQUIRED",
+            "body_readback_note": "字幕Cueが0件または未指定のため本文完全性検証は不可",
+        }
+
+    cues_count = len(cues)
+    all_contained = True
+    for c in cues[:15]:
+        if isinstance(c, dict):
+            txt = c.get("text", "").strip()
+        elif isinstance(c, (list, tuple)) and len(c) > 2:
+            txt = str(c[2]).strip()
+        else:
+            txt = str(c).strip()
+        if txt and txt not in transcript_okf_text:
+            all_contained = False
+            break
+
+    return {
+        "has_actual_cues": True,
+        "cues_count": cues_count,
+        "cues_fully_contained": all_contained,
+        "content_sha256": hashlib.sha256(transcript_okf_text.encode("utf-8")).hexdigest() if transcript_okf_text else None,
+        "body_readback_status": "UNKNOWN",
+        "body_readback_note": "NotebookLMソース一覧DOMからは本文内容の直接読み戻しは未実施（本文完全立証は実機ソースビューアー操作が必要なためUNKNOWNとして保持）",
+    }
+
+
+def verify_mutual_okf_links(
+    research_note_text: str,
+    transcript_okf_text: str,
+    video_id: str,
+    video_url: str,
+) -> Dict[str, Any]:
+    """Strictly verify mutual links, canonical URLs, and distinct clickable vs logical IDs."""
+    clean_url = video_url.split("&")[0].split("#")[0].strip()
+
+    rn_has_logical = f'logical_id: "youtube:{video_id}:research"' in research_note_text or f"logical_id: youtube:{video_id}:research" in research_note_text
+    rn_has_tr_logical = f'transcript_logical_id: "youtube:{video_id}:transcript"' in research_note_text or f"transcript_logical_id: youtube:{video_id}:transcript" in research_note_text
+    rn_has_url = clean_url in research_note_text
+    rn_has_vid = f'video_id: "{video_id}"' in research_note_text or f"video_id: {video_id}" in research_note_text
+
+    tr_has_logical = f'logical_id: "youtube:{video_id}:transcript"' in transcript_okf_text or f"logical_id: youtube:{video_id}:transcript" in transcript_okf_text
+    tr_has_rn_logical = (
+        f'research_logical_id: "youtube:{video_id}:research"' in transcript_okf_text
+        or f'related_research_id: "youtube:{video_id}:research"' in transcript_okf_text
+        or f"research_logical_id: youtube:{video_id}:research" in transcript_okf_text
+        or f"related_research_id: youtube:{video_id}:research" in transcript_okf_text
+    )
+    tr_has_url = clean_url in transcript_okf_text
+    tr_has_vid = f'video_id: "{video_id}"' in transcript_okf_text or f"video_id: {video_id}" in transcript_okf_text
+
+    mutual_matches = rn_has_logical and rn_has_tr_logical and tr_has_logical and tr_has_rn_logical
+    urls_match = rn_has_url and tr_has_url
+    vids_match = rn_has_vid and tr_has_vid
+
+    has_clickable_notebook_link = "notebook.google.com/notebook/" in research_note_text and "/source/" in research_note_text
+
+    return {
+        "is_valid": bool(mutual_matches and urls_match and vids_match),
+        "mutual_matches": bool(mutual_matches),
+        "urls_match": bool(urls_match),
+        "vids_match": bool(vids_match),
+        "rn_logical_id": f"youtube:{video_id}:research" if rn_has_logical else None,
+        "rn_transcript_logical_id": f"youtube:{video_id}:transcript" if rn_has_tr_logical else None,
+        "tr_logical_id": f"youtube:{video_id}:transcript" if tr_has_logical else None,
+        "tr_research_logical_id": f"youtube:{video_id}:research" if tr_has_rn_logical else None,
+        "canonical_url": clean_url if urls_match else None,
+        "clickable_link_status": "VERIFIED" if has_clickable_notebook_link else "UNKNOWN",
+        "clickable_link_note": "Notebook固有ソースIDへの直接クリック可能リンクは未取得（論理ID参照のみ検証済み）" if not has_clickable_notebook_link else "クリック可能リンク検証済み",
+    }
+
+
 def build_transcript_okf_content(
     video_id: str,
     video_url: str,
@@ -374,7 +460,15 @@ def build_transcript_okf_content(
     transcript_logical_id = f"youtube:{video_id}:transcript"
     research_logical_id = f"youtube:{video_id}:research"
     cues_list = cues or []
-    cue_count = len(cues_list)
+    has_actual_cues = bool(cues_list and len(cues_list) > 0)
+
+    # Check for placeholder
+    is_placeholder = bool(raw_text and ("字幕発話データ未指定" in raw_text or "NOT_ACQUIRED" in raw_text))
+    if not has_actual_cues and (not raw_text or is_placeholder):
+        status = "NOT_ACQUIRED"
+        has_actual_cues = False
+
+    cue_count = len(cues_list) if has_actual_cues else 0
 
     clean_source_id = str(notebook_source_id).strip() if notebook_source_id else "UNKNOWN"
     if not clean_source_id or clean_source_id.upper() in ("", "NONE", "NULL"):
@@ -407,6 +501,7 @@ def build_transcript_okf_content(
         f'language: "{language}"',
         f'acquired_at: "{today}"',
         f"cue_count: {cue_count}",
+        f"has_actual_cues: {str(has_actual_cues).lower()}",
         f'transcript_status: "{status}"',
         'acquisition_method: "YOUTUBE_TIMEDTEXT_API"',
         "tags:",
@@ -436,6 +531,8 @@ def build_transcript_okf_content(
         f"# 【字幕原文】 {video_title}",
         "",
         f"<!-- ID: AI_VIDEO_TRANSCRIPT_RAW:{video_id} -->",
+        f"<!-- HAS_ACTUAL_CUES: {has_actual_cues} -->",
+        f"<!-- CUES_COUNT: {cue_count} -->",
         f"<!-- LOGICAL_ID: {transcript_logical_id} -->",
         f"<!-- RESEARCH_REF: {research_logical_id} -->",
         f"<!-- RELATED_RESEARCH_ID: {research_logical_id} -->",
@@ -507,6 +604,7 @@ def evaluate_2_source_okf_independence(
     items: List[Dict[str, Any]],
     video_id: str,
     video_title: str,
+    has_actual_cues: bool = True,
 ) -> Dict[str, Any]:
     """Verify presence and independence of Transcript OKF and Research Note OKF.
     
@@ -588,6 +686,10 @@ def evaluate_2_source_okf_independence(
         if transcript_candidates:
             chosen_transcript_idx = transcript_candidates[-1]
 
+    if not has_actual_cues:
+        transcript_candidates = []
+        chosen_transcript_idx = None
+
     yt_found = chosen_yt_idx is not None
     note_found = chosen_note_idx is not None
     transcript_found = chosen_transcript_idx is not None
@@ -595,6 +697,7 @@ def evaluate_2_source_okf_independence(
         note_found
         and transcript_found
         and chosen_note_idx != chosen_transcript_idx
+        and has_actual_cues
     )
 
     def _extract_meta(idx):
@@ -633,6 +736,9 @@ def evaluate_2_source_okf_independence(
         "is_2_source_okf_verified": is_2_source_okf,
         "independent_sources_count": (1 if note_found else 0) + (1 if transcript_found else 0),
         "independent_sources_distinct": bool(is_2_source_okf),
+        "has_actual_cues": has_actual_cues,
+        "content_body_verified": "UNKNOWN",
+        "body_readback_note": "NotebookLMソース一覧DOMからは本文内容の読み戻しは不可（ソースビューアー遷移が未実装のためUNKNOWNとして保持）",
     }
 
 
@@ -1114,6 +1220,16 @@ def ingest_and_verify_notebook(
             related_records=extracted_rel,
         )
 
+    has_actual_cues = (
+        bool(cues and len(cues) > 0)
+        or bool(transcript_content and "- (字幕発話データ未指定)" not in transcript_content and "NOT_ACQUIRED" not in transcript_content)
+        or any(
+            ("AI_VIDEO_TRANSCRIPT_RAW" in str(s) or ("youtube:" in str(s) and ":transcript" in str(s)))
+            for s in (mock_sources or [])
+        )
+    )
+    integrity_res = verify_transcript_content_integrity(cues, final_transcript_text)
+
     # 1. Drive Sync (Guaranteed deterministic channel: YT txt, Research MD & Transcript OKF MD)
     drive_res = sync_to_drive_notebook_sources(
         video_id=video_id,
@@ -1169,7 +1285,7 @@ def ingest_and_verify_notebook(
             # Mock mode for deterministic testing
             current_sources = list(mock_sources) if mock_sources is not None else []
             items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
-            okf_pre = evaluate_2_source_okf_independence(items, video_id, video_title)
+            okf_pre = evaluate_2_source_okf_independence(items, video_id, video_title, has_actual_cues=has_actual_cues)
             yt_found = okf_pre["youtube_found"]
             note_found = okf_pre["research_note_found"]
             transcript_found = okf_pre["transcript_source_found"]
@@ -1180,8 +1296,8 @@ def ingest_and_verify_notebook(
                 if not note_found:
                     current_sources.append(f"AI_VIDEO_RESEARCH_NOTE:{video_id}")
                     actions_taken.append("COPIED_TEXT_NOTE_INSERTED")
-                # Mandatory 2-Source 2/2: Transcript OKF
-                if not transcript_found:
+                # Mandatory 2-Source 2/2: Transcript OKF (ONLY if actual cues are present)
+                if not transcript_found and has_actual_cues:
                     current_sources.append(f"AI_VIDEO_TRANSCRIPT_RAW:{video_id}")
                     actions_taken.append("TRANSCRIPT_OKF_INSERTED")
                 # Optional reference: YouTube URL source
@@ -1191,7 +1307,7 @@ def ingest_and_verify_notebook(
 
             # Post-readback
             post_items = [{"index": i, "text": s} for i, s in enumerate(current_sources)]
-            okf_post = evaluate_2_source_okf_independence(post_items, video_id, video_title)
+            okf_post = evaluate_2_source_okf_independence(post_items, video_id, video_title, has_actual_cues=has_actual_cues)
             yt_found_post = okf_post["youtube_found"]
             note_found_post = okf_post["research_note_found"]
             transcript_found_post = okf_post["transcript_source_found"]
@@ -1201,6 +1317,8 @@ def ingest_and_verify_notebook(
                 status = "SUCCESS_2_SOURCE_OKF"
             elif yt_found_post and note_found_post:
                 status = "PARTIAL_2_SOURCE_OKF_PENDING"
+            elif not has_actual_cues:
+                status = "PARTIAL_NO_SUBTITLES"
             elif yt_found_post or note_found_post or transcript_found_post:
                 status = "NOTEBOOK_READBACK_PARTIAL"
             else:
@@ -1220,6 +1338,9 @@ def ingest_and_verify_notebook(
                 "detected_source_count": len(post_items),
                 "sources_sample": current_sources[:10],
                 "actions_taken": actions_taken,
+                "has_actual_cues": has_actual_cues,
+                "content_body_verified": "UNKNOWN",
+                "body_readback_note": "NotebookLMソース一覧DOMからは本文内容の読み戻しは不可（ソースビューアー遷移が未実装のためUNKNOWNとして保持）",
             }
     elif cdp_available:
         try:
@@ -1347,18 +1468,26 @@ def ingest_and_verify_notebook(
     # 2. Chrome tab detection alone is NOT sufficient.
     # 3. Double counting of same item is NOT sufficient.
     # 4. Independent distinct elements (n != t) verified from DOM is strictly mandatory.
+    # 5. Mock mode is strictly separated from LIVE SUCCESS.
+    # 6. Placeholder captions ("字幕発話データ未指定") do NOT qualify as Transcript OKF.
+    is_mock = bool(mock_cdp)
     is_full_success = (
         drive_res.get("status") == "DRIVE_SYNC_SUCCESS"
         and is_2_source_okf
         and readback_res.get("independent_sources_distinct", False)
+        and has_actual_cues
     )
 
     if is_full_success and is_2_source_okf:
         final_status = "SUCCESS_2_SOURCE_OKF"
-        print("  - [状態区分] 正式完成 (SUCCESS_2_SOURCE_OKF): 研究ノートOKFと字幕原文OKFの2ソース独立実在を完全立証。")
+        mode_str = " (Mock検証)" if is_mock else " (実機立証)"
+        print(f"  - [状態区分] 正式完成 (SUCCESS_2_SOURCE_OKF){mode_str}: 研究ノートOKFと字幕原文OKFの2ソース独立実在を立証。")
     elif readback_res.get("youtube_source_found") and readback_res.get("research_note_found"):
         final_status = "PARTIAL_2_SOURCE_OKF_PENDING"
         print("  - [状態区分] 暫定状態 (PARTIAL_2_SOURCE_OKF_PENDING): 旧式（YouTube URL＋研究ノート）のみ確認。正式完成 (SUCCESS_2_SOURCE_OKF) には字幕原文OKFの独立登録が必須です。")
+    elif not has_actual_cues:
+        final_status = "PARTIAL_NO_SUBTITLES"
+        print("  - [状態区分] 字幕未取得 (PARTIAL_NO_SUBTITLES): 字幕Cueが存在しないため、仮資料は正式な字幕原文OKFとして認定できません。")
     else:
         final_status = "NOTEBOOK_SYNC_PENDING_READBACK"
         print(f"  - [状態区分] 保留状態 ({final_status}): Notebook読み戻し未完了または不足ソースあり。")
@@ -1366,7 +1495,7 @@ def ingest_and_verify_notebook(
     return {
         "status": final_status,
         "execution_mode": "MOCK" if mock_cdp else "LIVE_CDP",
-        "is_mock": bool(mock_cdp),
+        "is_mock": is_mock,
         "notebook_id": NOTEBOOK_ID,
         "notebook_url": NOTEBOOK_URL,
         "drive_sync": drive_res,
@@ -1379,6 +1508,10 @@ def ingest_and_verify_notebook(
         "independent_sources_count": readback_res.get("independent_sources_count", 0),
         "research_note_found": readback_res.get("research_note_found", False),
         "transcript_source_found": readback_res.get("transcript_source_found", False),
+        "has_actual_cues": has_actual_cues,
+        "content_integrity": integrity_res,
+        "body_readback_status": integrity_res.get("body_readback_status", "UNKNOWN"),
+        "clickable_link_status": "UNKNOWN",
     }
 
 

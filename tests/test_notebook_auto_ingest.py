@@ -204,6 +204,7 @@ class TestNotebookAutoIngest(unittest.TestCase):
                 research_md_path=fake_md,
                 mock_cdp=True,
                 mock_sources=["https://www.youtube.com/watch?v=vidA"],
+                cues=[(0.0, 10.0, "テスト発話A")],
                 drive_dir=tmp_path / "drive_sync",
             )
             self.assertEqual(res_partial_yt["status"], "SUCCESS_2_SOURCE_OKF")

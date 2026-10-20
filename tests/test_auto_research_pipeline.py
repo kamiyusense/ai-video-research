@@ -257,8 +257,8 @@ class TestAutoResearchPipeline(unittest.TestCase):
             "https://www.youtube.com/watch?v=u3ka_AAb8qE",
             mock_cdp=True,
         )
-        self.assertIn(res.get("status"), ("RESUMED_NOTEBOOK_INGEST", "ALREADY_REGISTERED", "SUCCESS_2_SOURCE_OKF"))
-        if res.get("status") in ("RESUMED_NOTEBOOK_INGEST", "SUCCESS_2_SOURCE_OKF"):
+        self.assertIn(res.get("status"), ("RESUMED_NOTEBOOK_INGEST", "ALREADY_REGISTERED", "SUCCESS_2_SOURCE_OKF", "RESUMED_NOTEBOOK_INGEST_PARTIAL"))
+        if res.get("status") in ("RESUMED_NOTEBOOK_INGEST", "SUCCESS_2_SOURCE_OKF", "RESUMED_NOTEBOOK_INGEST_PARTIAL"):
             self.assertIn("notebook_ingest", res)
 
     def test_short_description_only_does_not_satisfy_real_content_acquired(self):
@@ -320,6 +320,7 @@ class TestAutoResearchPipeline(unittest.TestCase):
                 "https://www.youtube.com/watch?v=lC5jxpYmatE",
                 "AI_VIDEO_RESEARCH_NOTE:lC5jxpYmatE",
             ],  # Transcript OKF is missing
+            cues=[{"start": 0.0, "end": 10.0, "text": "AI技術の検証"}],
         )
         self.assertTrue(nb_res.get("is_full_success"))
         self.assertIn("TRANSCRIPT_OKF_INSERTED", nb_res.get("actions_taken", []))
@@ -582,6 +583,128 @@ class TestAutoResearchPipeline(unittest.TestCase):
         res_mismatch = nai.evaluate_2_source_okf_independence(items_mismatch, vid, v_title)
         self.assertFalse(res_mismatch["is_2_source_okf_verified"])
         self.assertFalse(res_mismatch["research_note_found"])
+
+    def test_evaluate_final_status_blocks_mock_mode(self):
+        """1. Mock成功の遮断: is_mock=True は全条件が揃っていても SUCCESS_2_SOURCE_OKF を遮断すること。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
+            is_mock=True,  # Mock実行
+        )
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
+        self.assertEqual(status, "PARTIAL_MOCK_VERIFIED")
+        self.assertTrue(any("Mockシミュレーション" in r for r in reasons))
+
+    def test_resume_fails_when_captions_missing(self):
+        """2. 字幕なしの仮資料を正式成功にしない: Resume経路で字幕Cueが存在しない場合、完全SUCCESSを遮断すること。"""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            fake_md = tmp_path / "note.md"
+            fake_md.write_text("dummy note", encoding="utf-8")
+
+            nb_res = auto_research_pipeline.run_notebook_registration_only(
+                video_id="dummyNoCuesVid",
+                research_md_path=fake_md,
+                video_title="字幕なしテスト動画",
+                mock_cdp=True,
+                cues=None,  # 字幕未取得
+                mock_sources=["https://www.youtube.com/watch?v=dummyNoCuesVid"],
+            )
+            self.assertNotEqual(nb_res.get("status"), "SUCCESS_2_SOURCE_OKF")
+            self.assertIn(nb_res.get("status"), ("PARTIAL_NO_SUBTITLES", "PARTIAL_2_SOURCE_OKF_PENDING"))
+            self.assertFalse(nb_res.get("is_full_success"))
+            self.assertFalse(nb_res.get("has_actual_cues"))
+
+    def test_verify_transcript_content_integrity_preserves_unknown_body_status(self):
+        """3. 保存本文の検証: ソース一覧DOMの検出のみでは本文完全立証と扱わず、UNKNOWNとして保持すること。"""
+        import notebook_auto_ingest as nai
+
+        sample_cues = [
+            {"start": 0.0, "end": 5.0, "text": "第1文の実発話"},
+            {"start": 5.0, "end": 10.0, "text": "第2文の実発話"},
+        ]
+        tr_text = nai.build_transcript_okf_content(
+            video_id="testVidIntegrity",
+            video_url="https://www.youtube.com/watch?v=testVidIntegrity",
+            video_title="本文検証テスト",
+            cues=sample_cues,
+        )
+        integrity = nai.verify_transcript_content_integrity(sample_cues, tr_text)
+        self.assertTrue(integrity["has_actual_cues"])
+        self.assertEqual(integrity["cues_count"], 2)
+        self.assertTrue(integrity["cues_fully_contained"])
+        self.assertEqual(integrity["body_readback_status"], "UNKNOWN")
+        self.assertIn("UNKNOWNとして保持", integrity["body_readback_note"])
+
+        # 字幕なし時
+        integrity_empty = nai.verify_transcript_content_integrity([], "")
+        self.assertFalse(integrity_empty["has_actual_cues"])
+        self.assertEqual(integrity_empty["body_readback_status"], "NOT_ACQUIRED")
+
+    def test_verify_mutual_okf_links_and_clickable_distinction(self):
+        """4. 双方のURL・相互リンク検証: 厳格照合および実クリック可能リンク(UNKNOWN)の区別を検証。"""
+        import notebook_auto_ingest as nai
+
+        vid = "u3ka_AAb8qE"
+        v_url = f"https://www.youtube.com/watch?v={vid}"
+        okf_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        rn_text = okf_md.read_text(encoding="utf-8")
+
+        tr_text = nai.build_transcript_okf_content(
+            video_id=vid,
+            video_url=v_url,
+            video_title="【OKF実践】",
+            cues=[{"start": 496.0, "end": 548.0, "text": "YAMLフロントマターによる荷札"}],
+            related_records=[{"target_id": "youtube:pRfC1DILDEM:research", "relation": "COMPLEMENTS", "status": "CONFIRMED"}],
+        )
+
+        res = nai.verify_mutual_okf_links(rn_text, tr_text, vid, v_url)
+        self.assertTrue(res["is_valid"])
+        self.assertTrue(res["mutual_matches"])
+        self.assertTrue(res["urls_match"])
+        self.assertTrue(res["vids_match"])
+        self.assertEqual(res["clickable_link_status"], "UNKNOWN")
+        self.assertIn("直接クリック可能リンクは未取得", res["clickable_link_note"])
+
+    def test_rag_and_okf_research_notes_verifications(self):
+        """5. RAG・OKF既存2動画の検品: 字幕UNVERIFIEDの保持、出典付きCOMPLEMENTS、UI制限案内の存在を立証。"""
+        rag_md = ROOT / "research" / "2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+        okf_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+
+        rag_text = rag_md.read_text(encoding="utf-8")
+        okf_text = okf_md.read_text(encoding="utf-8")
+
+        # 字幕完全性未証明の誠実な保持
+        self.assertIn('transcript_status: "UNVERIFIED"', rag_text)
+        self.assertIn('transcript_status: "UNVERIFIED"', okf_text)
+
+        # 出典付きCOMPLEMENTS関係
+        self.assertIn('target_id: "youtube:u3ka_AAb8qE:research"', rag_text)
+        self.assertIn('relation: "COMPLEMENTS"', rag_text)
+        self.assertIn('status: "CONFIRMED"', rag_text)
+        self.assertIn("13:16", rag_text)
+
+        self.assertIn('target_id: "youtube:pRfC1DILDEM:research"', okf_text)
+        self.assertIn('relation: "COMPLEMENTS"', okf_text)
+        self.assertIn('status: "CONFIRMED"', okf_text)
+        self.assertIn("08:16", okf_text)
+
+        # Notebook UI制限事項の明記
+        self.assertIn("NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様", rag_text)
+        self.assertIn("NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様", okf_text)
 
 
 if __name__ == "__main__":
