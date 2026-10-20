@@ -290,6 +290,101 @@ class TestRealNotebookTitles(unittest.TestCase):
         self.assertEqual(c.add_calls, [])
 
 
+class TestCliAdapterAddText(unittest.TestCase):
+    """T5: 実CLI（notebooklm-py 0.8.5）の `source add - --type text` に合わせたアダプタ。"""
+
+    def fake_run(self, stdout, rc=0):
+        calls = []
+
+        def run(args, **kw):
+            calls.append({"args": args, **kw})
+            return ing.subprocess.CompletedProcess(args, rc, stdout=stdout, stderr="")
+
+        return run, calls
+
+    def test_add_text_args_stdin_and_nested_id(self):
+        run, calls = self.fake_run(json.dumps({"source": {"id": "src-123", "title": "t"}}))
+        c = ing.NotebookLmCliClient("nb-1", add_timeout=777)
+        with mock.patch.object(ing.subprocess, "run", run):
+            sid = c.add_text("【字幕原文】題 [abc]", "本文\n2行目")
+        self.assertEqual(sid, "src-123")
+        self.assertEqual(calls[0]["args"], [
+            "notebooklm", "source", "add", "-", "--type", "text",
+            "--title", "【字幕原文】題 [abc]", "--json", "--notebook", "nb-1",
+        ])
+        self.assertEqual(calls[0]["input"], "本文\n2行目")
+        self.assertEqual(calls[0]["timeout"], 777)
+
+    def test_add_text_default_timeout_is_long(self):
+        run, calls = self.fake_run(json.dumps({"source": {"id": "x"}}))
+        with mock.patch.object(ing.subprocess, "run", run):
+            ing.NotebookLmCliClient("nb-1").add_text("t", "b")
+        self.assertGreaterEqual(calls[0]["timeout"], 600)
+
+    def test_add_text_flat_id_fallback(self):
+        run, _ = self.fake_run(json.dumps({"id": "flat-1"}))
+        with mock.patch.object(ing.subprocess, "run", run):
+            self.assertEqual(ing.NotebookLmCliClient("nb-1").add_text("t", "b"), "flat-1")
+
+    def test_add_text_without_id_returns_none(self):
+        for out in (json.dumps({"source": {}}), "not json", json.dumps([1])):
+            run, _ = self.fake_run(out)
+            with mock.patch.object(ing.subprocess, "run", run):
+                self.assertIsNone(ing.NotebookLmCliClient("nb-1").add_text("t", "b"))
+
+    def test_add_without_id_goes_to_readback_not_resend(self):
+        """CLIがIDを返さない → 再送せず一覧で確認（入っていれば CONFIRMED_BY_READBACK）。"""
+        title = ing.transcript_title(VID, TITLE)
+        state = {"listed": [
+            {"id": "yt-1", "type": "youtube", "title": TITLE},
+            {"id": "rn-1", "type": "markdown", "title": ing.research_note_title(VID, TITLE)},
+        ]}
+        add_calls = []
+
+        def run(args, **kw):
+            sub = args[1:3]
+            if args[1] == "auth":
+                return ing.subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if sub == ["source", "list"]:
+                return ing.subprocess.CompletedProcess(args, 0, stdout=json.dumps({"sources": state["listed"]}), stderr="")
+            if sub == ["source", "add"]:
+                add_calls.append(kw["input"])
+                state["listed"] = state["listed"] + [{"id": "tr-new", "type": "text", "title": title}]
+                state["body"] = kw["input"]
+                return ing.subprocess.CompletedProcess(args, 0, stdout="{}", stderr="")
+            if sub == ["source", "fulltext"]:
+                body = state.get("body", "") if args[3] == "tr-new" else "動画の文字起こし本文"
+                return ing.subprocess.CompletedProcess(args, 0, stdout=json.dumps({"content": body}), stderr="")
+            raise AssertionError(args)
+
+        c = ing.NotebookLmCliClient("nb-1")
+        with mock.patch.object(ing.subprocess, "run", run):
+            res = ing.run_ingest(c, VID, TITLE, NOTE, cues=None, live=True, notebook_id="nb-1")
+        self.assertEqual(len(add_calls), 1)
+        self.assertEqual(res["writes"][0]["result"], "CONFIRMED_BY_READBACK")
+        self.assertEqual(res["writes"][0]["source_id"], "tr-new")
+        self.assertEqual(res["status"], "SUCCESS_2_SOURCE_OKF")
+
+    def test_add_timeout_is_unknown_and_not_resent(self):
+        add_calls = []
+
+        def run(args, **kw):
+            if args[1] == "auth":
+                return ing.subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[1:3] == ["source", "list"]:
+                return ing.subprocess.CompletedProcess(args, 0, stdout=json.dumps({"sources": [
+                    {"id": "rn-1", "type": "markdown", "title": ing.research_note_title(VID, TITLE)}]}), stderr="")
+            if args[1:3] == ["source", "add"]:
+                add_calls.append(1)
+                raise ing.subprocess.TimeoutExpired(args, kw["timeout"])
+            raise AssertionError(args)
+
+        with mock.patch.object(ing.subprocess, "run", run):
+            res = ing.run_ingest(ing.NotebookLmCliClient("nb-1"), VID, TITLE, NOTE, cues=CUES, live=True, notebook_id="nb-1")
+        self.assertEqual(add_calls, [1])
+        self.assertEqual(res["status"], "WRITE_RESULT_UNKNOWN")
+
+
 class TestHealthCheck(unittest.TestCase):
     """T3: 読み取り専用のNotebook健康診断。"""
 

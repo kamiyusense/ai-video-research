@@ -60,28 +60,32 @@ class NotebookClient(Protocol):
 class NotebookLmCliClient:
     """notebooklm CLI を subprocess で呼ぶ実機用アダプタ。
 
-    UNVERIFIED: 下記コマンドの正確さは実機未確認。実機で確認済みなのは
-    `notebooklm source list --json` と `notebooklm auth check --test --passive` の形だけで、
-    ノートブック指定フラグ・fulltext・add-text の書式は推定。実機で使う前に `--help` で照合すること。
+    コマンドの形は notebooklm-py 0.8.5 の実CLIで照合済み（2026-10-20 検品ループ記録7）。
+    auth / list / fulltext は実機dry-runで動作確認済み。add は実機調査（同記録）で判明した形で、
+    書き込みの実行は未確認（UNVERIFIED）。本文は標準入力で渡す（`--type text` のときだけ `-` が使える）。
     """
 
-    # UNVERIFIED: flags other than the two confirmed forms above are guesses.
     COMMANDS = {
         "auth_check_passive": ["notebooklm", "auth", "check", "--test", "--passive"],
         "list_sources": ["notebooklm", "source", "list", "--json", "--notebook", "{notebook_id}"],
         "get_fulltext": ["notebooklm", "source", "fulltext", "{source_id}", "--json", "--notebook", "{notebook_id}"],
-        "add_text": ["notebooklm", "source", "add-text", "--title", "{title}", "--file", "-", "--json", "--notebook", "{notebook_id}"],
+        "add_text": ["notebooklm", "source", "add", "-", "--type", "text", "--title", "{title}", "--json", "--notebook", "{notebook_id}"],
     }
 
-    def __init__(self, notebook_id: str, timeout: int = 120):
+    def __init__(self, notebook_id: str, timeout: int = 120, add_timeout: int = 600):
         if not notebook_id:
             raise ValueError("notebook_id is required")
         self.notebook_id = notebook_id
         self.timeout = timeout
+        self.add_timeout = add_timeout
 
-    def _run(self, key: str, stdin: Optional[str] = None, **fmt: str) -> subprocess.CompletedProcess:
+    def _run(
+        self, key: str, stdin: Optional[str] = None, timeout: Optional[int] = None, **fmt: str
+    ) -> subprocess.CompletedProcess:
         args = [a.format(notebook_id=self.notebook_id, **fmt) for a in self.COMMANDS[key]]
-        return subprocess.run(args, input=stdin, capture_output=True, text=True, encoding="utf-8", timeout=self.timeout)
+        return subprocess.run(
+            args, input=stdin, capture_output=True, text=True, encoding="utf-8", timeout=timeout or self.timeout
+        )
 
     def auth_check_passive(self) -> bool:
         try:
@@ -111,15 +115,18 @@ class NotebookLmCliClient:
             return cp.stdout
 
     def add_text(self, title: str, text: str) -> Optional[str]:
-        cp = self._run("add_text", stdin=text, title=title)
+        cp = self._run("add_text", stdin=text, timeout=self.add_timeout, title=title)
         if cp.returncode != 0:
-            raise RuntimeError(f"source add-text failed (rc={cp.returncode})")
+            raise RuntimeError(f"source add failed (rc={cp.returncode})")
         try:
             data = json.loads(cp.stdout)
-            sid = data.get("id") if isinstance(data, dict) else None
-            return str(sid) if sid else None
         except json.JSONDecodeError:
             return None
+        if not isinstance(data, dict):
+            return None
+        src = data.get("source")
+        sid = (src.get("id") if isinstance(src, dict) else None) or data.get("id")
+        return str(sid) if sid else None
 
 
 # ---------------------------------------------------------------------------
