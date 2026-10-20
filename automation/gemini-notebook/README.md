@@ -28,7 +28,7 @@
 
 ### 拡張1：Notebook（元資料の図書館）とGitHub（構造化正本）の二層設計
 - **Gemini Notebook の役割（純粋2ソースOKF原則）**:
-  - 新規動画の登録では、1ノート300ソース枠（最大150動画相当）を厳格に保護するため、YouTube URLソースをデフォルト除外とし、純粋な**「字幕原文OKF（`AI_VIDEO_TRANSCRIPT_RAW:<video_id>`）」と「研究ノートOKF（`AI_VIDEO_RESEARCH_NOTE:<video_id>`）」の2つの独立資料登録を絶対の原則**とする（YouTube URLは追加参考オプトイン `--include-youtube-url` として併用可、※字幕全文をGitHubへ保存することは引き続き禁止）。
+  - 新規動画の登録では、1ノート300ソース枠（最大150動画相当）を厳格に保護するため、YouTube URLソースをデフォルト除外とし、純粋な**「字幕原文OKF（`AI_VIDEO_TRANSCRIPT_RAW:<video_id>`）」と「研究ノートOKF（`AI_VIDEO_RESEARCH_NOTE:<video_id>`）」の2つの独立資料登録を絶対の原則**とする（2026-10-20 R2: YouTube URL単体のソースは登録しない・`--include-youtube-url` は使わない。※字幕全文をGitHubへ保存することは引き続き禁止）。
   - 同時に、構造化研究カード（`動画研究カード_<video_id>`）により**動画タイトル・独自要約・章立て目次（開始/終了時刻）・`&t=XXs` 再生リンク・検証結果・既存研究との関連**を併用し、既存ソースおよび総合索引 `AI技術研究室_知識索引.md` を保護する。
 - **GitHub 正本の役割（文字数上限と完全保持の分離設計）**:
   - `research_receipt_v1` 契約のスキーマ上限：

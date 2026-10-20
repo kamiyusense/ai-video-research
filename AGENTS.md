@@ -118,7 +118,7 @@ AIが目標として定めた方針とユーザーの希望に認識のズレを
 
 今後新たに取り込む新規動画（インテーク〜研究〜保存〜Notebook登録）においては、旧来の「YouTube URL ＋ 研究ノート」方式ではなく、**「字幕原文OKF（`AI_VIDEO_TRANSCRIPT_RAW:<video_id>`）」と「研究ノートOKF（`AI_VIDEO_RESEARCH_NOTE:<video_id>`）」の2つの独立資料をNotebookへ登録することを絶対の基本原則とする**。
 
-1. **純粋2ソース登録の徹底**: 新規動画のNotebook登録は、YouTube URLソースをデフォルト除外とし、純粋な「字幕原文OKF（Copied text）」と「研究ノートOKF（Copied text）」の2ソースのみを登録する（YouTube URLは追加参考が必要な場合のみ `--include-youtube-url` でオプトイン可能）。
+1. **純粋2ソース登録の徹底**: 新規動画のNotebook登録は、YouTube URLソースをデフォルト除外とし、純粋な「字幕原文OKF（Copied text）」と「研究ノートOKF（Copied text）」の2ソースのみを登録する（2026-10-20 相棒確定 R2: YouTube URL単体のソースは登録しない。オプトインも廃止。URLは両資料の荷札・本文に記載する。旧フラグ `--include-youtube-url` は使わない。詳細は docs/OKF_KNOWLEDGE_ROADMAP.md 冒頭）。
 2. **300ソース枠の最適化**: 1ノート上限300ソースの環境において、1動画あたり2ソース（最大150動画相当）の消費に厳格に抑え、ソース枠の枯渇を防ぐ。
 3. **完成判定基準（新SUCCESS条件：2-Source OKF完全成功基準）**: 読み戻し（Readback）において、「研究ノートOKF」と「字幕原文OKF」の双方が独立した2つのDOM要素（`Index_note != Index_transcript`）として確認され、動画ID・元URL・相互論理IDの一致、および本文Cue全量の非改変一致が立証された場合のみ `SUCCESS_2_SOURCE_OKF` と判定する。YouTube URL＋研究ノートのみの場合は `PARTIAL_2_SOURCE_OKF_PENDING`（暫定状態）として区別する。また、Drive配置のみ、Chromeタブ検出のみ、Mock結果のみ、同一要素二重カウントによる偽PASS判定は厳禁とする。
 4. **著作権・規約境界**: 字幕全文はGitHubへ保存せず（Notebook/Drive配置のみ）、研究ノートのみをGitHub正本に保存する。
