@@ -42,7 +42,7 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 
 - 結果はJSON。`status` が `OK`（終了コード0）か `ATTENTION`（1）か `AUTH_EXPIRED`（3）。
 - `AUTH_EXPIRED` なら、ここで止めてログインし直す（0章の決まり）。
-- 見る項目: `registry_ids_missing_in_notebook`（台帳にあるのに棚に無い）、`notebook_sources_not_in_registry`（棚にあるのに台帳に無い研究ノート・字幕原文）、`videos_without_transcript_okf`（字幕原文がまだの動画）、`sources_without_published_at`（荷札に投稿日時が無い・`UNKNOWN` の字幕全文・研究ノート。2026-10-20時点では `a32a70ec` が該当する見込み）。投稿日時を確かめるため、字幕全文・研究ノートの本文を読む（読み取りのみ）。
+- 見る項目: `registry_ids_missing_in_notebook`（台帳にあるのに棚に無い）、`notebook_sources_not_in_registry`（棚にあるのに台帳に無い研究ノート・字幕原文）、`videos_without_transcript_okf`（字幕原文がまだの動画）、`sources_without_published_at`（荷札に投稿日時が無い・`UNKNOWN` の字幕全文・研究ノート。2026-10-20時点では `a32a70ec` が該当する見込み）。投稿日時を確かめるため、字幕全文・研究ノートの本文を読む（読み取りのみ）。`transcripts_without_anchors`（段落の時刻目印が無い字幕全文。既定ONの間は `ATTENTION`。時刻なし形式の15本と `a32a70ec` が該当する見込みで、新形式に置き換えた後の確認に使う）。
 
 > **たとえ**: 棚と台帳を見比べて「無くなった本」「台帳に書き忘れた本」「まだ原本が届いていない動画」を数えるだけ。何も動かさない。
 
@@ -59,7 +59,7 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
   - `AMBIGUOUS_EXISTING_SOURCES`: 見分けがつかないので止まった。
   - `TRANSCRIPT_UNAVAILABLE`: 字幕全文がどこからも取れなかった（Notebook内YouTubeソースの本文・YouTube字幕とも無し）ので、何も書かずに止まった。
   - `AUTH_EXPIRED_HALT`: ログイン切れ。
-- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければ、①実行しているPCからYouTubeの字幕（youtube-transcript-api → 既存のYouTube字幕取得の順）、②それも取れずNotebook内にその動画のYouTubeソースがあれば、その本文（単語の間に空白が入る読みにくい版なので最後の手段）を使う。どちらを使ったかは荷札の `acquisition_method` に入る。投稿日時は実行PCからYouTubeの視聴ページで取る。**2026-10-20 22:42 JST の方針転換**で字幕全文は時刻なしが正になり、本文は発話を約1分ごとの段落にまとめた読みやすい形（発話そのものは変えない）。場面の時刻リンクは研究ノート側に付く。字幕全文・研究ノートの両方の荷札に `published_at`（取れなければ `UNKNOWN`）、字幕全文の荷札に取得元 `acquisition_method` と `cue_count` が入る。
+- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければ、①実行しているPCからYouTubeの字幕（youtube-transcript-api → 既存のYouTube字幕取得の順）、②それも取れずNotebook内にその動画のYouTubeソースがあれば、その本文（単語の間に空白が入る読みにくい版なので最後の手段）を使う。どちらを使ったかは荷札の `acquisition_method` に入る。投稿日時は実行PCからYouTubeの視聴ページで取る。字幕全文の本文は、発話を約1分ごとの段落にまとめた読みやすい形（発話そのものは変えず、発話ごとの時刻は入れない）で、各段落の先頭に時刻目印を1行付ける（既定ON。形式は下の「目印行の形式」）。確認済みの場面の時刻リンクは研究ノート側に付く。字幕全文・研究ノートの両方の荷札に `published_at`（取れなければ `UNKNOWN`）、字幕全文の荷札に取得元 `acquisition_method` と `cue_count` が入る。
 - `--video-title` はNotebookのYouTubeソースを見つけるのに使う。YouTube上のタイトルと同じものを渡す。
 - `--notebook-id` を付けないと、棚を読まずに「両方足す」とだけ出す（`DRY_RUN_PLAN_OFFLINE`）。
 
@@ -418,9 +418,25 @@ ID: index:related
 
 注意: 条件を厳しくした分、本当は関連している組が落ちている可能性がある（例: NotebookLM の使い方を扱う動画どうしで、共通語が汎用語に分類された組）。落ちた組の数は未確認（UNKNOWN）で、`candidate_filter_stats` が理由別の件数だけを数える。
 
-### 補足: 字幕の段落ごとの時刻目印（任意・既定OFF）
+### 目印行の形式（字幕の段落ごとの時刻目印・仕様）
 
-`build_transcript_okf_content(..., paragraph_anchors=True)` にすると、時刻なしの本文の各段落の先頭に `▶HH:MM:SS <動画URL>&t=<秒>s` の1行だけが付く（段落の最初の発話の開始位置。文の途中には入れない）。既定は `False` で、そのときの出力は従来と完全に同じ（テストで固定）。ONにするかどうかは相棒の判断待ち。切り替えは `notebooklm_py_ingest.py` と `auto_research_pipeline.py` のコマンドに `--paragraph-anchors`（ON）／`--no-paragraph-anchors`（OFF）を付けるか、既定そのもの（`notebooklm_py_ingest.DEFAULT_PARAGRAPH_ANCHORS`、今は `False`）を1か所変える。どちらで組むかは dry-run の計画（`paragraph_anchors`）といつも一緒に表示される。
+相棒の決定（2026-10-20 02:37 JST）で既定ON。相棒PC側で字幕を作り直すときもこの形式にそろえる。
+
+| 項目 | 決まり |
+|---|---|
+| 行の形式 | `▶HH:MM:SS <動画URL>&t=<秒>s`（例: `▶00:08:16 https://www.youtube.com/watch?v=u3ka_AAb8qE&t=496s`）。`▶` と時刻の間に空白は入れない。時刻とURLの間は半角空白1つ |
+| 時刻 | その段落の最初の発話の開始位置。`HH:MM:SS` と `<秒>` は同じ値（1時間以上は `01:02:05` ↔ `3725`）。小数は切り捨て |
+| 位置 | 約60秒ごとの段落の先頭に1行だけ。段落の本文は次の行から（同じブロック、空行は入れない）。文の途中・発話ごとには入れない |
+| 段落の切り方 | 段落の最初の発話から60秒以上たった発話の切れ目で次の段落（保険として1000字超でも分ける）。発話テキストは変えず、空白1つでつなぐ |
+| 見出し | `## 字幕全文 (取得全量・段落先頭に時刻目印)`。荷札 `transcript_format: "PARAGRAPHS_WITH_ANCHORS"` |
+| 機械で見る正規表現 | `ANCHOR_LINE_RE`（`notebook_auto_ingest.py`）：`^▶(\d{2,}):([0-5]\d):([0-5]\d) (https://www\.youtube\.com/watch\?v=[\w-]{11}&t=(\d+)s)$` |
+| 読み戻しの許容 | NotebookLMの表示で `▶` が落ちる・改行が変わっても、記号と空白を除く正規化一致で合格にする（`▶` は除去する記号に入れてある）。`health` の目印判定はゆるめ（`▶` と時刻があれば可） |
+
+- 目印なしの形式（従来）は `--no-paragraph-anchors` か `paragraph_anchors=False` で出せる。見出しは `## 字幕全文 (取得全量・時刻なし)`、荷札は `transcript_format: "UNTIMED_PARAGRAPHS"`。この出力は固定のゴールデンテストで従来と完全に同じ。
+- 既定は1か所：`notebooklm_py_ingest.DEFAULT_PARAGRAPH_ANCHORS`（今は `True`）。`notebooklm_py_ingest.py` と `auto_research_pipeline.py` の `--paragraph-anchors / --no-paragraph-anchors` が優先する。どちらで組むかは dry-run の計画（`paragraph_anchors`、字幕の `plan_details` 行にも）といつも一緒に表示される。
+- `health`：目印のない字幕全文OKF（時刻なし形式の15本＋`pRfC1DILDEM` の `a32a70ec` など）を `transcripts_without_anchors` に載せて `ATTENTION` にする（既定ONの間。`--no-paragraph-anchors` で対象外）。置き換えの前後の確認に使う。
+- `migrate-plan`：追加する字幕は目印つき（`to_add` の字幕の行に `paragraph_anchors: true`）。目印のない既存の字幕全文OKFは、`published_at` があっても `ADD_THEN_DELETE`（置き換えは相棒の承認待ち）になり、URLソースの削除は新形式の読み戻し一致の後だけ。
+- 実機でNotebookLMが `▶` やURLをどう表示するかは未確認（UNKNOWN）。
 
 字幕全文OKFの本文は、見出しの直後に見える2行 `ID: AI_VIDEO_TRANSCRIPT_RAW:<動画ID>` と `動画: <URL>` から始まる（ロードマップ v2.0 §3.1。HTMLコメントはNotebookの読み戻しで消えるため）。
 

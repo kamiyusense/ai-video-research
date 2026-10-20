@@ -14,8 +14,9 @@ docs/OKF_KNOWLEDGE_ROADMAP.md v1.1「1動画2ソースMVP完成契約」に沿�
    タイトルで決めきれなければ本文の荷札（type / logical_id）を読み、それでも曖昧なら書き込み0で
    AMBIGUOUS_EXISTING_SOURCES。揃っていれば NO_OP。
 3. 足りない方だけ組み立てる（字幕原文は build_transcript_okf_content を再利用）。
-   2026-10-20 22:42 JST 相棒の方針転換（docs/OKF_KNOWLEDGE_ROADMAP.md R3）: 字幕全文は時刻なしを正とし、
-   発話を段落にまとめた本文にする（場面の時刻リンクは研究ノート側）。字幕の取得元は
+   字幕全文は発話を約1分ごとの段落にまとめた本文にし、各段落の先頭に時刻目印の1行
+   （`▶HH:MM:SS <URL>&t=<秒>s`。既定ON、docs/OKF_KNOWLEDGE_ROADMAP.md R3）を付ける。発話ごとの時刻は入れない。
+   確認済みの場面の時刻リンクは研究ノート側。字幕の取得元は
    渡されたcue → YouTube字幕（youtube-transcript-api→timedtext）→ Notebook内YouTubeソースの本文（fulltext。
    単語の間に空白が入り読みにくいため最後の手段、acquisition_method に明記）の順。
    どれも取れなければ書き込み0で TRANSCRIPT_UNAVAILABLE。両OKFに published_at を記録する。
@@ -45,7 +46,7 @@ REGISTRY_PATH = ROOT / "registry.json"
 if str(AUTO_DIR) not in sys.path:
     sys.path.insert(0, str(AUTO_DIR))
 
-from notebook_auto_ingest import build_transcript_okf_content  # noqa: E402
+from notebook_auto_ingest import build_transcript_okf_content, has_paragraph_anchors  # noqa: E402
 from receipt_to_research import linkify_timestamps  # noqa: E402
 
 ACQ_TIMEDTEXT = "YOUTUBE_TIMEDTEXT_API"
@@ -161,7 +162,7 @@ _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 _MD_LINK_RE = re.compile(r"!?\[([^\]]*)\]\(([^)]*)\)")
 _LIST_NUM_RE = re.compile(r"^\s*\d+[.)]\s+", re.M)
 _LIST_BULLET_RE = re.compile(r"^\s*[-+]\s+", re.M)
-_MD_SYMBOLS_RE = re.compile(r"[#*>`_~|]")
+_MD_SYMBOLS_RE = re.compile(r"[#*>`_~|▶]")   # ▶ は段落の時刻目印。読み戻しで消えても一致とみなす
 _WS_RE = re.compile(r"\s+")
 
 
@@ -296,8 +297,9 @@ def classify_sources(
     }
 
 
-# 段落ごとの時刻目印（`▶HH:MM:SS <URL>&t=<秒>s`）の既定。相棒の返事が来たらここを True にするだけで切り替わる。
-DEFAULT_PARAGRAPH_ANCHORS = False
+# 段落ごとの時刻目印（`▶HH:MM:SS <URL>&t=<秒>s`）の既定。相棒の決定（2026-10-20 02:37 JST）でON。
+# --no-paragraph-anchors / paragraph_anchors=False の明示指定は常にこの既定より優先する。
+DEFAULT_PARAGRAPH_ANCHORS = True
 
 
 def resolve_paragraph_anchors(value: Optional[bool]) -> bool:
@@ -314,7 +316,7 @@ def build_transcript_text(
     raw_text: Optional[str] = None,
     paragraph_anchors: Optional[bool] = None,
 ) -> Dict[str, Any]:
-    """字幕全文OKF（既定は時刻なしの段落本文）。cue が無ければ raw_text（Notebook内YouTubeソースの本文など）を使う。"""
+    """字幕全文OKF（約1分ごとの段落本文。目印の有無は paragraph_anchors、None=既定ON）。cue が無ければ raw_text（Notebook内YouTubeソースの本文など）を使う。"""
     url = f"https://www.youtube.com/watch?v={video_id}"
     text = build_transcript_okf_content(
         video_id, url, video_title, cues=cues or None, raw_text=None if cues else raw_text,
@@ -401,13 +403,19 @@ def fetch_youtube_transcript(video_id: str, sources=None) -> Dict[str, Any]:
 PLAN_LOGICAL_SUFFIX = {"transcript": "transcript", "research_note": "research"}
 
 
-def plan_details(video_id: str, video_title: str, kinds: List[str]) -> List[Dict[str, str]]:
-    """追加予定ソースの種類・タイトル・logical_id（計画の表示用。本文は含めない）。"""
+def plan_details(
+    video_id: str, video_title: str, kinds: List[str], paragraph_anchors: Optional[bool] = None,
+) -> List[Dict[str, Any]]:
+    """追加予定ソースの種類・タイトル・logical_id（計画の表示用。本文は含めない）。字幕は目印の有無も示す。"""
     titles = {"transcript": transcript_title, "research_note": research_note_title}
-    return [
-        {"kind": k, "title": titles[k](video_id, video_title), "logical_id": f"youtube:{video_id}:{PLAN_LOGICAL_SUFFIX[k]}"}
-        for k in kinds
-    ]
+    rows: List[Dict[str, Any]] = []
+    for k in kinds:
+        row: Dict[str, Any] = {"kind": k, "title": titles[k](video_id, video_title),
+                               "logical_id": f"youtube:{video_id}:{PLAN_LOGICAL_SUFFIX[k]}"}
+        if k == "transcript":
+            row["paragraph_anchors"] = resolve_paragraph_anchors(paragraph_anchors)
+        rows.append(row)
+    return rows
 
 
 def run_ingest(
@@ -438,7 +446,7 @@ def run_ingest(
     if client is None:
         result["status"] = "DRY_RUN_PLAN_OFFLINE"
         result["plan"] = ["transcript", "research_note"]
-        result["plan_details"] = plan_details(video_id, video_title, result["plan"])
+        result["plan_details"] = plan_details(video_id, video_title, result["plan"], paragraph_anchors)
         result["notes"].append("Notebook未接続のため、既存ソースの有無は未確認（UNKNOWN）。")
         return result
 
@@ -495,7 +503,7 @@ def run_ingest(
             "text": linkify_timestamps(ensure_published_at(research_note_text, published_at), video_id),
         }
     result["plan"] = list(planned)
-    result["plan_details"] = plan_details(video_id, video_title, result["plan"])
+    result["plan_details"] = plan_details(video_id, video_title, result["plan"], paragraph_anchors)
 
     if not live:
         result["status"] = "DRY_RUN_PLAN"
@@ -557,8 +565,15 @@ _TRANSCRIPT_TITLE_RE = re.compile(r"^【字幕原文】|AI_VIDEO_TRANSCRIPT_RAW:
 REGISTRY_SOURCE_KEYS = ("research_note", "transcript_okf", "youtube_url_source")
 
 
-def health_check(client: NotebookClient, registry: Dict[str, Any]) -> Dict[str, Any]:
-    """Notebookと台帳 registry.json の notebook_sources を照合する。書き込み系は一切呼ばない。"""
+def health_check(
+    client: NotebookClient, registry: Dict[str, Any], paragraph_anchors: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """Notebookと台帳 registry.json の notebook_sources を照合する。書き込み系は一切呼ばない。
+
+    段落の時刻目印が既定ON（paragraph_anchors=None→DEFAULT_PARAGRAPH_ANCHORS）のとき、目印のない字幕全文OKFを
+    transcripts_without_anchors に載せて ATTENTION にする（時刻なし形式の字幕を新形式に置き換える前後の確認用）。
+    """
+    anchors_expected = resolve_paragraph_anchors(paragraph_anchors)
     if not client.auth_check_passive():
         return {
             "status": "AUTH_EXPIRED",
@@ -602,6 +617,7 @@ def health_check(client: NotebookClient, registry: Dict[str, Any]) -> Dict[str, 
 
     # 字幕全文・研究ノートの荷札に投稿日時が無い（UNKNOWN含む）ものを数える（R4。本文の読み取りのみ）
     published_missing = []
+    without_anchors = []
     for s in sources:
         if s.get("type") == "youtube":
             continue
@@ -614,12 +630,15 @@ def health_check(client: NotebookClient, registry: Dict[str, Any]) -> Dict[str, 
         )
         if not kind:
             continue
-        value = published_at_of(client.get_fulltext(str(s.get("id"))))
+        body = client.get_fulltext(str(s.get("id")))
+        value = published_at_of(body)
         if value in (None, "UNKNOWN"):
             published_missing.append({"source_id": s.get("id"), "kind": kind, "title": title, "published_at": value or "MISSING"})
+        if anchors_expected and kind == "transcript_okf" and not has_paragraph_anchors(body):
+            without_anchors.append({"source_id": s.get("id"), "title": title})
 
     return {
-        "status": "OK" if not missing and not unregistered and not published_missing else "ATTENTION",
+        "status": "OK" if not missing and not unregistered and not published_missing and not without_anchors else "ATTENTION",
         "notebook_source_count": len(sources),
         "registry_record_count": len(records),
         "registry_ids_missing_in_notebook": missing,
@@ -630,6 +649,9 @@ def health_check(client: NotebookClient, registry: Dict[str, Any]) -> Dict[str, 
         "videos_without_transcript_okf_count": len(transcript_missing),
         "sources_without_published_at": published_missing,
         "sources_without_published_at_count": len(published_missing),
+        "paragraph_anchors_expected": anchors_expected,
+        "transcripts_without_anchors": without_anchors,
+        "transcripts_without_anchors_count": len(without_anchors),
     }
 
 
@@ -668,12 +690,16 @@ def resolve_video_id(youtube_title: str, sources: List[Dict[str, Any]], research
 def plan_url_source_migration(
     client: NotebookClient,
     research_dir: Path = ROOT / "research",
+    paragraph_anchors: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """URL単体ソース（type=youtube）を字幕全文OKFへ移す計画を返す。読み取りのみで、追加も削除もしない。
 
-    2026-10-20 22:42 JST 相棒の判断: 先に各動画の字幕全文OKF（時刻なし・published_at入り）を登録し、
+    2026-10-20 22:42 JST 相棒の判断: 先に各動画の字幕全文OKF（published_at入り・段落の時刻目印つき）を登録し、
     読み戻しで一致を確かめてから、URLソースを削除してよい。このツールは削除の実行コードを持たない。
+    追加する字幕全文OKFは段落の時刻目印つき（既定ON。to_add の transcript 行に paragraph_anchors として出る）。
+    目印のない既存の字幕全文OKF（時刻なし形式）は、ONのとき置き換え対象（相棒の承認待ち）として扱う。
     """
+    anchors_expected = resolve_paragraph_anchors(paragraph_anchors)
     if not client.auth_check_passive():
         return {"status": "AUTH_EXPIRED", "user_action": "相棒のPCでNotebookLMにログインし直してください。", "items": []}
     sources = client.list_sources()
@@ -696,23 +722,25 @@ def plan_url_source_migration(
             continue
         pre = classify_sources(sources, vid, title, client)
         tr_id, rn_id = pre["transcript_source_id"], pre["research_note_source_id"]
-        tr_pub = published_at_of(client.get_fulltext(tr_id)) if tr_id else None
+        tr_body = client.get_fulltext(tr_id) if tr_id else None
+        tr_pub = published_at_of(tr_body) if tr_id else None
+        tr_anchored = has_paragraph_anchors(tr_body) if tr_id else None
         item["existing"] = {
             "transcript_okf": tr_id, "transcript_published_at": (tr_pub or "MISSING") if tr_id else None,
-            "research_note_okf": rn_id,
+            "transcript_has_anchors": tr_anchored, "research_note_okf": rn_id,
         }
         to_add = []
         if not tr_id:
             to_add.append("transcript")
         if not rn_id:
             to_add.append("research_note")
-        item["to_add"] = plan_details(vid, title, to_add)
+        item["to_add"] = plan_details(vid, title, to_add, anchors_expected)
         item["notes"] = []
         if pre["ambiguous"]:
             item["status"] = "AMBIGUOUS_EXISTING_SOURCES"
             item["delete_after_readback"] = []
             item["notes"].extend(pre["ambiguous_reasons"])
-        elif tr_id and tr_pub not in (None, "UNKNOWN"):
+        elif tr_id and tr_pub not in (None, "UNKNOWN") and (tr_anchored or not anchors_expected):
             item["status"] = "READY_TO_DELETE_URL_SOURCE"
             item["delete_after_readback"] = [yt.get("id")]
             item["notes"].append("字幕全文OKF（published_at入り）が既にある。削除前にその本文の読み戻し一致をもう一度確かめる。")
@@ -720,13 +748,16 @@ def plan_url_source_migration(
             item["status"] = "ADD_THEN_DELETE"
             item["delete_after_readback"] = [yt.get("id")]
             if tr_id:
-                item["to_add_pending_approval"] = plan_details(vid, title, ["transcript"])
+                item["to_add_pending_approval"] = plan_details(vid, title, ["transcript"], anchors_expected)
                 item["replace_pending_approval"] = [tr_id]
-                item["notes"].append(f"既存の字幕全文OKF {tr_id} に published_at が無い。入り版の追加・置き換え（{tr_id} の削除）は相棒の承認待ち。")
+                lacks = [w for w, bad in (("published_at", tr_pub in (None, "UNKNOWN")),
+                                          ("段落の時刻目印", anchors_expected and not tr_anchored)) if bad]
+                item["notes"].append(f"既存の字幕全文OKF {tr_id} に{'・'.join(lacks)}が無い。新形式版の追加・置き換え（{tr_id} の削除）は相棒の承認待ち。")
             item["notes"].append("URLソースの削除は、追加した字幕全文OKFの読み戻し一致を確かめた後だけ（その前は削除しない）。")
         items.append(item)
     return {
         "status": "DRY_RUN_MIGRATION_PLAN",
+        "paragraph_anchors": anchors_expected,
         "url_source_count": len(items),
         "video_id_unknown_count": sum(1 for i in items if i["video_id"] == "UNKNOWN"),
         "delete_after_readback_count": sum(len(i["delete_after_readback"]) for i in items),
@@ -739,9 +770,11 @@ def main_health(argv: List[str]) -> int:
     ap = argparse.ArgumentParser(prog="notebooklm_py_ingest.py health", description="Notebook健康診断（読み取り専用）")
     ap.add_argument("--notebook-id", required=True)
     ap.add_argument("--registry", type=Path, default=REGISTRY_PATH)
+    ap.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
+                    help=f"目印のない字幕を ATTENTION にするか（既定: {'ON' if DEFAULT_PARAGRAPH_ANCHORS else 'OFF'}）")
     args = ap.parse_args(argv)
     registry = json.loads(args.registry.read_text(encoding="utf-8"))
-    rep = health_check(NotebookLmCliClient(args.notebook_id), registry)
+    rep = health_check(NotebookLmCliClient(args.notebook_id), registry, paragraph_anchors=args.paragraph_anchors)
     print(json.dumps(rep, ensure_ascii=False, indent=2))
     return 0 if rep["status"] == "OK" else (3 if rep["status"] == "AUTH_EXPIRED" else 1)
 
@@ -751,8 +784,11 @@ def main_migrate_plan(argv: List[str]) -> int:
                                  description="URL単体ソースの移行計画（読み取りのみ・削除しない）")
     ap.add_argument("--notebook-id", required=True)
     ap.add_argument("--research-dir", type=Path, default=ROOT / "research")
+    ap.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
+                    help=f"追加する字幕に段落の時刻目印を付ける計画にするか（既定: {'ON' if DEFAULT_PARAGRAPH_ANCHORS else 'OFF'}）")
     args = ap.parse_args(argv)
-    rep = plan_url_source_migration(NotebookLmCliClient(args.notebook_id), args.research_dir)
+    rep = plan_url_source_migration(NotebookLmCliClient(args.notebook_id), args.research_dir,
+                                    paragraph_anchors=args.paragraph_anchors)
     print(json.dumps(rep, ensure_ascii=False, indent=2))
     return 3 if rep["status"] == "AUTH_EXPIRED" else 0
 

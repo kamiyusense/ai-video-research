@@ -1078,7 +1078,7 @@ def run_notebooklm_py_step(
 
     client を渡さなければ notebook_id から実CLIクライアントを作る（notebook_id も無ければ未接続の計画のみ）。
     fetch_transcript を渡さなければ実行PCからYouTubeの字幕と投稿日時を取る（youtube-transcript-api→timedtext）。
-    字幕全文OKFは時刻なしの段落本文になる（2026-10-20 22:42 方針転換）。
+    字幕全文OKFは約1分ごとの段落本文で、各段落の先頭に時刻目印の1行が付く（paragraph_anchors 既定ON。発話ごとの時刻は入れない）。
     """
     import notebooklm_py_ingest
 
@@ -1137,7 +1137,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--notebook-id", help="notebooklm-py で登録するNotebookのID")
     parser.add_argument("--live", action="store_true", help="notebooklm-py でNotebookへ実際に書き込む（--notebook-id 必須）")
     parser.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
-                        help="字幕の各段落の先頭に時刻目印 ▶HH:MM:SS とURLを付ける（未指定なら notebooklm_py_ingest の既定。現在OFF）")
+                        help="字幕の各段落の先頭に時刻目印 ▶HH:MM:SS とURLを付ける（未指定なら notebooklm_py_ingest の既定。現在ON）")
     args = parser.parse_args(args_list)
     if args.live and args.notebook_backend != "notebooklm-py":
         parser.error("--live は --notebook-backend notebooklm-py のときだけ使えます。")

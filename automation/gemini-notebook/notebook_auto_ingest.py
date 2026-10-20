@@ -448,6 +448,24 @@ def verify_mutual_okf_links(
     }
 
 
+# 段落の時刻目印の形式（仕様。変えるときは NOTEBOOKLM_PY_RUNBOOK.md の「目印行の形式」も同時に直す）:
+#   ▶HH:MM:SS https://www.youtube.com/watch?v=<動画ID>&t=<秒>s
+# 約1分ごとの段落の先頭に1行だけ。文の途中には入れない。HH:MM:SS と <秒> は段落の最初の発話の開始位置。
+ANCHOR_LINE_RE = re.compile(r"^▶(\d{2,}):([0-5]\d):([0-5]\d) (https://www\.youtube\.com/watch\?v=[\w-]{11}&t=(\d+)s)$", re.M)
+_ANCHOR_LOOSE_RE = re.compile(r"▶\s*\d{1,3}:[0-5]\d(?::[0-5]\d)?")   # Notebookの読み戻しで空白や改行が変わっても拾う
+
+
+def anchor_line(video_id: str, start_sec: float) -> str:
+    """段落先頭の時刻目印の1行。"""
+    sec = int(start_sec)
+    return f"▶{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d} https://www.youtube.com/watch?v={video_id}&t={sec}s"
+
+
+def has_paragraph_anchors(body: Optional[str]) -> bool:
+    """字幕全文の本文に段落の時刻目印が1つでもあるか（読み戻し本文の確認用。形式の揺れは許す）。"""
+    return bool(_ANCHOR_LOOSE_RE.search(body or ""))
+
+
 def build_transcript_okf_content(
     video_id: str,
     video_url: str,
@@ -466,12 +484,13 @@ def build_transcript_okf_content(
 ) -> str:
     """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter.
 
-    2026-10-20 22:42 JST 相棒の方針転換: 字幕全文は**時刻なし**を正とする。発話を段落にまとめた読みやすい本文に
-    し（発話テキスト自体は改変しない）、場面の時刻リンクは研究ノート側で示す。荷札に `published_at`
-    （不明なら "UNKNOWN"）・`acquisition_method`・`cue_count` を残す。cueが無くても本文（raw_text）があれば登録できる。
+    字幕全文は、発話を約1分ごとの段落にまとめた読みやすい本文にする（発話テキスト自体は改変しない。発話ごとの
+    時刻は入れない）。荷札に `published_at`（不明なら "UNKNOWN"）・`acquisition_method`・`cue_count` を残す。
+    cueが無くても本文（raw_text）があれば登録できる。
+    `paragraph_anchors=True` のとき、cueがある本文の各段落の先頭に時刻目印の1行（ANCHOR_LINE_RE の形式）を付ける。
+    相棒の決定（2026-10-20 02:37 JST）で運用の既定はON（`notebooklm_py_ingest.DEFAULT_PARAGRAPH_ANCHORS`）。この関数の
+    引数の既定は False のままで、False の出力は目印なしの従来形式（ゴールデンテストで固定）。
     `timestamped=True` を明示したときだけ、各cue行を `- [HH:MM:SS](<URL>&t=<秒>s) <発話>` で出す（旧形式）。
-    `paragraph_anchors=True`（既定OFF）のときだけ、cueがある時刻なし本文の各段落の先頭に目印の1行
-    `▶HH:MM:SS <URL>&t=<秒>s` を付ける（段落の最初の発話の開始時刻。文の途中には入れない）。OFFの出力は従来と同じ。
     """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     transcript_logical_id = f"youtube:{video_id}:transcript"
@@ -487,7 +506,7 @@ def build_transcript_okf_content(
 
     cue_count = len(cues_list) if has_actual_cues else 0
     if has_actual_cues:
-        transcript_format = "TIMESTAMPED_CUES" if timestamped else "UNTIMED_PARAGRAPHS"
+        transcript_format = "TIMESTAMPED_CUES" if timestamped else "UNTIMED_PARAGRAPHS"   # 目印ありは下で PARAGRAPHS_WITH_ANCHORS
     else:
         transcript_format = "RAW_TEXT" if status != "NOT_ACQUIRED" else "NONE"
     clean_published = str(published_at).strip() if published_at and str(published_at).strip() else "UNKNOWN"
@@ -521,7 +540,7 @@ def build_transcript_okf_content(
         lines.append(f'notebook_open_link: "{valid_open_link}"')
     anchored = bool(paragraph_anchors and cues_list and has_actual_cues and not timestamped)
     if anchored:
-        transcript_format = "UNTIMED_PARAGRAPHS_WITH_ANCHORS"
+        transcript_format = "PARAGRAPHS_WITH_ANCHORS"
     lines.extend([
         f'published_at: "{clean_published}"',
         f'language: "{language}"',
@@ -585,7 +604,7 @@ def build_transcript_okf_content(
         f"- **検証状態**: {status}",
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
         (
-            f"- **場面の時刻**: 本文は読みやすさのため発話ごとの時刻を付けていません。各段落の先頭の `▶時刻` は、その段落の最初の発話の位置を示す目印です。確認済みの場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
+            f"- **場面の時刻**: 本文は約1分ごとの段落で、各段落の先頭の `▶HH:MM:SS` と動画の時刻つきURLが、その段落の最初の発話の位置を示す目印です（発話ごとの時刻は入れていません）。確認済みの場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
             if anchored else
             f"- **場面の時刻**: 本文は読みやすさのため時刻を付けていません。場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
         ),
@@ -624,13 +643,9 @@ def build_transcript_okf_content(
             hhmmss = f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
             lines.append(f"- [{hhmmss}](https://www.youtube.com/watch?v={video_id}&t={sec}s) {txt}")
     elif cues_list:
-        lines.extend(["## 字幕全文 (取得全量・時刻なし)", ""])
+        lines.extend(["## 字幕全文 (取得全量・段落先頭に時刻目印)" if anchored else "## 字幕全文 (取得全量・時刻なし)", ""])
         if anchored:
-            blocks = []
-            for st_sec, text in cues_to_paragraph_spans(cues_list):
-                sec = int(st_sec)
-                hhmmss = f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
-                blocks.append(f"▶{hhmmss} https://www.youtube.com/watch?v={video_id}&t={sec}s\n{text}")
+            blocks = [f"{anchor_line(video_id, st_sec)}\n{text}" for st_sec, text in cues_to_paragraph_spans(cues_list)]
             lines.append("\n\n".join(blocks))
         else:
             lines.append("\n\n".join(cues_to_paragraphs(cues_list)))
@@ -661,7 +676,7 @@ def cues_to_paragraphs(cues: List[Any], span_sec: float = 60.0, max_chars: int =
 
 
 def cues_to_paragraph_spans(cues: List[Any], span_sec: float = 60.0, max_chars: int = 1000) -> List[Tuple[float, str]]:
-    """発話を約1分ごとの段落にまとめる（AGENTS.md「時刻なし・約1分ごとの段落分け」）。発話テキストは変えず、空白1つでつなぐだけ。
+    """発話を約1分ごとの段落にまとめる（AGENTS.md「約1分ごとの段落分け」）。発話テキストは変えず、空白1つでつなぐだけ。
 
     段落の最初の発話の開始から span_sec 以上たった発話の切れ目で次の段落にする。
     保険として、段落が max_chars 字を超えたらその切れ目でも分ける。

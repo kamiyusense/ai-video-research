@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for build_transcript_okf_content(paragraph_anchors=...): 段落ごとの時刻目印（既定OFF・オフライン）."""
+"""Tests for build_transcript_okf_content(paragraph_anchors=...): 段落ごとの時刻目印（運用の既定ON・オフライン）."""
 import io
 import json
 import re
@@ -172,7 +172,7 @@ class TestParagraphAnchors(unittest.TestCase):
 
     def test_on_adds_one_marker_line_per_paragraph_at_the_head(self):
         text = build(paragraph_anchors=True)
-        body = text.split("## 字幕全文 (取得全量・時刻なし)\n\n", 1)[1]
+        body = text.split("## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n", 1)[1]
         blocks = body.split("\n\n")
         self.assertEqual(blocks, [
             f"▶00:00:00 {URL}&t=0s\n最初の発話です。 二つ目の発話。",
@@ -186,10 +186,34 @@ class TestParagraphAnchors(unittest.TestCase):
             self.assertNotIn("http", speech)
             self.assertNotIn("▶", speech)
 
+    def test_anchor_lines_follow_the_fixed_format_and_sit_at_paragraph_heads(self):
+        """RUNBOOK「目印行の形式」の仕様：`▶HH:MM:SS <URL>&t=<秒>s` を約1分ごとの段落の先頭に1行だけ。"""
+        cues = [(float(t), float(t) + 8.0, f"発話{t}。") for t in range(0, 400, 10)]
+        text = nai.build_transcript_okf_content(VID, URL, "t", cues=cues, paragraph_anchors=True)
+        body = text.split("## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n", 1)[1]
+        paragraphs = body.split("\n\n")
+        self.assertEqual(len(paragraphs), len(nai.cues_to_paragraphs(cues)))
+        starts = []
+        for para in paragraphs:
+            first, _, rest = para.partition("\n")
+            m = nai.ANCHOR_LINE_RE.match(first)
+            self.assertIsNotNone(m, first)
+            h, mi, se, link, secs = m.groups()
+            self.assertEqual(int(h) * 3600 + int(mi) * 60 + int(se), int(secs))
+            self.assertEqual(link, f"{URL}&t={secs}s")
+            self.assertNotIn("▶", rest)          # 段落の途中には入れない
+            starts.append(int(secs))
+        self.assertEqual(len(nai.ANCHOR_LINE_RE.findall(body)), len(paragraphs))
+        self.assertTrue(all(b - a >= 60 for a, b in zip(starts, starts[1:])), starts)   # 約1分ごと
+        self.assertTrue(nai.has_paragraph_anchors(body))
+        self.assertFalse(nai.has_paragraph_anchors(build()))   # 目印なし形式には無い
+        self.assertTrue(nai.has_paragraph_anchors("▶ 00:01:05\n\nhttps://www.youtube.com/watch?v=x&t=65s"))   # 読み戻しの揺れは許す
+
     def test_on_changes_only_markers_format_and_the_time_note(self):
         on = build(paragraph_anchors=True)
         restored = re.sub(r"^▶\S+ \S+\n", "", on, flags=re.M)
-        restored = restored.replace('transcript_format: "UNTIMED_PARAGRAPHS_WITH_ANCHORS"', 'transcript_format: "UNTIMED_PARAGRAPHS"')
+        restored = restored.replace('transcript_format: "PARAGRAPHS_WITH_ANCHORS"', 'transcript_format: "UNTIMED_PARAGRAPHS"')
+        restored = restored.replace("## 字幕全文 (取得全量・段落先頭に時刻目印)", "## 字幕全文 (取得全量・時刻なし)")
         restored = re.sub(r"- \*\*場面の時刻\*\*: [^\n]*", lambda m: re.search(r"- \*\*場面の時刻\*\*: [^\n]*", GOLDEN_OFF).group(0), restored)
         self.assertEqual(restored, GOLDEN_OFF)
 
@@ -246,7 +270,7 @@ def transcript_text(res):
 
 
 class TestParagraphAnchorsWiring(unittest.TestCase):
-    """paragraph_anchors を run_ingest / pipeline / CLI から切り替えられる（既定OFF。既定は1か所の定数で切り替える）."""
+    """paragraph_anchors を run_ingest / pipeline / CLI から切り替えられる（既定ON。既定は1か所の定数で切り替える）."""
 
     def setUp(self):
         for target, name in ((urllib.request, "urlopen"), (socket, "create_connection")):
@@ -254,13 +278,16 @@ class TestParagraphAnchorsWiring(unittest.TestCase):
             p.start()
             self.addCleanup(p.stop)
 
-    def test_default_constant_is_off_and_none_follows_it(self):
-        self.assertIs(ing.DEFAULT_PARAGRAPH_ANCHORS, False)
-        self.assertIs(plan()["paragraph_anchors"], False)
-        self.assertIs(plan(paragraph_anchors=None)["paragraph_anchors"], False)
-        with mock.patch.object(ing, "DEFAULT_PARAGRAPH_ANCHORS", True):
-            self.assertIs(plan()["paragraph_anchors"], True)              # 既定だけ切り替えれば全経路がONになる
-            self.assertIs(plan(paragraph_anchors=False)["paragraph_anchors"], False)  # 明示指定は常に優先
+    def test_default_is_on_and_explicit_off_wins(self):
+        """相棒の決定（2026-10-20 02:37 JST）で既定ON。--no-paragraph-anchors / paragraph_anchors=False は常に優先する。"""
+        self.assertIs(ing.DEFAULT_PARAGRAPH_ANCHORS, True)
+        self.assertIs(plan()["paragraph_anchors"], True)
+        self.assertIs(plan(paragraph_anchors=None)["paragraph_anchors"], True)
+        self.assertIs(plan(paragraph_anchors=False)["paragraph_anchors"], False)
+        self.assertIn("▶00:00:00 ", transcript_text(plan()))
+        with mock.patch.object(ing, "DEFAULT_PARAGRAPH_ANCHORS", False):
+            self.assertIs(plan()["paragraph_anchors"], False)             # 既定の定数だけで全経路が切り替わる
+            self.assertIs(plan(paragraph_anchors=True)["paragraph_anchors"], True)
 
     def test_dry_run_plan_shows_which_one_and_the_text_follows(self):
         for flag in (False, True):
@@ -324,7 +351,7 @@ class TestParagraphAnchorsWiring(unittest.TestCase):
                 self.assertEqual(arp.main([url] + argv), 0)
             self.assertIs(seen["paragraph_anchors"], want)
 
-        for flag, expect in ((None, False), (True, True)):
+        for flag, expect in ((None, True), (False, False)):
             out = io.StringIO()
             with redirect_stdout(out):
                 res = arp.run_pipeline(url, dry_run=True, notebook_backend="notebooklm-py", notebook_id="nb-1",
