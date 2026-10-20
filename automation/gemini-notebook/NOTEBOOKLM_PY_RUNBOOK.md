@@ -16,7 +16,7 @@
 | 既にある資料と見分けがつかない時は、何も書かずに `AMBIGUOUS_EXISTING_SOURCES` で止まる | 似た本が2冊あって分からなければ、勝手に3冊目を置かない |
 | 字幕全文はGitHubに保存しない（Notebookへの複製は 2026-10-20 に相棒が許可済み） | 原本のコピーは図書館にだけ置き、GitHubの台帳には荷札だけ書く |
 
-**CLIコマンドの確認状況**（[検品ループ記録](../../docs/REVIEW_LOOP_LOG.md) 7）: ツールの内部で呼ぶ `notebooklm` CLIのうち、ログイン点検・一覧・本文取得は相棒PCの実機dry-runで動作確認済み。テキスト追加は `notebooklm source add - --type text --title <題> --json --notebook <ID>`（本文は標準入力）で、形は実機調査（ループ記録7）で判明したものだが、書き込みの実行は**未確認（UNVERIFIED）**。合わなければ `notebooklm_py_ingest.py` の `NotebookLmCliClient.COMMANDS` を直す（コード変更は作業役＋検品役のループで）。
+**CLIコマンドの確認状況**（[検品ループ記録](../../docs/REVIEW_LOOP_LOG.md) 7）: ツールの内部で呼ぶ `notebooklm` CLIのうち、実CLIで確認済みなのは `auth check --test --passive`・`source list --json`・`source fulltext --json` の3つ（相棒PCの実機dry-run）。PR #14 `1e128aa` までの版は存在しない `source add-text` を呼んでいたため、その版で `--live` を使うと必ず失敗する（T5 `4831a12` で修正）。テキスト追加は `notebooklm source add - --type text --title <題> --json --notebook <ID>`（本文は標準入力）で、形は実機調査（ループ記録7）で判明したものだが、書き込みの実行は**未確認（UNVERIFIED）**。合わなければ `notebooklm_py_ingest.py` の `NotebookLmCliClient.COMMANDS` を直す（コード変更は作業役＋検品役のループで）。
 
 > **たとえ**: 司書さんへの指示書のうち「点検・一覧・中身を読む」は実物で試した。「本を置く」は書き方を調べただけで、まだ実際に置いたことはない。
 
@@ -92,5 +92,5 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 python automation/gemini-notebo
 
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 
-- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `011d719` 時点で、ネット遮断・同名ブランチのローカルコピーで152件OK。
-- **未確認（UNVERIFIED / UNKNOWN）**: 実Notebookへの書き込み（`--live`）はまだ一度も実行していない（dry-runは実機で実行済み、ループ記録7）。`add_text` 後にソースへ付く type も不明。
+- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で、ネット遮断・同名ブランチのローカルコピーで158件OK。
+- **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。
