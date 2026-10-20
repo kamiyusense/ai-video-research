@@ -31,6 +31,7 @@
 | 14 | T8 URL貼り付け経路へ notebooklm-py 接続＋研究ノート荷札に `published_at` | 作業役（PR #14 `f83dec0`） | PASS（1周目・条件付き） | 独立実測186件OK。手順8はGitHub保存後に `run_notebooklm_py_step` を呼び、字幕OKFのcueと `published_at` を渡す。成功判定は SUCCESS_2_SOURCE_OKF / NO_OP のみ、URL単体ソースの読み返しは常にFalse（登録しない）。既定はdry-run、書き込みは `--live` と notebook_id 必須。UNKNOWN：手順3〜8を通しで通すテストなし、dry-run時は手順8前に戻るため計画が出ない、実機 `--live` 未実行 |
 | 15 | T9 通し試験（手順3〜8モック）＋dry-runで手順8の計画表示 | 作業役（PR #14 `0082e2d`） | PASS（1周目） | 独立実測195件OK、作業ツリー差分なし。dry-run時は `live=False` を強制して手順8の計画（種類・タイトル・logical_id）だけ返し、IDが無ければ一覧も読まない。通し試験で追加は字幕・研究ノートの2件のみ・URL単体0件、既登録はNO_OP。注意：(c)時刻リンク形式と(e)時刻なし停止の試験は22:42の方針転換によりT10で書き換え予定。UNKNOWN：dry-runの予定タイトルは仮名、GitHub保存は偽物、実機 `--live` 未実行 |
 | 16 | T10 字幕時刻なし化・published_at点検・URLソース15件の移行計画・ロードマップv1.3 | 作業役（PR #14 `e4b42e7`） | NEEDS_FIX（1周目） | コードは良好：独立実測209件OK・差分なし。時刻なし本文が既定、取得元は cue→Notebook内YouTube本文→字幕API、何も無い時だけ TRANSCRIPT_UNAVAILABLE で停止、health が published_at 欠落を ATTENTION、migrate-plan は読み取りのみで削除コードなし（15件解決・UNKNOWN 0）。不足：(1) ロードマップに旧記述が残る（表題v1.2、v1.2改訂行の「時刻リンク」、完成判定(4)の「Cue全量…引用時刻と整合」、Phase5表と受入条件の「30組完全双方向整合性」、G3の取り消し線）＝相棒22:49「新旧を併存させない」に反する、(2) 段落区切りが3秒/300字で、AGENTS.md と相棒PCで作成済み15本の「約1分ごと」と不一致 |
+| 17 | T10 修正（2周目） | 作業役（PR #14 `efe019d`） | PASS | 独立実測212件OK・差分なし。ロードマップv1.3で旧記述（v1.2改訂行・Cue全量・取り消し線・「30組」の誤読）を解消、段落は約60秒ごと（保険1000字）、字幕取得順は cue→字幕API→timedtext→Notebook本文（最後の手段）、README と AGENTS.md の `--include-youtube-url` 記述なし。UNKNOWN：migrate-plan・health本文読み・タイトル取得は実機未実行、相棒PCで作成済み15本との段落形式の一致は未照合 |
 
 ## 次のタスク（作業役向け）
 
