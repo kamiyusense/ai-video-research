@@ -731,12 +731,18 @@ def run_pipeline(
         }
 
     # 2. Fetch YouTube metadata & captions
-    print(f"[2/8] YouTubeメタデータ＆字幕本文取得中 ({video_id})...")
-    player_data = verify_timestamps.fetch_player(video_id)
-    if not player_data or "videoDetails" not in player_data:
-        raise RuntimeError(f"YouTubeプレイヤーデータの取得に失敗しました: {video_id}")
+    if dry_run:
+        # Dry run must be fully offline: no YouTube player/watch/caption requests.
+        print(f"[2/8] [DRY RUN] 外部通信を行わず、動画IDのみのメタデータでプレビューします ({video_id})。")
+        player_data = {"videoDetails": {"videoId": video_id}}
+        publish_date = None
+    else:
+        print(f"[2/8] YouTubeメタデータ＆字幕本文取得中 ({video_id})...")
+        player_data = verify_timestamps.fetch_player(video_id)
+        if not player_data or "videoDetails" not in player_data:
+            raise RuntimeError(f"YouTubeプレイヤーデータの取得に失敗しました: {video_id}")
 
-    publish_date = verify_timestamps.fetch_watch_publish_date(video_id)
+        publish_date = verify_timestamps.fetch_watch_publish_date(video_id)
     vd = player_data.get("videoDetails", {})
     print(f"  - タイトル: {vd.get('title')}")
     print(f"  - 投稿者: {vd.get('author')}")

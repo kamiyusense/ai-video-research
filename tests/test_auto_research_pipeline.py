@@ -255,6 +255,29 @@ class TestAutoResearchPipeline(unittest.TestCase):
         self.assertEqual(res.get("status"), "DRY_RUN_COMPLETE")
         self.assertFalse(test_scratch.exists())
 
+    def test_dry_run_makes_no_network_calls(self):
+        """dry-run中は外部通信（urlopen・ソケット接続）が1回も起きないこと。"""
+        import socket
+        import urllib.request
+        from unittest import mock
+
+        calls = []
+
+        def _blocked(*args, **kwargs):
+            calls.append(args[:1])
+            raise AssertionError(f"dry-run中に外部通信が呼ばれました: {args[:1]}")
+
+        with mock.patch.object(urllib.request, "urlopen", _blocked), \
+                mock.patch.object(socket, "create_connection", _blocked):
+            res = auto_research_pipeline.run_pipeline(
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                dry_run=True,
+                enable_live_gemini=True,
+                gemini_api_key="fake_key_must_not_be_called",
+            )
+        self.assertEqual(res.get("status"), "DRY_RUN_COMPLETE")
+        self.assertEqual(calls, [])
+
     def test_resume_notebook_ingest_from_already_registered(self):
         """8. GitHub登録済み / Notebook未登録からNotebook工程だけ再開できること。"""
         # u3ka_AAb8qE is already registered on GitHub
