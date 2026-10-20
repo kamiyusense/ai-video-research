@@ -59,7 +59,7 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
    - **Phase 2 (既存2動画での検証)**: `GOLDEN_STANDARD_VERIFIED / JS_PY_PARITY_100%`。`pRfC1DILDEM` と `u3ka_AAb8qE` の双方が `COMPLEMENTS`（相互補完・`CONFIRMED`）として相互リンク・UI参照案内・論理ID完備の基準例として確立。PythonとGASのレンダリングパリティ100%一致。
    - **Phase 3 (Gemini研究タスク統合)**: `CODE_UPDATED`。`GEMINI_TASK.md` v0.7追従・4大関係ラベル（COMPLEMENTS, EXTENDS, UPDATES, CONTRADICTS）の判定基準・未登録先CANDIDATE厳格ルールを明文化。
    - **Phase 4 (保存経路・索引整備)**: `CODE_UPDATED`。`cloud_relay_gas.js` および `query_research.py` で confirmed/candidate/unresolved リンクを独立集計。
-   - **Phase 5 (既存資産の非破壊移行・逆リンク整備)**: `BACKWARD_COMPATIBLE_VERIFIED / BACKLINKS_PARITY_COMPLETE`。既存29動画・263章資産の下位互換を完全維持（未移行28動画はハイブリッド透過パース）。主要ハブ5件への逆リンク整備により、全30ペア・60本の有向エッジにおける逆リンク欠落0件・完全双方向整合性を達成。リポジトリ内全140件のMarkdown相対リンク実在確認完了。
+   - **Phase 5 (既存資産の非破壊移行・逆リンク整備)**: `BACKWARD_COMPATIBLE_VERIFIED / DOC_LINKS_CHECKED`。既存29動画・263章資産の下位互換を完全維持（未移行28動画はハイブリッド透過パース）。目次・ハブ文書5件への逆リンク整備により、文書間リンク30組（有向60本）の逆リンク欠落0件を確認（目次リンクの整合であり、テーマが関連する動画どうしのリンク実績は1組のみ）。リポジトリ内全140件のMarkdown相対リンク実在確認完了。
    - **Phase 6 (質問回答品質の検証・最終整合性是正)**: `TEST_PASSED`。5分類ルーター、条件付き決定論的件数集計（RAG/OKF/字幕5状態等）、時系列ソート区別（公開日/確認日）、1ホップ探索免責表示、Markdownリンク化パリティ、OKFフロントマターtype欠落FAIL検査、字幕証拠判定、および逆リンク双方向性アサーションを実装。全85テストPASS。
 2. **次はPhase 7（最速実機稼働実証・1本の完全通過）**:
    - ステータス: `2_SOURCE_OKF_INGEST_READY`（`u3ka_AAb8qE` および `pRfC1DILDEM` を対象に、既存実装 `build_transcript_okf_content` および `notebook_auto_ingest.py` を再利用し、必須2ソース『字幕原文OKF (`AI_VIDEO_TRANSCRIPT_RAW:<video_id>`)』＋『研究ノートOKF (`AI_VIDEO_RESEARCH_NOTE:<video_id>`)』の登録・読み戻しをMock/静的検証済み（実機LIVE読み戻しは未実行・承認待ち）。全121テストPASS）。

@@ -634,25 +634,27 @@ def _cue_parts(c: Any) -> Tuple[float, float, str]:
     return 0.0, 0.0, str(c).strip()
 
 
-def cues_to_paragraphs(cues: List[Any], gap_sec: float = 3.0, max_chars: int = 300) -> List[str]:
-    """発話を読みやすい段落にまとめる。発話テキストは変えず、空白1つでつなぐだけ。
+def cues_to_paragraphs(cues: List[Any], span_sec: float = 60.0, max_chars: int = 1000) -> List[str]:
+    """発話を約1分ごとの段落にまとめる（AGENTS.md「時刻なし・約1分ごとの段落分け」）。発話テキストは変えず、空白1つでつなぐだけ。
 
-    前の発話の終わりから gap_sec 以上の間（沈黙）があるか、段落が max_chars 字を超えたら次の段落にする。
+    段落の最初の発話の開始から span_sec 以上たった発話の切れ目で次の段落にする。
+    保険として、段落が max_chars 字を超えたらその切れ目でも分ける。
     """
     paragraphs: List[str] = []
     cur: List[str] = []
     cur_len = 0
-    prev_end: Optional[float] = None
+    cur_start: Optional[float] = None
     for c in cues:
-        st, en, txt = _cue_parts(c)
+        st, _, txt = _cue_parts(c)
         if not txt:
             continue
-        if cur and ((prev_end is not None and st - prev_end >= gap_sec) or cur_len >= max_chars):
+        if cur and ((cur_start is not None and st - cur_start >= span_sec) or cur_len >= max_chars):
             paragraphs.append(" ".join(cur))
             cur, cur_len = [], 0
+        if not cur:
+            cur_start = st
         cur.append(txt)
         cur_len += len(txt)
-        prev_end = max(en, st)
     if cur:
         paragraphs.append(" ".join(cur))
     return paragraphs

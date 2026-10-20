@@ -492,7 +492,7 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
     """T6: ロードマップv1.2「ユーザー確定仕様」（時刻リンク・投稿日時・URL単体ソース廃止）。"""
 
     def test_default_transcript_is_untimed_paragraphs(self):
-        """T10（22:42 方針転換）: 既定は時刻なし。間（3秒以上）で段落を分け、発話はそのまま空白でつなぐ。"""
+        """T10（22:42 方針転換）: 既定は時刻なし。約1分ごと（発話の切れ目）で段落を分け、発話はそのまま空白でつなぐ。"""
         cues = [(0.0, 1.0, "最初"), (1.2, 2.0, "続き"), (496.9, 500.0, "荷札の話"), (3725.4, 3730.0, "1時間超え")]
         text = ing.build_transcript_text(VID, TITLE, cues, "2026-10-01")["text"]
         self.assertNotIn("&t=", text)
@@ -501,6 +501,17 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
                      'acquisition_method: "YOUTUBE_TIMEDTEXT_API"', 'transcript_format: "UNTIMED_PARAGRAPHS"',
                      f'resource: "https://www.youtube.com/watch?v={VID}"'):
             self.assertIn(line, text)
+
+    def test_paragraphs_are_about_one_minute_split_at_utterance_boundaries(self):
+        """T10 検品1周目の直し：AGENTS.md と相棒PC作成済み15本の形式（約60秒ごと）に合わせる。"""
+        import notebook_auto_ingest as nai
+        cues = [(float(t), float(t) + 8.0, f"発話{t}") for t in range(0, 140, 10)]  # 0,10,…,130秒
+        paras = nai.cues_to_paragraphs(cues)
+        self.assertEqual([p.split(" ")[0] for p in paras], ["発話0", "発話60", "発話120"])
+        self.assertEqual([len(p.split(" ")) for p in paras], [6, 6, 2])
+        self.assertEqual(" ".join(paras), " ".join(c[2] for c in cues))  # 発話は欠けず、順番も変わらない
+        # 沈黙が短くても1分未満なら同じ段落（旧既定の3秒の間では分けない）
+        self.assertEqual(len(nai.cues_to_paragraphs([(0.0, 1.0, "a"), (30.0, 31.0, "b"), (59.9, 60.0, "c")])), 1)
 
     def test_long_paragraph_is_split(self):
         import notebook_auto_ingest as nai
