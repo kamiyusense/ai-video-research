@@ -1068,12 +1068,19 @@ class TestPipelineDryRunNotebookPlan(unittest.TestCase):
     def test_dry_run_returns_plan_with_titles_and_logical_ids(self):
         c = self.write_guard(FakeClient([]))
         fetch = lambda vid: {"cues": CUES, "published_at": "2026-10-01"}
+        # T10: 棚を読む dry-run では題名・投稿日時を読み取りで取り、計画の題名を本物にする（偽の取得関数）
+        meta = lambda vid: {"player_data": {"videoDetails": {"videoId": vid, "title": "本物の動画タイトル"},
+                                            "captions": {"must": "be dropped"}},
+                            "published_at": "2026-07-25"}
         res = self.arp.run_pipeline(self.URL, dry_run=True, notebook_backend="notebooklm-py",
-                                    notebook_id="nb-1", notebook_client=c, fetch_transcript=fetch)
+                                    notebook_id="nb-1", notebook_client=c, fetch_transcript=fetch,
+                                    fetch_video_meta=meta)
         self.assertEqual(res["status"], "DRY_RUN_PLAN")
         nb = res["notebook_ingest"]
         self.assertEqual(nb["writes"], [])
-        title = f"YouTube Video {self.VID}"
+        self.assertEqual(nb["published_at"], "2026-07-25")
+        self.assertNotIn("captions", str(res["receipt"].get("raw_cues")))
+        title = "本物の動画タイトル"
         self.assertEqual(nb["plan_details"], [
             {"kind": "transcript", "title": ing.transcript_title(self.VID, title),
              "logical_id": f"youtube:{self.VID}:transcript"},
@@ -1081,8 +1088,23 @@ class TestPipelineDryRunNotebookPlan(unittest.TestCase):
              "logical_id": f"youtube:{self.VID}:research"},
         ])
 
+    def test_dry_run_title_fetch_failure_keeps_placeholder_with_note(self):
+        c = self.write_guard(FakeClient([]))
+
+        def broken(vid):
+            raise OSError("offline")
+
+        res = self.arp.run_pipeline(self.URL, dry_run=True, notebook_backend="notebooklm-py", notebook_id="nb-1",
+                                    notebook_client=c, fetch_video_meta=broken,
+                                    fetch_transcript=lambda vid: {"cues": CUES, "published_at": None})
+        self.assertEqual(res["status"], "DRY_RUN_PLAN")
+        nb = res["notebook_ingest"]
+        self.assertEqual(nb["plan_details"][0]["title"], ing.transcript_title(self.VID, f"YouTube Video {self.VID}"))
+        self.assertTrue(any("仮名" in n for n in nb["notes"]))
+
     def test_dry_run_without_notebook_id_is_offline_plan(self):
         res = self.arp.run_pipeline(self.URL, dry_run=True, notebook_backend="notebooklm-py",
+                                    fetch_video_meta=lambda vid: self.fail("棚を読まない計画で題名取得は不要"),
                                     fetch_transcript=lambda vid: self.fail("棚を読まない計画で字幕取得は不要"))
         self.assertEqual(res["status"], "DRY_RUN_PLAN_OFFLINE")
         self.assertEqual([p["logical_id"] for p in res["notebook_ingest"]["plan_details"]],
@@ -1092,6 +1114,7 @@ class TestPipelineDryRunNotebookPlan(unittest.TestCase):
         c = self.write_guard(FakeClient([]))
         res = self.arp.run_pipeline(self.URL, dry_run=True, notebook_backend="notebooklm-py",
                                     notebook_id="nb-1", notebook_live=True, notebook_client=c,
+                                    fetch_video_meta=lambda vid: {},
                                     fetch_transcript=lambda vid: {"cues": CUES, "published_at": None})
         self.assertEqual(res["status"], "DRY_RUN_PLAN")
         self.assertFalse(res["notebook_ingest"]["live"])

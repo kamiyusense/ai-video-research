@@ -643,6 +643,7 @@ def run_pipeline(
     notebook_live: bool = False,
     notebook_client: Any = None,
     fetch_transcript: Any = None,
+    fetch_video_meta: Any = None,
 ) -> Dict[str, Any]:
     """Execute complete automated research pipeline from URL to GitHub commit & verification.
 
@@ -764,7 +765,21 @@ def run_pipeline(
         }
 
     # 2. Fetch YouTube metadata & captions
-    if dry_run:
+    meta_note = None
+    if dry_run and notebook_backend == "notebooklm-py" and notebook_id:
+        # 棚を読む dry-run（読み取りのみの通信あり）では、計画の題名を本物にするため題名・投稿日時だけ取る。
+        # 字幕トラック情報は捨てて、研究レシート側で字幕を取りに行かない。
+        print(f"[2/8] [DRY RUN] YouTubeの題名・投稿日時だけを読み取ります ({video_id})...")
+        try:
+            meta = (fetch_video_meta or fetch_video_meta_readonly)(video_id) or {}
+        except Exception as ex:  # 取れなければ仮の題名で計画を続ける
+            meta, meta_note = {}, f"題名の取得に失敗（{type(ex).__name__}）。計画の題名は仮名。"
+        details = (meta.get("player_data") or {}).get("videoDetails") or {}
+        player_data = {"videoDetails": dict(details, videoId=video_id)}
+        publish_date = meta.get("published_at")
+        if not details.get("title") and not meta_note:
+            meta_note = "題名を取得できなかったため、計画の題名は仮名。"
+    elif dry_run:
         # Dry run must be fully offline: no YouTube player/watch/caption requests.
         print(f"[2/8] [DRY RUN] 外部通信を行わず、動画IDのみのメタデータでプレビューします ({video_id})。")
         player_data = {"videoDetails": {"videoId": video_id}}
@@ -805,6 +820,8 @@ def run_pipeline(
             published_at=publish_date, research_note_text=note_preview,
             **dict(py_nb, live=False),
         )
+        if meta_note:
+            nb_res.setdefault("notes", []).append(meta_note)
         for p in nb_res.get("plan_details", []):
             print(f"  - 追加予定: {p['kind']} / {p['title']} / {p['logical_id']}")
         print(f"\n[DRY RUN] Notebook計画: {nb_res['status']}。GitHub・Notebook・Driveへの書き込みゼロで終了します。")
@@ -1097,6 +1114,14 @@ NOTEBOOKLM_PY_RESUME_STATUS = {
 }
 
 
+def fetch_video_meta_readonly(video_id: str) -> Dict[str, Any]:
+    """YouTubeの題名などと投稿日時を読み取る（書き込みなし）。dry-run の計画表示用。"""
+    return {
+        "player_data": verify_timestamps.fetch_player(video_id),
+        "published_at": verify_timestamps.fetch_watch_publish_date(video_id),
+    }
+
+
 def run_notebooklm_py_step(
     video_id: str,
     video_title: str,
@@ -1112,7 +1137,8 @@ def run_notebooklm_py_step(
     """notebooklm_py_ingest.run_ingest で字幕取得・不足分の登録・読み戻しを1回で行う。
 
     client を渡さなければ notebook_id から実CLIクライアントを作る（notebook_id も無ければ未接続の計画のみ）。
-    fetch_transcript を渡さなければ実行PCからYouTubeの時刻つき字幕を取る（youtube-transcript-api→timedtext）。
+    fetch_transcript を渡さなければ実行PCからYouTubeの字幕と投稿日時を取る（youtube-transcript-api→timedtext）。
+    字幕全文OKFは時刻なしの段落本文になる（2026-10-20 22:42 方針転換）。
     """
     import notebooklm_py_ingest
 

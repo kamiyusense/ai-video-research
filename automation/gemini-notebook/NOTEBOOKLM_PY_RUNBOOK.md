@@ -74,14 +74,14 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 ```
 
 - `--notebook-id` を付けると棚の一覧を読み、字幕と投稿日時を取りに行く（読み取りのみ）。付けなければ棚も字幕も見ずに `DRY_RUN_PLAN_OFFLINE` を返す。
-- dry-runではYouTubeのタイトルを取りに行かないため、計画のタイトルは仮の `YouTube Video <動画ID>` になる（本番の登録ではYouTube上のタイトルが入る）。
+- `--notebook-id` 付きのdry-runでは、YouTubeの題名と投稿日時も読み取りで取り、計画の題名を本番と同じにする（字幕トラック情報は使わない）。題名が取れなかったとき・`--notebook-id` 無しのときは、仮の `YouTube Video <動画ID>` になり、取れなかった理由を `notes` に書く。
 
-出力例（オフラインテストの偽の棚で取得。最後のJSONから抜粋）:
+出力例（オフラインテストの偽の棚・偽の題名取得（題名「テスト用の動画タイトル」）で取得。最後のJSONから抜粋）:
 
 ```
 [8/8] [DRY RUN] notebooklm-py でNotebookへの追加予定を確認します（書き込みなし）...
-  - 追加予定: transcript / 【字幕原文】YouTube Video dQw4w9WgXcQ [dQw4w9WgXcQ] / youtube:dQw4w9WgXcQ:transcript
-  - 追加予定: research_note / 【研究ノート】YouTube Video dQw4w9WgXcQ [dQw4w9WgXcQ] / youtube:dQw4w9WgXcQ:research
+  - 追加予定: transcript / 【字幕原文】テスト用の動画タイトル [dQw4w9WgXcQ] / youtube:dQw4w9WgXcQ:transcript
+  - 追加予定: research_note / 【研究ノート】テスト用の動画タイトル [dQw4w9WgXcQ] / youtube:dQw4w9WgXcQ:research
 [DRY RUN] Notebook計画: DRY_RUN_PLAN。GitHub・Notebook・Driveへの書き込みゼロで終了します。
 {
   "status": "DRY_RUN_PLAN",
@@ -90,8 +90,8 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
     "live": false,
     "plan": ["transcript", "research_note"],
     "plan_details": [
-      {"kind": "transcript", "title": "【字幕原文】YouTube Video dQw4w9WgXcQ [dQw4w9WgXcQ]", "logical_id": "youtube:dQw4w9WgXcQ:transcript"},
-      {"kind": "research_note", "title": "【研究ノート】YouTube Video dQw4w9WgXcQ [dQw4w9WgXcQ]", "logical_id": "youtube:dQw4w9WgXcQ:research"}
+      {"kind": "transcript", "title": "【字幕原文】テスト用の動画タイトル [dQw4w9WgXcQ]", "logical_id": "youtube:dQw4w9WgXcQ:transcript"},
+      {"kind": "research_note", "title": "【研究ノート】テスト用の動画タイトル [dQw4w9WgXcQ]", "logical_id": "youtube:dQw4w9WgXcQ:research"}
     ],
     "writes": [],
     "new_source_ids": [],
@@ -195,5 +195,5 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 
-- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T10時点で209件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
+- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T10時点で210件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
 - **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。 `migrate-plan` も実機未実行（Notebook内YouTubeソースの本文が実際に取れるか・その文字数はUNKNOWN）。

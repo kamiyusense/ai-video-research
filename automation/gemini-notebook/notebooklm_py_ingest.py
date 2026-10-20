@@ -328,7 +328,7 @@ def ensure_published_at(research_note_text: str, published_at: Optional[str]) ->
 
 
 def fetch_cues_transcript_api(video_id: str, languages: tuple = ("ja", "en")) -> List[Any]:
-    """youtube-transcript-api で時刻つき字幕を取る（未インストールなら ImportError）。
+    """youtube-transcript-api で字幕cue（開始・終了・発話）を取る（未インストールなら ImportError）。
 
     相棒PCで 1.2.2 により pRfC1DILDEM 275 cue・u3ka_AAb8qE 381 cue の取得を確認済み（検品ループ記録 T6）。
     `YouTubeTranscriptApi().fetch(...)` の呼び方は 1.x 系のもの。
@@ -340,7 +340,7 @@ def fetch_cues_transcript_api(video_id: str, languages: tuple = ("ja", "en")) ->
 
 
 def fetch_cues_timedtext(video_id: str) -> List[Any]:
-    """既存の取得関数（YouTube player API → timedtext）で時刻つき字幕を取る。"""
+    """既存の取得関数（YouTube player API → timedtext）で字幕cueを取る。"""
     import auto_research_pipeline
     import verify_timestamps
 
@@ -358,7 +358,7 @@ CUE_SOURCES = (
 
 
 def fetch_youtube_transcript(video_id: str, sources=None) -> Dict[str, Any]:
-    """実行PCから YouTube の時刻つき字幕と投稿日時を取る。失敗は空で返す。
+    """実行PCから YouTube の字幕cueと投稿日時を取る。失敗は空で返す（cueの時刻は段落分けにだけ使う）。
 
     字幕は sources を順に試し、最初に cue が取れたものを使う（既定: youtube-transcript-api → 既存timedtext）。
     """
@@ -411,7 +411,8 @@ def run_ingest(
 ) -> Dict[str, Any]:
     """1動画2ソースの不足分を登録する。live=False（既定）では書き込みを一切行わない。
 
-    cues / published_at が無く fetch_transcript があれば、それで時刻つき字幕と投稿日時を取る。
+    字幕の取得元は cues → Notebook内YouTubeソースの本文 → fetch_transcript（YouTube字幕）の順。
+    published_at が無く fetch_transcript があれば、それで投稿日時を取る。
     """
     result: Dict[str, Any] = {"video_id": video_id, "live": live, "writes": [], "notes": []}
 
