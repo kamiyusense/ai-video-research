@@ -5,6 +5,11 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Tests must not depend on a real Google Drive mount (G:/マイドライブ exists only on the owner's PC).
+import os as _os, tempfile as _tempfile
+_DRIVE_TMP = _tempfile.mkdtemp(prefix="ai-research-drive-")
+_os.environ.setdefault("AI_RESEARCH_DRIVE_ROOT", _DRIVE_TMP)
 AUTO_DIR = ROOT / "automation" / "gemini-notebook"
 CONTRACT_PATH = AUTO_DIR / "contract_spec_v1.json"
 

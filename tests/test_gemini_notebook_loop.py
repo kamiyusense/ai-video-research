@@ -28,6 +28,11 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Tests must not depend on a real Google Drive mount (G:/マイドライブ exists only on the owner's PC).
+import os as _os, tempfile as _tempfile
+_DRIVE_TMP = _tempfile.mkdtemp(prefix="ai-research-drive-")
+_os.environ.setdefault("AI_RESEARCH_DRIVE_ROOT", _DRIVE_TMP)
 sys.path.insert(0, str(ROOT / "automation" / "gemini-notebook"))
 MODULE_PATH = ROOT / "automation" / "gemini-notebook" / "receipt_to_research.py"
 QUERY_MODULE_PATH = ROOT / "automation" / "gemini-notebook" / "query_research.py"

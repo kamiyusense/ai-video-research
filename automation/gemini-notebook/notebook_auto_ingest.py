@@ -43,7 +43,8 @@ AUTO_DIR = Path(__file__).resolve().parent
 
 NOTEBOOK_ID = "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7"
 NOTEBOOK_URL = f"https://gemini.google.com/notebook/{NOTEBOOK_ID}"
-DEFAULT_DRIVE_ROOT = Path("G:/マイドライブ")
+# AI_RESEARCH_DRIVE_ROOT overrides the Windows Drive mount (used by tests on machines without G:).
+DEFAULT_DRIVE_ROOT = Path(os.environ.get("AI_RESEARCH_DRIVE_ROOT") or "G:/マイドライブ")
 DEFAULT_NOTEBOOK_SOURCES_DIR = DEFAULT_DRIVE_ROOT / "AI技術研究室_Notebookソース"
 DEFAULT_CDP_PORT = 9222
 DEFAULT_CDP_HOST = "127.0.0.1"
