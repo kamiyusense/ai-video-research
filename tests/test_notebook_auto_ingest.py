@@ -33,11 +33,13 @@ class TestNotebookAutoIngest(unittest.TestCase):
                 target_dir=tmp_path / "sync_target",
             )
             self.assertEqual(res["status"], "DRIVE_SYNC_SUCCESS")
-            self.assertEqual(len(res["synced_files"]), 3)
+            # 2026-10-20 相棒確定 R2 で YouTube URL単体の参照ファイルを廃止したため 3→2 に更新
+            self.assertEqual(len(res["synced_files"]), 2)
             
             files = [Path(f["path"]) for f in res["synced_files"]]
             self.assertTrue(all(f.exists() for f in files))
-            self.assertTrue(any(f.name.endswith("_youtube_source.txt") for f in files))
+            self.assertFalse(any(f.name.endswith("_youtube_source.txt") for f in files))
+            self.assertFalse(list((tmp_path / "sync_target").glob("*_youtube_source.txt")))
             self.assertTrue(any(f.name.endswith("_research_note.md") for f in files))
             self.assertTrue(any(f.name.endswith("_transcript_okf.md") for f in files))
 
@@ -335,30 +337,34 @@ class TestNotebookAutoIngest(unittest.TestCase):
 
 
     def test_infer_semantic_related_records(self):
-        """動画内容から意味付き関連リンク（CANDIDATE）が客観的根拠付きで動的推論されること。"""
+        """T11（R6）: 固定4〜5本×単語一致をやめ、台帳全件の研究ノートとの語の重なりから CANDIDATE を出す。
+        旧テスト（OKF/RAG語を入れると u3ka/pRfC が出る・evidence が「キーワード一致:」）は、新しい根拠形式に期待値を更新。"""
         import auto_research_pipeline
 
-        # Test Case 1: OKF and RAG keywords present
         rels = auto_research_pipeline.infer_semantic_related_records(
             video_id="newVid123",
             title="OKFによる知識管理とRAG探索の最前線",
             summary_ja="オープンナレッジ形式(OKF)で資料を構造化し、RAG検索を最適化する手法。",
             detailed_findings_ja="【詳細】荷札による体系化とベクトル検索のハイブリッド探索。",
+            chapters=[{"title": "OKFの荷札とRAGの検索設計", "key_topics": ["OKF", "RAG", "検索"]}],
         )
         target_ids = [r["target_id"] for r in rels]
-        self.assertIn("youtube:u3ka_AAb8qE", target_ids)
-        self.assertIn("youtube:pRfC1DILDEM", target_ids)
+        self.assertIn("youtube:u3ka_AAb8qE:research", target_ids)
+        self.assertIn("youtube:pRfC1DILDEM:research", target_ids)
+        self.assertLessEqual(len(rels), 5)
         for r in rels:
             self.assertEqual(r["status"], "CANDIDATE")
-            self.assertTrue(r["evidence"].startswith("キーワード一致:"))
+            self.assertTrue(r["evidence"].startswith("共通語:"))
+            self.assertIn("本ノート:", r["evidence"])
+            self.assertIn("相手:", r["evidence"])
 
-        # Test Case 2: Self-link prevention
+        # 自己リンクの除外
         rels_self = auto_research_pipeline.infer_semantic_related_records(
             video_id="u3ka_AAb8qE",
             title="OKF解説動画",
             summary_ja="OKFの概要",
         )
-        self.assertNotIn("youtube:u3ka_AAb8qE", [r["target_id"] for r in rels_self])
+        self.assertNotIn("youtube:u3ka_AAb8qE:research", [r["target_id"] for r in rels_self])
 
     def test_build_transcript_okf_content(self):
         """字幕原文OKFのYAMLフロントマターおよびコメントヘッダーに所定のプロパティが含まれること。"""
@@ -384,8 +390,9 @@ class TestNotebookAutoIngest(unittest.TestCase):
         self.assertIn('transcript_status: "UNVERIFIED"', content)
         self.assertIn('<!-- RELATED_RESEARCH_ID: youtube:abc123xyz:research -->', content)
         self.assertIn('- **元YouTube URL**: https://www.youtube.com/watch?v=abc123xyz', content)
-        self.assertIn('- **[00:00]** (0.0s) こんにちは世界', content)
-        self.assertIn('- **[00:02]** (2.5s) テスト字幕です', content)
+        # 2026-10-20 22:42 JST 相棒の方針転換で字幕全文は時刻なしの段落本文に変更されたため期待値を更新
+        self.assertIn("## 字幕全文 (取得全量・時刻なし)\n\nこんにちは世界 テスト字幕です", content)
+        self.assertNotIn("&t=", content)
         # Default when unknown
         self.assertIn('notebook_source_id: "UNKNOWN"', content)
         self.assertNotIn('notebook_open_link', content)

@@ -28,7 +28,7 @@
 
 - **荷札（YAMLフロントマター）の必須項目**: `okf_version: "0.2"` / `type: "TRANSCRIPT"` / `title` / `logical_id` / `research_logical_id` / `video_id` / `resource` / `canonical_url` / `published_at`（＋`published_at_jst`・`publication_date`・`published_at_source`） / `language` / `acquired_at` / `acquisition_method` / `cue_count` / `transcript_status` / `cue_text_sha256`。分かれば `research_notebook_source_id`。
 - **本文**: 先頭に見える形で `ID: AI_VIDEO_TRANSCRIPT_RAW:<video_id>` と `動画: <URL>` の2行（HTMLコメントはNotebookの読み戻しで消えるため使わない）。続けて字幕の発話テキストを**改変・清書・補完せず**連結し、約60秒ごとに段落を分け、各段落の先頭に時刻目印の行 `[hh:mm:ss] <URL>&t=<秒>s` を置く（R3）。
-- **取得方法**: YouTubeの字幕（日本語トラック）を直接取得する。投稿者がつけた字幕があればそれを、無ければ自動生成字幕を使う。自動生成字幕は誤変換を含むので `transcript_status: "UNVERIFIED"`。取得できた全量を保存し、欠けた箇所を創作しない。Notebook内YouTubeソースの本文から取る方法は、URLソースが前提になるため使わない。
+- **取得方法**: YouTubeの字幕（日本語トラック）を直接取得する。投稿者がつけた字幕があればそれを、無ければ自動生成字幕を使う。自動生成字幕は誤変換を含むので `transcript_status: "UNVERIFIED"`。取得できた全量を保存し、欠けた箇所を創作しない。取得元の順は「渡されたcue → YouTube字幕（youtube-transcript-api → timedtext）→ Notebook内YouTubeソース本文」。最後の本文由来は、URLソースが残っている既存動画だけの最終手段（単語の間に空白が入る読みにくい版）で、URLソースが0件の今は事実上使わず、新規動画では使わない。どれで取ったかは `acquisition_method` に記録する。どこからも取れなければ `TRANSCRIPT_UNAVAILABLE` で止め、書き込みは0件（創作しない）。
 - **Notebookのタイトル**: `【字幕原文】<動画タイトル先頭40字> [<video_id>]`
 
 ### 3.2 研究ノートOKF `youtube:<video_id>:research`
@@ -44,6 +44,7 @@
 - `relation` は4種類だけ: `COMPLEMENTS`（補い合う）／`EXTENDS`（発展させている）／`UPDATES`（新しい情報で古い情報を更新している）／`CONTRADICTS`（主張が対立している）。
 - `status` は `CANDIDATE`（候補）と `CONFIRMED`（根拠を確かめた）を分ける。**確定の判定はAI（作業役が根拠を書き、検品役が字幕・研究ノートを読み戻して確認）で行い、相棒の確認は不要**（2026-10-21 相棒決定：相棒の確認が要る仕分けはやらない）。名前やタグが似ているだけでは確定しない。相手が存在しなければ `UNRESOLVED`。
 - **古い情報の扱い**: `UPDATES` と `published_at` を使い、回答では新しい方を優先し、古い方は「以前はこうだった」と区別する。
+- **コードの扱い**: `automation/gemini-notebook/related_links.py`（読み取り専用）が、`related_records` の検証（宛先の実在・`relation`・`status`・`note`/`evidence` 必須・`CONFIRMED` は時刻かURLが必須・自己リンク・逆リンク欠落の数）、registry全体からの候補づくり（章・タグ・主張の共通語の重なり。常に `CANDIDATE` で自動の `CONFIRMED` はしない。`UPDATES` は投稿日が新しく更新を示す語があるときだけ）、関連索引OKF `index:related`（動画ごとの投稿日・関連先・関係・状態・理由）のdry-run生成を行う。索引の入れ替え計画は「新版を追加 → 読み戻し → 旧版を削除」の3段で、計画を出すだけで書き込み・削除はしない。既存コードは上の4種に加えて `RESOLVES_BACKLOG`（積み残しの解消）も受け付ける。
 - **限界**: NotebookLMは資料内のリンクをたどって開くことはできない（IDで検索して見つけるだけ）。効果は「関連資料が見つけやすくなる」まで。
 
 ## 4. 保存先と境界
@@ -87,8 +88,8 @@ Notebookへの読み戻しは完全一致にならない（NotebookLMがMarkdown
 | 字幕原文OKF | 15本（段落ごとの時刻目印・`published_at` 入り、YouTube字幕から取得、14本は自動生成字幕＝`UNVERIFIED`）。15本とも正規化一致・ID行・時刻目印・`published_at` を読み戻しで確認 |
 | 研究ノートOKF（`【研究ノート】`形式） | `pRfC1DILDEM`（新版 `0c14a49d`、新しい字幕ID `2e263d34`・`published_at` 入り）、`u3ka_AAb8qE`（`65b634f5`）、`CnkEROU7fZw`（`bfeee73b`）。他の12本は旧形式の `動画研究_…` 資料が研究ノート相当 |
 | `published_at` | 字幕は15本すべて。研究ノートは `pRfC1DILDEM` のみ |
-| 関連動画リンク（R6） | `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ |
-| 自動化（R5） | `notebooklm_py_ingest.py` は計画だけのdry-runが実機で動いた。今回の登録は相棒PCの手作業スクリプト。本番自動化は未実装 |
+| 関連動画リンク（R6） | 確定済みで検証に合格するのは `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ。GitHub研究ノートは31本で `related_records` は計65件、検証不合格は33件（根拠なし・自己リンク。既存ノートは書き換えていない）。registry全体からの候補は、汎用語だけ・固有語2語未満・該当箇所が対応しない組を外して49件（未登録35件）で、並び順は経験則・人の確認は未実施（`related_links.py` のdry-run） |
+| 自動化（R5） | `notebooklm_py_ingest.py` は計画だけのdry-runが実機で動いた。今回の登録は相棒PCの手作業スクリプト。作業ブランチ（PR #14）のコードは、段落の時刻目印（`[hh:mm:ss] <URL>&t=<秒>s`。読み取りは旧 `▶` 形式も許す）・`published_at`・`health` の目印検査・`TRANSCRIPT_UNAVAILABLE` 停止・`migrate-plan` を持つが、オフラインのテスト（Mock）のみで実機は未実行 |
 | 質問回答の確認 | 未実施 |
 | 注意 | Notebookのログインが1〜2時間で切れる（2026-10-20〜21に3回）。切れたら作業は止まる |
 
@@ -99,8 +100,8 @@ Notebookへの読み戻しは完全一致にならない（NotebookLMがMarkdown
 | T1 | 15本の字幕原文OKFを登録し読み戻し確認 | DONE（2026-10-21、段落時刻版） |
 | T2 | 確認できた動画のYouTube URLソースを削除 | DONE（15件、残り0件） |
 | T3 | `pRfC1DILDEM` の旧字幕・旧研究ノートを新版に入れ替え | DONE（旧 `a32a70ec`・`af697c8c` 削除） |
-| T4 | 自動化コードに反映：字幕はYouTubeから直接取得・段落時刻目印・`published_at` 必須・URLソースを使わない | TODO |
+| T4 | 自動化コードに反映：字幕はYouTubeから直接取得・段落時刻目印・`published_at` 必須・URLソースを使わない | コードDONE（PR #14、オフラインのテストのみ。実機は未実行） |
 | T5 | 研究ノート全件に `published_at` を追加し、新形式（`【研究ノート】`・字幕IDつき）にそろえる | TODO |
-| T6 | 関連動画リンク（R6）：まず `CANDIDATE` で付け、根拠を確かめて `CONFIRMED` に | TODO |
+| T6 | 関連動画リンク（R6）：まず `CANDIDATE` で付け、根拠を確かめて `CONFIRMED` に | 検証器・候補づくり・関連索引のdry-runはコードDONE（PR #14）。ノートへの反映は相棒の判断待ち |
 | T7 | 質問回答の確認（研究ノートと字幕の両方を引用できるか） | TODO |
 | T8 | 方式B（R1-B）の実証は、T7 の後に必要なら | 保留 |

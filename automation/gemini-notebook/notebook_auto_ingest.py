@@ -38,6 +38,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+from receipt_to_research import linkify_timestamps  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 AUTO_DIR = Path(__file__).resolve().parent
 
@@ -444,6 +448,36 @@ def verify_mutual_okf_links(
     }
 
 
+# 段落の時刻目印の形式（仕様。変えるときは NOTEBOOKLM_PY_RUNBOOK.md の「目印行の形式」も同時に直す）:
+#   [HH:MM:SS] https://www.youtube.com/watch?v=<動画ID>&t=<秒>s
+# 約1分ごとの段落の先頭に1行だけ。文の途中には入れない。HH:MM:SS と <秒> は段落の最初の発話の開始位置。
+# 出力（anchor_line）はこの1形式だけ。相棒PCの実機（2026-10-21）の形式がこれ。
+# 読み取り側（ANCHOR_LINE_RE・has_paragraph_anchors・health）は、旧形式 `▶HH:MM:SS <URL>&t=<秒>s` も同じ目印として受け入れる
+# （過去にその形で登録した資料を取りこぼさないため。新しく作るときには使わない）。
+# groups: 1=旧形式の▶, 2=新形式の[, 3=時, 4=分, 5=秒, 6=URL, 7=URLの秒
+ANCHOR_LINE_RE = re.compile(
+    r"^(?:(▶)|(\[))(\d{2,}):([0-5]\d):([0-5]\d)(?(2)\]) (https://www\.youtube\.com/watch\?v=[\w-]{11}&t=(\d+)s)$", re.M)
+# Notebookの読み戻しで空白や改行・記号が変わっても拾う（▶か[ ]が落ちても、時刻の直後に時刻つき動画URLが続けば目印とみなす）。
+# `[00:01:05](URL)` のような時刻リンク（旧・発話ごとの形式や研究ノート）は目印に数えない。
+_TIME = r"\d{1,3}:[0-5]\d(?::[0-5]\d)?"
+_ANCHOR_LOOSE_RE = re.compile(
+    rf"▶\s*{_TIME}"
+    rf"|\[\s*{_TIME}\s*\](?!\()"
+    rf"|{_TIME}\s+https://www\.youtube\.com/watch\?v=[\w-]{{11}}&t=\d+s"
+)
+
+
+def anchor_line(video_id: str, start_sec: float) -> str:
+    """段落先頭の時刻目印の1行（`[HH:MM:SS] <URL>&t=<秒>s`）。"""
+    sec = int(start_sec)
+    return f"[{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}] https://www.youtube.com/watch?v={video_id}&t={sec}s"
+
+
+def has_paragraph_anchors(body: Optional[str]) -> bool:
+    """字幕全文の本文に段落の時刻目印が1つでもあるか（読み戻し本文の確認用。形式の揺れは許す）。"""
+    return bool(_ANCHOR_LOOSE_RE.search(body or ""))
+
+
 def build_transcript_okf_content(
     video_id: str,
     video_url: str,
@@ -455,8 +489,21 @@ def build_transcript_okf_content(
     notebook_source_id: Optional[str] = "UNKNOWN",
     notebook_open_link: Optional[str] = None,
     related_records: Optional[List[Dict[str, Any]]] = None,
+    published_at: Optional[str] = None,
+    acquisition_method: str = "YOUTUBE_TIMEDTEXT_API",
+    timestamped: bool = False,
+    paragraph_anchors: bool = False,
 ) -> str:
-    """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter."""
+    """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter.
+
+    字幕全文は、発話を約1分ごとの段落にまとめた読みやすい本文にする（発話テキスト自体は改変しない。発話ごとの
+    時刻は入れない）。荷札に `published_at`（不明なら "UNKNOWN"）・`acquisition_method`・`cue_count` を残す。
+    cueが無くても本文（raw_text）があれば登録できる。
+    `paragraph_anchors=True` のとき、cueがある本文の各段落の先頭に時刻目印の1行（ANCHOR_LINE_RE の形式）を付ける。
+    相棒の決定（2026-10-20 02:37 JST）で運用の既定はON（`notebooklm_py_ingest.DEFAULT_PARAGRAPH_ANCHORS`）。この関数の
+    引数の既定は False のままで、False の出力は目印なしの従来形式（ゴールデンテストで固定）。
+    `timestamped=True` を明示したときだけ、各cue行を `- [HH:MM:SS](<URL>&t=<秒>s) <発話>` で出す（旧形式）。
+    """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     transcript_logical_id = f"youtube:{video_id}:transcript"
     research_logical_id = f"youtube:{video_id}:research"
@@ -470,6 +517,11 @@ def build_transcript_okf_content(
         has_actual_cues = False
 
     cue_count = len(cues_list) if has_actual_cues else 0
+    if has_actual_cues:
+        transcript_format = "TIMESTAMPED_CUES" if timestamped else "UNTIMED_PARAGRAPHS"   # 目印ありは下で PARAGRAPHS_WITH_ANCHORS
+    else:
+        transcript_format = "RAW_TEXT" if status != "NOT_ACQUIRED" else "NONE"
+    clean_published = str(published_at).strip() if published_at and str(published_at).strip() else "UNKNOWN"
 
     clean_source_id = str(notebook_source_id).strip() if notebook_source_id else "UNKNOWN"
     if not clean_source_id or clean_source_id.upper() in ("", "NONE", "NULL"):
@@ -498,13 +550,18 @@ def build_transcript_okf_content(
     ]
     if valid_open_link:
         lines.append(f'notebook_open_link: "{valid_open_link}"')
+    anchored = bool(paragraph_anchors and cues_list and has_actual_cues and not timestamped)
+    if anchored:
+        transcript_format = "PARAGRAPHS_WITH_ANCHORS"
     lines.extend([
+        f'published_at: "{clean_published}"',
         f'language: "{language}"',
         f'acquired_at: "{today}"',
         f"cue_count: {cue_count}",
         f"has_actual_cues: {str(has_actual_cues).lower()}",
         f'transcript_status: "{status}"',
-        'acquisition_method: "YOUTUBE_TIMEDTEXT_API"',
+        f'transcript_format: "{transcript_format}"',
+        f'acquisition_method: "{acquisition_method}"',
         "tags:",
         '  - "AI技術研究室"',
         '  - "字幕原文"',
@@ -531,6 +588,9 @@ def build_transcript_okf_content(
         "",
         f"# 【字幕原文】 {video_title}",
         "",
+        # v2.0 §3.1: HTMLコメントはNotebookの読み戻しで消えるため、IDと動画URLを見える行でも先頭に持つ
+        f"ID: AI_VIDEO_TRANSCRIPT_RAW:{video_id}",
+        f"動画: {video_url}",
         f"<!-- ID: AI_VIDEO_TRANSCRIPT_RAW:{video_id} -->",
         f"<!-- HAS_ACTUAL_CUES: {has_actual_cues} -->",
         f"<!-- CUES_COUNT: {cue_count} -->",
@@ -551,9 +611,15 @@ def build_transcript_okf_content(
         f"- **対応研究ノート論理ID**: `{research_logical_id}`",
         f"- **元YouTube URL**: {video_url}",
         f"- **動画URL**: {video_url}",
+        f"- **投稿日時**: {clean_published}",
         f"- **総Cue数**: {cue_count} 件",
         f"- **検証状態**: {status}",
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
+        (
+            f"- **場面の時刻**: 本文は約1分ごとの段落で、各段落の先頭の `[HH:MM:SS]` と動画の時刻つきURLが、その段落の最初の発話の位置を示す目印です（発話ごとの時刻は入れていません）。確認済みの場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
+            if anchored else
+            f"- **場面の時刻**: 本文は読みやすさのため時刻を付けていません。場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
+        ),
         f"- **Notebook UI制限・参照案内**: NotebookLMのUI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する研究ノートを参照する場合は、上記『対応研究ノート論理ID (`{research_logical_id}`)』または『動画ID (`{video_id}`)』をもとに、Notebookのソース一覧から検索・特定してください。",
         "",
     ])
@@ -573,12 +639,8 @@ def build_transcript_okf_content(
             lines.append(f"- `{t_id}` ({rel}): {note}{extra}")
         lines.append("")
 
-    lines.extend([
-        "## 字幕発話タイムライン (取得全量)",
-        "",
-    ])
-
-    if cues_list:
+    if timestamped and cues_list:
+        lines.extend(["## 字幕発話タイムライン (取得全量)", ""])
         for c in cues_list:
             if isinstance(c, (list, tuple)):
                 st_sec = float(c[0]) if len(c) > 0 else 0.0
@@ -589,16 +651,66 @@ def build_transcript_okf_content(
             else:
                 st_sec = 0.0
                 txt = str(c).strip()
-            m = int(st_sec // 60)
-            s = int(st_sec % 60)
-            mmss = f"{m:02d}:{s:02d}"
-            lines.append(f"- **[{mmss}]** ({st_sec:.1f}s) {txt}")
-    elif raw_text:
-        lines.append(raw_text)
+            sec = int(st_sec)
+            hhmmss = f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
+            lines.append(f"- [{hhmmss}](https://www.youtube.com/watch?v={video_id}&t={sec}s) {txt}")
+    elif cues_list:
+        lines.extend(["## 字幕全文 (取得全量・段落先頭に時刻目印)" if anchored else "## 字幕全文 (取得全量・時刻なし)", ""])
+        if anchored:
+            blocks = [f"{anchor_line(video_id, st_sec)}\n{text}" for st_sec, text in cues_to_paragraph_spans(cues_list)]
+            lines.append("\n\n".join(blocks))
+        else:
+            lines.append("\n\n".join(cues_to_paragraphs(cues_list)))
+    elif raw_text and not is_placeholder:
+        lines.extend(["## 字幕全文 (取得全量・時刻なし)", ""])
+        lines.append(raw_text.strip())
     else:
-        lines.append("- (字幕発話データなし)")
+        lines.extend(["## 字幕全文", "", "- (字幕発話データなし)"])
 
     return "\n".join(lines)
+
+
+def _cue_parts(c: Any) -> Tuple[float, float, str]:
+    if isinstance(c, (list, tuple)):
+        st = float(c[0]) if len(c) > 0 else 0.0
+        en = float(c[1]) if len(c) > 1 else st
+        return st, en, str(c[2]).strip() if len(c) > 2 else ""
+    if isinstance(c, dict):
+        st = float(c.get("start", 0))
+        en = c.get("end", st + float(c.get("duration", 0) or 0))
+        return st, float(en), str(c.get("text", "")).strip()
+    return 0.0, 0.0, str(c).strip()
+
+
+def cues_to_paragraphs(cues: List[Any], span_sec: float = 60.0, max_chars: int = 1000) -> List[str]:
+    """発話を約1分ごとの段落にまとめる（本文だけ。開始時刻つきは cues_to_paragraph_spans）。"""
+    return [text for _, text in cues_to_paragraph_spans(cues, span_sec=span_sec, max_chars=max_chars)]
+
+
+def cues_to_paragraph_spans(cues: List[Any], span_sec: float = 60.0, max_chars: int = 1000) -> List[Tuple[float, str]]:
+    """発話を約1分ごとの段落にまとめる（AGENTS.md「約1分ごとの段落分け」）。発話テキストは変えず、空白1つでつなぐだけ。
+
+    段落の最初の発話の開始から span_sec 以上たった発話の切れ目で次の段落にする。
+    保険として、段落が max_chars 字を超えたらその切れ目でも分ける。
+    """
+    paragraphs: List[Tuple[float, str]] = []
+    cur: List[str] = []
+    cur_len = 0
+    cur_start: Optional[float] = None
+    for c in cues:
+        st, _, txt = _cue_parts(c)
+        if not txt:
+            continue
+        if cur and ((cur_start is not None and st - cur_start >= span_sec) or cur_len >= max_chars):
+            paragraphs.append((cur_start or 0.0, " ".join(cur)))
+            cur, cur_len = [], 0
+        if not cur:
+            cur_start = st
+        cur.append(txt)
+        cur_len += len(txt)
+    if cur:
+        paragraphs.append((cur_start or 0.0, " ".join(cur)))
+    return paragraphs
 
 
 def evaluate_2_source_okf_independence(
@@ -873,7 +985,11 @@ def add_youtube_source_via_cdp(
     video_id: str,
     video_url: str,
 ) -> Dict[str, Any]:
-    """Open Notebook source modal and add YouTube URL source via CDP DOM interaction."""
+    """Open Notebook source modal and add YouTube URL source via CDP DOM interaction.
+
+    2026-10-20 ユーザー確定仕様によりYouTube URL単体ソースの登録は廃止。常に何もせず無効を返す。
+    """
+    return {"success": False, "status": "DISABLED_BY_SPEC", "note": "YouTube URL単体ソースの登録は廃止（2026-10-20 ユーザー確定仕様）"}
     js_add_youtube = f"""
     (async () => {{
         // 1. Ensure source dialog is open
@@ -1085,8 +1201,9 @@ def sync_to_drive_notebook_sources(
     target_dir: Path = DEFAULT_NOTEBOOK_SOURCES_DIR,
     transcript_content: Optional[str] = None,
     cues: Optional[List[Dict[str, Any]]] = None,
+    published_at: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Place the sources (YouTube reference, Research Markdown & Transcript OKF) into Drive folder."""
+    """Place the sources (Research Markdown & Transcript OKF) into Drive folder."""
     if not target_dir.parent.exists():
         return {
             "status": "DRIVE_ROOT_NOT_FOUND",
@@ -1096,20 +1213,11 @@ def sync_to_drive_notebook_sources(
 
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    yt_file = target_dir / f"{video_id}_youtube_source.txt"
-    yt_content = (
-        f"【YouTube元動画資料】\n"
-        f"動画ID: {video_id}\n"
-        f"タイトル: {video_title}\n"
-        f"URL: {video_url}\n"
-        f"登録日時: {datetime.now(timezone.utc).isoformat()}\n"
-        f"※NotebookLMでYouTubeソースとして追加する場合は、上記URLを直接「YouTube」ソース欄へ投入してください。\n"
-    )
-    yt_file.write_text(yt_content, encoding="utf-8")
+    # YouTube URL単体の参照ファイル（<id>_youtube_source.txt）は作らない（2026-10-20 相棒確定 R2）
 
     md_file = target_dir / f"{video_id}_research_note.md"
     if research_md_path.exists():
-        md_content = research_md_path.read_text(encoding="utf-8")
+        md_content = linkify_timestamps(research_md_path.read_text(encoding="utf-8"), video_id)
         md_file.write_text(md_content, encoding="utf-8")
     else:
         md_content = f"# 研究ノート {video_id}\nURL: {video_url}\n"
@@ -1131,6 +1239,7 @@ def sync_to_drive_notebook_sources(
             cues=cues,
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
     else:
         tr_text = build_transcript_okf_content(
@@ -1140,10 +1249,10 @@ def sync_to_drive_notebook_sources(
             raw_text="- (字幕発話データ未指定)",
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
     tr_file.write_text(tr_text, encoding="utf-8")
 
-    yt_sha = hashlib.sha256(yt_file.read_bytes()).hexdigest()
     md_sha = hashlib.sha256(md_file.read_bytes()).hexdigest()
     tr_sha = hashlib.sha256(tr_file.read_bytes()).hexdigest()
 
@@ -1151,12 +1260,6 @@ def sync_to_drive_notebook_sources(
         "status": "DRIVE_SYNC_SUCCESS",
         "target_dir": str(target_dir),
         "synced_files": [
-            {
-                "kind": "YOUTUBE_SOURCE_REF",
-                "path": str(yt_file),
-                "sha256": yt_sha,
-                "size_bytes": yt_file.stat().st_size,
-            },
             {
                 "kind": "RESEARCH_NOTE_MARKDOWN",
                 "path": str(md_file),
@@ -1187,8 +1290,11 @@ def ingest_and_verify_notebook(
     cues: Optional[List[Dict[str, Any]]] = None,
     transcript_content: Optional[str] = None,
     add_youtube_source: bool = False,
+    published_at: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Execute complete notebook ingestion workflow: pre-readback, conditional UI ingest & post-readback."""
+    if add_youtube_source:
+        raise ValueError("YouTube URL単体ソースの登録は廃止されました（2026-10-20 ユーザー確定仕様）。")
     print("=" * 60)
     print("AI技術研究室 | Gemini Notebook 自動ソース登録・読み戻し検証 (2-Source OKF)")
     print(f"対象Notebook: {NOTEBOOK_URL}")
@@ -1210,6 +1316,7 @@ def ingest_and_verify_notebook(
             cues=cues,
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
     else:
         final_transcript_text = build_transcript_okf_content(
@@ -1219,6 +1326,7 @@ def ingest_and_verify_notebook(
             raw_text="- (字幕発話データ未指定)",
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
 
     has_actual_cues = (
@@ -1239,6 +1347,7 @@ def ingest_and_verify_notebook(
         research_md_path=research_md_path,
         target_dir=drive_dir,
         transcript_content=final_transcript_text,
+        published_at=published_at,
     )
     print(f"[1/3] Google Drive同期フォルダ連携: {drive_res.get('status')}")
 
@@ -1387,7 +1496,7 @@ def ingest_and_verify_notebook(
                         # Step 1: Add missing Research Note OKF if not present (Mandatory 2-Source 1/2)
                         if not note_already:
                             print(f"  - [CDP ACTION] 研究ノート(Copied text)を追加します: AI_VIDEO_RESEARCH_NOTE:{video_id}")
-                            note_content = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
+                            note_content = linkify_timestamps(research_md_path.read_text(encoding="utf-8"), video_id) if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
                             note_add_res = add_copied_text_source_via_cdp(
                                 client=client,
                                 tab=notebook_tab,
@@ -1525,7 +1634,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--research-md", help="研究ノートMarkdownファイルのパス", default=None)
     parser.add_argument("--transcript-file", help="字幕原文Markdown/テキストファイルのパス", default=None)
     parser.add_argument("--transcript-text", help="字幕原文テキスト", default=None)
-    parser.add_argument("--include-youtube-url", action="store_true", help="追加参考としてYouTube URLソースもNotebookへ登録する（通常は2ソースOKFのみ）")
+    parser.add_argument("--include-youtube-url", action="store_true", help="廃止（2026-10-20）：指定するとエラーで停止する")
     parser.add_argument("--launch-chrome", action="store_true", help="専用プロファイルでChromeを起動する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
     return parser
@@ -1539,6 +1648,9 @@ def main(args_list: Optional[List[str]] = None) -> int:
         res = launch_dedicated_chrome()
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0
+
+    if args.include_youtube_url:
+        parser.error("--include-youtube-url は廃止されました。YouTube URL単体ソースは登録しません（2026-10-20 ユーザー確定仕様）。")
 
     if not args.video_id:
         parser.error("登録処理には video_id が必要です（--launch-chrome 時は不要）")
@@ -1558,7 +1670,6 @@ def main(args_list: Optional[List[str]] = None) -> int:
         video_title=args.title,
         research_md_path=md_p,
         transcript_content=tr_content,
-        add_youtube_source=args.include_youtube_url,
         mock_cdp=args.mock_cdp,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
