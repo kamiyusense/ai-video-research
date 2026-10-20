@@ -21,6 +21,7 @@
 | 4 | T2 notebooklm-py 2ソース自動登録モジュール | 作業役（PR #14 `2aaf20d`） | NEEDS_FIX（1周目） | テストは独立実測で136件OK（ネット遮断・同名ブランチ）。安全面はOK。ただし実Notebookのタイトル（`tests/fixtures/notebook_sources_20261020.json`）で重複判定を試すと、`【研究ノート】…[id]`・`動画研究_…id…` を研究ノートと認識せず、IDを含むmarkdownをYouTube扱いする → LIVEで研究ノートを二重登録する。修正指示済み |
 | 5 | T2 修正（2周目） | 作業役（PR #14 `1e128aa`） | PASS | 独立実測：ネット遮断・同名ブランチで146件OK。fixtureの実タイトルで台帳31件を走査し、研究ノートは `registry.json` の `notebook_sources` と全件一致、字幕原文は pRfC1DILDEM の `a32a70ec` のみ検出、曖昧0件。動画タイトルを渡すとYouTubeは type=youtube のソースだけを拾う（pRfC→`25c0f62e`、sodTF→`2a738296`）。追加は add_text の1か所のみで削除口なし。CLIアダプタは実機未確認（UNVERIFIED） |
 | 6 | T3 Notebook健康診断（読み取り専用） | 作業役（PR #14 `011d719`） | PASS（1周目） | 独立実測：ネット遮断・同名ブランチで152件OK。fixture＋台帳で OK・欠落0・台帳外0・字幕原文未登録30。字幕原文 `a32a70ec` を消した一覧では ATTENTION・欠落1を正しく報告。ログイン切れでは AUTH_EXPIRED で一覧も書き込みも呼ばない（書き込み0回を確認） |
+| 7 | T2 実機dry-run（相棒PC、書き込み0） | 作業役（ユーザーPC、`1e128aa`） | PASS（計画）／add_textは不合格 | ログイン確認PASS、一覧54件→54件で変化なし。pRfC1DILDEM → `NO_OP`、u3ka_AAb8qE → 字幕原文だけ追加の計画（元本文 `d1fef625` 10201文字、`NOTEBOOK_YOUTUBE_SOURCE_FULLTEXT`）。CLIアダプタの list/fulltext/auth は実CLIと一致。ただし notebooklm-py 0.8.5 に `source add-text` は無く、live だと必ず失敗 → T5で修正 |
 
 ## 次のタスク（作業役向け）
 
@@ -31,6 +32,12 @@
 - 受入条件: 書いた内容がループ記録2〜6と矛盾しない。「成功」「完了」を根拠なしに書かない。既存テスト152件を壊さない。
 - 禁止: コード変更、実Notebook接続。
 
+**T5（T4の次）: CLIアダプタの add_text を実CLIに合わせる**
+- 実機調査（ループ記録7）による正しい形: `notebooklm source add - --type text --title {title} --json --notebook {notebook_id}`（本文は標準入力。`--type text` のときだけ `-` が使える）。出力JSONは `{"source": {...}}` の入れ子なので、IDは `data["source"]["id"]`（無ければ `data["id"]`）で読む。
+- 追加: add 用の timeout を設定可能にする（既定は長め、例: 600秒）。
+- 受入条件: subprocess を偽物に差し替えたテストで、渡す引数列・標準入力・入れ子JSONからのID取得・ID無し時の「結果不明→一覧で確認」経路を固定。既存テスト非破壊。
+- 禁止: 実Notebook接続・書き込み。
+
 ## ユーザー判断の記録
 
 - 2026-10-20 18:04（JST）相棒が待ちリスト1〜4をすべて明示許可。
@@ -39,7 +46,14 @@
 
 ## ユーザー待ちリスト
 
-（2026-10-20 20:08 JST：1〜4は完了。結果はループ記録2・3と `registry.json` の `notebook_sources`。現在の待ちは無し）
+（2026-10-20 20:08 JST：1〜4は完了。結果はループ記録2・3と `registry.json` の `notebook_sources`）
+
+| # | 何を | なぜ止めたか | 承認されたら進むこと |
+|---|---|---|---|
+| 5 | u3ka_AAb8qE の字幕原文OKFを、新しい自動登録道具で実Notebookへ追加する（T5修正後に `--live`） | 新しいNotebook書き込み（守りルール5）。前回の許可はpRfC1DILDEM分のみ | OKF動画も字幕原文＋研究ノートの2ソースになる |
+
+（以下は完了済みの旧リスト）
+
 
 
 | # | 何を | なぜ止めたか | 承認されたら進むこと |
