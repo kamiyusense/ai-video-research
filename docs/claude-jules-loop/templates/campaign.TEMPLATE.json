@@ -1,0 +1,85 @@
+{
+  "profile": "CLAUDE_JULES_CAMPAIGN_V1",
+  "campaign_id": "prod-c1",
+  "loop_id": "claude-jules-prod-c1",
+  "repository": "kamiyusense/ai-video-research",
+  "policy": {
+    "profile": "CLAUDE_JULES_STARTER_POLICY_V1",
+    "policy_version": 1,
+    "repository": "kamiyusense/ai-video-research",
+    "base_branch": "feature/gemini-notebook-research-loop-20261016",
+    "route": "jules-api-carrier",
+    "billing": "subscription",
+    "allow_api_fallback": false,
+    "allow_metered_fallback": false,
+    "trusted_writers": [
+      "kamiyusense"
+    ],
+    "max_concurrent_tasks": 1,
+    "max_campaign_rounds": null,
+    "max_corrective_rounds": 3,
+    "intent_lease_minutes": 15,
+    "max_label_attempts": 5,
+    "jules_ack_timeout_minutes": 60,
+    "read_retry": {
+      "attempts": 3,
+      "backoff_seconds": [
+        0,
+        5,
+        30
+      ]
+    },
+    "allowed_task_kinds": [
+      "proof",
+      "code_change"
+    ],
+    "on_quota_unknown": "proceed",
+    "base_policy": "descendant_untouched",
+    "path_classes": {
+      "execution_config": [
+        ".github/",
+        ".claude/",
+        ".mcp.json",
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "safety_boundary": [
+        "registry.json",
+        "research/",
+        "evidence/",
+        "automation/gemini-notebook/state/",
+        "automation/gemini-notebook/cloud_relay_gas.js",
+        "docs/claude-jules-loop/"
+      ]
+    },
+    "defer_escalate_minutes": 240,
+    "heartbeat_minutes": 360,
+    "corrective_api_first": true
+  },
+  "tasks": [],
+  "objectives": [
+    {
+      "objective_id": "o1-research-pipeline-tests",
+      "title": "Fix evidence-backed bugs and add tests in the research pipeline scripts",
+      "scope_prefixes": [
+        "automation/gemini-notebook/auto_research_pipeline.py",
+        "automation/gemini-notebook/intake_url.py",
+        "automation/gemini-notebook/intake_receipt.py",
+        "automation/gemini-notebook/receipt_to_research.py",
+        "automation/gemini-notebook/query_research.py",
+        "automation/gemini-notebook/verify_timestamps.py",
+        "tests/test_"
+      ],
+      "allowed_operations": [
+        "bug_fix",
+        "test_add",
+        "test_fix"
+      ],
+      "priority": 10,
+      "approved_by": "",
+      "approved_at": ""
+    }
+  ],
+  "control_issue": null,
+  "_template_note": "TEMPLATE. Not active. Copy to docs/claude-jules-loop/active/ only after the owner decides (see PORT_PLAN.md). approved_by/approved_at are empty on purpose."
+}

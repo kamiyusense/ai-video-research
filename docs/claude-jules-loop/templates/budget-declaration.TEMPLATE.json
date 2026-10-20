@@ -1,0 +1,14 @@
+{
+  "profile": "CLAUDE_JULES_LIVE_BUDGET_DECLARATION_V3",
+  "budget_id": "jules-avr1",
+  "campaign_id": "prod-c1",
+  "repository": "kamiyusense/ai-video-research",
+  "data_branch": "claude/claude-jules-loop-data",
+  "ledger_prefix": "claude-jules-budget/jules-avr1/",
+  "cap": 0,
+  "slot_create": true,
+  "approved_by": "",
+  "approval_ref": "",
+  "rolling_24h_limit": 0,
+  "_template_note": "TEMPLATE. cap and rolling_24h_limit are 0 (= nothing may start) until the owner sets them."
+}

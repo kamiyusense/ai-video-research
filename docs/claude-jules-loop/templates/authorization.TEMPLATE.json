@@ -1,0 +1,24 @@
+{
+  "profile": "CLAUDE_JULES_LIVE_AUTHORIZATION_V2",
+  "campaign_id": "prod-c1",
+  "repository": "kamiyusense/ai-video-research",
+  "budget_id": "jules-prod-c1",
+  "issues": "campaign",
+  "writes": [
+    "comment",
+    "add_label",
+    "create_issue",
+    "api_message",
+    "takeover"
+  ],
+  "max_labels": 1,
+  "max_activations": 0,
+  "max_writes": 12,
+  "expires_at": "",
+  "approved_by": "",
+  "approval_ref": "",
+  "route": "jules-api-carrier",
+  "billing": "subscription",
+  "usage_credits_confirmed_off": false,
+  "_template_note": "TEMPLATE. Owner fills approved_by/approval_ref/expires_at/max_activations at activation. usage_credits_confirmed_off must be true only after the owner checked it."
+}
