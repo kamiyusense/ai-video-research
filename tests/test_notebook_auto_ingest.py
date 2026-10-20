@@ -386,9 +386,9 @@ class TestNotebookAutoIngest(unittest.TestCase):
         self.assertIn('transcript_status: "UNVERIFIED"', content)
         self.assertIn('<!-- RELATED_RESEARCH_ID: youtube:abc123xyz:research -->', content)
         self.assertIn('- **元YouTube URL**: https://www.youtube.com/watch?v=abc123xyz', content)
-        # 2026-10-20 ユーザー確定仕様（ロードマップv1.2）で cue 行は時刻リンク形式に変更されたため期待値を更新
-        self.assertIn('- [00:00:00](https://www.youtube.com/watch?v=abc123xyz&t=0s) こんにちは世界', content)
-        self.assertIn('- [00:00:02](https://www.youtube.com/watch?v=abc123xyz&t=2s) テスト字幕です', content)
+        # 2026-10-20 22:42 JST 相棒の方針転換で字幕全文は時刻なしの段落本文に変更されたため期待値を更新
+        self.assertIn("## 字幕全文 (取得全量・時刻なし)\n\nこんにちは世界 テスト字幕です", content)
+        self.assertNotIn("&t=", content)
         # Default when unknown
         self.assertIn('notebook_source_id: "UNKNOWN"', content)
         self.assertNotIn('notebook_open_link', content)

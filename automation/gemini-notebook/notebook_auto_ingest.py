@@ -460,11 +460,15 @@ def build_transcript_okf_content(
     notebook_open_link: Optional[str] = None,
     related_records: Optional[List[Dict[str, Any]]] = None,
     published_at: Optional[str] = None,
+    acquisition_method: str = "YOUTUBE_TIMEDTEXT_API",
+    timestamped: bool = False,
 ) -> str:
     """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter.
 
-    2026-10-20 ユーザー確定仕様: 各cue行は `- [HH:MM:SS](<URL>&t=<秒>s) <発話>`（秒は切り捨て）、
-    荷札に `published_at`（不明なら "UNKNOWN"）、cueが無ければ `transcript_status: "TIMESTAMPS_MISSING"`。
+    2026-10-20 22:42 JST 相棒の方針転換: 字幕全文は**時刻なし**を正とする。発話を段落にまとめた読みやすい本文に
+    し（発話テキスト自体は改変しない）、場面の時刻リンクは研究ノート側で示す。荷札に `published_at`
+    （不明なら "UNKNOWN"）・`acquisition_method`・`cue_count` を残す。cueが無くても本文（raw_text）があれば登録できる。
+    `timestamped=True` を明示したときだけ、各cue行を `- [HH:MM:SS](<URL>&t=<秒>s) <発話>` で出す（旧形式）。
     """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     transcript_logical_id = f"youtube:{video_id}:transcript"
@@ -479,9 +483,10 @@ def build_transcript_okf_content(
         has_actual_cues = False
 
     cue_count = len(cues_list) if has_actual_cues else 0
-    if not has_actual_cues:
-        # 時刻つきcueが無い字幕は正式登録しない（暫定扱い）
-        status = "TIMESTAMPS_MISSING"
+    if has_actual_cues:
+        transcript_format = "TIMESTAMPED_CUES" if timestamped else "UNTIMED_PARAGRAPHS"
+    else:
+        transcript_format = "RAW_TEXT" if status != "NOT_ACQUIRED" else "NONE"
     clean_published = str(published_at).strip() if published_at and str(published_at).strip() else "UNKNOWN"
 
     clean_source_id = str(notebook_source_id).strip() if notebook_source_id else "UNKNOWN"
@@ -518,7 +523,8 @@ def build_transcript_okf_content(
         f"cue_count: {cue_count}",
         f"has_actual_cues: {str(has_actual_cues).lower()}",
         f'transcript_status: "{status}"',
-        'acquisition_method: "YOUTUBE_TIMEDTEXT_API"',
+        f'transcript_format: "{transcript_format}"',
+        f'acquisition_method: "{acquisition_method}"',
         "tags:",
         '  - "AI技術研究室"',
         '  - "字幕原文"',
@@ -569,6 +575,7 @@ def build_transcript_okf_content(
         f"- **総Cue数**: {cue_count} 件",
         f"- **検証状態**: {status}",
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
+        f"- **場面の時刻**: 本文は読みやすさのため時刻を付けていません。場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。",
         f"- **Notebook UI制限・参照案内**: NotebookLMのUI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する研究ノートを参照する場合は、上記『対応研究ノート論理ID (`{research_logical_id}`)』または『動画ID (`{video_id}`)』をもとに、Notebookのソース一覧から検索・特定してください。",
         "",
     ])
@@ -588,12 +595,8 @@ def build_transcript_okf_content(
             lines.append(f"- `{t_id}` ({rel}): {note}{extra}")
         lines.append("")
 
-    lines.extend([
-        "## 字幕発話タイムライン (取得全量)",
-        "",
-    ])
-
-    if cues_list:
+    if timestamped and cues_list:
+        lines.extend(["## 字幕発話タイムライン (取得全量)", ""])
         for c in cues_list:
             if isinstance(c, (list, tuple)):
                 st_sec = float(c[0]) if len(c) > 0 else 0.0
@@ -607,12 +610,52 @@ def build_transcript_okf_content(
             sec = int(st_sec)
             hhmmss = f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
             lines.append(f"- [{hhmmss}](https://www.youtube.com/watch?v={video_id}&t={sec}s) {txt}")
-    elif raw_text:
-        lines.append(raw_text)
+    elif cues_list:
+        lines.extend(["## 字幕全文 (取得全量・時刻なし)", ""])
+        lines.append("\n\n".join(cues_to_paragraphs(cues_list)))
+    elif raw_text and not is_placeholder:
+        lines.extend(["## 字幕全文 (取得全量・時刻なし)", ""])
+        lines.append(raw_text.strip())
     else:
-        lines.append("- (字幕発話データなし)")
+        lines.extend(["## 字幕全文", "", "- (字幕発話データなし)"])
 
     return "\n".join(lines)
+
+
+def _cue_parts(c: Any) -> Tuple[float, float, str]:
+    if isinstance(c, (list, tuple)):
+        st = float(c[0]) if len(c) > 0 else 0.0
+        en = float(c[1]) if len(c) > 1 else st
+        return st, en, str(c[2]).strip() if len(c) > 2 else ""
+    if isinstance(c, dict):
+        st = float(c.get("start", 0))
+        en = c.get("end", st + float(c.get("duration", 0) or 0))
+        return st, float(en), str(c.get("text", "")).strip()
+    return 0.0, 0.0, str(c).strip()
+
+
+def cues_to_paragraphs(cues: List[Any], gap_sec: float = 3.0, max_chars: int = 300) -> List[str]:
+    """発話を読みやすい段落にまとめる。発話テキストは変えず、空白1つでつなぐだけ。
+
+    前の発話の終わりから gap_sec 以上の間（沈黙）があるか、段落が max_chars 字を超えたら次の段落にする。
+    """
+    paragraphs: List[str] = []
+    cur: List[str] = []
+    cur_len = 0
+    prev_end: Optional[float] = None
+    for c in cues:
+        st, en, txt = _cue_parts(c)
+        if not txt:
+            continue
+        if cur and ((prev_end is not None and st - prev_end >= gap_sec) or cur_len >= max_chars):
+            paragraphs.append(" ".join(cur))
+            cur, cur_len = [], 0
+        cur.append(txt)
+        cur_len += len(txt)
+        prev_end = max(en, st)
+    if cur:
+        paragraphs.append(" ".join(cur))
+    return paragraphs
 
 
 def evaluate_2_source_okf_independence(

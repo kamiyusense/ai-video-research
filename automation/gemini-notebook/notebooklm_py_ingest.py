@@ -14,9 +14,10 @@ docs/OKF_KNOWLEDGE_ROADMAP.md v1.1「1動画2ソースMVP完成契約」に沿�
    タイトルで決めきれなければ本文の荷札（type / logical_id）を読み、それでも曖昧なら書き込み0で
    AMBIGUOUS_EXISTING_SOURCES。揃っていれば NO_OP。
 3. 足りない方だけ組み立てる（字幕原文は build_transcript_okf_content を再利用）。
-   2026-10-20 ユーザー確定仕様（docs/OKF_KNOWLEDGE_ROADMAP.md v1.2 冒頭）: 字幕は実行PCからYouTubeの
-   時刻つき字幕を取り、各cueに時刻リンクを付ける。取れなければ書き込み0で TRANSCRIPT_TIMESTAMPS_UNAVAILABLE
-   （Notebook内本文への時刻なしフォールバックは廃止）。両OKFに published_at を記録する。
+   2026-10-20 22:42 JST 相棒の方針転換（docs/OKF_KNOWLEDGE_ROADMAP.md R3）: 字幕全文は時刻なしを正とし、
+   発話を段落にまとめた本文にする（場面の時刻リンクは研究ノート側）。字幕の取得元は
+   渡されたcue → Notebook内YouTubeソースの本文（fulltext）→ YouTube字幕（youtube-transcript-api→timedtext）の順。
+   どれも取れなければ書き込み0で TRANSCRIPT_UNAVAILABLE。両OKFに published_at を記録する。
 4. 既定は dry-run（計画のみ）。live=True かつ notebook_id 指定時だけ add_text する。
 5. 書き込み結果が不明（例外・ID無し）でも再送しない。一覧の読み戻しで有無を確認する。
 6. 事後読み戻し：完全一致、または Markdown記号・空白を除いた正規化一致で合格。両ソースが別IDであることも確認。
@@ -48,6 +49,7 @@ from receipt_to_research import linkify_timestamps  # noqa: E402
 
 ACQ_TIMEDTEXT = "YOUTUBE_TIMEDTEXT_API"
 ACQ_TRANSCRIPT_API = "YOUTUBE_TRANSCRIPT_API"
+ACQ_NOTEBOOK_FULLTEXT = "NOTEBOOK_YOUTUBE_SOURCE_FULLTEXT"
 
 
 class NotebookClient(Protocol):
@@ -296,15 +298,18 @@ def classify_sources(
 def build_transcript_text(
     video_id: str,
     video_title: str,
-    cues: List[Any],
+    cues: Optional[List[Any]],
     published_at: Optional[str],
     acquisition_method: str = ACQ_TIMEDTEXT,
+    raw_text: Optional[str] = None,
 ) -> Dict[str, Any]:
+    """字幕全文OKF（既定は時刻なしの段落本文）。cue が無ければ raw_text（Notebook内YouTubeソースの本文など）を使う。"""
     url = f"https://www.youtube.com/watch?v={video_id}"
-    text = build_transcript_okf_content(video_id, url, video_title, cues=cues, published_at=published_at)
-    if acquisition_method != ACQ_TIMEDTEXT:
-        text = text.replace(f'acquisition_method: "{ACQ_TIMEDTEXT}"', f'acquisition_method: "{acquisition_method}"', 1)
-    return {"text": text, "acquisition_method": acquisition_method, "cue_count": len(cues)}
+    text = build_transcript_okf_content(
+        video_id, url, video_title, cues=cues or None, raw_text=None if cues else raw_text,
+        published_at=published_at, acquisition_method=acquisition_method,
+    )
+    return {"text": text, "acquisition_method": acquisition_method, "cue_count": len(cues or [])}
 
 
 def ensure_published_at(research_note_text: str, published_at: Optional[str]) -> str:
@@ -438,9 +443,15 @@ def run_ingest(
         return result
 
     acquisition_method = ACQ_TIMEDTEXT
-    if fetch_transcript and ((need_transcript and not cues) or not published_at):
+    raw_text: Optional[str] = None
+    if need_transcript and not cues and pre.get("youtube_source_id"):
+        # 既存動画：Notebook内YouTubeソースの本文（時刻なし）を字幕全文に使う（22:42 方針転換で正式扱い）
+        raw_text = (client.get_fulltext(pre["youtube_source_id"]) or "").strip() or None
+        if raw_text:
+            acquisition_method = ACQ_NOTEBOOK_FULLTEXT
+    if fetch_transcript and ((need_transcript and not cues and not raw_text) or not published_at):
         fetched = fetch_transcript(video_id) or {}
-        if not cues:
+        if need_transcript and not cues and not raw_text:
             cues = fetched.get("cues") or None
             acquisition_method = fetched.get("acquisition_method") or ACQ_TIMEDTEXT
         if not published_at:
@@ -449,12 +460,11 @@ def run_ingest(
 
     planned: Dict[str, Dict[str, str]] = {}
     if need_transcript:
-        if not cues:
-            # 時刻の無い字幕は正式に登録しない（2026-10-20 ユーザー確定仕様）
-            result["status"] = "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE"
-            result["notes"].append("YouTubeの時刻つき字幕を取得できなかったため、何も書き込まずに停止。")
+        if not cues and not raw_text:
+            result["status"] = "TRANSCRIPT_UNAVAILABLE"
+            result["notes"].append("字幕全文を取得できなかった（Notebook内YouTubeソース本文・YouTube字幕とも無し）ため、何も書き込まずに停止。")
             return result
-        tr = build_transcript_text(video_id, video_title, cues, published_at, acquisition_method)
+        tr = build_transcript_text(video_id, video_title, cues, published_at, acquisition_method, raw_text=raw_text)
         result["transcript_acquisition_method"] = tr["acquisition_method"]
         result["transcript_cue_count"] = tr["cue_count"]
         planned["transcript"] = {"title": transcript_title(video_id, video_title), "text": tr["text"]}
@@ -570,8 +580,26 @@ def health_check(client: NotebookClient, registry: Dict[str, Any]) -> Dict[str, 
         if not (_UUID_RE.match(sid) and sid in notebook_ids):
             transcript_missing.append(r.get("video_id"))
 
+    # 字幕全文・研究ノートの荷札に投稿日時が無い（UNKNOWN含む）ものを数える（R4。本文の読み取りのみ）
+    published_missing = []
+    for s in sources:
+        if s.get("type") == "youtube":
+            continue
+        title = str(s.get("title", ""))
+        meta = registry_ids.get(str(s.get("id")), {})
+        kind = (
+            "transcript_okf" if meta.get("kind") == "transcript_okf" or _TRANSCRIPT_TITLE_RE.search(title)
+            else "research_note" if meta.get("kind") == "research_note" or _NOTE_TITLE_RE.search(title)
+            else None
+        )
+        if not kind:
+            continue
+        value = published_at_of(client.get_fulltext(str(s.get("id"))))
+        if value in (None, "UNKNOWN"):
+            published_missing.append({"source_id": s.get("id"), "kind": kind, "title": title, "published_at": value or "MISSING"})
+
     return {
-        "status": "OK" if not missing and not unregistered else "ATTENTION",
+        "status": "OK" if not missing and not unregistered and not published_missing else "ATTENTION",
         "notebook_source_count": len(sources),
         "registry_record_count": len(records),
         "registry_ids_missing_in_notebook": missing,
@@ -580,6 +608,108 @@ def health_check(client: NotebookClient, registry: Dict[str, Any]) -> Dict[str, 
         "notebook_sources_not_in_registry_count": len(unregistered),
         "videos_without_transcript_okf": transcript_missing,
         "videos_without_transcript_okf_count": len(transcript_missing),
+        "sources_without_published_at": published_missing,
+        "sources_without_published_at_count": len(published_missing),
+    }
+
+
+_PUBLISHED_AT_RE = re.compile(r'^\s*published[_ ]?at\s*[:：]\s*"?([^"\n]*?)"?\s*$', re.M | re.I)
+
+
+def published_at_of(body: Optional[str]) -> Optional[str]:
+    """本文の荷札の published_at 値（無ければ None、空・UNKNOWN は "UNKNOWN"）。"""
+    m = _PUBLISHED_AT_RE.search(body or "")
+    if not m:
+        return None
+    value = m.group(1).strip()
+    return "UNKNOWN" if not value or value.upper() == "UNKNOWN" else value
+
+
+_RESEARCH_FILE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-([\w-]{11})-")
+_ID_IN_TITLE_RE = re.compile(r"\[([\w-]{11})\]\s*$")
+
+
+def resolve_video_id(youtube_title: str, sources: List[Dict[str, Any]], research_dir: Path) -> Optional[str]:
+    """YouTubeソースのタイトルから動画IDを探す（Notebook内の「【…】題 [ID]」→ GitHub研究ノートの本文の順）。"""
+    for s in sources:
+        title = str(s.get("title", ""))
+        m = _ID_IN_TITLE_RE.search(title)
+        if s.get("type") != "youtube" and m and title.startswith(("【研究ノート】", "【字幕原文】")):
+            if _same_title(title, youtube_title) or youtube_title.startswith(_short_title(title.split("】", 1)[1].rsplit("[", 1)[0].strip())):
+                return m.group(1)
+    hits = set()
+    for path in sorted(Path(research_dir).glob("*.md")):
+        m = _RESEARCH_FILE_RE.match(path.name)
+        if m and youtube_title in path.read_text(encoding="utf-8", errors="replace"):
+            hits.add(m.group(1))
+    return hits.pop() if len(hits) == 1 else None
+
+
+def plan_url_source_migration(
+    client: NotebookClient,
+    research_dir: Path = ROOT / "research",
+) -> Dict[str, Any]:
+    """URL単体ソース（type=youtube）を字幕全文OKFへ移す計画を返す。読み取りのみで、追加も削除もしない。
+
+    2026-10-20 22:42 JST 相棒の判断: 先に各動画の字幕全文OKF（時刻なし・published_at入り）を登録し、
+    読み戻しで一致を確かめてから、URLソースを削除してよい。このツールは削除の実行コードを持たない。
+    """
+    if not client.auth_check_passive():
+        return {"status": "AUTH_EXPIRED", "user_action": "相棒のPCでNotebookLMにログインし直してください。", "items": []}
+    sources = client.list_sources()
+    items = []
+    for yt in [s for s in sources if s.get("type") == "youtube"]:
+        title = str(yt.get("title", ""))
+        vid = resolve_video_id(title, sources, research_dir)
+        item: Dict[str, Any] = {"youtube_source_id": yt.get("id"), "youtube_title": title, "video_id": vid or "UNKNOWN"}
+        fulltext = (client.get_fulltext(str(yt.get("id"))) or "").strip()
+        item["transcript_source_order"] = [
+            {"method": ACQ_NOTEBOOK_FULLTEXT, "source_id": yt.get("id"), "available": bool(fulltext), "chars": len(fulltext)},
+            {"method": ACQ_TRANSCRIPT_API, "available": "UNKNOWN（実行PCで取得して確認）"},
+        ]
+        if not vid:
+            item.update(status="VIDEO_ID_UNKNOWN", existing={}, to_add=[], delete_after_readback=[],
+                        notes=["動画IDを特定できないため計画から外す（削除もしない）。"])
+            items.append(item)
+            continue
+        pre = classify_sources(sources, vid, title, client)
+        tr_id, rn_id = pre["transcript_source_id"], pre["research_note_source_id"]
+        tr_pub = published_at_of(client.get_fulltext(tr_id)) if tr_id else None
+        item["existing"] = {
+            "transcript_okf": tr_id, "transcript_published_at": (tr_pub or "MISSING") if tr_id else None,
+            "research_note_okf": rn_id,
+        }
+        to_add = []
+        if not tr_id:
+            to_add.append("transcript")
+        if not rn_id:
+            to_add.append("research_note")
+        item["to_add"] = plan_details(vid, title, to_add)
+        item["notes"] = []
+        if pre["ambiguous"]:
+            item["status"] = "AMBIGUOUS_EXISTING_SOURCES"
+            item["delete_after_readback"] = []
+            item["notes"].extend(pre["ambiguous_reasons"])
+        elif tr_id and tr_pub not in (None, "UNKNOWN"):
+            item["status"] = "READY_TO_DELETE_URL_SOURCE"
+            item["delete_after_readback"] = [yt.get("id")]
+            item["notes"].append("字幕全文OKF（published_at入り）が既にある。削除前にその本文の読み戻し一致をもう一度確かめる。")
+        else:
+            item["status"] = "ADD_THEN_DELETE"
+            item["delete_after_readback"] = [yt.get("id")]
+            if tr_id:
+                item["to_add_pending_approval"] = plan_details(vid, title, ["transcript"])
+                item["replace_pending_approval"] = [tr_id]
+                item["notes"].append(f"既存の字幕全文OKF {tr_id} に published_at が無い。入り版の追加・置き換え（{tr_id} の削除）は相棒の承認待ち。")
+            item["notes"].append("URLソースの削除は、追加した字幕全文OKFの読み戻し一致を確かめた後だけ（その前は削除しない）。")
+        items.append(item)
+    return {
+        "status": "DRY_RUN_MIGRATION_PLAN",
+        "url_source_count": len(items),
+        "video_id_unknown_count": sum(1 for i in items if i["video_id"] == "UNKNOWN"),
+        "delete_after_readback_count": sum(len(i["delete_after_readback"]) for i in items),
+        "deletion_executed": False,
+        "items": items,
     }
 
 
@@ -594,15 +724,28 @@ def main_health(argv: List[str]) -> int:
     return 0 if rep["status"] == "OK" else (3 if rep["status"] == "AUTH_EXPIRED" else 1)
 
 
+def main_migrate_plan(argv: List[str]) -> int:
+    ap = argparse.ArgumentParser(prog="notebooklm_py_ingest.py migrate-plan",
+                                 description="URL単体ソースの移行計画（読み取りのみ・削除しない）")
+    ap.add_argument("--notebook-id", required=True)
+    ap.add_argument("--research-dir", type=Path, default=ROOT / "research")
+    args = ap.parse_args(argv)
+    rep = plan_url_source_migration(NotebookLmCliClient(args.notebook_id), args.research_dir)
+    print(json.dumps(rep, ensure_ascii=False, indent=2))
+    return 3 if rep["status"] == "AUTH_EXPIRED" else 0
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv[:1] == ["health"]:
         return main_health(argv[1:])
+    if argv[:1] == ["migrate-plan"]:
+        return main_migrate_plan(argv[1:])
     ap = argparse.ArgumentParser(description="notebooklm-py 経由の1動画2ソース登録（既定はdry-run）")
     ap.add_argument("--video-id", required=True)
     ap.add_argument("--video-title", required=True)
     ap.add_argument("--research-md", required=True, type=Path)
-    ap.add_argument("--cues-json", type=Path, help="字幕cueのJSON（[[start, end, text], ...]）。無ければ実行PCからYouTubeの時刻つき字幕を取る")
+    ap.add_argument("--cues-json", type=Path, help="字幕cueのJSON（[[start, end, text], ...]）。無ければNotebook内YouTubeソース本文→YouTube字幕の順に取る")
     ap.add_argument("--notebook-id")
     ap.add_argument("--live", action="store_true", help="実際にNotebookへ書き込む（--notebook-id 必須）")
     args = ap.parse_args(argv)
