@@ -352,6 +352,35 @@ class TestRepairPlan(unittest.TestCase):
                          rl.validate_related_records(corpus, ROOT)["error_record_count"])
         self.assertEqual((ROOT / "registry.json").read_bytes(), before)
 
+    def test_summary_is_a_short_human_readable_list(self):
+        corpus = self.corpus()
+        plan = rl.repair_plan_for_corpus(corpus, ROOT, limit=3)
+        text = rl.format_repair_summary(plan, corpus)
+        self.assertIn("対象ノート 1本／削除予定 2件／人の確認 0件", text)
+        self.assertIn("✕", text)
+        self.assertIn("自己リンク", text)
+        self.assertIn("根拠なし", text)
+        self.assertIn("＋", text)
+        self.assertIn("（同じ宛先）", text)
+        self.assertIn("共通語:", text)
+        self.assertNotIn("http", text)
+        self.assertNotIn("@@", text)   # 差分形式ではなく一覧
+        self.assertLess(len(text.splitlines()), 20)
+
+    def test_cli_summary_prints_text_and_modifies_nothing(self):
+        import io
+        from contextlib import redirect_stdout
+        before = (ROOT / "registry.json").read_bytes()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = rl.main(["repair-plan", "--summary"])
+        out = buf.getvalue()
+        self.assertEqual(rc, 0)
+        self.assertTrue(out.startswith("【related_records 修復計画の一覧"))
+        self.assertIn("温存する確定ペア: pRfC1DILDEM ↔ u3ka_AAb8qE", out)
+        self.assertNotIn('"files_modified"', out)    # JSONではない
+        self.assertEqual((ROOT / "registry.json").read_bytes(), before)
+
     def test_repair_plan_blocks_network(self):
         with mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("network")), \
              mock.patch.object(socket, "socket", side_effect=AssertionError("network")):

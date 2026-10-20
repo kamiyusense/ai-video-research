@@ -579,6 +579,7 @@ def run_pipeline(
     notebook_client: Any = None,
     fetch_transcript: Any = None,
     fetch_video_meta: Any = None,
+    paragraph_anchors: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Execute complete automated research pipeline from URL to GitHub commit & verification.
 
@@ -593,7 +594,8 @@ def run_pipeline(
         raise ValueError("Notebookへの --live 書き込みは notebook_backend='notebooklm-py' のときだけ使えます。")
     if notebook_live and not notebook_id:
         return {"status": "LIVE_REQUIRES_NOTEBOOK_ID", "notebook_ingest": {"status": "LIVE_REQUIRES_NOTEBOOK_ID", "writes": []}}
-    py_nb = dict(notebook_id=notebook_id, live=notebook_live, client=notebook_client, fetch_transcript=fetch_transcript)
+    py_nb = dict(notebook_id=notebook_id, live=notebook_live, client=notebook_client, fetch_transcript=fetch_transcript,
+                 paragraph_anchors=paragraph_anchors)  # None=notebooklm_py_ingest.DEFAULT_PARAGRAPH_ANCHORS
     today_str = date.today().isoformat()
     print("=" * 70)
     print(f"[PIPELINE START] AI技術研究室 完全自動化研究パイプライン 開始 (v2.2, Model: {gemini_model})")
@@ -759,6 +761,8 @@ def run_pipeline(
             nb_res.setdefault("notes", []).append(meta_note)
         for p in nb_res.get("plan_details", []):
             print(f"  - 追加予定: {p['kind']} / {p['title']} / {p['logical_id']}")
+        if "paragraph_anchors" in nb_res:
+            print(f"  - 字幕の段落目印（▶HH:MM:SS）: {'ON' if nb_res['paragraph_anchors'] else 'OFF'}")
         print(f"\n[DRY RUN] Notebook計画: {nb_res['status']}。GitHub・Notebook・Driveへの書き込みゼロで終了します。")
         return {
             "status": NOTEBOOKLM_PY_RESUME_STATUS.get(nb_res["status"], nb_res["status"]),
@@ -1068,6 +1072,7 @@ def run_notebooklm_py_step(
     client: Any = None,
     fetch_transcript: Any = None,
     research_note_text: Optional[str] = None,
+    paragraph_anchors: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """notebooklm_py_ingest.run_ingest で字幕取得・不足分の登録・読み戻しを1回で行う。
 
@@ -1095,6 +1100,7 @@ def run_notebooklm_py_step(
         notebook_id=notebook_id,
         published_at=published_at,
         fetch_transcript=fetch_transcript,
+        paragraph_anchors=paragraph_anchors,
     )
     res.pop("precheck", None)
     res.pop("postcheck", None)
@@ -1130,6 +1136,8 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--notebook-backend", choices=NOTEBOOK_BACKENDS, default="cdp", help="Notebook登録の方式（既定: cdp）")
     parser.add_argument("--notebook-id", help="notebooklm-py で登録するNotebookのID")
     parser.add_argument("--live", action="store_true", help="notebooklm-py でNotebookへ実際に書き込む（--notebook-id 必須）")
+    parser.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
+                        help="字幕の各段落の先頭に時刻目印 ▶HH:MM:SS とURLを付ける（未指定なら notebooklm_py_ingest の既定。現在OFF）")
     args = parser.parse_args(args_list)
     if args.live and args.notebook_backend != "notebooklm-py":
         parser.error("--live は --notebook-backend notebooklm-py のときだけ使えます。")
@@ -1157,6 +1165,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
         notebook_backend=args.notebook_backend,
         notebook_id=args.notebook_id,
         notebook_live=args.live,
+        paragraph_anchors=args.paragraph_anchors,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("status") in SUCCESS_CLI_STATUSES else 1

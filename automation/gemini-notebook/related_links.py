@@ -385,6 +385,38 @@ def repair_plan_for_corpus(
     }
 
 
+_REASON_JA = {
+    "SELF_LINK": "自己リンク", "TARGET_NOT_FOUND": "宛先なし", "BAD_RELATION": "関係ラベル不正", "BAD_STATUS": "status不正",
+    "NOTE_MISSING": "理由なし", "EVIDENCE_MISSING": "根拠なし", "CONFIRMED_WITHOUT_TIME_OR_URL": "確定なのに時刻・URLなし",
+}
+
+
+def format_repair_summary(plan: Dict[str, Any], corpus: Dict[str, Dict[str, Any]]) -> str:
+    """repair_plan_for_corpus の結果を、人が読める短い一覧にする（ノートごとの件数と根拠の一文だけ）。"""
+    lines = [
+        "【related_records 修復計画の一覧（提案だけ・ノートは書き換えません）】",
+        f"対象ノート {plan['notes_to_repair']}本／削除予定 {plan['delete_planned_count']}件"
+        f"／人の確認 {plan['needs_human_count']}件／置換候補 {plan['replace_candidate_count']}件",
+        "温存する確定ペア: " + (" ／ ".join(" ↔ ".join(x.split(":")[1] for x in pair) for pair in plan["protected_pairs"]) or "なし"),
+        "凡例: ✕=削除予定 ？=人の確認 ＋=置換候補（常にCANDIDATE。確定ではない）",
+        "",
+    ]
+    for v in sorted(plan["videos"], key=lambda x: (-len(x["remove"]), x["video_id"])):
+        lines.append(f"■ {_clip(v['title'], 34)} [{v['video_id']}]  削除予定 {len(v['remove'])}件／置換候補 {len(v['replace_candidates'])}件")
+        for r in v["remove"]:
+            why = "・".join(_REASON_JA.get(e, e) for e in r["reasons"])
+            rt = (corpus.get(target_video_id(r["target_id"]) or "") or {}).get("title")
+            lines.append(f"  {'✕' if r['action'] == 'DELETE_PLANNED' else '？'} {_clip(rt, 30) + ' ' if rt else ''}[{r['target_id']}] ({r['relation'] or '-'}) ─ {why}")
+        for c in v["replace_candidates"]:
+            tv = target_video_id(c["target_id"])
+            tt = _clip((corpus.get(tv) or {}).get("title") or tv, 30)
+            parts = [_clip(x, 40) for x in c["evidence"].split(" ／ ")]
+            same = "（同じ宛先）" if c["same_target_as_removed"] else ""
+            lines.append(f"  ＋ {tt} [{tv}] {c['relation']}{same} ─ " + "／".join(parts))
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
 # ---------------------------------------------------------------- 3. 関連索引OKF
 
 def build_related_index_okf(
@@ -513,6 +545,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     r.add_argument("--video-id")
     r.add_argument("--limit", type=int, default=DEFAULT_REPAIR_LIMIT, help="1ノートあたりの置換候補の上限")
     r.add_argument("--print-diff", action="store_true", help="差分を読みやすい文字列でも出す")
+    r.add_argument("--summary", action="store_true", help="JSONではなく、ノートごとの件数と根拠の一文だけの人が読める一覧を出す")
     i = sub.add_parser("index", help="関連索引OKFを組み立て、差し替え計画を出す")
     i.add_argument("--with-candidates", action="store_true", help="自動候補も「自動推定・未登録」として載せる")
     i.add_argument("--notebook-id", help="指定すると既存の関連索引ソースを一覧で探す（読み取りのみ）")
@@ -530,6 +563,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         rep = repair_plan_for_corpus(corpus, ROOT, limit=args.limit)
         if args.video_id:
             rep["videos"] = [v for v in rep["videos"] if v["video_id"] == args.video_id]
+        if args.summary:
+            print(format_repair_summary(rep, corpus), end="")
+            return 0
         if args.print_diff:
             rep["diff_text"] = "\n\n".join(v["diff"] for v in rep["videos"])
     else:

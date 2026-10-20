@@ -296,6 +296,15 @@ def classify_sources(
     }
 
 
+# 段落ごとの時刻目印（`▶HH:MM:SS <URL>&t=<秒>s`）の既定。相棒の返事が来たらここを True にするだけで切り替わる。
+DEFAULT_PARAGRAPH_ANCHORS = False
+
+
+def resolve_paragraph_anchors(value: Optional[bool]) -> bool:
+    """None（未指定）なら既定 DEFAULT_PARAGRAPH_ANCHORS、True/False ならその指定を使う。"""
+    return DEFAULT_PARAGRAPH_ANCHORS if value is None else bool(value)
+
+
 def build_transcript_text(
     video_id: str,
     video_title: str,
@@ -303,12 +312,14 @@ def build_transcript_text(
     published_at: Optional[str],
     acquisition_method: str = ACQ_TIMEDTEXT,
     raw_text: Optional[str] = None,
+    paragraph_anchors: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """字幕全文OKF（既定は時刻なしの段落本文）。cue が無ければ raw_text（Notebook内YouTubeソースの本文など）を使う。"""
     url = f"https://www.youtube.com/watch?v={video_id}"
     text = build_transcript_okf_content(
         video_id, url, video_title, cues=cues or None, raw_text=None if cues else raw_text,
         published_at=published_at, acquisition_method=acquisition_method,
+        paragraph_anchors=resolve_paragraph_anchors(paragraph_anchors),
     )
     return {"text": text, "acquisition_method": acquisition_method, "cue_count": len(cues or [])}
 
@@ -409,13 +420,17 @@ def run_ingest(
     notebook_id: Optional[str] = None,
     published_at: Optional[str] = None,
     fetch_transcript: Optional[Callable[[str], Dict[str, Any]]] = None,
+    paragraph_anchors: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """1動画2ソースの不足分を登録する。live=False（既定）では書き込みを一切行わない。
 
     字幕の取得元は cues → fetch_transcript（YouTube字幕）→ Notebook内YouTubeソースの本文（最後の手段）の順。
     published_at が無く fetch_transcript があれば、それで投稿日時を取る。
+    paragraph_anchors（None=既定 DEFAULT_PARAGRAPH_ANCHORS）がONなら、字幕の各段落の先頭に時刻目印の1行を付ける。
+    どちらで組むかは計画（result["paragraph_anchors"]）にいつも表示する。
     """
-    result: Dict[str, Any] = {"video_id": video_id, "live": live, "writes": [], "notes": []}
+    paragraph_anchors = resolve_paragraph_anchors(paragraph_anchors)
+    result: Dict[str, Any] = {"video_id": video_id, "live": live, "paragraph_anchors": paragraph_anchors, "writes": [], "notes": []}
 
     if live and not notebook_id:
         result["status"] = "LIVE_REQUIRES_NOTEBOOK_ID"
@@ -466,7 +481,10 @@ def run_ingest(
             result["status"] = "TRANSCRIPT_UNAVAILABLE"
             result["notes"].append("字幕全文を取得できなかった（Notebook内YouTubeソース本文・YouTube字幕とも無し）ため、何も書き込まずに停止。")
             return result
-        tr = build_transcript_text(video_id, video_title, cues, published_at, acquisition_method, raw_text=raw_text)
+        tr = build_transcript_text(
+            video_id, video_title, cues, published_at, acquisition_method, raw_text=raw_text,
+            paragraph_anchors=paragraph_anchors,
+        )
         result["transcript_acquisition_method"] = tr["acquisition_method"]
         result["transcript_cue_count"] = tr["cue_count"]
         planned["transcript"] = {"title": transcript_title(video_id, video_title), "text": tr["text"]}
@@ -752,6 +770,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--cues-json", type=Path, help="字幕cueのJSON（[[start, end, text], ...]）。無ければNotebook内YouTubeソース本文→YouTube字幕の順に取る")
     ap.add_argument("--notebook-id")
     ap.add_argument("--live", action="store_true", help="実際にNotebookへ書き込む（--notebook-id 必須）")
+    ap.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
+                    help=f"字幕の各段落の先頭に時刻目印 ▶HH:MM:SS とURLを付ける（既定: {'ON' if DEFAULT_PARAGRAPH_ANCHORS else 'OFF'}）")
     args = ap.parse_args(argv)
 
     if args.live and not args.notebook_id:
@@ -768,6 +788,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         live=args.live,
         notebook_id=args.notebook_id,
         fetch_transcript=fetch_youtube_transcript,
+        paragraph_anchors=args.paragraph_anchors,
     )
     res.pop("precheck", None)
     res.pop("postcheck", None)

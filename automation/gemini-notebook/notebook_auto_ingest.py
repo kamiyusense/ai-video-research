@@ -557,6 +557,9 @@ def build_transcript_okf_content(
         "",
         f"# 【字幕原文】 {video_title}",
         "",
+        # v2.0 §3.1: HTMLコメントはNotebookの読み戻しで消えるため、IDと動画URLを見える行でも先頭に持つ
+        f"ID: AI_VIDEO_TRANSCRIPT_RAW:{video_id}",
+        f"動画: {video_url}",
         f"<!-- ID: AI_VIDEO_TRANSCRIPT_RAW:{video_id} -->",
         f"<!-- HAS_ACTUAL_CUES: {has_actual_cues} -->",
         f"<!-- CUES_COUNT: {cue_count} -->",
