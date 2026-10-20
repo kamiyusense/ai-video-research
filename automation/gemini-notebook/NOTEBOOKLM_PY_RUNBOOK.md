@@ -426,6 +426,42 @@ ID: index:related
 
 注意: 条件を厳しくした分、本当は関連している組が落ちている可能性がある（例: NotebookLM の使い方を扱う動画どうしで、共通語が汎用語に分類された組）。落ちた組の数は未確認（UNKNOWN）で、`candidate_filter_stats` が理由別の件数だけを数える。
 
+### 手順8: 質問回答の確認（qa_check.py・相棒PC側で実行・読み取りのみ）
+
+Notebookに質問して、その回答に「動画URL・時刻リンク・関連動画・投稿日」の根拠がちゃんと付いているかを機械で判定する道具（T19）。**質問の自動生成と回答の判定だけで、ファイルへの書き込み・ネット通信・Notebook操作は一切しない。** Notebookへ質問を投げて回答を保存するのは相棒PC側の作業役で、この作業環境では実行できない（実機未実行＝UNKNOWN）。字幕全文は使わず、研究ノート（章・主張・関連記録）と台帳だけから期待を作る。
+
+```
+python3 automation/gemini-notebook/qa_check.py --selftest
+python3 automation/gemini-notebook/qa_check.py plan [--video-id <動画ID>] [--summary]
+python3 automation/gemini-notebook/qa_check.py check --question-id <質問ID> [--answer <回答ファイル>] [--json]
+```
+
+相棒PCでの手順:
+
+1. `--selftest` を実行し、`SELFTEST_OK` を確認する（合成した回答16件で判定が正しいか。ネット不要）。
+2. `plan --summary` で質問の一覧を出す。研究ノート1本につき3問（`<動画ID>-Q1`＝主張の時刻、`-Q2`＝章の時刻、`-Q3`＝関連動画。関連記録が無いノートは投稿日）。実データでは31本×3問＝93問。
+3. 質問文を1問ずつNotebookへ投げ、回答のテキストをファイルに保存する（例: `answer_u3ka_AAb8qE-Q2.txt`。保存先はGitの外に置く）。
+4. `check --question-id u3ka_AAb8qE-Q2 --answer answer_u3ka_AAb8qE-Q2.txt` で判定する。標準入力でも可（`--answer` を省略）。
+5. 結果の見方：`PASS`＝期待する根拠がそろっている／`PARTIAL`＝一部だけ（例: 時刻リンクが期待の時間帯の外）／`FAIL`＝根拠が無い・食い違う（URLの動画IDが違う、`[HH:MM:SS]` と `&t=` の秒が合わない、関連の関係名や新旧が逆、など）。終了コードは PASS＝0、PASS以外＝1、質問IDが無い＝2。
+6. 判定は4つの規則：(a) 字幕原文と研究ノートの両方を出典にしているか、(b) 動画URLと時刻リンク（`[HH:MM:SS] URL&t=<秒>s`。旧 `▶HH:MM:SS URL` も可）があり、時刻が期待の時間帯（開始の前90秒〜章の終わり後90秒、主張は前後90秒）に入るか、(c) 関連動画は研究ノートの関連記録にある組・関係名だけを述べているか、(d) 投稿日の値と新旧の言い方が台帳と合うか。
+
+- 実行しても `git status` に差分は出ない（テストで確認）。昇格（`CANDIDATE` → `CONFIRMED`）はこの道具の対象外で、判定が `PASS` でも自動では何も変えない。
+- NotebookLM が実際にどんな形で時刻リンクを返すか（`[` `]` や `▶` を落とすか）は実機で未確認（UNKNOWN）。URLの `&t=` が残る限り判定できるが、落ちる場合は PARTIAL/FAIL になりうる。
+
+### 手順9: 質問回答の一括実行（qa_run.py・相棒PC側で実行・Notebookへは質問だけ）
+
+手順8の `plan` の93問をNotebookへ順に質問し、各回答を `check` にかけて PASS／PARTIAL／FAIL の件数と動画別の一覧を出すラッパ（T20）。**既定はdry-run（質問と実行予定のコマンドを並べるだけで、Notebook接続0回）。** 呼べるコマンドは allowlist の3つ（`notebooklm auth check`・`notebooklm ask`・`notebooklm source list`）だけで、`add`・`delete`・`login`・`refresh` など書き込み系・ログイン系は、コマンドを組み立てる段階で拒否される（`DisallowedCommand`）。ログイン切れは書き込み0のまま即停止（`AUTH_EXPIRED`、終了コード3）で、再ログインはしない。
+
+```
+python3 automation/gemini-notebook/qa_run.py [--video-id <動画ID>] [--limit N]
+python3 automation/gemini-notebook/qa_run.py --live --notebook-id <ID> --out-dir /tmp/qa_answers [--video-id <動画ID>] [--limit N] [--summary]
+```
+
+- **回答は repo に保存しない**（字幕全文が混ざりうるため）。`--out-dir` が repo の中なら、dry-run でも `--live` でも拒否する（終了コード2）。回答は `<out-dir>/<質問ID>.txt`、集計はJSON（`--summary` で人が読める形）。回答本文は集計に載せない。
+- 相棒PCでの手順：①dry-runで質問とコマンドの形を見る。②**`notebooklm ask --help` を実機で見て、`qa_run.py` の `NotebookLmCliAskClient.COMMANDS["ask"]` の引数と `parse_ask_output` の取り出し方が合っているか確かめ、違えばそこだけ直す**（UNVERIFIED：askの引数・出力の形は実CLIで未確認）。③`--live --limit 3` で数問だけ実行して、回答ファイルと判定が妥当か見る。④問題なければ `--limit` を外して全93問（または `--video-id` で動画ごと）。
+- 終了コード：全問PASS＝0、PASS以外あり／途中で止まった＝1、ログイン切れ＝3、使い方の誤り（repo内の保存先・`--live` の引数不足・動画IDなし）＝2。質問が1問失敗しても続け、その問は `ERROR` と数える（3問続けて失敗したら `ABORTED_TOO_MANY_ERRORS` で止める）。失敗のたびにログイン状態を確かめ、切れていれば `AUTH_EXPIRED` で止める。
+- この作業環境では、偽クライアントのオフラインテストだけで確認している。実際のNotebook接続・askの動作・93問の所要時間はUNKNOWN。
+
 ### 目印行の形式（字幕の段落ごとの時刻目印・仕様）
 
 相棒の決定（2026-10-20 02:37 JST）で既定ON。形式は相棒PCの実機（2026-10-21、15本を登録・読み戻し済み）の `[HH:MM:SS] <URL>&t=<秒>s` に1本化した（ロードマップ R3・§3.1）。出力するのはこの形式だけで、旧 `▶HH:MM:SS` は作らない。
@@ -450,5 +486,5 @@ ID: index:related
 
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 
-- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T11時点で231件、T16時点で273件、T17時点で294件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
+- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T11時点で231件、T16時点で273件、T17時点で294件、T19時点で321件、T20時点で345件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
 - **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。 `migrate-plan` と `related_links.py` も実機未実行（Notebook内YouTubeソースの本文が実際に取れるか・その文字数はUNKNOWN）。
