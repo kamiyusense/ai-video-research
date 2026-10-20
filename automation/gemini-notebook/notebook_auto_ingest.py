@@ -462,6 +462,7 @@ def build_transcript_okf_content(
     published_at: Optional[str] = None,
     acquisition_method: str = "YOUTUBE_TIMEDTEXT_API",
     timestamped: bool = False,
+    paragraph_anchors: bool = False,
 ) -> str:
     """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter.
 
@@ -469,6 +470,8 @@ def build_transcript_okf_content(
     し（発話テキスト自体は改変しない）、場面の時刻リンクは研究ノート側で示す。荷札に `published_at`
     （不明なら "UNKNOWN"）・`acquisition_method`・`cue_count` を残す。cueが無くても本文（raw_text）があれば登録できる。
     `timestamped=True` を明示したときだけ、各cue行を `- [HH:MM:SS](<URL>&t=<秒>s) <発話>` で出す（旧形式）。
+    `paragraph_anchors=True`（既定OFF）のときだけ、cueがある時刻なし本文の各段落の先頭に目印の1行
+    `▶HH:MM:SS <URL>&t=<秒>s` を付ける（段落の最初の発話の開始時刻。文の途中には入れない）。OFFの出力は従来と同じ。
     """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     transcript_logical_id = f"youtube:{video_id}:transcript"
@@ -516,6 +519,9 @@ def build_transcript_okf_content(
     ]
     if valid_open_link:
         lines.append(f'notebook_open_link: "{valid_open_link}"')
+    anchored = bool(paragraph_anchors and cues_list and has_actual_cues and not timestamped)
+    if anchored:
+        transcript_format = "UNTIMED_PARAGRAPHS_WITH_ANCHORS"
     lines.extend([
         f'published_at: "{clean_published}"',
         f'language: "{language}"',
@@ -575,7 +581,11 @@ def build_transcript_okf_content(
         f"- **総Cue数**: {cue_count} 件",
         f"- **検証状態**: {status}",
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
-        f"- **場面の時刻**: 本文は読みやすさのため時刻を付けていません。場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。",
+        (
+            f"- **場面の時刻**: 本文は読みやすさのため発話ごとの時刻を付けていません。各段落の先頭の `▶時刻` は、その段落の最初の発話の位置を示す目印です。確認済みの場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
+            if anchored else
+            f"- **場面の時刻**: 本文は読みやすさのため時刻を付けていません。場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
+        ),
         f"- **Notebook UI制限・参照案内**: NotebookLMのUI上ではソース間直接リンクのクリックジャンプができない仕様です。対応する研究ノートを参照する場合は、上記『対応研究ノート論理ID (`{research_logical_id}`)』または『動画ID (`{video_id}`)』をもとに、Notebookのソース一覧から検索・特定してください。",
         "",
     ])
@@ -612,7 +622,15 @@ def build_transcript_okf_content(
             lines.append(f"- [{hhmmss}](https://www.youtube.com/watch?v={video_id}&t={sec}s) {txt}")
     elif cues_list:
         lines.extend(["## 字幕全文 (取得全量・時刻なし)", ""])
-        lines.append("\n\n".join(cues_to_paragraphs(cues_list)))
+        if anchored:
+            blocks = []
+            for st_sec, text in cues_to_paragraph_spans(cues_list):
+                sec = int(st_sec)
+                hhmmss = f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
+                blocks.append(f"▶{hhmmss} https://www.youtube.com/watch?v={video_id}&t={sec}s\n{text}")
+            lines.append("\n\n".join(blocks))
+        else:
+            lines.append("\n\n".join(cues_to_paragraphs(cues_list)))
     elif raw_text and not is_placeholder:
         lines.extend(["## 字幕全文 (取得全量・時刻なし)", ""])
         lines.append(raw_text.strip())
@@ -635,12 +653,17 @@ def _cue_parts(c: Any) -> Tuple[float, float, str]:
 
 
 def cues_to_paragraphs(cues: List[Any], span_sec: float = 60.0, max_chars: int = 1000) -> List[str]:
+    """発話を約1分ごとの段落にまとめる（本文だけ。開始時刻つきは cues_to_paragraph_spans）。"""
+    return [text for _, text in cues_to_paragraph_spans(cues, span_sec=span_sec, max_chars=max_chars)]
+
+
+def cues_to_paragraph_spans(cues: List[Any], span_sec: float = 60.0, max_chars: int = 1000) -> List[Tuple[float, str]]:
     """発話を約1分ごとの段落にまとめる（AGENTS.md「時刻なし・約1分ごとの段落分け」）。発話テキストは変えず、空白1つでつなぐだけ。
 
     段落の最初の発話の開始から span_sec 以上たった発話の切れ目で次の段落にする。
     保険として、段落が max_chars 字を超えたらその切れ目でも分ける。
     """
-    paragraphs: List[str] = []
+    paragraphs: List[Tuple[float, str]] = []
     cur: List[str] = []
     cur_len = 0
     cur_start: Optional[float] = None
@@ -649,14 +672,14 @@ def cues_to_paragraphs(cues: List[Any], span_sec: float = 60.0, max_chars: int =
         if not txt:
             continue
         if cur and ((cur_start is not None and st - cur_start >= span_sec) or cur_len >= max_chars):
-            paragraphs.append(" ".join(cur))
+            paragraphs.append((cur_start or 0.0, " ".join(cur)))
             cur, cur_len = [], 0
         if not cur:
             cur_start = st
         cur.append(txt)
         cur_len += len(txt)
     if cur:
-        paragraphs.append(" ".join(cur))
+        paragraphs.append((cur_start or 0.0, " ".join(cur)))
     return paragraphs
 
 

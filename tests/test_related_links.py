@@ -277,5 +277,86 @@ class TestRelatedIndexOkf(unittest.TestCase):
         self.assertEqual(before, hashlib.sha256((ROOT / "registry.json").read_bytes()).hexdigest())
 
 
+class TestRepairPlan(unittest.TestCase):
+    """検証に通らない related_records の削除予定・置換候補を差分として出すだけ（ファイルは書き換えない）。"""
+
+    def corpus(self):
+        shared = [("題名", "NotebookLM と Claude の連携"), ("章", "NotebookLM のソース整理と連携手順"),
+                  ("タグ", "NotebookLM"), ("タグ", "連携手順"), ("主張", "ソース整理の自動化")]
+        return corpus_of(
+            doc(A, "a", pieces=shared, related=[
+                rec(f"youtube:{A}"),                                   # 自己リンク
+                rec(f"youtube:{B}", evidence=""),                      # 根拠なし（置換候補と同じ宛先）
+                rec(f"youtube:{C}:research", status="CONFIRMED", evidence="12:34"),   # 合格のCONFIRMED（温存）
+            ]),
+            doc(B, "b", pieces=shared, related=[rec(f"youtube:{A}:research")]),
+            doc(C, "c", pieces=[("題名", "別の話題")], related=[rec(f"youtube:{A}:research", status="CONFIRMED", evidence="01:02")]),
+            *[doc(f"N{i:010d}", f"n{i}", pieces=[("題名", f"料理のレシピ{i}")]) for i in range(12)],
+        )
+
+    def test_removes_only_invalid_records_and_keeps_valid_ones(self):
+        plan = rl.repair_plan_for_corpus(self.corpus(), ROOT, limit=3)
+        self.assertEqual(plan["status"], "DRY_RUN_REPAIR_PLAN")
+        self.assertIs(plan["files_modified"], False)
+        self.assertEqual([v["video_id"] for v in plan["videos"]], [A])  # B・C・無関係なノートは不合格なし
+        v = plan["videos"][0]
+        self.assertEqual([(r["target_id"], r["reasons"], r["action"]) for r in v["remove"]], [
+            (f"youtube:{A}", ["SELF_LINK"], "DELETE_PLANNED"),
+            (f"youtube:{B}", ["EVIDENCE_MISSING"], "DELETE_PLANNED"),
+        ])
+        self.assertEqual([k["target_id"] for k in v["keep"]], [f"youtube:{C}:research"])
+        self.assertEqual(plan["delete_planned_count"], 2)
+
+    def test_replacements_are_candidate_with_evidence_and_never_self(self):
+        v = rl.repair_plan_for_corpus(self.corpus(), ROOT, limit=3)["videos"][0]
+        self.assertTrue(v["replace_candidates"])
+        for c in v["replace_candidates"]:
+            self.assertEqual(c["status"], "CANDIDATE")
+            self.assertTrue(c["evidence"].startswith("共通語:"))
+            self.assertNotEqual(rl.target_video_id(c["target_id"]), A)
+            self.assertNotEqual(rl.target_video_id(c["target_id"]), C)   # 温存した宛先は重ねない
+        same = [c for c in v["replace_candidates"] if c["same_target_as_removed"]]
+        self.assertEqual([rl.target_video_id(c["target_id"]) for c in same], [B])
+        self.assertIn("- youtube:" + B, v["diff"])
+        self.assertIn("+ youtube:" + B + ":research", v["diff"])
+        self.assertIn("= youtube:" + C + ":research", v["diff"])
+
+    def test_confirmed_invalid_record_goes_to_a_human_not_auto_delete(self):
+        c = corpus_of(doc(A, "a", related=[rec(f"youtube:{B}:research", status="CONFIRMED", evidence="雰囲気が似ている")]), doc(B, "b"))
+        plan = rl.repair_plan_for_corpus(c, ROOT)
+        r = plan["videos"][0]["remove"][0]
+        self.assertEqual((r["action"], r["reasons"]), ("NEEDS_HUMAN_CONFIRMED", ["CONFIRMED_WITHOUT_TIME_OR_URL"]))
+        self.assertEqual((plan["delete_planned_count"], plan["needs_human_count"]), (0, 1))
+
+    def test_valid_confirmed_pair_is_protected_even_when_a_sibling_record_is_bad(self):
+        c = corpus_of(
+            doc(A, "a", related=[rec(f"youtube:{B}:research", status="CONFIRMED", evidence="https://example.com/x"),
+                                 rec(f"youtube:{C}:research", evidence="")]),
+            doc(B, "b", related=[rec(f"youtube:{A}:research", status="CONFIRMED", evidence="03:21")]),
+            doc(C, "c"),
+        )
+        plan = rl.repair_plan_for_corpus(c, ROOT)
+        self.assertEqual(plan["protected_pairs"], [[f"youtube:{A}:research", f"youtube:{B}:research"]])
+        v = plan["videos"][0]
+        self.assertEqual([r["target_id"] for r in v["remove"]], [f"youtube:{C}:research"])
+        self.assertEqual([k["target_id"] for k in v["keep"]], [f"youtube:{B}:research"])
+
+    def test_real_registry_keeps_the_golden_pair_and_modifies_nothing(self):
+        before = (ROOT / "registry.json").read_bytes()
+        corpus = rl.load_corpus(ROOT)
+        plan = rl.repair_plan_for_corpus(corpus, ROOT)
+        self.assertEqual(plan["protected_pairs"], [["youtube:pRfC1DILDEM:research", "youtube:u3ka_AAb8qE:research"]])
+        touched = {v["video_id"] for v in plan["videos"]}
+        self.assertTrue(touched.isdisjoint({"pRfC1DILDEM", "u3ka_AAb8qE"}))
+        self.assertEqual(plan["delete_planned_count"] + plan["needs_human_count"],
+                         rl.validate_related_records(corpus, ROOT)["error_record_count"])
+        self.assertEqual((ROOT / "registry.json").read_bytes(), before)
+
+    def test_repair_plan_blocks_network(self):
+        with mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("network")), \
+             mock.patch.object(socket, "socket", side_effect=AssertionError("network")):
+            rl.repair_plan_for_corpus(self.corpus(), ROOT)
+
+
 if __name__ == "__main__":
     unittest.main()

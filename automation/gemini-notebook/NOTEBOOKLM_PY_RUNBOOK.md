@@ -205,10 +205,12 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 ```
 python3 automation/gemini-notebook/related_links.py validate
 python3 automation/gemini-notebook/related_links.py candidates [--video-id <動画ID>] [--limit 5]
+python3 automation/gemini-notebook/related_links.py repair-plan [--video-id <動画ID>] [--limit 3] [--print-diff]
 python3 automation/gemini-notebook/related_links.py index [--with-candidates] [--print-text] [--notebook-id <ID>]
 ```
 
 - `validate`: 研究ノート荷札の `related_records` を検査する。宛先が台帳・提案に実在するか／自己リンク／関係ラベルが `COMPLEMENTS・EXTENDS・UPDATES・CONTRADICTS・RESOLVES_BACKLOG` のどれか／`status` が `CANDIDATE`・`CONFIRMED` か／`note`・`evidence` があるか／`CONFIRMED` の `evidence` に時刻（`08:16` など）か出典URLがあるか。逆リンク（相手側にも自分への関係があるか）の有無も数える。
+- `repair-plan`: 検査に通らない `related_records`（根拠なし・自己リンクなど）を、ノートごとに**差分の形で提案するだけ**（研究ノートは書き換えない）。`-` が削除予定、`+` が根拠つき `CANDIDATE` の置換候補、`=` が温存。検査に通る記録（確定済みの `pRfC1DILDEM ↔ u3ka_AAb8qE` を含む）は必ず温存する。`CONFIRMED` で不合格のものは自動で消す案にせず「人の確認」に回す。現registryでは、21本のノートの33件が削除予定、置換候補は1ノート3件までで合計74件（2026-10-20 時点のdry-run）。置換候補の並びは経験則で、人の確認はまだ。実際にノートを直すかどうかは相棒の判断。
 - `candidates`: 台帳の全動画について、研究ノートの題名・章・タグ・主張・要約の語の重なりから関連の**候補（`CANDIDATE`）**を出す。根拠にした共通語と両ノートの該当箇所を `evidence` に入れる。多くのノートに出る語は使わず、自己リンクは除き、1動画あたり上限5件。`CONFIRMED` にはしない。`UPDATES` は、投稿日時が新しい側から古い側へで、新しい側の題名・章・タグに「新機能・アップデート」などがあるときだけ。
 - `index`: 「関連索引OKF」（`logical_id: index:related`）の本文を組み立て、Notebookの差し替え計画（①新版を追加 →②読み戻し一致を確認 →③そのときだけ旧版を削除）を出す。検査を通らない関係は索引に載せない。`--notebook-id` を付けると既存の関連索引ソースを一覧で探す（読み取りのみ）。削除は相棒の承認後に相棒PCの作業役が行う。
 - パイプライン（`auto_research_pipeline.py`）が新しい動画の研究レシートを作るときの関連候補も、同じ候補生成を使う（固定の4〜5本×単語一致は廃止）。
@@ -303,6 +305,10 @@ ID: index:related
 - 読み方：既存の `CONFIRMED` は `pRfC1DILDEM ↔ u3ka_AAb8qE` の1組だけで、検査も通っている。それ以外の既存の関係33件は `evidence` が無い（31件）または自己リンク（2件）で、検査に引っかかる。**自動候補は確認前の推定で、確定の関連として扱わない。**
 
 > **たとえ**: 「この動画とこの動画は同じ話をしている」という付箋を、根拠のメモ付きで貼っていく仕組み。まず付箋に不備が無いか点検し（validate）、貼る候補を挙げ（candidates）、全部を1冊の一覧表にまとめる（index）。一覧表を図書館の棚に出し直すのは、相棒の許可が出てから。
+
+### 補足: 字幕の段落ごとの時刻目印（任意・既定OFF）
+
+`build_transcript_okf_content(..., paragraph_anchors=True)` にすると、時刻なしの本文の各段落の先頭に `▶HH:MM:SS <動画URL>&t=<秒>s` の1行だけが付く（段落の最初の発話の開始位置。文の途中には入れない）。既定は `False` で、そのときの出力は従来と完全に同じ（テストで固定）。ONにするかどうかは相棒の判断待ちで、`notebooklm_py_ingest.py` からはまだ切り替えられない。
 
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 

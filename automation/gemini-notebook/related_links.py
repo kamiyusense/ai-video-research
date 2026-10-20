@@ -309,6 +309,82 @@ def candidates_for_corpus(corpus: Dict[str, Dict[str, Any]], limit: int = DEFAUL
     }
 
 
+# ---------------------------------------------------------------- 2.5 修復計画（差分の提案だけ）
+
+DEFAULT_REPAIR_LIMIT = 3
+
+
+def _rec_line(mark: str, target_id: str, relation: str, status: str, tail: str = "") -> str:
+    return f"{mark} {target_id}  {relation or '-'}  {status or '-'}{('  ' + tail) if tail else ''}"
+
+
+def repair_plan_for_corpus(
+    corpus: Dict[str, Dict[str, Any]], root: Path = ROOT, limit: int = DEFAULT_REPAIR_LIMIT,
+) -> Dict[str, Any]:
+    """検証に通らない related_records を「削除予定」と「置換候補」の差分として提案する（読み取りのみ）。
+
+    研究ノートのファイルは書き換えない。検証に通る記録（確定済みの合格ペアを含む）は必ず温存する。
+    CONFIRMED が不合格のときは自動で消す提案にせず「人の確認」に回す。置換候補は常に CANDIDATE。
+    """
+    report = validate_related_records(corpus, root)
+    protected = {frozenset(pair) for pair in report["confirmed_valid_pairs"]}
+    bad_by_video: Dict[str, List[Dict[str, Any]]] = {}
+    for item in report["items"]:
+        if item["errors"]:
+            bad_by_video.setdefault(item["source"].split(":")[1], []).append(item)
+
+    videos = []
+    for vid in sorted(corpus):
+        doc = corpus[vid]
+        bad = bad_by_video.get(vid, [])
+        if not bad:
+            continue
+        bad_keys = {(i["target_id"], i["relation"], i["status"]) for i in bad}
+        keep, remove = [], []
+        for rec in doc["related_records"]:
+            tid = str(rec.get("target_id") or "").strip()
+            key = (tid, str(rec.get("relation") or ""), str(rec.get("status") or ""))
+            row = {"target_id": tid, "relation": key[1], "status": key[2]}
+            if key not in bad_keys or frozenset((f"youtube:{vid}:research", tid)) in protected:
+                keep.append(row)
+                continue
+            item = next(i for i in bad if (i["target_id"], i["relation"], i["status"]) == key)
+            action = "NEEDS_HUMAN_CONFIRMED" if key[2] == "CONFIRMED" else "DELETE_PLANNED"
+            remove.append(dict(row, reasons=item["errors"], action=action))
+        keep_vids = {target_video_id(k["target_id"]) for k in keep}
+        removed_vids = {target_video_id(r["target_id"]) for r in remove}
+        everyone = infer_candidates(doc, corpus, limit=max(len(corpus), limit))
+        picked, seen = [], set()
+        for c in everyone:
+            tv = target_video_id(c["target_id"])
+            if tv in keep_vids or tv in seen:
+                continue
+            if tv in removed_vids or len(picked) < limit:
+                seen.add(tv)
+                picked.append(dict(c, same_target_as_removed=tv in removed_vids))
+        diff = [f"@@ {doc['research_path']}  related_records ({len(doc['related_records'])}件中 不合格 {len(remove)}件)"]
+        diff += [_rec_line("=", k["target_id"], k["relation"], k["status"], "（温存）") for k in keep]
+        diff += [_rec_line("-", r["target_id"], r["relation"], r["status"],
+                           "[" + ",".join(r["reasons"]) + "]" + (" ※CONFIRMEDなので人の確認" if r["action"] != "DELETE_PLANNED" else ""))
+                 for r in remove]
+        diff += [_rec_line("+", c["target_id"], c["relation"], "CANDIDATE", "根拠: " + _clip(c["evidence"], 110)) for c in picked]
+        videos.append({
+            "video_id": vid, "title": doc["title"], "research_path": doc["research_path"],
+            "keep": keep, "remove": remove, "replace_candidates": picked, "diff": "\n".join(diff),
+        })
+    return {
+        "status": "DRY_RUN_REPAIR_PLAN",
+        "files_modified": False,
+        "note_count": len(corpus),
+        "notes_to_repair": len(videos),
+        "delete_planned_count": sum(1 for v in videos for r in v["remove"] if r["action"] == "DELETE_PLANNED"),
+        "needs_human_count": sum(1 for v in videos for r in v["remove"] if r["action"] != "DELETE_PLANNED"),
+        "replace_candidate_count": sum(len(v["replace_candidates"]) for v in videos),
+        "protected_pairs": sorted(sorted(p) for p in protected),
+        "videos": videos,
+    }
+
+
 # ---------------------------------------------------------------- 3. 関連索引OKF
 
 def build_related_index_okf(
@@ -433,6 +509,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     c = sub.add_parser("candidates", help="台帳全件について関連候補（CANDIDATE）を出す")
     c.add_argument("--video-id")
     c.add_argument("--limit", type=int, default=DEFAULT_CANDIDATE_LIMIT)
+    r = sub.add_parser("repair-plan", help="検証に通らない related_records の削除予定と置換候補を差分で出す（書き換えない）")
+    r.add_argument("--video-id")
+    r.add_argument("--limit", type=int, default=DEFAULT_REPAIR_LIMIT, help="1ノートあたりの置換候補の上限")
+    r.add_argument("--print-diff", action="store_true", help="差分を読みやすい文字列でも出す")
     i = sub.add_parser("index", help="関連索引OKFを組み立て、差し替え計画を出す")
     i.add_argument("--with-candidates", action="store_true", help="自動候補も「自動推定・未登録」として載せる")
     i.add_argument("--notebook-id", help="指定すると既存の関連索引ソースを一覧で探す（読み取りのみ）")
@@ -446,6 +526,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         rep = candidates_for_corpus(corpus, limit=args.limit)
         if args.video_id:
             rep["videos"] = [v for v in rep["videos"] if v["video_id"] == args.video_id]
+    elif args.cmd == "repair-plan":
+        rep = repair_plan_for_corpus(corpus, ROOT, limit=args.limit)
+        if args.video_id:
+            rep["videos"] = [v for v in rep["videos"] if v["video_id"] == args.video_id]
+        if args.print_diff:
+            rep["diff_text"] = "\n\n".join(v["diff"] for v in rep["videos"])
     else:
         idx = build_related_index_okf(corpus, ROOT, include_auto_candidates=args.with_candidates)
         client = None
