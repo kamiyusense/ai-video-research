@@ -38,6 +38,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+from receipt_to_research import linkify_timestamps  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 AUTO_DIR = Path(__file__).resolve().parent
 
@@ -1101,7 +1105,7 @@ def sync_to_drive_notebook_sources(
     cues: Optional[List[Dict[str, Any]]] = None,
     published_at: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Place the sources (YouTube reference, Research Markdown & Transcript OKF) into Drive folder."""
+    """Place the sources (Research Markdown & Transcript OKF) into Drive folder."""
     if not target_dir.parent.exists():
         return {
             "status": "DRIVE_ROOT_NOT_FOUND",
@@ -1111,20 +1115,11 @@ def sync_to_drive_notebook_sources(
 
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    yt_file = target_dir / f"{video_id}_youtube_source.txt"
-    yt_content = (
-        f"【YouTube元動画資料】\n"
-        f"動画ID: {video_id}\n"
-        f"タイトル: {video_title}\n"
-        f"URL: {video_url}\n"
-        f"登録日時: {datetime.now(timezone.utc).isoformat()}\n"
-        f"※NotebookLMでYouTubeソースとして追加する場合は、上記URLを直接「YouTube」ソース欄へ投入してください。\n"
-    )
-    yt_file.write_text(yt_content, encoding="utf-8")
+    # YouTube URL単体の参照ファイル（<id>_youtube_source.txt）は作らない（2026-10-20 相棒確定 R2）
 
     md_file = target_dir / f"{video_id}_research_note.md"
     if research_md_path.exists():
-        md_content = research_md_path.read_text(encoding="utf-8")
+        md_content = linkify_timestamps(research_md_path.read_text(encoding="utf-8"), video_id)
         md_file.write_text(md_content, encoding="utf-8")
     else:
         md_content = f"# 研究ノート {video_id}\nURL: {video_url}\n"
@@ -1160,7 +1155,6 @@ def sync_to_drive_notebook_sources(
         )
     tr_file.write_text(tr_text, encoding="utf-8")
 
-    yt_sha = hashlib.sha256(yt_file.read_bytes()).hexdigest()
     md_sha = hashlib.sha256(md_file.read_bytes()).hexdigest()
     tr_sha = hashlib.sha256(tr_file.read_bytes()).hexdigest()
 
@@ -1168,12 +1162,6 @@ def sync_to_drive_notebook_sources(
         "status": "DRIVE_SYNC_SUCCESS",
         "target_dir": str(target_dir),
         "synced_files": [
-            {
-                "kind": "YOUTUBE_SOURCE_REF",
-                "path": str(yt_file),
-                "sha256": yt_sha,
-                "size_bytes": yt_file.stat().st_size,
-            },
             {
                 "kind": "RESEARCH_NOTE_MARKDOWN",
                 "path": str(md_file),
@@ -1410,7 +1398,7 @@ def ingest_and_verify_notebook(
                         # Step 1: Add missing Research Note OKF if not present (Mandatory 2-Source 1/2)
                         if not note_already:
                             print(f"  - [CDP ACTION] 研究ノート(Copied text)を追加します: AI_VIDEO_RESEARCH_NOTE:{video_id}")
-                            note_content = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
+                            note_content = linkify_timestamps(research_md_path.read_text(encoding="utf-8"), video_id) if research_md_path.exists() else f"# 研究ノート {video_id}\nURL: {video_url}\n"
                             note_add_res = add_copied_text_source_via_cdp(
                                 client=client,
                                 tab=notebook_tab,

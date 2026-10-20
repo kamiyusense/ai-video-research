@@ -1090,6 +1090,48 @@ def clean(s):
     return str(s).replace("\n", " ").replace("\r", " ").strip()
 
 
+# 本文中の MM:SS / HH:MM:SS を再生位置リンクにする（2026-10-20 相棒確定 R3）。
+# 既存リンク・インラインコード・HTMLコメント・URL・荷札（先頭の --- 〜 ---）・コードブロックは対象外。
+# cloud_relay_gas.js の linkifyTimestamps_ と同じ規則（Python/JS出力一致）。
+_LINKIFY_PROTECT_RE = re.compile(r"(\[[^\]]*\]\([^)]*\)|`[^`]*`|<!--.*?-->|https?://[^\s)\]>]+)")
+_LINKIFY_TIME_RE = re.compile(r"(?<![0-9:])([0-9]{1,2}):([0-5][0-9])(?::([0-5][0-9]))?(?![0-9:])")
+
+
+def linkify_timestamps(text, video_id):
+    if not text or not video_id:
+        return text
+
+    def _to_link(m):
+        if m.group(3) is not None:
+            sec = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + int(m.group(3))
+        else:
+            sec = int(m.group(1)) * 60 + int(m.group(2))
+        return "[{}](https://www.youtube.com/watch?v={}&t={}s)".format(m.group(0), video_id, sec)
+
+    lines = str(text).split("\n")
+    out = []
+    in_front = bool(lines) and lines[0].strip() == "---"
+    in_code = False
+    for i, line in enumerate(lines):
+        if in_front:
+            out.append(line)
+            if i > 0 and line.strip() == "---":
+                in_front = False
+            continue
+        if line.strip().startswith("```"):
+            in_code = not in_code
+            out.append(line)
+            continue
+        if in_code:
+            out.append(line)
+            continue
+        parts = _LINKIFY_PROTECT_RE.split(line)
+        for j in range(0, len(parts), 2):
+            parts[j] = _LINKIFY_TIME_RE.sub(_to_link, parts[j])
+        out.append("".join(parts))
+    return "\n".join(out)
+
+
 def format_claims_lines(vid, claims):
     lines = []
     for c in claims:
@@ -1294,7 +1336,7 @@ def render(v, checked_at):
         "Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。",
         "",
     ]
-    return "\n".join(lines)
+    return linkify_timestamps("\n".join(lines), vid)
 
 
 def render_delta_section(v, checked_at):

@@ -44,6 +44,7 @@ if str(AUTO_DIR) not in sys.path:
     sys.path.insert(0, str(AUTO_DIR))
 
 from notebook_auto_ingest import build_transcript_okf_content  # noqa: E402
+from receipt_to_research import linkify_timestamps  # noqa: E402
 
 ACQ_TIMEDTEXT = "YOUTUBE_TIMEDTEXT_API"
 ACQ_TRANSCRIPT_API = "YOUTUBE_TRANSCRIPT_API"
@@ -447,7 +448,8 @@ def run_ingest(
     if need_note:
         planned["research_note"] = {
             "title": research_note_title(video_id, video_title),
-            "text": ensure_published_at(research_note_text, published_at),
+            # Notebook側のコピーだけ根拠時刻をリンク化する（GitHubの研究ノートは書き換えない）
+            "text": linkify_timestamps(ensure_published_at(research_note_text, published_at), video_id),
         }
     result["plan"] = list(planned)
 

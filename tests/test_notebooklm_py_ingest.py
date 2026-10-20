@@ -617,5 +617,69 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         self.assertEqual(res["status"], "DISABLED_BY_SPEC")
 
 
+class TestLinkifyTimestamps(unittest.TestCase):
+    """T7: 研究ノートの根拠時刻を再生位置リンクにする（R3）。"""
+
+    def setUp(self):
+        import receipt_to_research
+        self.lk = receipt_to_research.linkify_timestamps
+
+    def test_mmss_and_hhmmss_become_links_with_seconds(self):
+        out = self.lk("要点は08:16と1:02:05", VID)
+        self.assertEqual(out, f"要点は[08:16](https://www.youtube.com/watch?v={VID}&t=496s)と"
+                              f"[1:02:05](https://www.youtube.com/watch?v={VID}&t=3725s)")
+
+    def test_existing_links_urls_code_frontmatter_and_comments_untouched(self):
+        text = (
+            '---\ntime: "12:34"\n---\n'
+            f"- [08:16](https://www.youtube.com/watch?v={VID}&t=496s) 既存\n"
+            "- URL https://example.com/a?t=10:20 と `01:02`\n"
+            "<!-- 09:00 -->\n```\n05:00\n```\n"
+        )
+        self.assertEqual(self.lk(text, VID), text)
+
+    def test_non_time_patterns_and_idempotence(self):
+        self.assertEqual(self.lk("比率16:9、番号12:345", VID), "比率16:9、番号12:345")
+        once = self.lk("# 03:15 の話\n本文 10:00", VID)
+        self.assertEqual(self.lk(once, VID), once)
+
+    def test_notebook_copy_is_linkified_but_github_file_is_not(self):
+        note_path = ROOT / "research" / "2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+        original = note_path.read_text(encoding="utf-8")
+        c = FakeClient([TR_SOURCE])
+        ing.run_ingest(c, VID, TITLE, "根拠は 08:16 にある", cues=CUES, live=True, notebook_id="nb-1")
+        body = c.add_calls[0][1]
+        self.assertIn(f"[08:16](https://www.youtube.com/watch?v={VID}&t=496s)", body)
+        self.assertEqual(note_path.read_text(encoding="utf-8"), original)
+
+    def test_drive_sync_linkifies_note_and_writes_no_youtube_source_file(self):
+        import tempfile
+        import notebook_auto_ingest as nai
+        with tempfile.TemporaryDirectory() as tmp:
+            note = Path(tmp) / "note.md"
+            note.write_text("根拠 08:16\n", encoding="utf-8")
+            target = Path(tmp) / "drive"
+            res = nai.sync_to_drive_notebook_sources(VID, f"https://www.youtube.com/watch?v={VID}", TITLE, note,
+                                                     target_dir=target, cues=CUES)
+            names = sorted(p.name for p in target.iterdir())
+            md = (target / f"{VID}_research_note.md").read_text(encoding="utf-8")
+            self.assertEqual(note.read_text(encoding="utf-8"), "根拠 08:16\n")
+        self.assertEqual(names, [f"{VID}_research_note.md", f"{VID}_transcript_okf.md"])
+        self.assertEqual(len(res["synced_files"]), 2)
+        self.assertIn(f"[08:16](https://www.youtube.com/watch?v={VID}&t=496s)", md)
+
+    def test_python_and_gas_linkify_match(self):
+        import subprocess as sp
+        samples = [
+            "# 08:16 の話\n- [00:10](https://x/y) と https://e.com/?t=10:20 と `01:02`\n- 1:02:05 と 16:9",
+            '---\nt: "12:34"\n---\n本文 03:15\n```\n05:00\n```\n<!-- 09:00 --> 59:59',
+        ]
+        gas = (AUTO_DIR / "cloud_relay_gas.js").as_posix()
+        script = ("const g=require(%s);const s=%s;process.stdout.write(JSON.stringify(s.map(t=>g.linkifyTimestamps(t,%s))));"
+                  % (json.dumps(gas), json.dumps(samples), json.dumps(VID)))
+        js = json.loads(sp.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(js, [self.lk(t, VID) for t in samples])
+
+
 if __name__ == "__main__":
     unittest.main()

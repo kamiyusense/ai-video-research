@@ -33,11 +33,13 @@ class TestNotebookAutoIngest(unittest.TestCase):
                 target_dir=tmp_path / "sync_target",
             )
             self.assertEqual(res["status"], "DRIVE_SYNC_SUCCESS")
-            self.assertEqual(len(res["synced_files"]), 3)
+            # 2026-10-20 相棒確定 R2 で YouTube URL単体の参照ファイルを廃止したため 3→2 に更新
+            self.assertEqual(len(res["synced_files"]), 2)
             
             files = [Path(f["path"]) for f in res["synced_files"]]
             self.assertTrue(all(f.exists() for f in files))
-            self.assertTrue(any(f.name.endswith("_youtube_source.txt") for f in files))
+            self.assertFalse(any(f.name.endswith("_youtube_source.txt") for f in files))
+            self.assertFalse(list((tmp_path / "sync_target").glob("*_youtube_source.txt")))
             self.assertTrue(any(f.name.endswith("_research_note.md") for f in files))
             self.assertTrue(any(f.name.endswith("_transcript_okf.md") for f in files))
 
