@@ -44,8 +44,11 @@
 - 未確認事項(UNKNOWN): 投稿者が実務で使用しているObsidian専用テンプレートプラグイン名。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:BStkW1HTfmk` (COMPLEMENTS): ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完
-- `youtube:ZjUJ-35acaU` (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完
+
+- `youtube:2-8cXaRHlqI:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「markdown・神連携・cli」 | status: CANDIDATE | evidence: 共通語: markdown, 神連携, cli, obsidian, リサーチ ／ 本ノート: 題名「【情報収集を完全自動化】NotebookLM・Claude Code・Obsi…」 ／ 相手: 題名「【天才AI化】ClaudeのフルMAXパワーを出すAI神連携はNotebook…」
+- `youtube:JXmk7hmbS3c:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「pdf・obsidian・cli」 | status: CANDIDATE | evidence: 共通語: pdf, obsidian, cli ／ 本ノート: 章「ステップ1：NotebookLMへの複数情報ソース（PDF、Web、YouTu…」 ／ 相手: 章「③ Discord MCP接続（生成画像・PDFをスマホへ自動送信・確認）」
+- `youtube:BStkW1HTfmk:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完 | status: CANDIDATE | evidence: 相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- `youtube:ZjUJ-35acaU:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CANDIDATE | evidence: 相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

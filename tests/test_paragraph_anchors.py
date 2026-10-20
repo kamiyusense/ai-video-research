@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "automation" / "gemini-notebook"))
 import notebook_auto_ingest as nai  # noqa: E402
 import notebooklm_py_ingest as ing  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import branch_pin  # noqa: E402
 
 VID = "vid12345678"
 URL = f"https://www.youtube.com/watch?v={VID}"
@@ -323,6 +325,8 @@ class TestParagraphAnchorsWiring(unittest.TestCase):
             p = mock.patch.object(target, name, side_effect=AssertionError("network"))
             p.start()
             self.addCleanup(p.stop)
+        import auto_research_pipeline as arp
+        branch_pin.pin_target_branch(self, arp)      # 実リポジトリの今の枝には依存しない
 
     def test_default_is_on_and_explicit_off_wins(self):
         """相棒の決定（2026-10-20 02:37 JST）で既定ON。--no-paragraph-anchors / paragraph_anchors=False は常に優先する。"""

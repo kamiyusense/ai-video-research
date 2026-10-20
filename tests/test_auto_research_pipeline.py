@@ -15,12 +15,16 @@ CONTRACT_PATH = AUTO_DIR / "contract_spec_v1.json"
 
 import sys
 sys.path.insert(0, str(AUTO_DIR))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import auto_research_pipeline
+import branch_pin
 
 
 class TestAutoResearchPipeline(unittest.TestCase):
     def setUp(self):
         self.contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
+        # 実リポジトリの今のブランチ（main でも作業枝でも）には依存しない。許可された作業枝名だけをパイプラインに見せる
+        branch_pin.pin_target_branch(self, auto_research_pipeline)
 
     def test_default_model_is_gemini_3_8_flash(self):
         """1. gemini-3.8-flash が標準モデルであること。"""
@@ -150,13 +154,6 @@ class TestAutoResearchPipeline(unittest.TestCase):
         self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
         self.assertEqual(status, "PARTIAL_READBACK_MISMATCH")
         self.assertTrue(any("registry.json" in r for r in reasons))
-
-    def test_verify_target_branch_early_success(self):
-        auto_research_pipeline.verify_target_branch_early(root=ROOT)
-
-    def test_verify_target_branch_early_forbidden(self):
-        with self.assertRaises(RuntimeError):
-            auto_research_pipeline.verify_target_branch_early(root=ROOT, target_branch="non-existent-branch-xyz")
 
     def test_local_transcript_engine_with_cues(self):
         cues = [
@@ -733,6 +730,59 @@ class TestAutoResearchPipeline(unittest.TestCase):
         # Notebook UI制限事項の明記
         self.assertIn("NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様", rag_text)
         self.assertIn("NotebookLM UI上ではソース間直接リンクのクリックジャンプができない仕様", okf_text)
+
+
+class TestTargetBranchGuard(unittest.TestCase):
+    """安全チェック：許可された非default作業枝以外（main・他の枝・detached HEAD）では、書き込み系は何も始まる前に拒否する。
+
+    実リポジトリの今の枝には依存しない（一時 git リポジトリで枝名を与える）。どの枝でテストを流しても結果が同じになる。
+    """
+
+    URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    REFUSED = ("main", "master", "develop", "claude/project-thread-u5xj4e", "feature/other-branch")
+
+    def test_allowed_work_branch_passes(self):
+        root = branch_pin.temp_repo_on_branch(self, auto_research_pipeline.DEFAULT_TARGET_BRANCH)
+        auto_research_pipeline.verify_target_branch_early(root=root)
+
+    def test_explicit_target_branch_is_honoured(self):
+        root = branch_pin.temp_repo_on_branch(self, "feature/some-work")
+        auto_research_pipeline.verify_target_branch_early(root=root, target_branch="feature/some-work")
+        with self.assertRaises(RuntimeError):
+            auto_research_pipeline.verify_target_branch_early(root=root)    # 既定の許可枝ではない
+
+    def test_main_and_every_other_branch_is_refused(self):
+        for name in self.REFUSED:
+            root = branch_pin.temp_repo_on_branch(self, name)
+            with self.assertRaises(RuntimeError, msg=name) as cm:
+                auto_research_pipeline.verify_target_branch_early(root=root)
+            self.assertIn("default branch", str(cm.exception))
+            self.assertIn(name, str(cm.exception))
+
+    def test_detached_head_is_refused(self):
+        root = branch_pin.temp_repo_detached(self)
+        with self.assertRaises(RuntimeError):
+            auto_research_pipeline.verify_target_branch_early(root=root)
+
+    def test_not_a_git_repository_is_refused(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d, self.assertRaises(RuntimeError):
+            auto_research_pipeline.verify_target_branch_early(root=Path(d))
+
+    def test_pipeline_on_main_stops_before_any_file_is_touched(self):
+        from unittest import mock
+        for dry_run in (True, False):
+            root = branch_pin.temp_repo_on_branch(self, "main")
+            scratch = root / "scratch"
+            before = sorted(p.name for p in root.iterdir())
+            with mock.patch.object(auto_research_pipeline, "ROOT", root), \
+                    mock.patch.object(auto_research_pipeline, "SCRATCH_DIR", scratch), \
+                    mock.patch("urllib.request.urlopen", side_effect=AssertionError("network")), \
+                    self.assertRaises(RuntimeError) as cm:
+                auto_research_pipeline.run_pipeline(self.URL, dry_run=dry_run)
+            self.assertIn("default branch", str(cm.exception))
+            self.assertEqual(sorted(p.name for p in root.iterdir()), before)
+            self.assertFalse(scratch.exists())
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ GitHubが読めないときは完了や引継ぎ成功を断言せず `BLOCKED /
 - 新規動画は **字幕原文OKF ＋ 研究ノートOKF の2ソース**（R1）。**YouTube URLだけのソースは登録しない**（R2）。両資料に動画URLと `published_at` を入れる（R2・R4）。
 - 字幕本文は約60秒ごとの段落で、**各段落の先頭に時刻目印を1つ**（`[HH:MM:SS] <URL>&t=<秒>s`）。発話ごとの時刻は入れない。確認済みの場面の時刻リンクは研究ノート側（R3。目印行の形式は RUNBOOK）。
 - URL貼付から読み戻しまで人手なしで通す（R5）。既定は計画だけ（dry-run）、書き込みは `--live` と Notebook ID の両方が必要。
-- 関連動画どうしのリンクは `related_records` で `CANDIDATE` / `CONFIRMED` を分ける（R6）。
+- 関連動画どうしのリンクは `related_records` で `CANDIDATE` / `CONFIRMED` を分ける（R6）。修復は人の目視確認を前提にせず自動で適用する（2026-10-21 相棒決定）。`CONFIRMED` は根拠（時刻・出典URL）を確かめたものだけで、自動では付けない。
 - 既存のYouTube URLソースは、同じ動画の字幕原文OKFを登録して読み戻しで確認できた後に限って削除してよい（2026-10-20 相棒決定）。それ以外の既存資料は消さない。
 - 字幕全文はGitHubに保存しない。鍵・トークンはチャットにも保存先にも出さない。
 
@@ -35,7 +35,7 @@ GitHubが読めないときは完了や引継ぎ成功を断言せず `BLOCKED /
 | 自動登録 `notebooklm_py_ingest.py` | 計画だけのdry-runは相棒PCで実機確認済み（書き込み0件）。`--live` と `health` は実機未実行 |
 | 字幕の取得元 | cue → YouTube字幕（youtube-transcript-api → timedtext）→ Notebook内YouTube本文（URLソースが残る既存動画の最終手段）。取れなければ `TRANSCRIPT_UNAVAILABLE` で書き込み0のまま停止 |
 | URLソース15件の移行 | `migrate-plan`（読み取りのみ。削除コードは持たない） |
-| 関連動画リンク | `related_links.py`（読み取り専用）：`related_records` の検証、registry全体からの `CANDIDATE` 推定、関連索引OKF `index:related` のdry-run |
+| 関連動画リンク | `related_links.py`：`related_records` の検証、registry全体からの `CANDIDATE` 推定、関連索引OKF `index:related` のdry-run（ここまで読み取りのみ）。`repair-apply`（既定dry-run、`--write` のときだけ研究ノートの `related_records` を書く）が、人の取捨選択なしで不合格33件を削除し、`CANDIDATE` の追加と逆リンクの補完をする。適用済みで108件・不合格0（相棒PCが付けた16件は無変更）。`CONFIRMED` は自動で付けない。Notebook側の研究ノートは未差し替え |
 | テスト | 全件オフライン（Mock）。Mockの成功を実機LIVEの成功と同じ扱いにしない |
 | 実機（Notebook・GAS）の登録 | 相棒PC側の作業。字幕原文OKF15本は登録・読み戻し済み、`pRfC1DILDEM` の入れ替えとURLソースの削除は未実行（現況は [ロードマップ §7](OKF_KNOWLEDGE_ROADMAP.md) と検品の記録を読み戻して確かめる） |
 

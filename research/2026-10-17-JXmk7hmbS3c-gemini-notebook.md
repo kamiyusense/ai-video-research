@@ -23,6 +23,36 @@ related_records:
     evidence: "両研究ノートの独自要約（⑨Playwright MCP・⑩常時稼働Mac mini／Mac mini常時稼働・Playwright MCP）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:2-8cXaRHlqI:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「claude.md・cli・mcp」"
+    status: "CANDIDATE"
+    evidence: "共通語: claude.md, cli, mcp, obsidian, サブエージェント ／ 本ノート: 章「⑤ CLAUDE.md への行動指針とスキル別エージェントマッピング記載」 ／ 相手: 章「CLAUDE.md 単体記憶の限界とObsidianテーマ別分割（LLM Wi…」"
+  - target_id: "youtube:X9Zk68AII4A:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「skill・プラグイン・スキル」"
+    status: "CANDIDATE"
+    evidence: "共通語: skill, プラグイン, スキル ／ 本ノート: 章「① スキルクリエイター（Skill Creator）プラグインの導入」 ／ 相手: 章「Skill機能のアーキテクチャとコマンド拡張の仕組み」"
+  - target_id: "youtube:BStkW1HTfmk:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「claude.md・mcp・obsidian」"
+    status: "CANDIDATE"
+    evidence: "共通語: claude.md, mcp, obsidian ／ 本ノート: 章「⑤ CLAUDE.md への行動指針とスキル別エージェントマッピング記載」 ／ 相手: 章「CLAUDE.md / AGENTS.md / MEMORY.md の基本構成…」"
+  - target_id: "youtube:RZLAP2CLUM8:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：共通の主題「pdf・obsidian・cli」"
+    status: "CANDIDATE"
+    evidence: "共通語: pdf, obsidian, cli ／ 相手: 章「ステップ1：NotebookLMへの複数情報ソース（PDF、Web、YouTu…」 ／ 本ノート: 章「③ Discord MCP接続（生成画像・PDFをスマホへ自動送信・確認）」"
+  - target_id: "youtube:Vr3JkAT9mo8:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
+  - target_id: "youtube:lC5jxpYmatE:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：Skill・ハーネス・権限分離・トークン節約の実務構成を補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # Claude Codeをインストールしたら必ず準備しときたいこと１０選！
 
@@ -75,9 +105,6 @@ Claude Code導入直後に設定すべき10大必須項目を実演解説。①S
 - 未確認事項(UNKNOWN): KEITO氏が内部運用している非公開Discord Botのソースコード全文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完
-- `youtube:Vr3JkAT9mo8` (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完
-- `youtube:BStkW1HTfmk` (COMPLEMENTS): ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

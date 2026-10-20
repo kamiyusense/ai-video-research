@@ -94,11 +94,12 @@ class TestValidator(unittest.TestCase):
             self.assertEqual((i["errors"], i["status"], i["relation"], i["backlink_present"]), ([], "CONFIRMED", "COMPLEMENTS", True))
         self.assertEqual(rep["confirmed_count"], 2)
 
-    def test_real_notes_known_problems_are_visible(self):
+    def test_real_notes_known_problems_were_repaired(self):
+        """T17：根拠なし33件（自己リンク2件を含む）は repair-apply で削除済み。もう残っていないことを見る。"""
         rep = self.check(rl.load_corpus(ROOT))
         self.assertEqual(rep["note_count"], 31)
-        self.assertGreater(rep["error_counts"].get("EVIDENCE_MISSING", 0), 0)  # evidence が無い既存候補が多い
-        self.assertEqual(rep["error_counts"].get("SELF_LINK"), 2)               # ZjUJ-35acaU / BStkW1HTfmk の自己リンク
+        self.assertEqual(rep["error_counts"], {})
+        self.assertEqual(rep["status"], "OK")
 
 
 class TestCandidates(unittest.TestCase):
@@ -351,10 +352,16 @@ class TestRelatedIndexOkf(unittest.TestCase):
         offline = rl.plan_related_index_replacement(None, idx)
         self.assertEqual(offline["existing_index_source_ids"], "UNKNOWN")
 
-    def test_module_has_no_write_or_delete_code(self):
+    def test_module_writes_only_inside_repair_apply_and_has_no_delete_code(self):
         src = (ROOT / "automation" / "gemini-notebook" / "related_links.py").read_text(encoding="utf-8")
-        for needle in ("write_text", "add_text(", ".unlink(", "os.remove", "rmtree", "open(", "subprocess"):
+        for needle in ("add_text(", ".unlink(", "os.remove", "rmtree", "open(", "subprocess"):
             self.assertNotIn(needle, src, needle)
+        # 書き込みは repair_apply の中の 2 か所だけ（本番 --write と、dry-run の一時コピー）
+        start = src.index("def repair_apply(")
+        end = src.index("# ----------------------------------------------------------------", start)
+        self.assertEqual(src.count("write_text"), src[start:end].count("write_text"))
+        self.assertEqual(src[start:end].count("write_text"), 2)
+        self.assertIn("if write:\n        for c in plan[\"changed\"]:\n            (root / c[\"research_path\"]).write_text", src[start:end])
 
     def test_cli_runs_on_real_registry_without_changing_files(self):
         import io
@@ -477,6 +484,341 @@ class TestRepairPlan(unittest.TestCase):
         with mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("network")), \
              mock.patch.object(socket, "socket", side_effect=AssertionError("network")):
             rl.repair_plan_for_corpus(self.corpus(), ROOT)
+
+
+def _write_notes(root, notes):
+    (root / "research").mkdir(parents=True, exist_ok=True)
+    for vid, text in notes.items():
+        (root / "research" / f"{vid}.md").write_text(text, encoding="utf-8")
+
+
+LEGACY_WITH_SECTION = f"""# ノートA
+
+## 独自要約
+本文は変えない。
+
+## 関連する既存研究・課題との接続
+- `youtube:{A}` (UPDATES): 自己リンク
+- `youtube:{B}` (COMPLEMENTS): 根拠なしのリンク
+- `youtube:{C}:research` (COMPLEMENTS): 合格の確定リンク | status: CONFIRMED | evidence: 12:34 の言及
+
+## 限界
+最後の節。
+"""
+LEGACY_NO_SECTION = "# ノートB\n\n## 独自要約\n本文は変えない。\n\n## 限界\n最後の節。\n"
+FRONTMATTER_NOTE = f"""---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "ノートC"
+related_records:
+  - target_id: "youtube:{A}:research"
+    relation: "COMPLEMENTS"
+    note: "既存の確定"
+    status: "CONFIRMED"
+    evidence: "01:02"
+logical_id: "youtube:{C}:research"
+---
+
+# 本文
+変えない。
+"""
+FRONTMATTER_NO_BLOCK = "---\ntype: \"RESEARCH_NOTE\"\ntitle: \"ノートD\"\n---\n\n# 本文\n"
+
+
+def new_rec(target, relation="COMPLEMENTS", status="CANDIDATE", note="自動推定の候補（未確認）：共通の主題「x」", evidence="共通語: x ／ 本ノート: 章「x」 ／ 相手: 章「x」"):
+    return {"target_id": target, "relation": relation, "status": status, "note": note, "evidence": evidence, "direction": "FORWARD"}
+
+
+class TestRepairApplyEditing(unittest.TestCase):
+    """edit_note_text：関連レコード以外は1バイトも変えない（荷札あり・本文だけ・節なしの3種）。"""
+
+    def test_legacy_note_deletes_bad_lines_and_appends_after_the_last_record_line(self):
+        removed = {(f"youtube:{A}", "UPDATES", "CANDIDATE"), (f"youtube:{B}", "COMPLEMENTS", "CANDIDATE")}
+        out = rl.edit_note_text(LEGACY_WITH_SECTION, removed, [new_rec(f"youtube:{B}:research")])
+        self.assertEqual(out, f"""# ノートA
+
+## 独自要約
+本文は変えない。
+
+## 関連する既存研究・課題との接続
+- `youtube:{C}:research` (COMPLEMENTS): 合格の確定リンク | status: CONFIRMED | evidence: 12:34 の言及
+- `youtube:{B}:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「x」 | status: CANDIDATE | evidence: 共通語: x ／ 本ノート: 章「x」 ／ 相手: 章「x」
+
+## 限界
+最後の節。
+""")
+        self.assertTrue(rl.only_related_records_changed(LEGACY_WITH_SECTION, out))
+
+    def test_legacy_note_without_the_section_gets_it_at_the_end(self):
+        out = rl.edit_note_text(LEGACY_NO_SECTION, set(), [new_rec(f"youtube:{A}:research")])
+        self.assertTrue(out.startswith(LEGACY_NO_SECTION))
+        self.assertEqual(out[len(LEGACY_NO_SECTION):],
+                         "\n## 関連する既存研究・課題との接続\n\n- `youtube:" + A + ":research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「x」"
+                         " | status: CANDIDATE | evidence: 共通語: x ／ 本ノート: 章「x」 ／ 相手: 章「x」\n")
+        self.assertTrue(rl.only_related_records_changed(LEGACY_NO_SECTION, out))
+
+    def test_emptied_section_keeps_its_heading_and_takes_the_new_lines(self):
+        text = "# t\n\n## 関連する既存研究・課題との接続\n- `youtube:" + A + "` (COMPLEMENTS): 根拠なし\n\n## 限界\nx\n"
+        out = rl.edit_note_text(text, {(f"youtube:{A}", "COMPLEMENTS", "CANDIDATE")}, [new_rec(f"youtube:{B}:research")])
+        self.assertEqual(out.splitlines()[2], "## 関連する既存研究・課題との接続")
+        self.assertIn(f"`youtube:{B}:research`", out.splitlines()[3] + out.splitlines()[4])
+        self.assertTrue(out.endswith("\n## 限界\nx\n"))
+        self.assertTrue(rl.only_related_records_changed(text, out))
+
+    def test_frontmatter_note_gets_items_inside_the_related_records_block_only(self):
+        out = rl.edit_note_text(FRONTMATTER_NOTE, set(), [new_rec(f"youtube:{B}:research", note="理由", evidence='共通語: "x"')])
+        self.assertTrue(rl.only_related_records_changed(FRONTMATTER_NOTE, out))
+        data, body = rl.query_research.parse_yaml_frontmatter(out)
+        self.assertEqual([r["target_id"] for r in data["related_records"]], [f"youtube:{A}:research", f"youtube:{B}:research"])
+        self.assertEqual(data["related_records"][1]["status"], "CANDIDATE")
+        self.assertEqual(data["related_records"][1]["evidence"], '共通語: "x"')
+        self.assertEqual(data["logical_id"], f"youtube:{C}:research")    # 他の荷札項目は残る
+        self.assertEqual(body, "\n# 本文\n変えない。\n")
+
+    def test_frontmatter_without_a_block_gets_one_before_the_closing_line(self):
+        out = rl.edit_note_text(FRONTMATTER_NO_BLOCK, set(), [new_rec(f"youtube:{A}:research")])
+        data, body = rl.query_research.parse_yaml_frontmatter(out)
+        self.assertEqual([r["target_id"] for r in data["related_records"]], [f"youtube:{A}:research"])
+        self.assertEqual(data["title"], "ノートD")
+        self.assertEqual(body, "\n# 本文\n")
+
+    def test_frontmatter_item_is_removed_by_key_and_other_items_stay(self):
+        out = rl.edit_note_text(FRONTMATTER_NOTE, {(f"youtube:{A}:research", "COMPLEMENTS", "CONFIRMED")}, [])
+        data, _ = rl.query_research.parse_yaml_frontmatter(out)
+        self.assertEqual(data["related_records"], [])
+        self.assertEqual(data["logical_id"], f"youtube:{C}:research")
+        self.assertTrue(rl.only_related_records_changed(FRONTMATTER_NOTE, out))
+
+    def test_separator_and_newlines_in_text_cannot_break_the_line(self):
+        out = rl.edit_note_text(LEGACY_NO_SECTION, set(), [new_rec(f"youtube:{A}:research", note="a | b\nc", evidence="d | e\nf")])
+        line = [ln for ln in out.splitlines() if ln.startswith("- `youtube:")][0]
+        key = rl._line_record_key(line)
+        self.assertEqual(key, (f"youtube:{A}:research", "COMPLEMENTS", "CANDIDATE"))
+        self.assertEqual(line.count(" | status: "), 1)
+        self.assertEqual(line.count(" | evidence: "), 1)
+
+    def test_a_change_outside_the_records_is_detected(self):
+        self.assertFalse(rl.only_related_records_changed(LEGACY_NO_SECTION, LEGACY_NO_SECTION.replace("最後の節", "別の節")))
+        self.assertFalse(rl.only_related_records_changed(FRONTMATTER_NOTE, FRONTMATTER_NOTE.replace('type: "RESEARCH_NOTE"', 'type: "OTHER"')))
+        self.assertFalse(rl.only_related_records_changed(LEGACY_NO_SECTION, LEGACY_NO_SECTION + "余計な行\n"))
+
+
+class TestRepairApplyPlan(unittest.TestCase):
+    """repair_apply_plan：削除は不合格だけ、追加は CANDIDATE だけ（CONFIRMED は自動で付けない）、逆リンクを足す。"""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        shared = [("題名", "NotebookLM と Claude の連携"), ("章", "NotebookLM のソース整理と連携手順"),
+                  ("タグ", "NotebookLM"), ("タグ", "連携手順"), ("主張", "ソース整理の自動化")]
+        self.corpus = corpus_of(
+            doc(A, "a", pieces=shared, related=[
+                rec(f"youtube:{A}", relation="UPDATES", evidence=""),
+                rec(f"youtube:{B}", evidence=""),
+                rec(f"youtube:{C}:research", status="CONFIRMED", evidence="12:34 の言及"),
+            ]),
+            doc(B, "b", pieces=shared),
+            doc(C, "c", pieces=[("題名", "別の話題")], related=[rec(f"youtube:{A}:research", status="CONFIRMED", evidence="01:02")]),
+            *[doc(f"N{i:010d}", f"n{i}", pieces=[("題名", f"料理のレシピ{i}")]) for i in range(12)],
+        )
+        notes = {A: LEGACY_WITH_SECTION, B: LEGACY_NO_SECTION, C: FRONTMATTER_NOTE}
+        notes.update({f"N{i:010d}": "# n\n" for i in range(12)})
+        _write_notes(self.root, notes)
+
+    def plan(self, **kw):
+        return rl.repair_apply_plan(self.corpus, self.root, **kw)
+
+    def test_deletes_only_invalid_records_and_adds_candidates_never_confirmed(self):
+        plan = self.plan()
+        by = {c["video_id"]: c for c in plan["changed"]}
+        self.assertEqual(sorted(by), [A, B])        # C・無関係なノートは変更なし
+        self.assertEqual([(r["target_id"], r["reasons"]) for r in by[A]["removed"]],
+                         [(f"youtube:{A}", ["SELF_LINK", "EVIDENCE_MISSING"]), (f"youtube:{B}", ["EVIDENCE_MISSING"])])
+        self.assertEqual(plan["removed_count"], 2)
+        for ch in plan["changed"]:
+            for a in ch["added"]:
+                self.assertEqual(a["status"], "CANDIDATE")
+                self.assertTrue(a["evidence"])
+                self.assertNotEqual(rl.target_video_id(a["target_id"]), ch["video_id"])
+        self.assertNotIn(f"youtube:{A} ", by[A]["new_text"])
+        self.assertIn(f"`youtube:{C}:research` (COMPLEMENTS): 合格の確定リンク | status: CONFIRMED", by[A]["new_text"])   # 温存
+        self.assertEqual([a["target_id"] for a in by[A]["added"]], [f"youtube:{B}:research"])
+        self.assertTrue(all(c["only_related_records_changed"] for c in plan["changed"]))
+
+    def test_every_added_link_has_its_backlink(self):
+        plan = self.plan()
+        by = {c["video_id"]: c for c in plan["changed"]}
+        # A→B を足したので B→A もある（ここでは B 自身の候補としても出るので、重ねて足さない）
+        self.assertEqual([a["target_id"] for a in by[B]["added"]], [f"youtube:{A}:research"])
+        self.assertEqual(plan["added_reverse_count"], 0)
+        self.assertIn(f"`youtube:{A}:research`", by[B]["new_text"])
+        # 片方向の候補しか出ない組は、相手側に CANDIDATE の逆向きを足し、根拠は「本ノート」と「相手」を入れ替える
+        corpus = corpus_of(doc(A, "a", related=[rec(f"youtube:{B}:research", evidence="本ノート: 章「x」 ／ 相手: 章「y」")]), doc(B, "b"))
+        _write_notes(self.root, {A: "# a\n", B: LEGACY_NO_SECTION})
+        (ch,) = rl.repair_apply_plan(corpus, self.root)["changed"]
+        (back,) = ch["added"]
+        self.assertEqual((ch["video_id"], back["direction"], back["status"]), (B, "REVERSE", "CANDIDATE"))
+        self.assertEqual(back["evidence"], "相手ノートの記載: 本ノート: 章「x」 ／ 相手: 章「y」")
+        self.assertEqual(rl._swap_viewpoint("共通語: x ／ 本ノート: 章「x」 ／ 相手: 章「y」"), "共通語: x ／ 相手: 章「x」 ／ 本ノート: 章「y」")
+
+    def test_reverse_of_a_kept_record_is_added_as_candidate_not_confirmed(self):
+        corpus = corpus_of(doc(A, "a", related=[rec(f"youtube:{B}:research", status="CONFIRMED", evidence="12:34")]), doc(B, "b"))
+        _write_notes(self.root, {A: "# a\n", B: LEGACY_NO_SECTION})
+        plan = rl.repair_apply_plan(corpus, self.root)
+        (ch,) = plan["changed"]
+        self.assertEqual(ch["video_id"], B)
+        self.assertEqual([(a["target_id"], a["status"], a["direction"]) for a in ch["added"]], [(f"youtube:{A}:research", "CANDIDATE", "REVERSE")])
+        self.assertIn("12:34", ch["added"][0]["evidence"])
+
+    def test_confirmed_invalid_record_is_left_for_a_human(self):
+        corpus = corpus_of(doc(A, "a", related=[rec(f"youtube:{B}:research", status="CONFIRMED", evidence="雰囲気")]), doc(B, "b"))
+        _write_notes(self.root, {A: "# a\n", B: "# b\n"})
+        plan = rl.repair_apply_plan(corpus, self.root)
+        self.assertEqual(plan["removed_count"], 0)
+        self.assertEqual([(n["video_id"], n["reasons"]) for n in plan["needs_human"]], [(A, ["CONFIRMED_WITHOUT_TIME_OR_URL"])])
+
+    def test_the_protected_pair_is_never_touched(self):
+        corpus = corpus_of(
+            doc(A, "a", related=[rec(f"youtube:{B}:research", status="CONFIRMED", evidence="12:34"), rec(f"youtube:{C}", evidence="")]),
+            doc(B, "b", related=[rec(f"youtube:{A}:research", status="CONFIRMED", evidence="https://example.com/x")]), doc(C, "c"))
+        _write_notes(self.root, {A: "# a\n", B: "# b\n", C: "# c\n"})
+        plan = rl.repair_apply_plan(corpus, self.root)
+        self.assertEqual(plan["protected_pairs"], [[f"youtube:{A}:research", f"youtube:{B}:research"]])
+        self.assertEqual({r["target_id"] for c in plan["changed"] for r in c["removed"]}, {f"youtube:{C}"})
+
+    def test_plan_is_deterministic(self):
+        a, b = self.plan(), self.plan()
+        self.assertEqual([c["new_text"] for c in a["changed"]], [c["new_text"] for c in b["changed"]])
+
+
+class TestRepairApplyOnACopyOfTheRealNotes(unittest.TestCase):
+    """実データの写しに対する通し検査（実データの状態に依らない性質だけを見る）。"""
+
+    def copy_root(self):
+        import shutil
+        import tempfile
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        shutil.copytree(ROOT / "research", root / "research")
+        shutil.copytree(ROOT / "proposals", root / "proposals")
+        shutil.copy2(ROOT / "registry.json", root / "registry.json")
+        return root
+
+    @staticmethod
+    def snapshot(root):
+        return {p.name: p.read_bytes() for p in sorted((root / "research").glob("*.md"))}
+
+    def test_dry_run_writes_nothing_and_reports_the_projected_result(self):
+        root = self.copy_root()
+        before = self.snapshot(root)
+        rep = rl.repair_apply(root, write=False)
+        self.assertEqual(rep["status"], "DRY_RUN_REPAIR_APPLY")
+        self.assertIs(rep["files_modified"], False)
+        self.assertEqual(self.snapshot(root), before)
+        self.assertEqual(rep["validate_after"]["error_record_count"], 0)
+        self.assertEqual(rep["second_run_changes"], 0)
+
+    def test_write_repairs_everything_changes_only_related_records_and_is_idempotent(self):
+        root = self.copy_root()
+        before = self.snapshot(root)
+        reg_before = (root / "registry.json").read_bytes()
+        rep = rl.repair_apply(root, write=True)
+        self.assertEqual(rep["status"], "APPLIED")
+        after = self.snapshot(root)
+        changed = {n for n in before if before[n] != after[n]}
+        self.assertEqual(changed, {Path(c["research_path"]).name for c in rep["changed"]})
+        for n in before:
+            self.assertTrue(rl.only_related_records_changed(before[n].decode("utf-8"), after[n].decode("utf-8")), n)
+        self.assertEqual(set(before), set(after))                        # ファイルの増減なし
+        self.assertEqual((root / "registry.json").read_bytes(), reg_before)   # registry.json は変えない
+        v = rep["validate_after"]
+        self.assertEqual((v["status"], v["error_record_count"], v["self_link_count"], v["target_not_found_count"],
+                          v["missing_backlink_count"]), ("OK", 0, 0, 0, 0))
+        # 確定済みの記録は自動では増えず、合格ペアは残る
+        self.assertEqual(v["confirmed_count"], rep["validate_before"]["confirmed_count"])
+        self.assertEqual(v["confirmed_valid_pairs"], rep["validate_before"]["confirmed_valid_pairs"])
+        # 2回目は変更0件で、ファイルは1バイトも変わらない
+        again = rl.repair_apply(root, write=True)
+        self.assertEqual(again["notes_changed"], 0)
+        self.assertIs(again["files_modified"], False)
+        self.assertEqual(self.snapshot(root), after)
+        # 追加した記録は全部 CANDIDATE で根拠つき
+        corpus = rl.load_corpus(root)
+        for c in rep["changed"]:
+            for a in c["added"]:
+                self.assertEqual(a["status"], "CANDIDATE")
+                self.assertTrue(a["evidence"].strip())
+                rec_ = next(r for r in corpus[c["video_id"]]["related_records"] if r["target_id"] == a["target_id"])
+                self.assertEqual(rec_["status"], "CANDIDATE")
+
+    def test_nothing_is_written_when_a_non_record_line_would_change(self):
+        root = self.copy_root()
+        before = self.snapshot(root)
+        real_edit = rl.edit_note_text
+
+        def bad_edit(text, remove_keys, add_records):
+            return real_edit(text, remove_keys, add_records).replace("## 限界", "## 限界（改変）")
+
+        with mock.patch.object(rl, "edit_note_text", bad_edit):
+            rep = rl.repair_apply(root, write=True)
+        if rep["status"] != "APPLIED":      # 実データ側にすでに変更が無い状態なら、検査が走らず APPLIED(変更0) になる
+            self.assertEqual(rep["status"], "BLOCKED_NON_RECORD_DIFF")
+            self.assertTrue(rep["blocked_files"])
+        self.assertEqual(self.snapshot(root), before)
+
+    def test_blocks_network(self):
+        root = self.copy_root()
+        with mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("network")), \
+             mock.patch.object(socket, "socket", side_effect=AssertionError("network")):
+            rl.repair_apply(root, write=True)
+
+    def test_cli_is_dry_run_unless_write_is_given(self):
+        import contextlib
+        import io
+        root = self.copy_root()
+        before = self.snapshot(root)
+        with mock.patch.object(rl, "ROOT", root):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(rl.main(["repair-apply", "--print-diff"]), 0)
+            out = json.loads(buf.getvalue())
+            self.assertEqual(out["status"], "DRY_RUN_REPAIR_APPLY")
+            self.assertNotIn("_texts", out)
+            self.assertEqual(self.snapshot(root), before)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(rl.main(["repair-apply", "--write"]), 0)
+            self.assertEqual(json.loads(buf.getvalue())["status"], "APPLIED")
+            self.assertEqual(rl.main.__defaults__, (None,))
+
+
+class TestRealNotesAfterRepair(unittest.TestCase):
+    """T17：自動適用後のリポジトリの研究ノート（実データ）の自己検査。"""
+
+    def test_validate_is_clean_and_registry_is_consistent(self):
+        corpus = rl.load_corpus(ROOT)
+        rep = rl.validate_related_records(corpus, ROOT)
+        self.assertEqual((rep["status"], rep["error_record_count"], rep["missing_backlink_count"]), ("OK", 0, 0))
+        self.assertEqual(rep["error_counts"], {})
+        self.assertFalse([i for i in rep["items"] if i["errors"]])
+        self.assertEqual(rep["confirmed_valid_pairs"], [(f"youtube:pRfC1DILDEM:research", "youtube:u3ka_AAb8qE:research")])
+        self.assertEqual(rep["confirmed_count"], 2)         # CONFIRMED は自動で増えていない
+        for vid, d in corpus.items():
+            for r in d["related_records"]:
+                self.assertNotEqual(rl.target_video_id(r["target_id"]), vid)
+                self.assertIn(rl.target_video_id(r["target_id"]), corpus)
+        # registry.json は related_records を持たない（正本は研究ノート）。台帳の各動画が研究ノートを指している
+        reg = json.loads((ROOT / "registry.json").read_text(encoding="utf-8"))
+        self.assertNotIn("related_records", json.dumps(reg))
+        self.assertEqual(sorted(r["video_id"] for r in reg["records"]), sorted(corpus))
+
+    def test_applying_again_changes_nothing(self):
+        rep = rl.repair_apply(ROOT, write=False)
+        self.assertEqual(rep["notes_changed"], 0)
+        self.assertEqual((rep["removed_count"], rep["added_forward_count"], rep["added_reverse_count"]), (0, 0, 0))
 
 
 if __name__ == "__main__":

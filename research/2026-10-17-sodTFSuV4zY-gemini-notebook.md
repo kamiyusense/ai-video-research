@@ -23,6 +23,36 @@ related_records:
     evidence: "両研究ノートの独自要約（⑨Playwright MCP・⑩常時稼働Mac mini／Mac mini常時稼働・Playwright MCP）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:ZgMrRA1Czlc:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「password・mcp・コンテナ」"
+    status: "CANDIDATE"
+    evidence: "共通語: password, mcp, コンテナ, 秘密鍵, 隔離 ／ 本ノート: 主張「[Gemini公式照合報告(一次URL未添付・要独立確認)] Playwrig…」 ／ 相手: 主張「制約・注意点: Sepoliaテストネットの無価値トークンであっても目的達成の…」"
+  - target_id: "youtube:YrTVpJ1ebUk:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「codex・コードレビュー・cli」"
+    status: "CANDIDATE"
+    evidence: "共通語: codex, コードレビュー, cli, pro, openai ／ 本ノート: タグ「Codex」 ／ 相手: 章「「ウルトラファストモード」（Codex最大8倍・API最大6倍）」"
+  - target_id: "youtube:NCQZiT0e59g:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：共通の主題「codex・mcp・ディスパッチ」"
+    status: "CANDIDATE"
+    evidence: "共通語: codex, mcp, ディスパッチ ／ 相手: 章「スマホ画面からのClaude / Codex選択ディスパッチとMac Stud…」 ／ 本ノート: タグ「Codex」"
+  - target_id: "youtube:Vr3JkAT9mo8:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
+  - target_id: "youtube:W35UQZL2w7E:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：共通の主題「git・codex・chatgpt」"
+    status: "CANDIDATE"
+    evidence: "共通語: git, codex, chatgpt, openai ／ 相手: 題名「【研究カード】 【Chat-GPT Codex】トークン（使用量）をムダなく使…」 ／ 本ノート: タグ「Codex」"
+  - target_id: "youtube:lC5jxpYmatE:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：Skill・ハーネス・権限分離・トークン節約の実務構成を補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介
 
@@ -72,8 +102,6 @@ related_records:
 - 未確認事項(UNKNOWN): 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完
-- `youtube:Vr3JkAT9mo8` (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。
