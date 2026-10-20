@@ -1,0 +1,101 @@
+# 動画研究05｜課題ドリブン・Skill再利用・Computer Useの省力化
+
+## メタデータ
+- record_id: `youtube:lC5jxpYmatE`
+- video_id: `lC5jxpYmatE`
+- URL: https://www.youtube.com/watch?v=lC5jxpYmatE
+- タイトル（Gemini Sparkのメタデータ報告）: 【ガチ勢への道】ガチ便利なAIテクニックを正しいカタチで身につけろ！
+- 投稿者（同報告）: AI仙人【AI歴10年・ガチADHD男】
+- 公開日（同報告）: 2026-10-02、独立メタデータ再検証は未実施
+- 動画尺（同報告）: 56:31
+- 研究日: 2026-10-10 (Asia/Tokyo)
+- 対象: Skill、Computer Use、Harness、Hooks、課題ドリブン、Dify、Jev
+- 記録方法: ユーザーが提供したGemini Sparkの字幕中心の独立調査（映像未確認）、Google AI Studioの**指定4区間**の映像・発言の分析報告、公式ドキュメントの別途確認
+- **ChatGPT自身は元動画を独立視聴していない**。字幕全文、動画本体、AI回答全文は保存しない
+- LIVE・Skill導入・他repo変更: NOT_RUN
+
+## 結論（独自要約）
+目新しいAIの機能を片端から覚えるより、日々の「AIに任せようとしてできなかったこと」を短く記録し、新機能が出たときに照らし合わせて再挑戦する「課題ドリブン」の学び方が有用。その他、過去の良い成果物を参考資料としてオンデマンド利用すること、Computer Useの反復操作を適切なAPI・スクリプトに置き換えること、Hooksとハーネスの役割を区別することが重要な着想。
+
+特定製品を推奨または実装済みとする資料ではない。動画内の意見、公式仕様、利用者の評価、研究室側の提案を区別する。
+
+## 主張・時刻と確認した範囲
+
+| ID | 動画位置 | 動画の説明の独自要約 | 観察の根拠 | 結果 |
+|---|---|---|---|---|
+| V05-01 | [02:02](https://www.youtube.com/watch?v=lC5jxpYmatE&t=122s)〜10:39 | Skillの使い方と、増やしすぎ・重複・管理負担の問題を紹介 | Spark字幕レポート | VIDEO_REPORTED / 直接映像 UNKNOWN |
+| V05-02 | [10:39](https://www.youtube.com/watch?v=lC5jxpYmatE&t=639s)〜24:16 | 成功した資料を必要なときに参照し、案件別の一時的な手順を生成する | Spark字幕、AI Studioの10:39〜12:00映像報告（出演者のトーク・テロップのみ、実演なし） | VIDEO_REPORTED / 実演 UNKNOWN |
+| V05-03 | [24:16](https://www.youtube.com/watch?v=lC5jxpYmatE&t=1456s)〜27:38 | Computer Useで既存アプリを操作する発想 | Spark字幕、AI Studioの24:16〜25:30映像報告（トーク・テロップのみ） | VIDEO_REPORTED / 実演 UNKNOWN |
+| V05-04 | [27:38](https://www.youtube.com/watch?v=lC5jxpYmatE&t=1658s)〜28:19 | 反復的な画面操作は、可能なら手順をコードに移して利用量を減らす | Spark字幕、AI Studioの27:38〜28:19映像報告（コード画面・実演なし） | VIDEO_REPORTED / 費用削減実測 UNKNOWN |
+| V05-05 | 28:19〜29:08 | Jevのような特化型判断モデルをブラウザ選択へ使う案 | Spark字幕のみ | VIDEO_REPORTED / 実性能 UNKNOWN |
+| V05-06 | 29:08〜37:57 | 守り・拡張のハーネスと、実行前後のHooksを説明 | Spark字幕のみ | VIDEO_REPORTED / 個々の設計は要検証 |
+| V05-07 | [37:57](https://www.youtube.com/watch?v=lC5jxpYmatE&t=2277s)〜46:29 | できなかった課題を蓄積し、新機能で再挑戦する学び方 | Spark字幕、AI Studioの37:57〜39:40映像報告（トーク・ロゴ・テロップのみ） | VIDEO_REPORTED / 有効性実証 UNKNOWN |
+| V05-08 | 51:18〜55:01 | DifyのようなGUIワークフローに対する批判的意見 | Spark字幕のみ | 出演者の評価であり普遍的事実ではない |
+
+重要: ここでの時刻は、**Sparkの時刻付き字幕解析報告およびAI Studioの選択区間報告**に基づく。動画内時刻をChatGPTが目視測定したわけではない。映像確認は指定4区間のみで、他区間に実演が無いと断定しない。
+
+## 公式資料との照合（独立確認日 2026-10-10）
+
+1. **Claude Code Skills**: https://code.claude.com/docs/en/skills
+   - `SKILL.md`を登録し、Skill本文は**呼び出された時だけロード**される（CONFIRMED_DOC）。したがって「Skillを多く保存しただけで本文の全量が毎回読み込まれる」という解釈は不正確。
+   - 多数保存の問題は、メタデータ管理、呼び出し判定、重複、メンテナンス、曖昧な適用条件などに分解して評価する。
+   - ユーザーが用意した成果物を参考にその場で文章を作る方法は、厳密にはSkillシステムの登録とは別の「参考資料・都度指示」になり得る。
+2. **Claude Code Hooks**: https://code.claude.com/docs/en/hooks
+   - イベントに紐付く処理・条件付き動作の仕組みが公式にある（CONFIRMED_DOC）。本研究室では未設定・未実行。
+3. **OpenAI Computer Use説明**: https://learn.chatgpt.com/docs/computer-use
+   - Computer Useが画面を扱う機能であることの公式解説を確認（CONFIRMED_DOC）。モデル、プラン、接続対象、権限は利用時に再検証が必要。
+   - 「一度操作したら自動的に信頼できるスクリプトへ変わる」ことやコスト改善幅は未検証。
+
+### 検証を保留する主張
+- Jevの40〜200倍等の数値、各ブラウザエージェントでの利用実績: この記録では一次ベンチマーク未検証（UNKNOWN）。
+- Skillは必ず3〜5個が最適、動的Skillなら保守ゼロ: 一般化できる証拠未確認（UNKNOWN）。
+- Difyは旧式で不要: 出演者の意見。共有・監査・視覚的なフロー編集などの要件次第で評価が変わる。
+- AI Studioの軽量化成功: ユーザー提供の短い指定4区間の回答は回収できた。ただし、**入力動画の内部処理量が必ず減ったことの実測証拠ではない**。
+
+## 研究室への持ち帰り
+
+**採用候補として記録し、既存プロジェクトへは自動適用しない**。
+
+優先順:
+1. **課題ストック法**: 解決できなかった作業を再挑戦の候補として保存。新技術を見た際に「既存の課題を解けるか」で採用評価。→ `proposals/006-unresolved-task-backlog-revisit.md`
+2. **Skill/成果物の必要時参照**: 常設ルールやSkillを無制限に増やすより、実績ある資料を用途別に呼び出す。公式の遅延読み込みを前提に誤解しない。
+3. **Computer Use → 固定化**: 反復業務の手順は、できるなら公式API・安全なスクリプトへ移す。認証や画面依存には注意。
+4. **Harness/Hooks**: 既存ロードマップの研究テーマへ接続。今回の話を理由に新たなフックを有効化しない。
+5. **Jev/Dify**: 先駆者の意見・研究候補として残す。現時点で導入判断はしない。
+
+## 既知の条件・失敗例
+- 課題を記録するだけで、未来のAIが自動巡回・発見・通知することはない。
+- 参照資料には機密データや認証情報を入れない。外部AIに渡すなら送信範囲を確認する。
+- 画面操作をスクリプト化しても、UI変更・入力差・権限不足・破壊的操作で失敗する。初回はmock・read-only・バックアップ等で検証する。
+- AI Studioの長尺動画解析でブラウザが繰り返しフリーズし、一時チャットの保存が失われた。今回は短い指定区間の結果を回収した。根本原因はUNKNOWN。
+- AI Studioの実演確認は「映っていない」4区間のみで、動画全体がデモなしという意味ではない。
+
+## 次の研究候補
+- 課題ストックの再評価タイミング、重複、解決済判定と、適切なAIからの「新しい方法で解決できるか」の提案方法。
+- Skillを増やす/都度参照する/使い捨て指示にする境界の検証。
+- 安全に反復できる操作を、画面操作からAPI・スクリプトへ移行するmock比較。
+- Jevの公開仕様・ベンチマーク、Difyとの適材適所の一次資料比較。
+
+## 保存状態
+- 研究成果: 独自要約（本資料）／改善案 P006。
+- 自動知識活用・Skill化・モデル起動・LIVE試験・他repoへの適用: NOT_RUN。
+- commit と remote readback はこの変更を含むDraft PRから確認する。
+
+## 差分更新 (2026-10-17 / YouTube一次メタデータ・時刻照合)
+- checked_at: 2026-10-17
+- YouTube一次メタデータ照合: タイトル一致（「【ガチ勢への道】ガチ便利なAIテクニックを正しいカタチで身につけろ！」）、投稿者一致（「AI仙人【AI歴10年・ガチADHD男】」）、公開日一致（`2026-10-02`）、動画実測長一致（`56:31` / `3391s`）。
+- 概要欄チャプター有無: YouTube動画概要欄に公式チャプター記載なし（既存記録の7区間はSpark字幕レポートおよびGoogle AI Studio指定4区間報告に基づく確認範囲を維持）。
+
+## 関連する既存研究・課題との接続（被参照 / Backlinks）
+- [youtube:26MGuVIJh4A:research](2026-10-17-26MGuVIJh4A-gemini-notebook.md) (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:NCQZiT0e59g:research](2026-10-17-NCQZiT0e59g-gemini-notebook.md) (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:X9Zk68AII4A:research](2026-10-17-X9Zk68AII4A-gemini-notebook.md) (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:cneFa24EFEk:research](2026-10-17-cneFa24EFEk-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:JXmk7hmbS3c:research](2026-10-17-JXmk7hmbS3c-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:sodTFSuV4zY:research](2026-10-17-sodTFSuV4zY-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:t22FELAl-BM:research](2026-10-17-t22FELAl-BM-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:y2xCGyURl7Q:research](2026-10-17-y2xCGyURl7Q-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:ZgMrRA1Czlc:research](2026-10-17-ZgMrRA1Czlc-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- [youtube:ZY7YuYHLlIQ:research](2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md) (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+
+

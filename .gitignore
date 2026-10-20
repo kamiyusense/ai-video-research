@@ -1,0 +1,17 @@
+# 公開しない一時情報。ignoreは秘密漏洩を保証する装置ではない。
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+cookies*
+transcripts/
+subtitles/
+raw-media/
+private/
+.claude/settings.local.json
+.DS_Store
+__pycache__/

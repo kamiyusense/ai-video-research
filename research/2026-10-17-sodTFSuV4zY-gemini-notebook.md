@@ -1,0 +1,79 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介"
+logical_id: "youtube:sodTFSuV4zY:research"
+record_id: "youtube:sodTFSuV4zY"
+video_id: "sodTFSuV4zY"
+resource: "https://www.youtube.com/watch?v=sodTFSuV4zY"
+canonical_url: "https://www.youtube.com/watch?v=sodTFSuV4zY"
+published_at: "2026-10-14T04:59:23-07:00"
+published_at_jst: "2026-10-14T20:59:23+09:00"
+publication_date: "2026-10-14"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:sodTFSuV4zY:transcript"
+transcript_notebook_source_id: "9d3fbe09-c40e-41ab-a351-31bd527681ed"
+research_notebook_source_id: "9d2e470f-736e-401e-8d2e-daed0df46fe1"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:JXmk7hmbS3c:research"
+    relation: "COMPLEMENTS"
+    note: "Claude Codeの実務環境づくり。どちらもPlaywright MCPと常時稼働のMac miniを使う構成を紹介"
+    evidence: "両研究ノートの独自要約（⑨Playwright MCP・⑩常時稼働Mac mini／Mac mini常時稼働・Playwright MCP）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
+# デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介
+
+- record_id: `youtube:sodTFSuV4zY`
+- video_id: `sodTFSuV4zY`
+- canonical_url: https://www.youtube.com/watch?v=sodTFSuV4zY
+- original_url: https://www.youtube.com/watch?v=sodTFSuV4zY
+- publication_date: 2026-10-14 (YouTube一次確認一致)
+- checked_at: 2026-10-17
+- source_scope: YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017
+- Gemini Notebook source: AI技術研究室_直近調査12本_完全総合辞書_20261017
+- Gemini readback (self-reported): UNKNOWN
+- GitHub independent verification: NOT_RUN
+- GitHub-to-Notebook reverse sync: NOT_SYNCED_FROM_GITHUB
+- changes: NEW
+
+## 独自要約
+現役AIエンジニアがメイン機（MacBook Pro）と常時稼働サブ機（Mac mini）＋スマホをTailscale（VPN）とエージェント統合開発環境「Orca」で繋ぎ、Claude Code（MAX 20x×2契約）を主軸、OpenAI Codexをサブエージェント（画像生成・第三者コードレビュー）として並列運用する実務環境を公開。Playwright（MCP/CLI・WebMCP）、1Password Environments MCPによる秘密鍵の非露出管理、Dockerコンテナ隔離、Karabiner-Elements設定のAI自動生成など、
+
+## 動画目次・確認済みタイムライン（チャプター）
+- UNKNOWN | **オープニング・開発環境の全体像** | Gemini報告区間(00:00〜00:54 / 一次時刻未確認のため再生リンク非生成): オープニング・開発環境の全体像 | time_source: UNKNOWN | topics: Claude Code, claude -p, Codex
+- UNKNOWN | **ハードウェア構成とTailscaleによるリモート開発** | Gemini報告区間(00:54〜03:12 / 一次時刻未確認のため再生リンク非生成): ハードウェア構成とTailscaleによるリモート開発 | time_source: UNKNOWN | topics: Tailscale
+- UNKNOWN | **Orca（統合AI開発環境）とGit worktree並列開発** | Gemini報告区間(03:12〜07:45 / 一次時刻未確認のため再生リンク非生成): Orca（統合AI開発環境）とGit worktree並列開発 | time_source: UNKNOWN | topics: Orca, Git worktree
+- UNKNOWN | **1Password Environments MCPによる機密情報非露出管理** | Gemini報告区間(07:45〜11:20 / 一次時刻未確認のため再生リンク非生成): 1Password Environments MCPによる機密情報非露出管理 | time_source: UNKNOWN | topics: 1Password Environments MCP
+- UNKNOWN | **Playwright CLI & WebMCP によるWebブラウザ自動操作** | Gemini報告区間(11:20〜14:50 / 一次時刻未確認のため再生リンク非生成): Playwright CLI & WebMCP によるWebブラウザ自動操作 | time_source: UNKNOWN | topics: Playwright CLI, WebMCP
+- UNKNOWN | **PhotoCraft / OpenCut によるメディア生成ワークフロー** | Gemini報告区間(14:50〜17:30 / 一次時刻未確認のため再生リンク非生成): PhotoCraft / OpenCut によるメディア生成ワークフロー | time_source: UNKNOWN | topics: PhotoCraft, OpenCut
+- UNKNOWN | **Karabiner-Elements & ThumbSenseのキーバインド最適化** | Gemini報告区間(17:30〜20:15 / 一次時刻未確認のため再生リンク非生成): Karabiner-Elements & ThumbSenseのキーバインド最適化 | time_source: UNKNOWN | topics: Karabiner-Elements, ThumbSense
+- UNKNOWN | **まとめ・今後のエージェントハーネス展望** | Gemini報告区間(20:15〜23:01 / 一次時刻未確認のため再生リンク非生成): まとめ・今後のエージェントハーネス展望 | time_source: UNKNOWN | topics: Claude Code, claude -p, Codex
+
+## 詳細技術知識・再利用ノート
+- 整理番号・区分: No.01 (Part 1: 直近調査12本 (No.01〜12)) / 投稿者(Gemini記載): クロノITチャンネル / 調査日: 2026-10-16
+- YouTube一次メタデータ照合: タイトル=一致 / 投稿者=一致
+- 動画長・公開日一次照合: YouTube一次実測長=23:01 (1381s) vs Gemini記載長=23:01 (一致(±2s以内)) | YouTube一次公開日=2026-10-14 vs Gemini記載公開日=2026-10-14 (一致)
+- チャプター時刻一次検証内訳: 全8章中 概要欄チャプター一致(YOUTUBE_CHAPTER_METADATA)=0章, 字幕語彙一致(TIMESTAMPED_CAPTIONS)=0章, 一次根拠未確認(UNKNOWN)=8章
+- 証拠強度区分: PART1（Notebook内のYouTubeソース由来・章別一次照合適用）
+- 全体要約（原文保持）: 現役AIエンジニアがメイン機（MacBook Pro）と常時稼働サブ機（Mac mini）＋スマホをTailscale（VPN）とエージェント統合開発環境「Orca」で繋ぎ、Claude Code（MAX 20x×2契約）を主軸、OpenAI Codexをサブエージェント（画像生成・第三者コードレビュー）として並列運用する実務環境を公開。Playwright（MCP/CLI・WebMCP）、1Password Environments MCPによる秘密鍵の非露出管理、Dockerコンテナ隔離、Karabiner-Elements設定のAI自動生成など、AIに安全かつ高速に手足と環境を与えるベストプラクティスを提示。
+- 主要技術キーワード: Claude Code, claude -p, Codex, Orca, Git worktree, Tailscale, 1Password Environments MCP, Playwright CLI, WebMCP, Dockerコンテナ隔離, PhotoCraft, OpenCut, Karabiner-Elements, ThumbSense
+- 公式仕様・一次資料照合報告（一次URL未添付時はREPORTED_BY_AUTHOR扱い）: Playwright公式（Coding agentsガイド）、1Password公式（Environments Claude Codeプラグイン）、Orca公式GitHub（stablyai/orca）、PhotoCraft公式GitHub（storytold/photocraft）、Claude Code公式CLIリファレンス（claude -p）と完全一致。
+- 制約・注意点: Aqua Voiceでの固有名詞認識精度、Mac mini単独でのローカルLLM同時稼働に限界あり。
+- 今後の応用・自動化案: TailscaleとOrcaによる常時稼働Mac miniへのエージェント並列ディスパッチと1Password MCP安全連携。
+- 未確認事項（UNKNOWN）: 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。
+- YouTube概要欄の公式チャプター（一次照合参照用）: 0:00 ソフトウェアツアー / 1:04 言語とフレームワーク / 1:57 AI / 5:29 エディタとターミナル / 9:15 開発とインフラ / 13:10 制作 / 15:16 業務 / 16:56 Macの環境 / 21:44 まとめ
+
+## 主張・一次資料・時刻
+- [Gemini公式照合報告(一次URL未添付・要独立確認)] Playwright公式（Coding agentsガイド）、1Password公式（Environments Claude Codeプラグイン）、Orca公式GitHub（stablyai/orca）、PhotoCraft公式GitHub（storytold/photocraft）、Claude Code公式CLIリファレンス（claude -p）と完全一致。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+- 制約・注意点: Aqua Voiceでの固有名詞認識精度、Mac mini単独でのローカルLLM同時稼働に限界あり。 / 今後の応用: TailscaleとOrcaによる常時稼働Mac miniへのエージェント並列ディスパッチと1Password MCP安全連携。 | REPORTED_BY_AUTHOR | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+- 未確認事項(UNKNOWN): 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
+
+## 関連する既存研究・課題との接続
+- `youtube:lC5jxpYmatE` (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完
+- `youtube:Vr3JkAT9mo8` (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完
+
+## 限界
+Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

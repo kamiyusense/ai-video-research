@@ -1,0 +1,124 @@
+{
+  "schema_version": "research_receipt_v1",
+  "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "checked_at": "2026-10-18",
+  "notebook_readback": "UNKNOWN",
+  "github_dedup_status": "PASS",
+  "videos": [
+    {
+      "video_id": "sodTFSuV4zY",
+      "title": "デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介",
+      "url": "https://www.youtube.com/watch?v=sodTFSuV4zY",
+      "published_at": "2026-10-14",
+      "summary_ja": "現役AIエンジニアがメイン機とサブ機＋スマホをTailscaleとエージェント統合開発環境Orcaで繋ぎ、Claude Codeを主軸、OpenAI Codexをサブとして並列運用する実務環境を公開。1Password MCPやDocker隔離など安全に手足を与えるベストプラクティスを提示。",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "notebook_source_id": "AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "notebook_readback": "UNKNOWN",
+      "changes": [
+        "KNOWN"
+      ],
+      "claims": [
+        {
+          "text": "Playwright公式（Coding agentsガイド）、1Password公式（Environmentsプラグイン）、Orca公式GitHub、PhotoCraft公式GitHub、Claude Code公式CLIリファレンスと一致",
+          "status": "REPORTED_BY_AUTHOR",
+          "timestamp_seconds": null,
+          "timestamp_source": "UNKNOWN",
+          "official_url": "https://code.claude.com/docs/en/hooks"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "オープニング・開発環境の全体像",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): オープニング・開発環境の全体像",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Claude Code",
+            "Codex"
+          ]
+        },
+        {
+          "title": "ハードウェア構成とTailscaleによるリモート開発",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): ハードウェア構成とTailscaleによるリモート開発",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Tailscale"
+          ]
+        },
+        {
+          "title": "Orca（統合AI開発環境）とGit worktree並列開発",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): Orca（統合AI開発環境）とGit worktree並列開発",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Orca",
+            "Git worktree"
+          ]
+        },
+        {
+          "title": "1Password Environments MCPによる機密情報非露出管理",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): 1Password Environments MCPによる機密情報非露出管理",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "1Password Environments MCP"
+          ]
+        },
+        {
+          "title": "Playwright CLI & WebMCP によるWebブラウザ自動操作",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): Playwright CLI & WebMCP によるWebブラウザ自動操作",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Playwright CLI",
+            "WebMCP"
+          ]
+        },
+        {
+          "title": "PhotoCraft / OpenCut によるメディア生成ワークフロー",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): PhotoCraft / OpenCut によるメディア生成ワークフロー",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "PhotoCraft",
+            "OpenCut"
+          ]
+        },
+        {
+          "title": "Karabiner-Elements & ThumbSenseのキーバインド最適化",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): Karabiner-Elements & ThumbSenseのキーバインド最適化",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Karabiner-Elements"
+          ]
+        },
+        {
+          "title": "まとめ・今後のエージェントハーネス展望",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "Gemini報告区間(一次時刻未確認のため再生リンク非生成): まとめ・今後のエージェントハーネス展望",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Claude Code"
+          ]
+        }
+      ],
+      "detailed_findings_ja": "1. **ハードウェアとネットワーク構成**:\n   - メイン機とサブ機をTailscaleでセキュアに接続し、リモート端末から安全にエージェント作業をディスパッチ。\n2. **MCPと秘密鍵管理**:\n   - 1Password Environments MCPを利用し、環境変数やAPIキーをコード・プロンプトに直接露出させずに保護。\n3. **決定論的ガードとブラウザ操作**:\n   - Playwright CLIおよびWebMCPによる決定論的なWebブラウザ操作基盤の整備。"
+    }
+  ],
+  "next_topics": [
+    "TailscaleとOrcaによる常時稼働サブ機へのエージェント並列ディスパッチと1Password MCP安全連携"
+  ],
+  "unknowns": [
+    "投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細"
+  ]
+}

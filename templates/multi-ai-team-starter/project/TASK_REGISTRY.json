@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "purpose": "Project-specific stable task IDs and duplicate guard. No automatic sync.",
+  "project": "{{PROJECT_NAME}}",
+  "records": []
+}

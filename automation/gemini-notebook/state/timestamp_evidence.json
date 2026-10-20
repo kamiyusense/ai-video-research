@@ -1,0 +1,2171 @@
+{
+  "schema_version": "timestamp_evidence_v1",
+  "videos": {
+    "2-8cXaRHlqI": {
+      "caption_cue_count": 562,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "claude",
+            "12",
+            "日問題"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_PASS"
+        },
+        "1056": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "セットアップ",
+            "notebooklm",
+            "cli",
+            "claude",
+            "mcpb"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "1139": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "ツール",
+            "セキュリティ",
+            "リスク"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        },
+        "147": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "トークン",
+            "原因",
+            "コンテキスト",
+            "サブエージェント"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "262": {
+          "control_max_hits": 4,
+          "matched_title_tokens": [
+            "ツール",
+            "役割分担",
+            "notebooklm",
+            "調査",
+            "obsidian",
+            "claude"
+          ],
+          "title_tokens": 10,
+          "verdict": "CAPTION_PASS"
+        },
+        "412": {
+          "control_max_hits": 3,
+          "matched_title_tokens": [
+            "リサーチ",
+            "処理",
+            "notebooklm",
+            "体感",
+            "トークン",
+            "10",
+            "圧縮"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        },
+        "498": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "回分",
+            "担当",
+            "期限"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "619": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "studio"
+          ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
+          "title_tokens": 2,
+          "verdict": "CAPTION_FAIL"
+        },
+        "701": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "claude",
+            "md",
+            "限界",
+            "obsidian",
+            "テーマ",
+            "llm"
+          ],
+          "title_tokens": 9,
+          "verdict": "CAPTION_PASS"
+        },
+        "824": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "obsidian",
+            "vault"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_PASS"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "【さき】のAIでええやん。",
+      "yt_len_sec": 1338,
+      "yt_pub": "2026-06-21",
+      "yt_title": "【天才AI化】ClaudeのフルMAXパワーを出すAI神連携はNotebookLMとObsidianを使うんやで。【Gemini Notebook】"
+    },
+    "26MGuVIJh4A": {
+      "caption_cue_count": 1177,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "1059": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "融合",
+            "判断軸"
+          ],
+          "title_tokens": 3,
+          "verdict": "CAPTION_PASS"
+        },
+        "1215": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "並列",
+            "セッション",
+            "ドパガキ",
+            "獲得"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "1398": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "ターミナル",
+            "並列",
+            "演習",
+            "動画"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        },
+        "143": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "天才",
+            "記憶",
+            "正解",
+            "能力"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "1595": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "思考",
+            "外注"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "1778": {
+          "control_max_hits": 4,
+          "matched_title_tokens": [
+            "アイデア",
+            "発想力",
+            "トップダウン",
+            "思考"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_FAIL"
+        },
+        "2054": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "ボトムアップ",
+            "思考",
+            "ゴール"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "2365": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [],
+          "title_tokens": 1,
+          "verdict": "CAPTION_FAIL"
+        },
+        "2726": {
+          "desc_start": 2728,
+          "verdict": "DESC_MATCH"
+        },
+        "2985": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "偉人",
+            "ペルソナ",
+            "討論"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "3180": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "デスク",
+            "醤油"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_PASS"
+        },
+        "358": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "判断軸",
+            "拡張"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "660": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "プロ",
+            "センサー"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_PASS"
+        },
+        "772": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "評価"
+          ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
+          "title_tokens": 6,
+          "verdict": "CAPTION_FAIL"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        15,
+        152,
+        368,
+        524,
+        745,
+        966,
+        1228,
+        1355,
+        1621,
+        1786,
+        2009,
+        2213,
+        2728
+      ],
+      "desc_summary": "0:00 OP / 0:15 天才になるAIの使い方 / 2:32 AI時代の天才とは？ / 6:08 天才の要素① 「判断軸」 / 8:44 生産性爆発時代に大切なこと / 12:25 AIを見る「センサー」を養う方法 / 16:06 AIと一緒に自分も強くなる / 20:28 天才の要素② 「認知負荷耐性」 / 22:35 「認知負荷耐性」を身につける方法 / 27:01 AIにどこまで思考を任せるべきか？ / 29:46 天才の要素③ 「アイデア」 / 33:29 「発想力」がある人の思考術 / 36:53 思考の制限を外す目標設定 / 45:28 視聴者の方からの質問返し",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AI仙人 【AI歴10年・ガチADHD男】",
+      "yt_len_sec": 3242,
+      "yt_pub": "2026-10-16",
+      "yt_title": "【未来でガチ伸びる】AI時代で天才と呼ばれる人間になるための必須条件をまとめた"
+    },
+    "BStkW1HTfmk": {
+      "caption_cue_count": 478,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1100": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1260": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "135": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "340": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "550": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "870": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": true,
+      "desc_starts": [
+        0,
+        48,
+        266,
+        372,
+        490,
+        657,
+        749,
+        958,
+        1195,
+        1292
+      ],
+      "desc_summary": "00:00 Obsidianに注目している理由 / 00:48 Obsidianの基本 / 04:26 重要なのは機能じゃない / 06:12 右腕AIのフォルダをObsidianで見る / 08:10 共創の現場 / 10:57 右腕AIのフォルダをiCloudで同期するベストプラクティス / 12:29 なぜGoogleドライブじゃだめなのか / 15:58 窓口テスト ローカル vs Googleドライブ / 19:55 保管庫に何でも置かない / 21:32 まとめ",
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "Leo Tohyama / AIコーチ",
+      "yt_len_sec": 1341,
+      "yt_pub": "2026-10-05",
+      "yt_title": "【22分で完全解説】今日からはじめる AIエージェント×Obsidian。AIへの説明し直しを卒業して、ClaudeもChatGPTも「右腕」にする方法。"
+    },
+    "BvbkOQWgAw8": {
+      "caption_cue_count": 174,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "mit",
+            "大学生",
+            "48",
+            "時間",
+            "活用法"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "126": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "質問",
+            "共通",
+            "メンタルモデル"
+          ],
+          "title_tokens": 3,
+          "verdict": "CAPTION_PASS"
+        },
+        "176": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "質問",
+            "意見",
+            "主張"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_PASS"
+        },
+        "218": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "質問",
+            "見分",
+            "10"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_PASS"
+        },
+        "266": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "ゲーム",
+            "実況",
+            "著作権"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_PASS"
+        },
+        "374": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "アフタートーク",
+            "スマートグラス"
+          ],
+          "title_tokens": 2,
+          "verdict": "CAPTION_PASS"
+        },
+        "70": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "教科書"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_FAIL"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "ウェブマニア",
+      "yt_len_sec": 442,
+      "yt_pub": "2026-03-21",
+      "yt_title": "【神AI × 神活用】天才が考えるGoogleの『NotebookLM』の活用術が目から鱗すぎたので紹介します【全人類必見】"
+    },
+    "D0B-l7A69nI": {
+      "caption_cue_count": 216,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "178": {
+          "desc_start": 178,
+          "verdict": "DESC_MATCH"
+        },
+        "275": {
+          "desc_start": 275,
+          "verdict": "DESC_MATCH"
+        },
+        "314": {
+          "desc_start": 314,
+          "verdict": "DESC_MATCH"
+        },
+        "390": {
+          "desc_start": 388,
+          "verdict": "DESC_MATCH"
+        },
+        "483": {
+          "desc_start": 483,
+          "verdict": "DESC_MATCH"
+        },
+        "58": {
+          "desc_start": 55,
+          "verdict": "DESC_MATCH"
+        },
+        "96": {
+          "desc_start": 95,
+          "verdict": "DESC_MATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        55,
+        95,
+        178,
+        275,
+        314,
+        388,
+        483,
+        509
+      ],
+      "desc_summary": "0:00 オープニング / 0:55 YouTubeをAIで要約する5つの方法 / 1:35 1.ChatGPTのGPTsで要約 / 2:58 2.Gemini、Perplexityなら一発 / 4:35 3.手軽なWebサービス / 5:14 4.Chrome拡張機能 YouTube Summary / 6:28 5.最強の学習ツール Notebook LM / 8:03 注意点 / 8:29 まとめ",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AIコウリツカ",
+      "yt_len_sec": 564,
+      "yt_pub": "2025-08-02",
+      "yt_title": "倍速は古い!? YouTubeをAIで要約して時短学習する6つの方法【ChatGPT/拡張機能/Notebook LMなど】"
+    },
+    "Eh75KT85Y40": {
+      "caption_cue_count": 550,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "claude",
+            "プロジェクト",
+            "grokbot"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "1044": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "seo"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_FAIL"
+        },
+        "115": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "エフォート"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_FAIL"
+        },
+        "1155": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "プロジェクト",
+            "スレッド",
+            "スマホ"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        },
+        "1220": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "11",
+            "pr",
+            "レポート",
+            "ページ"
+          ],
+          "title_tokens": 11,
+          "verdict": "CAPTION_PASS"
+        },
+        "1386": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "ファイル"
+          ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
+          "title_tokens": 7,
+          "verdict": "CAPTION_FAIL"
+        },
+        "1456": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [],
+          "title_tokens": 1,
+          "verdict": "CAPTION_FAIL"
+        },
+        "243": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "プロジェクト",
+            "テンプレート"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_PASS"
+        },
+        "320": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "未来予測",
+            "クラウド",
+            "スマホ"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "422": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "エフォート"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_FAIL"
+        },
+        "544": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "seo",
+            "aio",
+            "対策",
+            "プロジェクト",
+            "サブスレッド"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "708": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "時間",
+            "セッション",
+            "制限",
+            "アカウント"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "845": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "時代",
+            "種類"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "975": {
+          "control_max_hits": 3,
+          "matched_title_tokens": [
+            "スレッド",
+            "トークン",
+            "コーディネーター",
+            "320",
+            "記事企画",
+            "710"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "みかみ【東大退学させられた男】",
+      "yt_len_sec": 1532,
+      "yt_pub": "2026-10-16",
+      "yt_title": "【実演】指示する相手は1人、働くのはAIチーム。年商30億社長がClaude Code「プロジェクト」を徹底解説"
+    },
+    "GVB8VfuNeJQ": {
+      "caption_cue_count": 603,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "135": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "340": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "560": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "790": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "975": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "みずたろうのAIしか勝たん",
+      "yt_len_sec": 1320,
+      "yt_pub": "2026-08-19",
+      "yt_title": "間違いなく神神神AI！Gemini Notebookの進化が衝撃的すぎたので全機能・使い方など徹底解説します"
+    },
+    "JMoByqOlftc": {
+      "caption_cue_count": 332,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "1010": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "最初"
+          ],
+          "title_tokens": 3,
+          "verdict": "CAPTION_FAIL"
+        },
+        "287": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "pro",
+            "対象"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_FAIL"
+        },
+        "323": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "google",
+            "pro",
+            "900",
+            "725",
+            "400",
+            "gb"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "497": {
+          "desc_start": 497,
+          "verdict": "DESC_MATCH"
+        },
+        "72": {
+          "control_max_hits": 3,
+          "matched_title_tokens": [
+            "本命",
+            "容量",
+            "google",
+            "pro",
+            "文章",
+            "claude"
+          ],
+          "title_tokens": 11,
+          "verdict": "CAPTION_PASS"
+        },
+        "735": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "時間"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_FAIL"
+        },
+        "860": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "下書",
+            "未定",
+            "日付"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        89,
+        317,
+        497,
+        674,
+        808,
+        961,
+        1028
+      ],
+      "desc_summary": "00:00 初めての有料AI、どれに払う？ / 01:29 本命はChatGPT Plus。相談から作業まで / 05:17 Google AI Proは、容量も使う人ほどお得 / 08:17 Claude Pro。文章の強さに、お金を払いたい？ / 11:14 料金表で、期待まで買わない / 13:28 1か月で、何が楽になれば続ける？ / 16:01 選ぶのは、使う理由がある1つ / 17:08 有料プランのおすすめを、サボり男から",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "サボり男。【AI情報・活用術】",
+      "yt_len_sec": 1091,
+      "yt_pub": "2026-10-02",
+      "yt_title": "初めてAIに課金するならどれ？ChatGPT・Gemini・Claudeを比較【2026年10月】"
+    },
+    "JXmk7hmbS3c": {
+      "caption_cue_count": 549,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "reason": "NO_DISTINCTIVE_TITLE_TOKENS",
+          "verdict": "CAPTION_FAIL"
+        },
+        "1075": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "ブラウザ",
+            "操作",
+            "chrome",
+            "mcp"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "1181": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "mac",
+            "mini",
+            "用意",
+            "スリープ"
+          ],
+          "title_tokens": 9,
+          "verdict": "CAPTION_PASS"
+        },
+        "1328": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [],
+          "title_tokens": 1,
+          "verdict": "CAPTION_FAIL"
+        },
+        "222": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "エージェントチーム",
+            "専門",
+            "サブエージェント",
+            "検証",
+            "構築",
+            "agents"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "27": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "スキルクリエイター",
+            "skill",
+            "プラグイン"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_PASS"
+        },
+        "297": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "discord",
+            "mcp",
+            "接続",
+            "pdf",
+            "スマホ"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "463": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "リモートコントロール",
+            "qr",
+            "コード",
+            "スマホ"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "548": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "claude",
+            "md",
+            "行動指針",
+            "スキル",
+            "記載"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "690": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "自動承認",
+            "モード",
+            "理解"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "791": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "obsidian",
+            "管理",
+            "スキル",
+            "説明書",
+            "マニュアル"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "977": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "モデル",
+            "エフォート"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_PASS"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "KEITO【AI&WEB ch】",
+      "yt_len_sec": 1360,
+      "yt_pub": "2026-03-31",
+      "yt_title": "Claude Codeをインストールしたら必ず準備しときたいこと１０選！"
+    },
+    "Mg0pYFVAuWQ": {
+      "caption_cue_count": 529,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "130": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "330": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "525": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "680": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "810": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": true,
+      "desc_starts": [
+        0,
+        122,
+        211,
+        284,
+        563,
+        760,
+        878,
+        944
+      ],
+      "desc_summary": "0:00 オープニング：Gemini Notebookのアップデートで何が変わっ / 2:02 Gemini Notebookの基本おさらいと、今回追加された3つの機 / 3:31 新機能①：リアルタイムの音声会話（スマホで資料に声で質問できる） / 4:44 新機能②：音声レコーダー（アプリ内で直接録音してそのままノートの資料に / 9:23 新機能③：インタラクティブなレポート作成（図解・クイズ・カードの一体化 / 12:40 使用量のカウント方式の変更と、枠を節約するコツ / 14:38 触る前に知っておくべき4つのつまずきポイント・注意点 / 15:44 まとめと今日からできる事前準備、判断の基準",
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "あいまる / iPhone×AIで毎日を効率化",
+      "yt_len_sec": 1075,
+      "yt_pub": "2026-09-28",
+      "yt_title": "【保存版】Gemini Notebook 新機能を全部解説｜音声会話・録音・要約が来た"
+    },
+    "MnzEE0fLxBs": {
+      "caption_cue_count": 449,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "150": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "345": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "555": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "776": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "920": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "ここなのAI大学",
+      "yt_len_sec": 1138,
+      "yt_pub": "2026-09-17",
+      "yt_title": "【最強AI】Gemini Notebookを徹底解説しました【NotebookLM】【神アップデート】"
+    },
+    "NCQZiT0e59g": {
+      "caption_cue_count": 1082,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "1105": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "判断基準",
+            "仮面",
+            "餃子",
+            "ラーメン"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        },
+        "1595": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "コンテキスト"
+          ],
+          "title_tokens": 3,
+          "verdict": "CAPTION_FAIL"
+        },
+        "162": {
+          "desc_start": 161,
+          "verdict": "DESC_MATCH"
+        },
+        "1818": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "自己改善",
+            "ループ",
+            "rsi",
+            "成長",
+            "アーキテクチャ"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "1905": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "中国",
+            "deepseek",
+            "harness"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_PASS"
+        },
+        "1964": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "mac",
+            "性格",
+            "コンテキスト",
+            "社員"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "2233": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "脱獄系",
+            "ローカル",
+            "llm",
+            "操作",
+            "コード",
+            "中国系"
+          ],
+          "title_tokens": 10,
+          "verdict": "CAPTION_PASS"
+        },
+        "234": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "スマホ",
+            "claude",
+            "codex",
+            "studio"
+          ],
+          "title_tokens": 9,
+          "verdict": "CAPTION_PASS"
+        },
+        "2406": {
+          "desc_start": 2408,
+          "verdict": "DESC_MATCH"
+        },
+        "2580": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "obsidian",
+            "gemini",
+            "tts"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "2673": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "焼肉",
+            "タレ"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_FAIL"
+        },
+        "376": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "html",
+            "個人",
+            "line"
+          ],
+          "title_tokens": 9,
+          "verdict": "CAPTION_PASS"
+        },
+        "570": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "社員",
+            "定義",
+            "人間",
+            "手足"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "625": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "手足"
+          ],
+          "title_tokens": 9,
+          "verdict": "CAPTION_FAIL"
+        },
+        "668": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [],
+          "title_tokens": 5,
+          "verdict": "CAPTION_FAIL"
+        },
+        "961": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "コンテキスト",
+            "判断軸"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_FAIL"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        9,
+        131,
+        161,
+        576,
+        636,
+        967,
+        1111,
+        1483,
+        1695,
+        1839,
+        1974,
+        2408
+      ],
+      "desc_summary": "0:00 OP / 0:09 AI社員を作っている？ / 2:11 ガチAI社員の作り方 / 2:41 AI仙人流 AI社員 / 9:36 AI社員の必須要素 / 10:36 要素① 手足 / 16:07 要素② コンテキスト / 18:31 要素③ 判断軸 / 24:43 マスターコンテキスト / 28:15 AI時代の思考法 / 30:39 要素④ RSI（自己改善） / 32:54 1パソコン＝1AI社員 / 40:08 視聴者の方からの質問返し",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AI仙人 【AI歴10年・ガチADHD男】",
+      "yt_len_sec": 2920,
+      "yt_pub": "2026-10-13",
+      "yt_title": "【最新トレンド】自分より頭良く働き続ける！AI社員の作り方を大公開"
+    },
+    "RZLAP2CLUM8": {
+      "caption_cue_count": 359,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1030": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "150": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "375": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "640": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "860": {
+          "verdict": "OUT_OF_RANGE"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": true,
+      "desc_starts": [
+        0,
+        29,
+        108,
+        283,
+        440,
+        671
+      ],
+      "desc_summary": "00:00 ハイライト / 00:29 OPトーク / 01:48 NotebookLM ClaudeCode obsidianの比較 / 04:43 NotebookLM ClaudeCode obsidianの連携 / 07:20 競合調査・提案書・知識保存 / 11:11 本日のまとめ",
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AIの中の人",
+      "yt_len_sec": 763,
+      "yt_pub": "2026-09-10",
+      "yt_title": "【情報収集を完全自動化】NotebookLM・Claude Code・Obsidianの神連携ワークフローを徹底解説"
+    },
+    "Vr3JkAT9mo8": {
+      "caption_cue_count": 462,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "1060": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [],
+          "title_tokens": 2,
+          "verdict": "CAPTION_FAIL"
+        },
+        "180": {
+          "control_max_hits": 3,
+          "matched_title_tokens": [
+            "md",
+            "memory"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_FAIL"
+        },
+        "270": {
+          "desc_start": 266,
+          "verdict": "DESC_MATCH"
+        },
+        "485": {
+          "desc_start": 480,
+          "verdict": "DESC_MATCH"
+        },
+        "780": {
+          "desc_start": 777,
+          "verdict": "DESC_MATCH"
+        },
+        "885": {
+          "desc_start": 884,
+          "verdict": "DESC_MATCH"
+        },
+        "930": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "管理"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_FAIL"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        30,
+        60,
+        128,
+        174,
+        266,
+        344,
+        431,
+        480,
+        547,
+        602,
+        777,
+        884,
+        924,
+        977,
+        1050,
+        1121
+      ],
+      "desc_summary": "00:00 はじめに / 00:30 ①デスクトップ版のChatGPT Workを使う / 01:00 ②右腕とスペシャリストで役割分担する / 02:08 ③前提知識をローカルに溜める / 02:54 ④AGENTS.mdとMEMORY.md / 04:26 スターターキットで「右腕AI」を作る / 05:44 AGENTS.mdの中身 / 07:11 MEMORY.mdの中身 / 08:00 MEMORY.mdを充実させる / 09:07 Obsidianで読みやすくする / 10:02 スペシャリストの3つのタイプ / 12:57 植物管理スペシャリストを作る / 14:44 プロジェクトを設定する / 15:24 写真を送って植物を登録する / 16:17 サイト機能でダッシュボードを作る",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "Leo Tohyama / AIコーチ",
+      "yt_len_sec": 1222,
+      "yt_pub": "2026-07-28",
+      "yt_title": "ChatGPT Work でAIを「担当制」にしたら、仕事の効率が上がった。「右腕AI」を構築する全手順【20分で完全解説】"
+    },
+    "W35UQZL2w7E": {
+      "caption_cue_count": 137,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "100": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "270": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "495": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "760": {
+          "verdict": "OUT_OF_RANGE"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "独学クソリーマンの逆襲",
+      "yt_len_sec": 531,
+      "yt_pub": "2026-08-02",
+      "yt_title": "【Chat-GPT Codex】トークン（使用量）をムダなく使う節約術10選｜今すぐできる実践テクニック"
+    },
+    "X9Zk68AII4A": {
+      "caption_cue_count": 555,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1050": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "140": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "340": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "590": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "855": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        110,
+        211,
+        310,
+        352,
+        461,
+        532,
+        644,
+        773,
+        962,
+        1052,
+        1180
+      ],
+      "desc_summary": "00:00 オープニング・Claude 公式の eval 記事 / 01:50 過剰適合とは? OCR ツールの例 / 03:31 train と test に分けて過剰適合を防ぐ / 05:10 例題: メール振り分けアプリ (68%) / 05:52 頼りになる eval の 4 つの条件 / 07:41 build-eval を実際に使ってみる / 08:52 過剰適合の原因と 3 つの防ぎ方 / 10:44 hillclimb の回し方と失敗の分類 / 12:53 Sonnet 5 で費用減・スコア 98.9% / 16:02 claude-api skill の改善例 / 17:32 まとめ: 両方で上がった修正だけ残す / 19:40 エンディング・メンバーシップ案内",
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "まさおAIじっくり解説ch",
+      "yt_len_sec": 1271,
+      "yt_pub": "2026-10-03",
+      "yt_title": "【神機能】Claude Codeで『Evalの改善スキル』が登場！本当に教えたいSkillを徹底解説"
+    },
+    "XckM9eFa_vg": {
+      "caption_cue_count": 525,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "1150": {
+          "control_max_hits": 3,
+          "matched_title_tokens": [
+            "スペシャリスト",
+            "連携",
+            "料理",
+            "健康"
+          ],
+          "title_tokens": 5,
+          "verdict": "CAPTION_PASS"
+        },
+        "1186": {
+          "desc_start": 1189,
+          "verdict": "DESC_MATCH"
+        },
+        "1242": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "ライブアーティファクト",
+            "ワークアウト",
+            "ダッシュボード"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "1284": {
+          "desc_start": 1283,
+          "verdict": "DESC_MATCH"
+        },
+        "220": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "相棒",
+            "一生",
+            "武器",
+            "知識",
+            "武器目録"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "316": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "2026",
+            "cowork",
+            "利用制限"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_PASS"
+        },
+        "378": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "右腕"
+          ],
+          "title_tokens": 2,
+          "verdict": "CAPTION_FAIL"
+        },
+        "392": {
+          "control_max_hits": 5,
+          "matched_title_tokens": [
+            "土台",
+            "フォルダ",
+            "スターターキット",
+            "claude",
+            "md",
+            "memory",
+            "00",
+            "resources"
+          ],
+          "title_tokens": 9,
+          "verdict": "CAPTION_PASS"
+        },
+        "457": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "作法",
+            "claude",
+            "md"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "546": {
+          "desc_start": 545,
+          "verdict": "DESC_MATCH"
+        },
+        "579": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "obsidian",
+            "マークダウン"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "651": {
+          "desc_start": 649,
+          "verdict": "DESC_MATCH"
+        },
+        "720": {
+          "desc_start": 723,
+          "verdict": "DESC_MATCH"
+        },
+        "78": {
+          "desc_start": 81,
+          "verdict": "DESC_MATCH"
+        },
+        "835": {
+          "desc_start": 834,
+          "verdict": "DESC_MATCH"
+        },
+        "900": {
+          "control_max_hits": 3,
+          "matched_title_tokens": [
+            "cowork",
+            "プロジェクト",
+            "右腕",
+            "フォルダ",
+            "スペシャリスト"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "957": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "fireshot",
+            "登録",
+            "提案",
+            "リスト"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        81,
+        214,
+        300,
+        367,
+        439,
+        545,
+        589,
+        649,
+        723,
+        834,
+        1189,
+        1283
+      ],
+      "desc_summary": "00:00 - イントロ：AI活用を自分に最適化する鍵 / 01:21 - AI活用をRPGで例える（勇者、相棒、武器、乗り物） / 03:34 - 「一生物の武器」と「武器目録」の重要性 / 05:00 - 2026年のAI環境と「武器磨き」の進化 / 06:07 - 実践ステップ1：スターターキットの導入と土台作り / 07:19 - 指示書（cloud.md）とメモリ（Memory.md）の役割 / 09:05 - 実践ステップ2：自分専用のAIにするための情報入力 / 09:49 - Obsidianを使った情報の視認化と管理 / 10:49 - 実践ステップ3：分野別「スペシャリスト」の作成（YouTube、料 / 12:03 - スペシャリストの3つのタイプ（ナレッジ、ミッション、アシスタント） / 13:54 - 実演：料理スペシャリストの活用方法（レシピ保存から献立提案まで） / 19:49 - さらに便利にする2つの機能：スケジュールとライブアーティファクト / 21:23 - まとめ：ストック型のAI活用でトレンドに左右されない自分を作る",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "Leo Tohyama / AIコーチ",
+      "yt_len_sec": 1379,
+      "yt_pub": "2026-06-09",
+      "yt_title": "どんなAIが来ても困らない「一生モノのAI」の作り方"
+    },
+    "YrTVpJ1ebUk": {
+      "caption_cue_count": 182,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "100": {
+          "desc_start": 102,
+          "verdict": "DESC_MATCH"
+        },
+        "161": {
+          "desc_start": 159,
+          "verdict": "DESC_MATCH"
+        },
+        "236": {
+          "desc_start": 236,
+          "verdict": "DESC_MATCH"
+        },
+        "306": {
+          "desc_start": 306,
+          "verdict": "DESC_MATCH"
+        },
+        "372": {
+          "desc_start": 371,
+          "verdict": "DESC_MATCH"
+        },
+        "430": {
+          "desc_start": 426,
+          "verdict": "DESC_MATCH"
+        },
+        "509": {
+          "desc_start": 509,
+          "verdict": "DESC_MATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        49,
+        84,
+        102,
+        159,
+        236,
+        281,
+        306,
+        339,
+        371,
+        426,
+        491,
+        509,
+        543,
+        567,
+        631
+      ],
+      "desc_summary": "0:00 動画について / 0:49 動画のもくじ / 1:24 第一章：dots・GPT-6.1 Sol・Ultrafast / 1:42 ①、dots / 2:39 ②、GPT-6.1 Sol / 3:56 ③、Ultrafastモード / 4:41 第二章：ChatGPTとCodex関連ツール / 5:06 ①、月額500ドルのProプラン / 5:39 ②、Codexクラウド / 6:11 ③、ChatGPT Space / 7:06 ④、Codexのその他新機能 / 8:11 第三章：開発系の新ツール / 8:29 ①、Decisions API / 9:03 ②、OpenAI Marketplace / 9:27 ③、プラグイン拡張機能",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AI大学【AI&ChatGPT最新情報】",
+      "yt_len_sec": 665,
+      "yt_pub": "2026-09-30",
+      "yt_title": "【OpenAI DevDay 2026速報】24時間働くAI「dots」など新しいAIが大量発表！ ～GPT-6.1 Sol・Astra最大8倍速・OpenAI版のJevほか完全ガイド～"
+    },
+    "ZY7YuYHLlIQ": {
+      "caption_cue_count": 1020,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "1330": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "1900": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "220": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "2300": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "495": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "890": {
+          "verdict": "CONTRADICTS_DESC"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": true,
+      "desc_starts": [
+        0,
+        51,
+        140,
+        249,
+        299,
+        973,
+        1589,
+        1935,
+        2076,
+        2267,
+        2546
+      ],
+      "desc_summary": "00:00 Geminiノートブック概要 / 00:51 基本的な使い方と機能説明 / 02:20 リニューアルで変わった点 / 04:09 利用プランと制限 / 04:59 実際の使用方法とデモンストレーション / 16:13 各機能の詳細検証 / 26:29 新機能：エージェント機能 / 32:15 Geminiとの連携機能 / 34:36 Geminiスパークとの掛け合わせ活用 / 37:47 無料プレゼント案内 / 42:26 まとめと今後の活用提案",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "KEITO【AI&WEB ch】",
+      "yt_len_sec": 2641,
+      "yt_pub": "2026-08-19",
+      "yt_title": "新しくなった『Gemini Notebook』完全解説！Sparkと組み合わせたAI活用"
+    },
+    "ZgMrRA1Czlc": {
+      "caption_cue_count": 164,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "120": {
+          "desc_start": 118,
+          "verdict": "DESC_MATCH"
+        },
+        "189": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "公開",
+            "362",
+            "アドレス"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "253": {
+          "desc_start": 250,
+          "verdict": "DESC_MATCH"
+        },
+        "315": {
+          "desc_start": 312,
+          "verdict": "DESC_MATCH"
+        },
+        "397": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "最終報告",
+            "ウォレット"
+          ],
+          "title_tokens": 6,
+          "verdict": "CAPTION_PASS"
+        },
+        "423": {
+          "desc_start": 420,
+          "verdict": "DESC_MATCH"
+        },
+        "516": {
+          "desc_start": 513,
+          "verdict": "DESC_MATCH"
+        },
+        "585": {
+          "desc_start": 582,
+          "verdict": "DESC_MATCH"
+        },
+        "61": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "モデル",
+            "gpt",
+            "5.6",
+            "内部"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        40,
+        118,
+        250,
+        312,
+        420,
+        513,
+        582
+      ],
+      "desc_summary": "00:00 オープニング / 00:40 第1章 報告の概要 / 01:58 第2章 鍵を導くまで / 04:10 第3章 使ってよいかの判断 / 05:12 第4章 デプロイと最終報告 / 07:00 第5章 発見と対策 / 08:33 第6章 報告ページの一覧 / 09:42 第7章 まとめ",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AIすきかも",
+      "yt_len_sec": 646,
+      "yt_pub": "2026-10-16",
+      "yt_title": "OpenAIの内部モデルが与えられていないウォレットでデプロイ費用を支払っていた！公開の復元フレーズから362アドレスを調べた"
+    },
+    "ZjUJ-35acaU": {
+      "caption_cue_count": 494,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "1170": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "動画"
+          ],
+          "title_tokens": 3,
+          "verdict": "CAPTION_FAIL"
+        },
+        "186": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "youtube",
+            "seo",
+            "19",
+            "追加",
+            "手順"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        },
+        "282": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "youtube",
+            "チャンネル",
+            "プラン",
+            "300",
+            "500"
+          ],
+          "title_tokens": 9,
+          "verdict": "CAPTION_PASS"
+        },
+        "375": {
+          "control_max_hits": 4,
+          "matched_title_tokens": [
+            "自分",
+            "faq",
+            "10",
+            "90",
+            "セミナー"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        },
+        "72": {
+          "control_max_hits": 2,
+          "matched_title_tokens": [
+            "chrome",
+            "拡張機能",
+            "youtube",
+            "to",
+            "notebooklm"
+          ],
+          "title_tokens": 7,
+          "verdict": "CAPTION_PASS"
+        },
+        "727": {
+          "desc_start": 726,
+          "verdict": "DESC_MATCH"
+        },
+        "883": {
+          "desc_start": 882,
+          "verdict": "DESC_MATCH"
+        },
+        "975": {
+          "desc_start": 973,
+          "verdict": "DESC_MATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        120,
+        359,
+        529,
+        644,
+        726,
+        882,
+        973
+      ],
+      "desc_summary": "00:00 ①-1 NotebookLM × YouTube拡張機能の概要 / 02:00 ①-2 NotebookLM × YouTube拡張機能使い方 / 05:59 ②-1-1【1本だけ】ソース1つのユースケース1 / 08:49 ②-1-2【1本だけ】ソース1つのユースケース2 / 10:44 ②-1-3【1本だけ】ソース1つのユースケース3 / 12:06 ②-2-1【複数本】ソース複数のユースケース1 / 14:42 ②-2-2【複数本】ソース複数のユースケース2 / 16:13 ②-3-1【大量インポート】ソース複数のユースケース1",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "mikimiki web スクール",
+      "yt_len_sec": 1283,
+      "yt_pub": "2026-03-21",
+      "yt_title": "【超便利】Google最強AI「NotebookLM」×「YouTube」の拡張機能が神！徹底解説していきます！"
+    },
+    "cneFa24EFEk": {
+      "caption_cue_count": 472,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1075": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "135": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1350": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1510": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "400": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "730": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [],
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "みかみ【東大退学させられた男】",
+      "yt_len_sec": 1673,
+      "yt_pub": "2026-05-08",
+      "yt_title": "【実演】Claude CodeでAI副業を完全自動化する方法。年商30億社長が全部見せます"
+    },
+    "gD6UZ4wG8OM": {
+      "caption_cue_count": 257,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "130": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "330": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "525": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "710": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        65,
+        123,
+        319,
+        521,
+        665,
+        854
+      ],
+      "desc_summary": "0:00 Claudeの開発者が書いた、AIへの頼み方の手引き / 1:05 第1章 翼はあるのに、歩いている / 2:03 第2章 高さ　作業の先に、何が起きてほしい？ / 5:19 第3章 深さ　一流なら、どこから始める？ / 8:41 第4章 広さ　ほかに、誰を呼ぶ？ / 11:05 第5章 なぜ人は、できると思う範囲でしか頼まないのか / 14:14 第6章 惑星と、フランスの首都",
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AI時短ラボ",
+      "yt_len_sec": 921,
+      "yt_pub": "2026-10-16",
+      "yt_title": "AIを低く見積もる世の中へ。― Claude開発者が書いた野心の手引き"
+    },
+    "j3Cyvbfn9_k": {
+      "caption_cue_count": 316,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "desc_start": 0,
+          "verdict": "DESC_MATCH"
+        },
+        "149": {
+          "desc_start": 144,
+          "verdict": "DESC_MATCH"
+        },
+        "376": {
+          "desc_start": 373,
+          "verdict": "DESC_MATCH"
+        },
+        "539": {
+          "desc_start": 535,
+          "verdict": "DESC_MATCH"
+        },
+        "60": {
+          "desc_start": 59,
+          "verdict": "DESC_MATCH"
+        },
+        "717": {
+          "desc_start": 716,
+          "verdict": "DESC_MATCH"
+        },
+        "870": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "プラン",
+            "google",
+            "pro"
+          ],
+          "title_tokens": 8,
+          "verdict": "CAPTION_PASS"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        29,
+        59,
+        88,
+        144,
+        239,
+        302,
+        322,
+        373,
+        535,
+        716,
+        768,
+        932
+      ],
+      "desc_summary": "00:00 ダイジェスト / 00:29 はじめに / 00:59 月額料金とモデルラインナップ / 01:28 ゲーム制作で検証 / 02:24 ゲーム制作｜Claude Opus 5.5 / 03:59 ゲーム制作｜GPT-6 Astra / 05:02 ゲーム制作｜Gemini 3.1 Pro / 05:22 ゲーム制作｜Gemini 3.8 Flash（参考） / 06:13 Artificial Analysisのランキング / 08:55 複雑な描画で検証｜普段使いのモデルの料金 / 11:56 複雑な描画で検証｜描画結果と画像生成 / 12:48 どれに課金する？ / 15:32 まとめ",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "キノコード / AI・プログラミング学習チャンネル",
+      "yt_len_sec": 1021,
+      "yt_pub": "2026-10-11",
+      "yt_title": "【検証】AIを選ぶならどれ？ChatGPT・Claude・Gemini｜ゲーム制作・画像生成・料金比較"
+    },
+    "lC5jxpYmatE": {
+      "caption_cue_count": 1126,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "122": {
+          "desc_start": 127,
+          "verdict": "DESC_MATCH"
+        },
+        "1456": {
+          "desc_start": 1461,
+          "verdict": "DESC_MATCH"
+        },
+        "1658": {
+          "desc_start": 1657,
+          "verdict": "DESC_MATCH"
+        },
+        "1699": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "ブラウザ",
+            "選択"
+          ],
+          "reason": "LEGACY_SPARK_REPORT_WEAK_BASIS",
+          "title_tokens": 5,
+          "verdict": "CAPTION_FAIL"
+        },
+        "1748": {
+          "desc_start": 1752,
+          "verdict": "DESC_MATCH"
+        },
+        "2277": {
+          "desc_start": 2272,
+          "verdict": "DESC_MATCH"
+        },
+        "3078": {
+          "control_max_hits": 0,
+          "matched_title_tokens": [
+            "ワークフロー"
+          ],
+          "reason": "INSUFFICIENT_DISTINCT_TOKENS",
+          "title_tokens": 4,
+          "verdict": "CAPTION_FAIL"
+        },
+        "639": {
+          "control_max_hits": 1,
+          "matched_title_tokens": [
+            "参照"
+          ],
+          "title_tokens": 4,
+          "verdict": "CAPTION_FAIL"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": false,
+      "desc_starts": [
+        0,
+        17,
+        127,
+        436,
+        650,
+        1181,
+        1402,
+        1461,
+        1657,
+        1752,
+        2178,
+        2272,
+        2686,
+        2800
+      ],
+      "desc_summary": "0:00 OP / 0:17 AI中級者になるための知識 / 2:07 Skillsとは / 7:16 Skillsを増やしすぎる問題 / 10:50 Skillsの動的作成 / 19:41 AIと融合して自分の仕事術を作る / 23:22 Skillsは本当に必要？ / 24:21 コンピューターユースとは？ / 27:37 コンピューターユースの上級Tips / 29:12 ハーネスとは / 36:18 Skillsとハーネスの違い / 37:52 AI時代のおすすめ勉強法 / 44:46 AI時代は「知識」より「経験」 / 46:40 視聴者の方からの質問返し",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AI仙人 【AI歴10年・ガチADHD男】",
+      "yt_len_sec": 3391,
+      "yt_pub": "2026-10-02",
+      "yt_title": "【ガチ勢への道】ガチ便利なAIテクニックを正しいカタチで身につけろ！"
+    },
+    "sodTFSuV4zY": {
+      "caption_cue_count": 324,
+      "caption_track": "ja:manual",
+      "chapters": {
+        "0": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "1050": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "1215": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "192": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "465": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "54": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "680": {
+          "verdict": "CONTRADICTS_DESC"
+        },
+        "890": {
+          "verdict": "CONTRADICTS_DESC"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": true,
+      "desc_starts": [
+        0,
+        64,
+        117,
+        329,
+        555,
+        790,
+        916,
+        1016,
+        1304
+      ],
+      "desc_summary": "0:00 ソフトウェアツアー / 1:04 言語とフレームワーク / 1:57 AI / 5:29 エディタとターミナル / 9:15 開発とインフラ / 13:10 制作 / 15:16 業務 / 16:56 Macの環境 / 21:44 まとめ",
+      "dur_match": true,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "クロノITチャンネル",
+      "yt_len_sec": 1381,
+      "yt_pub": "2026-10-14",
+      "yt_title": "デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介"
+    },
+    "t22FELAl-BM": {
+      "caption_cue_count": 646,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1205": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1458": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "1710": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "190": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "515": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "860": {
+          "verdict": "DURATION_MISMATCH"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": true,
+      "desc_starts": [
+        0,
+        63,
+        184,
+        248,
+        398,
+        567,
+        756,
+        893,
+        1005,
+        1116,
+        1296
+      ],
+      "desc_summary": "00:00 AI利用枠節約｜GPT-6 Astra・Fable 5.1 / 01:03 長い会話セッションで利用枠が減る仕組み / 03:04 少ないターン数でトークン消費を抑える方法 / 04:08 ChatGPT Chat・Workの利用枠を使い分け / 06:38 Claude Projectsで長文をキャッシュ活用 / 09:27 プロンプトキャッシュの仕組みと節約効果 / 12:36 Compactでキャッシュが切れる注意点 / 14:53 キャッシュ保持時間とセッション再開の判断 / 16:45 モデル変更とサブエージェントのキャッシュ分散 / 18:36 Effort変更｜Fable 5.1とGPT-6 Astra比較 / 21:36 MCP・Tool Searchでツール呼び出しを削減",
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "にゃんたのAIチャンネル",
+      "yt_len_sec": 1651,
+      "yt_pub": "2026-09-12",
+      "yt_title": "AIの使用枠がすぐになくなる？ChatGPTとClaudeの利用枠を節約するキャッシュの仕組みを解説してみた"
+    },
+    "y2xCGyURl7Q": {
+      "caption_cue_count": 172,
+      "caption_track": "ja:asr",
+      "chapters": {
+        "0": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "1065": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "1270": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "135": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "340": {
+          "verdict": "DURATION_MISMATCH"
+        },
+        "570": {
+          "verdict": "OUT_OF_RANGE"
+        },
+        "800": {
+          "verdict": "OUT_OF_RANGE"
+        }
+      },
+      "checked_at": "2026-10-17",
+      "contradicts_desc": true,
+      "desc_starts": [
+        0,
+        49,
+        88,
+        110,
+        169,
+        248,
+        325,
+        419,
+        585
+      ],
+      "desc_summary": "0:00 動画について / 0:49 動画のもくじ / 1:28 第一章：Gemini 4 Argonの最新概要 / 1:50 ①、Gemini 4 Argonの特徴 / 2:49 ②、Gemini 4 Argonのベンチマークスコア / 4:08 ③、Gemini 4 Argonの安全性 / 5:25 第二章：Gemini 4 Argonの使い方 / 6:59 第三章：Gemini 4 Argonの活用事例 / 9:45 エンディングムービー",
+      "dur_match": false,
+      "method": "youtube_player_android+timedtext",
+      "yt_author": "AI大学【AI&ChatGPT最新情報】",
+      "yt_len_sec": 619,
+      "yt_pub": "2026-10-14",
+      "yt_title": "Googleの最先端AIモデル「Gemini 4 Argon(アルゴン)」がついに公開！ ～概要・使い方・活用事例を徹底解説～"
+    }
+  }
+}

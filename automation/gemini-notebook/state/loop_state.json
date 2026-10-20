@@ -1,0 +1,127 @@
+{
+  "schema_version": "gemini_notebook_loop_state_v1",
+  "repository": "kamiyusense/ai-video-research",
+  "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "last_updated": "2026-10-19",
+  "processed_receipts": [
+    {
+      "sha256": "877cf5c0e2c84f6db654a5d3dee27a03766aa596a5eba5a58e96d29bfe706ac8",
+      "checked_at": "2026-10-17",
+      "new_video_ids": [
+        "sodTFSuV4zY",
+        "cneFa24EFEk",
+        "t22FELAl-BM",
+        "X9Zk68AII4A",
+        "ZgMrRA1Czlc",
+        "gD6UZ4wG8OM",
+        "W35UQZL2w7E",
+        "JXmk7hmbS3c",
+        "Eh75KT85Y40",
+        "26MGuVIJh4A",
+        "XckM9eFa_vg",
+        "NCQZiT0e59g"
+      ],
+      "updated_video_ids": [],
+      "github_write_status": "APPLIED_LOCAL",
+      "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+    },
+    {
+      "sha256": "dbe16f2d5f209b3167a934ff7ed8d1caaffa2194400585ddb7dfafd37e086124",
+      "checked_at": "2026-10-17",
+      "new_video_ids": [
+        "y2xCGyURl7Q",
+        "RZLAP2CLUM8",
+        "2-8cXaRHlqI",
+        "YrTVpJ1ebUk",
+        "j3Cyvbfn9_k",
+        "JMoByqOlftc",
+        "MnzEE0fLxBs",
+        "D0B-l7A69nI",
+        "Mg0pYFVAuWQ",
+        "GVB8VfuNeJQ",
+        "BvbkOQWgAw8",
+        "ZY7YuYHLlIQ"
+      ],
+      "updated_video_ids": [
+        "ZjUJ-35acaU",
+        "BStkW1HTfmk"
+      ],
+      "github_write_status": "APPLIED_LOCAL",
+      "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+    },
+    {
+      "sha256": "9e9cee013562efd403bd77326686d9132116045957d87bee838c4d6a42acb392",
+      "checked_at": "2026-10-18",
+      "new_video_ids": [
+        "pRfC1DILDEM"
+      ],
+      "updated_video_ids": [],
+      "github_write_status": "APPLIED_ATOMIC_COMMIT",
+      "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+    },
+    {
+      "sha256": "813cfd637a8bcc4a69e57bafb4c241b552972e53f4be70008cfb3e741250cbdc",
+      "checked_at": "2026-10-19",
+      "new_video_ids": [
+        "CnkEROU7fZw"
+      ],
+      "updated_video_ids": [],
+      "github_write_status": "APPLIED_LOCAL",
+      "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB"
+    }
+  ],
+  "next_topics_queue": [
+    "研究室の質問を4分類し、適切な検索・集計・時点照会・全体要約の使い分けを検証する"
+  ],
+  "open_unknowns": [
+    "W35UQZL2w7E (No.07): OpenAIの将来的なトークナイザー圧縮比率改定スケジュール。",
+    "JXmk7hmbS3c (No.08): KEITO氏が内部運用している非公開Discord Botのソースコード全文。",
+    "Eh75KT85Y40 (No.09): 公式LINEで配布されるテンプレート内部プロンプト全文。",
+    "26MGuVIJh4A (No.10): AI仙人氏が社内実務で使用している8ターミナル並列管理ツールの構成詳細。",
+    "XckM9eFa_vg (No.11): 概要欄配布スターターキットZIPの1文字単位の原文。",
+    "NCQZiT0e59g (No.12): 自作iPhone録音アプリおよび自己改善ループの内部ソースコード全文。",
+    "y2xCGyURl7Q (No.13): Argonの思考プロセストークンに対する厳密な内部課金レート。",
+    "RZLAP2CLUM8 (No.14): 投稿者が実務で使用しているObsidian専用テンプレートプラグイン名。",
+    "2-8cXaRHlqI (No.15): 言及された非公式NotebookLM CLIの正確なGitHubリポジトリURL。",
+    "YrTVpJ1ebUk (No.16): dotsの日本リージョン向け専用クラウドPCの提供開始日。",
+    "j3Cyvbfn9_k (No.17): 検証で動かなかったGemini 3.1 ProのWebGL互換性バグの詳細原因。",
+    "JMoByqOlftc (No.18): サボり男。氏が使用している自作プロンプト管理スプレッドシートの全項目。",
+    "MnzEE0fLxBs (No.19): ここな氏が実務で使用している社内規定ソースのファイル名。",
+    "D0B-l7A69nI (No.20): 動画内で言及された専用要約Webサイトの現在の運営状況。",
+    "Mg0pYFVAuWQ (No.21): 音声会話時の内部コンピュート消費レートの正確な係数。",
+    "GVB8VfuNeJQ (No.22): みずたろう氏が提示した契約書サンプルの実在企業名。",
+    "BvbkOQWgAw8 (No.23): MIT学生が使用した元論文の完全な書誌情報。",
+    "ZY7YuYHLlIQ (No.24): KEITO氏が使用したSparkスキル用YAMLメタプロンプトの全文公開リンク。",
+    "ZjUJ-35acaU (No.25): 拡張機能作者の今後のアップデート予定と保守方針。",
+    "BStkW1HTfmk (No.26): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。",
+    "sodTFSuV4zY (No.01): 投稿者自作の業務集約Webアプリの内部コード、月100ドルのChatGPT契約詳細。",
+    "ChatGPTは対象動画の字幕・映像を独立取得していない。時刻はGemini報告のみで独立証拠がなく、正式タイムスタンプをUNKNOWNとした。",
+    "Gemini Notebookのソース登録・読戻しPASSはGemini自己申告で、ChatGPTによる独立検証ではない。",
+    "Gemini報告に含まれる外部公式資料の照合判定は、この保存工程では独立確認していない。",
+    "対象動画の映像・スライド・画面操作は未確認。"
+  ],
+  "unresolved_backlog_refs": [
+    {
+      "id": "P006-U01",
+      "title": "Google AI Studioの長尺YouTube動画入力でのブラウザUIフリーズ回避・映像フレーム直接検証の省力化",
+      "source": "proposals/006-unresolved-task-backlog-revisit.md",
+      "status": "OPEN"
+    },
+    {
+      "id": "P006-U02",
+      "title": "Gemini Notebookと非公開GitHub間の手動コピーを最小化する安全な公式連携・差分同期",
+      "source": "automation/gemini-notebook/README.md",
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "P006-U03",
+      "title": "反復的な画面操作（Computer Use）から公式API・決定的スクリプトへの安全な移行判断",
+      "source": "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+      "status": "OPEN"
+    }
+  ],
+  "notebook_internal_master_index_name": "AI技術研究室_知識索引.md",
+  "github_index_export_file": "automation/gemini-notebook/state/github_knowledge_index_export.md",
+  "notebook_sync_status": "NOT_SYNCED_FROM_GITHUB",
+  "remote_branch_cache": {}
+}

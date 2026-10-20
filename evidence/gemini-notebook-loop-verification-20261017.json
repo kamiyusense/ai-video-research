@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "kind": "gemini_notebook_loop_v06_verification",
+  "recorded_at_utc": "2026-10-17T01:28:00Z",
+  "repository": "kamiyusense/ai-video-research",
+  "visibility": "private",
+  "branch": "feature/gemini-notebook-research-loop-20261016",
+  "base_commit_before_v06": "5dab24b79d03023e85b99019cfd1356c3051255a",
+  "pull_request": {
+    "url": "https://github.com/kamiyusense/ai-video-research/pull/10",
+    "number": 10,
+    "draft": true,
+    "merged": false
+  },
+  "selected_architecture": "GAS_DIRECT_VALIDATION_AND_GIT_DATABASE_API_ATOMIC_COMMIT_WITH_QA_VIDEO_LOCATOR_V06",
+  "operational_completion_criteria": {
+    "1_code_exists": "PASS",
+    "2_mock_parity_and_anomaly_tests_succeed": "PASS",
+    "3_actual_github_write_from_local_git_succeeds": "PASS",
+    "4_actual_github_write_from_production_gas_runtime": "NOT_TESTED",
+    "5_actual_notebook_update_succeeds": "NOT_TESTED",
+    "6_gemini_to_github_without_manual_copy": "NOT_TESTED",
+    "7_periodic_execution_continues_when_pc_is_off": "UNKNOWN",
+    "8_natural_language_qa_and_verified_timestamp_video_locator": "PASS (LOCAL_CLI_AND_MOCK_VERIFIED)"
+  },
+  "v06_feature_expansion_verification": {
+    "1_notebook_library_and_companion_card_design": {
+      "status": "PASS",
+      "mechanism": "Updated `GEMINI_TASK.md` and `QA_WORKFLOW.md` so YouTube URLs are registered as Notebook sources (for primary-source transcript reference inside Notebook without copying transcripts to GitHub) alongside a structured companion study card (`動画研究カード_<video_id>`) containing chapter table of contents, verified timestamps, clickable YouTube deep links, and related research, while strictly protecting existing Notebook sources and `AI技術研究室_知識索引.md`."
+    },
+    "2_github_rich_research_records_and_backward_compatible_receipt_v1_6": {
+      "status": "PASS (PYTHON_AND_JS_100_PERCENT_PARITY)",
+      "mechanism": "Upgraded `contract_spec_v1.json` to `gemini_notebook_bridge_contract_v1_6` while keeping 100% backward compatibility with `research_receipt_v1`. Added optional `detailed_findings_ja` (up to 2,500 chars / 25 newlines of structured analysis, still protected by `scan_forbidden_keys` against secret tokens and verbatim SRT/transcript dumps), `chapters` (up to 25 chapter segments with `start_seconds`, `end_seconds`, `summary_ja`, `timestamp_source`, `key_topics`), `related_records` (`EXTENDS`, `UPDATES`, `COMPLEMENTS`, `CONTRADICTS`, `RESOLVES_BACKLOG`), and `claims[].timestamp_source`."
+    },
+    "3_strict_timestamp_reliability_and_provenance": {
+      "status": "PASS (DOUBLE_GUARD_VERIFIED)",
+      "mechanism": "Every chapter and claim timestamp records `timestamp_source` (`YOUTUBE_CHAPTER_METADATA`, `TIMESTAMPED_CAPTIONS`, `VISUAL_FRAME_CHECK`, `OFFICIAL_TIME_RANGE`, `UNKNOWN`). Validation in both Python and GAS rejects any numeric `start_seconds`/`timestamp_seconds` when `timestamp_source == 'UNKNOWN'` and rejects missing `start_seconds` when `timestamp_source != 'UNKNOWN'`. Rendering and search generate clickable `&t=XXs` YouTube links ONLY when `start_seconds` is a verified integer and `timestamp_source != 'UNKNOWN'`."
+    },
+    "4_natural_language_qa_and_timestamped_video_locator": {
+      "status": "PASS (VERIFIED_ON_EXISTING_AND_V06_RECORDS)",
+      "mechanism": "Implemented `automation/gemini-notebook/query_research.py` and generated `automation/gemini-notebook/state/video_knowledge_catalog.json`. Executes the 6-step pipeline: (1) query intent & synonym analysis (`CONCEPT_AND_BASICS`, `FAILURE_AND_LIMITS`, `IMPLEMENTATION_AND_HOWTO`, `VERIFICATION_AND_OFFICIAL_SPEC`, `VIDEO_LOCATOR`), (2) purpose-weighted + verification-weighted search across GitHub records/chapters/claims, (3) Gemini Notebook deep-source lookup recommendation, (4) knowledge gap detection & follow-up discovery query suggestion, (5) evidence-backed answer synthesis, and (6) verified YouTube deep-link (`&t=XXs`) table output."
+    }
+  },
+  "automated_tests": {
+    "command": "py -3 tests/test_gemini_notebook_loop.py",
+    "test_count": 12,
+    "all_pass": true,
+    "verified_cases": [
+      {
+        "test_id": "test_01_extract_receipt_from_markdown_and_raw_json",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_02_youtube_url_normalization_and_mismatch_rejection",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_03_end_to_end_apply_duplicate_prevention_and_index_separation",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_04_fresh_remote_fetch_and_deep_markdown_deduplication",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_05_corrupted_loop_state_json_refuses_reset",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_06_intentional_failures_and_safety_boundaries",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_07_git_commit_push_readback_and_divergence_stop",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_08_cloud_payload_env_and_inbox_discovery",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_09_python_js_cross_language_contract_and_output_parity",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_10_gas_mock_atomic_commit_concurrency_conflict_and_drive_self_healing",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_11_pagination_truncated_tree_partial_scan_continuation_and_value_patterns",
+        "status": "PASS"
+      },
+      {
+        "test_id": "test_12_v06_chapters_detailed_findings_timestamp_provenance_and_qa_search",
+        "status": "PASS",
+        "evidence": "Verified 100% Python/GAS output parity on v0.6 rich receipts (`chapters`, `detailed_findings_ja`, `related_records`, `timestamp_source`), rejection of fabricated timestamps on `UNKNOWN` source, and end-to-end natural-language Q&A + verified `&t=XXs` segment ranking and gap detection via `query_research.py`."
+      }
+    ]
+  },
+  "boundaries": {
+    "default_branch_write": "NOT_RUN",
+    "merge": "NOT_RUN",
+    "auto_merge": "NOT_RUN",
+    "billing": "NOT_RUN",
+    "live_external_model_launch": "NOT_RUN",
+    "permission_changes": "NOT_RUN",
+    "multi_ai_council_phase0_write": "NOT_RUN",
+    "force_push": "NOT_RUN",
+    "file_deletions": 0,
+    "retry": 0,
+    "fallback": "disabled"
+  }
+}

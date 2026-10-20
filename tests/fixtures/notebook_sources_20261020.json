@@ -1,0 +1,278 @@
+{
+  "description": "NotebookLM「AI技術研究室」の実ソース一覧（タイトル・種類・IDのみ。本文なし）。2026-10-20 20:05 JST、notebooklm-py 0.8.5 source list の読み取り結果。重複検知テスト用。",
+  "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "checked_at": "2026-10-20",
+  "count": 54,
+  "sources": [
+    {
+      "id": "d1fef625-ac11-40f7-b0d4-cfe2ae46c9a2",
+      "type": "youtube",
+      "title": "AIが資料整理する新ルールOKFをサクッと理解する"
+    },
+    {
+      "id": "d8e0a79d-0e87-44e1-9780-9acca59816fe",
+      "type": "youtube",
+      "title": "AIの使用枠がすぐになくなる？ChatGPTとClaudeの利用枠を節約するキャッシュの仕組みを解説してみた"
+    },
+    {
+      "id": "e3682a04-5cf4-48df-a2b0-c542ca59c802",
+      "type": "youtube",
+      "title": "AIを低く見積もる世の中へ。― Claude開発者が書いた野心の手引き"
+    },
+    {
+      "id": "a6eeb79e-9fc7-4470-b027-ae41b204ad92",
+      "type": "markdown",
+      "title": "AI技術研究室_カスタム指示_知識活用ルール.md"
+    },
+    {
+      "id": "5ddccea0-d1e2-422c-93eb-ea65152b3d86",
+      "type": "markdown",
+      "title": "AI技術研究室_体系的目次・タイムライン総合辞書_01_直近12本_20261017.md"
+    },
+    {
+      "id": "c6b470dd-363f-429e-8ff4-0a442a5be553",
+      "type": "markdown",
+      "title": "AI技術研究室_体系的目次・タイムライン総合辞書_02_過去14本_20261017.md"
+    },
+    {
+      "id": "9c2d98cf-d68e-4d7c-882f-6ef47306f469",
+      "type": "markdown",
+      "title": "AI技術研究室_出典一覧と未確認事項・検証課題.md"
+    },
+    {
+      "id": "ad7824a5-21ad-450c-83e6-a0024a01398a",
+      "type": "markdown",
+      "title": "AI技術研究室_知識索引.md"
+    },
+    {
+      "id": "b598c792-3918-492f-b8c2-c21c8f466287",
+      "type": "markdown",
+      "title": "AI技術研究室_重要技術と機能の比較一覧.md"
+    },
+    {
+      "id": "5cb04ef7-f65e-4fe7-a432-21ab9d404ef3",
+      "type": "youtube",
+      "title": "Claude Codeをインストールしたら必ず準備しときたいこと１０選！"
+    },
+    {
+      "id": "e4be7103-6f2f-4bc9-8a77-d39dc6d1a1e4",
+      "type": "gemini_chat",
+      "title": "OKFとRAGの活用法に関する解説"
+    },
+    {
+      "id": "6909f35a-673e-4edf-8a7c-e96306174c0f",
+      "type": "youtube",
+      "title": "OpenAIの内部モデルが与えられていないウォレットでデプロイ費用を支払っていた！公開の復元フレーズから362アドレスを調べた"
+    },
+    {
+      "id": "3ae5598d-a1b4-4178-b940-5efcfaf336b9",
+      "type": "gemini_chat",
+      "title": "RAGが苦手な3種類の質問と解決策"
+    },
+    {
+      "id": "03ede39b-371e-4dfa-846a-fc2fb7a36b2f",
+      "type": "gemini_chat",
+      "title": "RAGの課題と検証値の確認"
+    },
+    {
+      "id": "25c0f62e-99aa-48bc-9486-357a350c76f5",
+      "type": "youtube",
+      "title": "【AI中級】RAGのその先。巨大な資料をAIで精度高く取り扱いたい。"
+    },
+    {
+      "id": "24a5aa33-898b-433f-820c-7d3b49f20a00",
+      "type": "youtube",
+      "title": "【AI実務中級】プロンプト脱却。AIへの指示は「型」と「自動化」で行うべし。プロンプトから抜け出そう"
+    },
+    {
+      "id": "bcc5fdc5-b9a4-4aba-b1a7-aaed99a7f385",
+      "type": "youtube",
+      "title": "【Chat-GPT Codex】トークン（使用量）をムダなく使う節約術10選｜今すぐできる実践テクニック"
+    },
+    {
+      "id": "a32a70ec-67c5-4285-8e80-5ff20e5cee91",
+      "type": "markdown",
+      "title": "【字幕原文】RAGのその先 [pRfC1DILDEM]"
+    },
+    {
+      "id": "d6cb3aef-3d37-4c11-9d37-a03f0f9e613c",
+      "type": "youtube",
+      "title": "【実演】Claude CodeでAI副業を完全自動化する方法。年商30億社長が全部見せます"
+    },
+    {
+      "id": "d2680680-5a11-4478-a662-d759690e1f08",
+      "type": "youtube",
+      "title": "【実演】指示する相手は1人、働くのはAIチーム。年商30億社長がClaude Code「プロジェクト」を徹底解説"
+    },
+    {
+      "id": "4fdce03f-7d8b-4e41-a20e-4c5326c2f8dc",
+      "type": "youtube",
+      "title": "【最新トレンド】自分より頭良く働き続ける！AI社員の作り方を大公開"
+    },
+    {
+      "id": "58c9dc16-9080-4418-b9ec-51a44035a1a2",
+      "type": "youtube",
+      "title": "【未来でガチ伸びる】AI時代で天才と呼ばれる人間になるための必須条件をまとめた"
+    },
+    {
+      "id": "65b634f5-f9ad-4c6e-930d-744970701c0b",
+      "type": "markdown",
+      "title": "【研究ノート】AIが資料整理する新ルールOKFをサクッと理解する [u3ka_AAb8qE]"
+    },
+    {
+      "id": "af697c8c-ad0e-44e3-8a7b-79711b1885e8",
+      "type": "markdown",
+      "title": "【研究ノート】RAGのその先 [pRfC1DILDEM]"
+    },
+    {
+      "id": "bfeee73b-dd35-4e03-862b-78a9abf6f851",
+      "type": "markdown",
+      "title": "【研究ノート】【AI実務中級】プロンプト脱却。AIへの指示は「型」と「自動化」で行うべし。プロンプトから抜け出そう [CnkEROU7fZw]"
+    },
+    {
+      "id": "f699506e-c1fb-4527-9394-250d9f5be58b",
+      "type": "youtube",
+      "title": "【神機能】Claude Codeで『Evalの改善スキル』が登場！本当に教えたいSkillを徹底解説"
+    },
+    {
+      "id": "ab92ff5a-d879-4394-8a4a-ece4e4f9c76c",
+      "type": "youtube",
+      "title": "どんなAIが来ても困らない「一生モノのAI」の作り方"
+    },
+    {
+      "id": "2a738296-d3c3-4270-98b0-d6809c600f72",
+      "type": "youtube",
+      "title": "デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介"
+    },
+    {
+      "id": "9d2e470f-736e-401e-8d2e-daed0df46fe1",
+      "type": "markdown",
+      "title": "動画研究_01_sodTFSuV4zY_AIエンジニア開発環境ツアーとOrca・1PasswordMCP_クロノIT_20261016.md"
+    },
+    {
+      "id": "5f5488ba-8220-4ddd-9253-635400f313d5",
+      "type": "markdown",
+      "title": "動画研究_02_cneFa24EFEk_ClaudeCode副業自動化とAddness連携実演_みかみ_20261016.md"
+    },
+    {
+      "id": "7c5c996e-1dfc-4001-9a63-84368b885a14",
+      "type": "markdown",
+      "title": "動画研究_03_t22FELAl-BM_ChatGPTとClaude利用枠を節約するキャッシュの仕組み_にゃんた_20261016.md"
+    },
+    {
+      "id": "ac71a06b-1dc5-43ec-994a-e164ce7dd669",
+      "type": "markdown",
+      "title": "動画研究_04_X9Zk68AII4A_ClaudeCode_Eval改善スキルbuild-evalとhillclimb_まさお_20261016.md"
+    },
+    {
+      "id": "4a71f5e5-7f23-43bd-bcba-a6325b664c09",
+      "type": "markdown",
+      "title": "動画研究_05_ZgMrRA1Czlc_OpenAI内部モデル無断ウォレット決済報告_AIすきかも_20261016.md"
+    },
+    {
+      "id": "2f6d897c-2796-443d-9904-db11e50df1ea",
+      "type": "markdown",
+      "title": "動画研究_06_gD6UZ4wG8OM_Claude開発者Felix野心の手引き解説_AI時短ラボ_20261016.md"
+    },
+    {
+      "id": "1c20abd2-ca54-4fbc-87ab-69d51b2320fe",
+      "type": "markdown",
+      "title": "動画研究_07_W35UQZL2w7E_ChatGPT_Codexトークン節約術10選_独学クソリーマン_20261016.md"
+    },
+    {
+      "id": "4fbeac98-f8bd-49c5-bfe3-6d060d17378c",
+      "type": "markdown",
+      "title": "動画研究_08_JXmk7hmbS3c_ClaudeCode初期準備10選_KEITO_20261016.md"
+    },
+    {
+      "id": "985408bb-a2dc-44e4-8481-ac9b8141b567",
+      "type": "markdown",
+      "title": "動画研究_09_Eh75KT85Y40_ClaudeCodeプロジェクト並列AIチーム実演_みかみ_20261016.md"
+    },
+    {
+      "id": "86780b90-9bbe-40b1-95de-344d60d6a7a7",
+      "type": "markdown",
+      "title": "動画研究_10_26MGuVIJh4A_AI時代で天才になる必須条件3選_AI仙人_20261016.md"
+    },
+    {
+      "id": "49b6f3fd-6c90-4a41-82cb-a501638ed3e7",
+      "type": "markdown",
+      "title": "動画研究_11_XckM9eFa_vg_一生モノの右腕AIの作り方_LeoTohyama_20261016.md"
+    },
+    {
+      "id": "23b4f3fd-dcd7-464c-8623-8caf30d22594",
+      "type": "markdown",
+      "title": "動画研究_12_NCQZiT0e59g_AI社員の作り方大公開_AI仙人_20261016.md"
+    },
+    {
+      "id": "54ce95d4-a723-4300-bc74-c93c179ba037",
+      "type": "markdown",
+      "title": "動画研究_2-8cXaRHlqI_ClaudeCodexNotebookLMxObsidian連携_20261016"
+    },
+    {
+      "id": "c141c0bd-449f-4c6f-b509-6772cc40d254",
+      "type": "markdown",
+      "title": "動画研究_BStkW1HTfmk_AIエージェントxObsidianローカル共創とMCP比較_LeoTohyama.md"
+    },
+    {
+      "id": "b51f77cb-cc1f-4347-abb0-3fceb86bb521",
+      "type": "markdown",
+      "title": "動画研究_BvbkOQWgAw8_NotebookLM天才の4ステップ学習術_ウェブマニア.md"
+    },
+    {
+      "id": "45f38bd5-ebdf-46b8-9167-f11096c60da4",
+      "type": "markdown",
+      "title": "動画研究_D0B-l7A69nI_YouTubeをAIで要約して時短学習する6つの方法_AIコウリツカ.md"
+    },
+    {
+      "id": "f55cfee6-d9f3-4362-a076-334f063d9c3d",
+      "type": "markdown",
+      "title": "動画研究_GVB8VfuNeJQ_Gemini_Notebook進化と全機能・業務活用_みずたろう.md"
+    },
+    {
+      "id": "97bb9ecd-99cd-4d80-b022-824ed2d4036a",
+      "type": "markdown",
+      "title": "動画研究_Mg0pYFVAuWQ_Gemini_Notebook新機能_音声会話・録音・要約_あいまる.md"
+    },
+    {
+      "id": "068fc7ca-854d-4dae-927d-fb16782b1a00",
+      "type": "markdown",
+      "title": "動画研究_MnzEE0fLxBs_Gemini_Notebook徹底解説_ここなのAI大学.md"
+    },
+    {
+      "id": "fd2780ee-3df0-4b2f-80d4-5e438da3d00e",
+      "type": "markdown",
+      "title": "動画研究_RZLAP2CLUM8_NotebookLMxClaudeCodexObsidian連携_20261016"
+    },
+    {
+      "id": "1c84dfcc-d2e4-4d54-a6d2-48151ab67594",
+      "type": "markdown",
+      "title": "動画研究_ZY7YuYHLlIQ_Gemini_Notebook完全解説とSpark連携YAML_KEITO.md"
+    },
+    {
+      "id": "ac534517-aba6-4c9d-b1e8-508552da3efc",
+      "type": "markdown",
+      "title": "動画研究_ZjUJ-35acaU_NotebookLM_YouTube拡張機能と一括取込_mikimiki.md"
+    },
+    {
+      "id": "c7bd2383-c3b9-4fde-b06d-3fb571b42102",
+      "type": "markdown",
+      "title": "動画研究_y2xCGyURl7Q_Gemini4Argon_20261016"
+    },
+    {
+      "id": "cedf6421-68bb-4d38-a878-d5330a62a287",
+      "type": "markdown",
+      "title": "研究動画_YrTVpJ1ebUk_j3Cyvbfn9_k_JMoByqOlftc_2026年10月AI最新ニュースと3社比較.md"
+    },
+    {
+      "id": "09ba59b1-b894-46d5-81e1-e4b5934aa995",
+      "type": "markdown",
+      "title": "研究記録_Gemini機能実機検証とNotebook自動同期_GEMINI_FEATURE_VERIFICATION.md"
+    },
+    {
+      "id": "2ea5897b-aa14-4cf8-9a78-bcd8df7f20b5",
+      "type": "markdown",
+      "title": "研究記録_Multi-AI_Council_合議設計と共通原則_GEMINI_NOTEBOOK_BUNDLE.md"
+    }
+  ]
+}

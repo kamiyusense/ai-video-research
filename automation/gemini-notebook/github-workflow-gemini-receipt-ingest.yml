@@ -1,0 +1,78 @@
+# AI技術研究室 | クラウド受信・検証・非defaultブランチ保存ワークフロー (GitHub Actions テンプレート)
+#
+# 注意 (AGENTS.md 境界遵守):
+#   初期設定で無断稼働させないため、`automation/gemini-notebook/` 配下に配置しています。
+#   クラウド自動受信を有効化する場合は、ユーザー承認のもと `.github/workflows/gemini-receipt-ingest.yml` へ配置してください。
+#   ※ `schedule` (定期自動起動) は含めていません。GAS からの `repository_dispatch` または手動 `workflow_dispatch` のみで動作します。
+
+name: Gemini Notebook Receipt Cloud Ingest
+
+on:
+  repository_dispatch:
+    types: [gemini_research_receipt]
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "保存先の非defaultブランチ名 (main/masterは拒否)"
+        required: true
+        default: "feature/gemini-notebook-research-loop-20261016"
+        type: string
+      receipt_payload:
+        description: "Gemini出力の全文Markdownまたはresearch_receipt_v1 JSON"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gemini-receipt-ingest-${{ github.event.client_payload.target_branch || inputs.target_branch || 'feature/gemini-notebook-research-loop-20261016' }}
+  cancel-in-progress: false
+
+jobs:
+  ingest_and_verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TARGET_BRANCH: ${{ github.event.client_payload.target_branch || inputs.target_branch || 'feature/gemini-notebook-research-loop-20261016' }}
+      RECEIPT_PAYLOAD: ${{ github.event. action == 'gemini_research_receipt' && toJSON(github.event.client_payload.receipt) || inputs.receipt_payload }}
+    steps:
+      - name: Safety Gate - Refuse default branch
+        run: |
+          if [ -z "$TARGET_BRANCH" ] || [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ]; then
+            echo "ERROR: Refusing default or empty branch: $TARGET_BRANCH" >&2
+            exit 2
+          fi
+
+      - name: Checkout target non-default branch with full remote refs
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Configure Git committer identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate receipt, deduplicate across all branches, commit, push, and verify readback
+        run: |
+          python3 automation/gemini-notebook/receipt_to_research.py \
+            --payload-env RECEIPT_PAYLOAD \
+            --apply \
+            --sync-index \
+            --commit \
+            --push \
+            --evidence-out evidence/cloud-ingest-last-run.json
+
+      - name: Write honest execution summary (GitHub save != Notebook sync)
+        if: always()
+        run: |
+          echo "### Gemini Receipt Cloud Ingest Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Target Branch: \`$TARGET_BRANCH\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Important**: Saving to GitHub (\`github_write_status\`) does NOT mean Gemini Notebook's internal master index (\`AI技術研究室_知識索引.md\`) has been updated (\`notebook_sync_status: NOT_SYNCED_FROM_GITHUB\`)." >> "$GITHUB_STEP_SUMMARY"
+          if [ -f evidence/cloud-ingest-last-run.json ]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat evidence/cloud-ingest-last-run.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi

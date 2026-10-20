@@ -1,0 +1,84 @@
+{
+  "schema_version": "research_receipt_v1",
+  "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+  "checked_at": "2026-10-18",
+  "notebook_readback": "UNKNOWN",
+  "github_dedup_status": "PASS",
+  "videos": [
+    {
+      "video_id": "kCc8FmEb1nY",
+      "title": "Let's build GPT: from scratch, in code, spelled out.",
+      "url": "https://www.youtube.com/watch?v=kCc8FmEb1nY",
+      "published_at": "2023-01-17",
+      "summary_ja": "Andrej KarpathyがTransformerアーキテクチャに基づく自己回帰言語モデルnanoGPTをPyTorchで一から構築・解説する基礎講義。自己注意機構、マルチヘッドアテンション、残差接続、LayerNormの直感的理解と実装を提示。",
+      "source_scope": "YOUTUBE_METADATA_AND_OFFICIAL_REPO | GITHUB:karpathy/nanoGPT",
+      "notebook_source_id": "src_live_real_karpathy_gpt",
+      "notebook_readback": "UNKNOWN",
+      "changes": [
+        "NEW"
+      ],
+      "claims": [
+        {
+          "text": "nanoGPT公式GitHubリポジトリ（karpathy/nanoGPT）および講義内容と整合",
+          "status": "REPORTED_BY_AUTHOR",
+          "timestamp_seconds": null,
+          "timestamp_source": "UNKNOWN",
+          "official_url": "https://github.com/karpathy/nanoGPT"
+        }
+      ],
+      "chapters": [
+        {
+          "title": "講義導入・データセットとトークナイザー準備",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "一次時刻未確認のため再生リンク非生成: 講義導入・データセットとトークナイザー準備",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Transformer",
+            "Tokenizer"
+          ]
+        },
+        {
+          "title": "自己注意機構（Self-Attention）とマルチヘッドアテンションの実装",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "一次時刻未確認のため再生リンク非生成: 自己注意機構とマルチヘッドアテンションの実装",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Self-Attention",
+            "Multi-Head Attention"
+          ]
+        },
+        {
+          "title": "残差接続、LayerNorm、GPTブロックの統合",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "一次時刻未確認のため再生リンク非生成: 残差接続、LayerNorm、GPTブロックの統合",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "Residual Connection",
+            "LayerNorm"
+          ]
+        },
+        {
+          "title": "言語モデルの学習とテキスト生成サンプリング",
+          "start_seconds": null,
+          "end_seconds": null,
+          "summary_ja": "一次時刻未確認のため再生リンク非生成: 言語モデルの学習とテキスト生成サンプリング",
+          "timestamp_source": "UNKNOWN",
+          "key_topics": [
+            "nanoGPT",
+            "Text Generation"
+          ]
+        }
+      ],
+      "detailed_findings_ja": "1. **Transformerの自己注意機構の基礎**:\n   - トークン間の重み付けを行うAttention機構の数学的背景とPyTorchでの効率的なテンソル計算手法。\n2. **残差接続とLayerNormによる深層学習の安定化**:\n   - 勾配消失を防ぐ残差接続と、プレLayerNorm構成による学習収束の改善。\n3. **nanoGPTの設計思想**:\n   - 余分な抽象化を排し、可読性とハック性を最優先にした最小限の言語モデル実装。"
+    }
+  ],
+  "next_topics": [
+    "nanoGPTのファインチューニングとエージェント推論への応用"
+  ],
+  "unknowns": [
+    "最新版PyTorchでのFlashAttention-2統合時の詳細パラメータ挙動"
+  ]
+}

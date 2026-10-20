@@ -1,0 +1,582 @@
+{
+  "schema_version": 1,
+  "purpose": "動画IDの重複確認用台帳。自動同期・自動検知は未実装。",
+  "repository": "kamiyusense/ai-video-research",
+  "records": [
+    {
+      "record_id": "youtube:lC5jxpYmatE",
+      "video_id": "lC5jxpYmatE",
+      "canonical_url": "https://www.youtube.com/watch?v=lC5jxpYmatE",
+      "research_path": "research/2026-10-10-lC5jxpYmatE-ai-techniques.md",
+      "proposal_paths": [
+        "proposals/006-unresolved-task-backlog-revisit.md"
+      ],
+      "source_scope": "Gemini Spark transcript report + AI Studio visual report on four selected segments; ChatGPT did not independently view full video",
+      "research_date": "2026-10-10",
+      "status": "RESEARCH_RECORDED; LIVE_NOT_RUN",
+      "evidence": "USER_SUPPLIED_REPORTS"
+    },
+    {
+      "record_id": "youtube:Vr3JkAT9mo8",
+      "video_id": "Vr3JkAT9mo8",
+      "canonical_url": "https://www.youtube.com/watch?v=Vr3JkAT9mo8",
+      "original_url": "https://www.youtube.com/watch?v=Vr3JkAT9mo8&t=237s",
+      "research_path": "research/2026-10-10-Vr3JkAT9mo8-work-specialists.md",
+      "proposal_paths": [
+        "proposals/007-video-research-specialist-rollout.md"
+      ],
+      "source_scope": "User supplied AI Studio full video audio/video analysis report 00:00-20:21 + Spark transcript and official article report; direct viewing by ChatGPT NOT_RUN",
+      "research_date": "2026-10-10",
+      "status": "RESEARCH_RECORDED; STATIC_SPECIALIST_IMPLEMENTED; LIVE_NOT_RUN",
+      "evidence": "USER_SUPPLIED_REPORTS"
+    },
+    {
+      "record_id": "youtube:sodTFSuV4zY",
+      "video_id": "sodTFSuV4zY",
+      "canonical_url": "https://www.youtube.com/watch?v=sodTFSuV4zY",
+      "research_path": "research/2026-10-17-sodTFSuV4zY-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "9d2e470f-736e-401e-8d2e-daed0df46fe1",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:cneFa24EFEk",
+      "video_id": "cneFa24EFEk",
+      "canonical_url": "https://www.youtube.com/watch?v=cneFa24EFEk",
+      "research_path": "research/2026-10-17-cneFa24EFEk-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "5f5488ba-8220-4ddd-9253-635400f313d5",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:t22FELAl-BM",
+      "video_id": "t22FELAl-BM",
+      "canonical_url": "https://www.youtube.com/watch?v=t22FELAl-BM",
+      "research_path": "research/2026-10-17-t22FELAl-BM-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "7c5c996e-1dfc-4001-9a63-84368b885a14",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:X9Zk68AII4A",
+      "video_id": "X9Zk68AII4A",
+      "canonical_url": "https://www.youtube.com/watch?v=X9Zk68AII4A",
+      "research_path": "research/2026-10-17-X9Zk68AII4A-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "ac71a06b-1dc5-43ec-994a-e164ce7dd669",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:ZgMrRA1Czlc",
+      "video_id": "ZgMrRA1Czlc",
+      "canonical_url": "https://www.youtube.com/watch?v=ZgMrRA1Czlc",
+      "research_path": "research/2026-10-17-ZgMrRA1Czlc-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "4a71f5e5-7f23-43bd-bcba-a6325b664c09",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:gD6UZ4wG8OM",
+      "video_id": "gD6UZ4wG8OM",
+      "canonical_url": "https://www.youtube.com/watch?v=gD6UZ4wG8OM",
+      "research_path": "research/2026-10-17-gD6UZ4wG8OM-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "2f6d897c-2796-443d-9904-db11e50df1ea",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:W35UQZL2w7E",
+      "video_id": "W35UQZL2w7E",
+      "canonical_url": "https://www.youtube.com/watch?v=W35UQZL2w7E",
+      "research_path": "research/2026-10-17-W35UQZL2w7E-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "1c20abd2-ca54-4fbc-87ab-69d51b2320fe",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:JXmk7hmbS3c",
+      "video_id": "JXmk7hmbS3c",
+      "canonical_url": "https://www.youtube.com/watch?v=JXmk7hmbS3c",
+      "research_path": "research/2026-10-17-JXmk7hmbS3c-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "4fbeac98-f8bd-49c5-bfe3-6d060d17378c",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:Eh75KT85Y40",
+      "video_id": "Eh75KT85Y40",
+      "canonical_url": "https://www.youtube.com/watch?v=Eh75KT85Y40",
+      "research_path": "research/2026-10-17-Eh75KT85Y40-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "985408bb-a2dc-44e4-8481-ac9b8141b567",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:26MGuVIJh4A",
+      "video_id": "26MGuVIJh4A",
+      "canonical_url": "https://www.youtube.com/watch?v=26MGuVIJh4A",
+      "research_path": "research/2026-10-17-26MGuVIJh4A-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "86780b90-9bbe-40b1-95de-344d60d6a7a7",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:XckM9eFa_vg",
+      "video_id": "XckM9eFa_vg",
+      "canonical_url": "https://www.youtube.com/watch?v=XckM9eFa_vg",
+      "research_path": "research/2026-10-17-XckM9eFa_vg-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "49b6f3fd-6c90-4a41-82cb-a501638ed3e7",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:NCQZiT0e59g",
+      "video_id": "NCQZiT0e59g",
+      "canonical_url": "https://www.youtube.com/watch?v=NCQZiT0e59g",
+      "research_path": "research/2026-10-17-NCQZiT0e59g-gemini-notebook.md",
+      "source_scope": "YOUTUBE_TRANSCRIPT_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_直近調査12本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "23b4f3fd-dcd7-464c-8623-8caf30d22594",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:y2xCGyURl7Q",
+      "video_id": "y2xCGyURl7Q",
+      "canonical_url": "https://www.youtube.com/watch?v=y2xCGyURl7Q",
+      "research_path": "research/2026-10-17-y2xCGyURl7Q-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "c7bd2383-c3b9-4fde-b06d-3fb571b42102",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:RZLAP2CLUM8",
+      "video_id": "RZLAP2CLUM8",
+      "canonical_url": "https://www.youtube.com/watch?v=RZLAP2CLUM8",
+      "research_path": "research/2026-10-17-RZLAP2CLUM8-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "fd2780ee-3df0-4b2f-80d4-5e438da3d00e",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:2-8cXaRHlqI",
+      "video_id": "2-8cXaRHlqI",
+      "canonical_url": "https://www.youtube.com/watch?v=2-8cXaRHlqI",
+      "research_path": "research/2026-10-17-2-8cXaRHlqI-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "54ce95d4-a723-4300-bc74-c93c179ba037",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:YrTVpJ1ebUk",
+      "video_id": "YrTVpJ1ebUk",
+      "canonical_url": "https://www.youtube.com/watch?v=YrTVpJ1ebUk",
+      "research_path": "research/2026-10-17-YrTVpJ1ebUk-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "cedf6421-68bb-4d38-a878-d5330a62a287",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:j3Cyvbfn9_k",
+      "video_id": "j3Cyvbfn9_k",
+      "canonical_url": "https://www.youtube.com/watch?v=j3Cyvbfn9_k",
+      "research_path": "research/2026-10-17-j3Cyvbfn9_k-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "cedf6421-68bb-4d38-a878-d5330a62a287",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:JMoByqOlftc",
+      "video_id": "JMoByqOlftc",
+      "canonical_url": "https://www.youtube.com/watch?v=JMoByqOlftc",
+      "research_path": "research/2026-10-17-JMoByqOlftc-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "cedf6421-68bb-4d38-a878-d5330a62a287",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:MnzEE0fLxBs",
+      "video_id": "MnzEE0fLxBs",
+      "canonical_url": "https://www.youtube.com/watch?v=MnzEE0fLxBs",
+      "research_path": "research/2026-10-17-MnzEE0fLxBs-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "068fc7ca-854d-4dae-927d-fb16782b1a00",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:D0B-l7A69nI",
+      "video_id": "D0B-l7A69nI",
+      "canonical_url": "https://www.youtube.com/watch?v=D0B-l7A69nI",
+      "research_path": "research/2026-10-17-D0B-l7A69nI-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "45f38bd5-ebdf-46b8-9167-f11096c60da4",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:Mg0pYFVAuWQ",
+      "video_id": "Mg0pYFVAuWQ",
+      "canonical_url": "https://www.youtube.com/watch?v=Mg0pYFVAuWQ",
+      "research_path": "research/2026-10-17-Mg0pYFVAuWQ-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "97bb9ecd-99cd-4d80-b022-824ed2d4036a",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:GVB8VfuNeJQ",
+      "video_id": "GVB8VfuNeJQ",
+      "canonical_url": "https://www.youtube.com/watch?v=GVB8VfuNeJQ",
+      "research_path": "research/2026-10-17-GVB8VfuNeJQ-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "f55cfee6-d9f3-4362-a076-334f063d9c3d",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:BvbkOQWgAw8",
+      "video_id": "BvbkOQWgAw8",
+      "canonical_url": "https://www.youtube.com/watch?v=BvbkOQWgAw8",
+      "research_path": "research/2026-10-17-BvbkOQWgAw8-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "b51f77cb-cc1f-4347-abb0-3fceb86bb521",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:ZY7YuYHLlIQ",
+      "video_id": "ZY7YuYHLlIQ",
+      "canonical_url": "https://www.youtube.com/watch?v=ZY7YuYHLlIQ",
+      "research_path": "research/2026-10-17-ZY7YuYHLlIQ-gemini-notebook.md",
+      "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017",
+      "research_date": "2026-10-17",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "1c84dfcc-d2e4-4d54-a6d2-48151ab67594",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:ZjUJ-35acaU",
+      "video_id": "ZjUJ-35acaU",
+      "canonical_url": "https://www.youtube.com/watch?v=ZjUJ-35acaU",
+      "research_path": "research/2026-10-10-ZjUJ-35acaU-notebooklm-youtube-extension.md",
+      "proposal_paths": [],
+      "source_scope": "USER_SUPPLIED_GEMINI_SPARK_TRANSCRIPT_REPORT; PRIMARY_GOOGLE_HELP_AND_CHROME_STORE; VIDEO_AUDIO_FRAMES_NOT_DIRECTLY_ACQUIRED",
+      "research_date": "2026-10-10",
+      "status": "REVIEWED_PARTIAL; OFFICIAL_CROSSCHECK; VIDEO_VISUAL_UNKNOWN; EXTENSION_NOT_TESTED",
+      "evidence": "SPARK_TRANSCRIPT_REPORT; GOOGLE_OFFICIAL_DOCS; CHROME_WEB_STORE",
+      "consolidated_from_branch": "origin/research/video08-notebooklm-youtube-extension-20261010",
+      "last_updated": "2026-10-17",
+      "update_history": [
+        {
+          "checked_at": "2026-10-17",
+          "changes": [
+            "UPDATED"
+          ],
+          "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017"
+        }
+      ],
+      "notebook_sources": {
+        "research_note": "ac534517-aba6-4c9d-b1e8-508552da3efc",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:BStkW1HTfmk",
+      "video_id": "BStkW1HTfmk",
+      "canonical_url": "https://www.youtube.com/watch?v=BStkW1HTfmk",
+      "research_path": "research/2026-10-10-BStkW1HTfmk-obsidian-preliminary.md",
+      "proposal_paths": [
+        "proposals/008-obsidian-optional-reader.md"
+      ],
+      "source_scope": "METADATA_ONLY; VIDEO_AUDIO_TRANSCRIPT_FRAMES_NOT_ACQUIRED. Independent assessment based on official Obsidian documentation, not this video's claims.",
+      "research_date": "2026-10-10",
+      "status": "VIDEO_CONTENT_PENDING; OFFICIAL_ONLY_RESEARCH; OBSIDIAN_INSTALL_NOT_RUN",
+      "evidence": "VIDEO_TITLE_DATE_PUBLIC_CATALOG_AND_OFFICIAL_OBSIDIAN_DOCS",
+      "consolidated_from_branch": "origin/research/video07-obsidian-github-overlay-20261010",
+      "last_updated": "2026-10-17",
+      "update_history": [
+        {
+          "checked_at": "2026-10-17",
+          "changes": [
+            "UPDATED"
+          ],
+          "source_scope": "GEMINI_PAST_RESEARCH_NOTE_AND_OFFICIAL_DOCS | NOTEBOOK_SOURCE:AI技術研究室_過去調査14本_完全総合辞書_20261017"
+        }
+      ],
+      "notebook_sources": {
+        "research_note": "c141c0bd-449f-4c6f-b509-6772cc40d254",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:pRfC1DILDEM",
+      "video_id": "pRfC1DILDEM",
+      "canonical_url": "https://www.youtube.com/watch?v=pRfC1DILDEM",
+      "research_path": "research/2026-10-18-pRfC1DILDEM-gemini-notebook.md",
+      "source_scope": "Gemini報告: YouTube字幕 00:00〜14:23 を取得して分析。映像・画面未確認。ChatGPT独立確認なし。Notebook登録・読戻しはGemini自己申告。",
+      "research_date": "2026-10-18",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "af697c8c-ad0e-44e3-8a7b-79711b1885e8",
+        "transcript_okf": "a32a70ec-67c5-4285-8e80-5ff20e5cee91",
+        "youtube_url_source": "25c0f62e-99aa-48bc-9486-357a350c76f5",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:u3ka_AAb8qE",
+      "video_id": "u3ka_AAb8qE",
+      "canonical_url": "https://www.youtube.com/watch?v=u3ka_AAb8qE",
+      "research_path": "research/2026-10-19-u3ka_AAb8qE-gemini-notebook.md",
+      "source_scope": "ユーザー提供字幕（主要タイムスタンプ付き区間 08:16〜16:33）およびYouTube動画情報を分析",
+      "research_date": "2026-10-19",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "65b634f5-f9ad-4c6e-930d-744970701c0b",
+        "youtube_url_source": "d1fef625-ac11-40f7-b0d4-cfe2ae46c9a2",
+        "transcript_okf": "NOT_REGISTERED",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "record_id": "youtube:CnkEROU7fZw",
+      "video_id": "CnkEROU7fZw",
+      "canonical_url": "https://www.youtube.com/watch?v=CnkEROU7fZw",
+      "research_path": "research/2026-10-19-CnkEROU7fZw-gemini-notebook.md",
+      "source_scope": "YouTubeメタデータ（長:702s, 投稿:海外Yパパラジオ　世界を読み解く）, 字幕実発話240件 [LOCAL_TRANSCRIPT_EXTRACTION]",
+      "research_date": "2026-10-19",
+      "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
+      "evidence": "GEMINI_RESEARCH_RECEIPT",
+      "notebook_sources": {
+        "research_note": "bfeee73b-dd35-4e03-862b-78a9abf6f851",
+        "youtube_url_source": "24a5aa33-898b-433f-820c-7d3b49f20a00",
+        "transcript_okf": "NOT_REGISTERED",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    }
+  ]
+}
