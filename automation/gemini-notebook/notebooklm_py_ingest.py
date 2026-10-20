@@ -15,7 +15,7 @@ docs/OKF_KNOWLEDGE_ROADMAP.md v1.1「1動画2ソースMVP完成契約」に沿�
    AMBIGUOUS_EXISTING_SOURCES。揃っていれば NO_OP。
 3. 足りない方だけ組み立てる（字幕原文は build_transcript_okf_content を再利用）。
    字幕全文は発話を約1分ごとの段落にまとめた本文にし、各段落の先頭に時刻目印の1行
-   （`▶HH:MM:SS <URL>&t=<秒>s`。既定ON、docs/OKF_KNOWLEDGE_ROADMAP.md R3）を付ける。発話ごとの時刻は入れない。
+   （`[HH:MM:SS] <URL>&t=<秒>s`。既定ON、docs/OKF_KNOWLEDGE_ROADMAP.md R3）を付ける。発話ごとの時刻は入れない。
    確認済みの場面の時刻リンクは研究ノート側。字幕の取得元は
    渡されたcue → YouTube字幕（youtube-transcript-api→timedtext）→ Notebook内YouTubeソースの本文（fulltext。
    単語の間に空白が入り読みにくいため最後の手段、acquisition_method に明記）の順。
@@ -162,7 +162,7 @@ _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 _MD_LINK_RE = re.compile(r"!?\[([^\]]*)\]\(([^)]*)\)")
 _LIST_NUM_RE = re.compile(r"^\s*\d+[.)]\s+", re.M)
 _LIST_BULLET_RE = re.compile(r"^\s*[-+]\s+", re.M)
-_MD_SYMBOLS_RE = re.compile(r"[#*>`_~|▶]")   # ▶ は段落の時刻目印。読み戻しで消えても一致とみなす
+_MD_SYMBOLS_RE = re.compile(r"[#*>`_~|▶\[\]]")   # [ ] と旧形式の ▶ は段落の時刻目印の記号。読み戻しで消えても一致とみなす
 _WS_RE = re.compile(r"\s+")
 
 
@@ -297,7 +297,7 @@ def classify_sources(
     }
 
 
-# 段落ごとの時刻目印（`▶HH:MM:SS <URL>&t=<秒>s`）の既定。相棒の決定（2026-10-20 02:37 JST）でON。
+# 段落ごとの時刻目印（`[HH:MM:SS] <URL>&t=<秒>s`）の既定。相棒の決定（2026-10-20 02:37 JST）でON。
 # --no-paragraph-anchors / paragraph_anchors=False の明示指定は常にこの既定より優先する。
 DEFAULT_PARAGRAPH_ANCHORS = True
 
@@ -807,7 +807,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--notebook-id")
     ap.add_argument("--live", action="store_true", help="実際にNotebookへ書き込む（--notebook-id 必須）")
     ap.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
-                    help=f"字幕の各段落の先頭に時刻目印 ▶HH:MM:SS とURLを付ける（既定: {'ON' if DEFAULT_PARAGRAPH_ANCHORS else 'OFF'}）")
+                    help=f"字幕の各段落の先頭に時刻目印 [HH:MM:SS] とURLを付ける（既定: {'ON' if DEFAULT_PARAGRAPH_ANCHORS else 'OFF'}）")
     args = ap.parse_args(argv)
 
     if args.live and not args.notebook_id:

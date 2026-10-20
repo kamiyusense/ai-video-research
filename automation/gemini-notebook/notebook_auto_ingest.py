@@ -449,16 +449,28 @@ def verify_mutual_okf_links(
 
 
 # 段落の時刻目印の形式（仕様。変えるときは NOTEBOOKLM_PY_RUNBOOK.md の「目印行の形式」も同時に直す）:
-#   ▶HH:MM:SS https://www.youtube.com/watch?v=<動画ID>&t=<秒>s
+#   [HH:MM:SS] https://www.youtube.com/watch?v=<動画ID>&t=<秒>s
 # 約1分ごとの段落の先頭に1行だけ。文の途中には入れない。HH:MM:SS と <秒> は段落の最初の発話の開始位置。
-ANCHOR_LINE_RE = re.compile(r"^▶(\d{2,}):([0-5]\d):([0-5]\d) (https://www\.youtube\.com/watch\?v=[\w-]{11}&t=(\d+)s)$", re.M)
-_ANCHOR_LOOSE_RE = re.compile(r"▶\s*\d{1,3}:[0-5]\d(?::[0-5]\d)?")   # Notebookの読み戻しで空白や改行が変わっても拾う
+# 出力（anchor_line）はこの1形式だけ。相棒PCの実機（2026-10-21）の形式がこれ。
+# 読み取り側（ANCHOR_LINE_RE・has_paragraph_anchors・health）は、旧形式 `▶HH:MM:SS <URL>&t=<秒>s` も同じ目印として受け入れる
+# （過去にその形で登録した資料を取りこぼさないため。新しく作るときには使わない）。
+# groups: 1=旧形式の▶, 2=新形式の[, 3=時, 4=分, 5=秒, 6=URL, 7=URLの秒
+ANCHOR_LINE_RE = re.compile(
+    r"^(?:(▶)|(\[))(\d{2,}):([0-5]\d):([0-5]\d)(?(2)\]) (https://www\.youtube\.com/watch\?v=[\w-]{11}&t=(\d+)s)$", re.M)
+# Notebookの読み戻しで空白や改行・記号が変わっても拾う（▶か[ ]が落ちても、時刻の直後に時刻つき動画URLが続けば目印とみなす）。
+# `[00:01:05](URL)` のような時刻リンク（旧・発話ごとの形式や研究ノート）は目印に数えない。
+_TIME = r"\d{1,3}:[0-5]\d(?::[0-5]\d)?"
+_ANCHOR_LOOSE_RE = re.compile(
+    rf"▶\s*{_TIME}"
+    rf"|\[\s*{_TIME}\s*\](?!\()"
+    rf"|{_TIME}\s+https://www\.youtube\.com/watch\?v=[\w-]{{11}}&t=\d+s"
+)
 
 
 def anchor_line(video_id: str, start_sec: float) -> str:
-    """段落先頭の時刻目印の1行。"""
+    """段落先頭の時刻目印の1行（`[HH:MM:SS] <URL>&t=<秒>s`）。"""
     sec = int(start_sec)
-    return f"▶{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d} https://www.youtube.com/watch?v={video_id}&t={sec}s"
+    return f"[{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}] https://www.youtube.com/watch?v={video_id}&t={sec}s"
 
 
 def has_paragraph_anchors(body: Optional[str]) -> bool:
@@ -604,7 +616,7 @@ def build_transcript_okf_content(
         f"- **検証状態**: {status}",
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
         (
-            f"- **場面の時刻**: 本文は約1分ごとの段落で、各段落の先頭の `▶HH:MM:SS` と動画の時刻つきURLが、その段落の最初の発話の位置を示す目印です（発話ごとの時刻は入れていません）。確認済みの場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
+            f"- **場面の時刻**: 本文は約1分ごとの段落で、各段落の先頭の `[HH:MM:SS]` と動画の時刻つきURLが、その段落の最初の発話の位置を示す目印です（発話ごとの時刻は入れていません）。確認済みの場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
             if anchored else
             f"- **場面の時刻**: 本文は読みやすさのため時刻を付けていません。場面の時刻リンクは対応研究ノート（`{research_logical_id}`）の根拠側にあります。"
         ),

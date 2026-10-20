@@ -175,19 +175,20 @@ class TestParagraphAnchors(unittest.TestCase):
         body = text.split("## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n", 1)[1]
         blocks = body.split("\n\n")
         self.assertEqual(blocks, [
-            f"▶00:00:00 {URL}&t=0s\n最初の発話です。 二つ目の発話。",
-            f"▶00:01:01 {URL}&t=61s\n次の段落の発話。",
-            f"▶01:02:05 {URL}&t=3725s\n三つ目の段落。",
+            f"[00:00:00] {URL}&t=0s\n最初の発話です。 二つ目の発話。",
+            f"[00:01:01] {URL}&t=61s\n次の段落の発話。",
+            f"[01:02:05] {URL}&t=3725s\n三つ目の段落。",
         ])
         # 目印のURLは段落ごとに1つだけ。文の途中（本文の行）には入らない。
         for block in blocks:
             marker, _, speech = block.partition("\n")
             self.assertEqual(marker.count("http"), 1)
             self.assertNotIn("http", speech)
-            self.assertNotIn("▶", speech)
+            self.assertIsNone(nai.ANCHOR_LINE_RE.search(speech))
+            self.assertNotIn("▶", marker)   # 旧形式は作らない
 
     def test_anchor_lines_follow_the_fixed_format_and_sit_at_paragraph_heads(self):
-        """RUNBOOK「目印行の形式」の仕様：`▶HH:MM:SS <URL>&t=<秒>s` を約1分ごとの段落の先頭に1行だけ。"""
+        """RUNBOOK「目印行の形式」の仕様：`[HH:MM:SS] <URL>&t=<秒>s` を約1分ごとの段落の先頭に1行だけ。"""
         cues = [(float(t), float(t) + 8.0, f"発話{t}。") for t in range(0, 400, 10)]
         text = nai.build_transcript_okf_content(VID, URL, "t", cues=cues, paragraph_anchors=True)
         body = text.split("## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n", 1)[1]
@@ -198,20 +199,24 @@ class TestParagraphAnchors(unittest.TestCase):
             first, _, rest = para.partition("\n")
             m = nai.ANCHOR_LINE_RE.match(first)
             self.assertIsNotNone(m, first)
-            h, mi, se, link, secs = m.groups()
+            _old, _new, h, mi, se, link, secs = m.groups()
+            self.assertIsNone(_old)   # 出力は新形式だけ
+            self.assertEqual(_new, "[")
             self.assertEqual(int(h) * 3600 + int(mi) * 60 + int(se), int(secs))
             self.assertEqual(link, f"{URL}&t={secs}s")
-            self.assertNotIn("▶", rest)          # 段落の途中には入れない
+            self.assertIsNone(nai.ANCHOR_LINE_RE.search(rest))          # 段落の途中には入れない
+            self.assertNotIn("▶", para)
             starts.append(int(secs))
         self.assertEqual(len(nai.ANCHOR_LINE_RE.findall(body)), len(paragraphs))
         self.assertTrue(all(b - a >= 60 for a, b in zip(starts, starts[1:])), starts)   # 約1分ごと
         self.assertTrue(nai.has_paragraph_anchors(body))
         self.assertFalse(nai.has_paragraph_anchors(build()))   # 目印なし形式には無い
-        self.assertTrue(nai.has_paragraph_anchors("▶ 00:01:05\n\nhttps://www.youtube.com/watch?v=x&t=65s"))   # 読み戻しの揺れは許す
+        self.assertTrue(nai.has_paragraph_anchors("[00:01:05]\n\nhttps://www.youtube.com/watch?v=x&t=65s"))   # 読み戻しの揺れは許す
+        self.assertTrue(nai.has_paragraph_anchors("▶ 00:01:05\n\nhttps://www.youtube.com/watch?v=x&t=65s"))
 
     def test_on_changes_only_markers_format_and_the_time_note(self):
         on = build(paragraph_anchors=True)
-        restored = re.sub(r"^▶\S+ \S+\n", "", on, flags=re.M)
+        restored = re.sub(r"^\[\S+\] \S+\n", "", on, flags=re.M)
         restored = restored.replace('transcript_format: "PARAGRAPHS_WITH_ANCHORS"', 'transcript_format: "UNTIMED_PARAGRAPHS"')
         restored = restored.replace("## 字幕全文 (取得全量・段落先頭に時刻目印)", "## 字幕全文 (取得全量・時刻なし)")
         restored = re.sub(r"- \*\*場面の時刻\*\*: [^\n]*", lambda m: re.search(r"- \*\*場面の時刻\*\*: [^\n]*", GOLDEN_OFF).group(0), restored)
@@ -229,14 +234,55 @@ class TestParagraphAnchors(unittest.TestCase):
         no_cues_off = nai.build_transcript_okf_content(VID, URL, "t", raw_text="本文だけ")
         norm = lambda s: re.sub(r'acquired_at: "[^"]+"', "", s)
         self.assertEqual(norm(no_cues), norm(no_cues_off))
-        self.assertNotIn("▶", no_cues)
+        self.assertIsNone(nai.ANCHOR_LINE_RE.search(no_cues))
         ts = nai.build_transcript_okf_content(VID, URL, "t", cues=CUES, timestamped=True, paragraph_anchors=True)
-        self.assertNotIn("▶", ts)
+        self.assertIsNone(nai.ANCHOR_LINE_RE.search(ts))
         self.assertIn('transcript_format: "TIMESTAMPED_CUES"', ts)
 
     def test_paragraph_spans_split_like_before(self):
         spans = nai.cues_to_paragraph_spans(CUES)
         self.assertEqual([s for s, _ in spans], [0.0, 61.0, 3725.5])
+
+
+class TestBothAnchorFormsAreAccepted(unittest.TestCase):
+    """T16: 出力は実機の `[HH:MM:SS] URL` の1形式。読み取り（正規表現・目印の有無・読み戻し一致）は旧 `▶HH:MM:SS URL` も受け入れる。"""
+
+    def test_builder_emits_only_the_real_machine_form(self):
+        self.assertEqual(nai.anchor_line(VID, 312.9), f"[00:05:12] {URL}&t=312s")
+        self.assertEqual(nai.anchor_line(VID, 3725), f"[01:02:05] {URL}&t=3725s")
+        self.assertNotIn("▶", build(paragraph_anchors=True))
+
+    def test_regex_accepts_both_forms_and_reads_the_same_seconds(self):
+        new = nai.ANCHOR_LINE_RE.match(f"[00:05:12] {URL}&t=312s")
+        old = nai.ANCHOR_LINE_RE.match(f"▶00:05:12 {URL}&t=312s")
+        for m in (new, old):
+            self.assertIsNotNone(m)
+            self.assertEqual(m.groups()[2:], ("00", "05", "12", f"{URL}&t=312s", "312"))
+        # 混ざった形・閉じ忘れ・時刻とURLの間に空白がない形は目印行ではない
+        for bad in (f"[00:05:12 {URL}&t=312s", f"▶00:05:12] {URL}&t=312s", f"[00:05:12]{URL}&t=312s",
+                    f"[00:05:12] {URL}&t=312", f"- [00:05:12]({URL}&t=312s) 発話"):
+            self.assertIsNone(nai.ANCHOR_LINE_RE.match(bad), bad)
+
+    def test_has_paragraph_anchors_accepts_both_forms_and_reflowed_readbacks(self):
+        for body in (f"[00:05:12] {URL}&t=312s\n本文", f"▶00:05:12 {URL}&t=312s\n本文",
+                     f"[00:05:12]\n\n{URL}&t=312s\n\n本文", f"▶ 00:05:12\n\n{URL}&t=312s\n\n本文",
+                     f"00:05:12\n\n{URL}&t=312s\n\n本文"):
+            self.assertTrue(nai.has_paragraph_anchors(body), body)
+        # 時刻リンク（旧・発話ごとの形式／研究ノートの根拠）と、時刻のない本文は目印に数えない
+        self.assertFalse(nai.has_paragraph_anchors(f"- [00:05:12]({URL}&t=312s) 発話"))
+        self.assertFalse(nai.has_paragraph_anchors(f"{URL}&t=312s 本文だけ"))
+        self.assertFalse(nai.has_paragraph_anchors(""))
+        self.assertFalse(nai.has_paragraph_anchors(None))
+
+    def test_readback_matches_across_the_two_forms(self):
+        """旧形式で登録した字幕が新形式の期待本文と記号・空白を除いて一致する（その逆も）。"""
+        cues = [(0.0, 1.0, "最初"), (70.0, 71.0, "次の段落")]
+        new = ing.build_transcript_text(VID, "t", cues, "2026-10-01")["text"]
+        old = re.sub(r"^\[(\S+)\] ", r"▶\1 ", new, flags=re.M)
+        self.assertNotEqual(old, new)
+        self.assertTrue(ing.readback_matches(new, old)["match"])
+        self.assertTrue(ing.readback_matches(old, new)["match"])
+        self.assertFalse(ing.readback_matches(new, old.replace("次の段落", "別の段落"))["match"])
 
 
 class FakeClient:
@@ -284,7 +330,7 @@ class TestParagraphAnchorsWiring(unittest.TestCase):
         self.assertIs(plan()["paragraph_anchors"], True)
         self.assertIs(plan(paragraph_anchors=None)["paragraph_anchors"], True)
         self.assertIs(plan(paragraph_anchors=False)["paragraph_anchors"], False)
-        self.assertIn("▶00:00:00 ", transcript_text(plan()))
+        self.assertIn("[00:00:00] ", transcript_text(plan()))
         with mock.patch.object(ing, "DEFAULT_PARAGRAPH_ANCHORS", False):
             self.assertIs(plan()["paragraph_anchors"], False)             # 既定の定数だけで全経路が切り替わる
             self.assertIs(plan(paragraph_anchors=True)["paragraph_anchors"], True)
@@ -294,7 +340,7 @@ class TestParagraphAnchorsWiring(unittest.TestCase):
             res = plan(paragraph_anchors=flag)
             self.assertEqual(res["status"], "DRY_RUN_PLAN")
             self.assertIs(res["paragraph_anchors"], flag)
-            self.assertEqual("▶00:00:00 " in transcript_text(res), flag)
+            self.assertEqual("[00:00:00] " in transcript_text(res), flag)
         offline = ing.run_ingest(None, VID, "テスト動画", NOTE, paragraph_anchors=True)
         self.assertEqual((offline["status"], offline["paragraph_anchors"]), ("DRY_RUN_PLAN_OFFLINE", True))
 
@@ -321,7 +367,7 @@ class TestParagraphAnchorsWiring(unittest.TestCase):
                            notebook_id="nb-1", paragraph_anchors=flag)
             texts = [t for ttl, t in c.bodies.values() if "字幕原文" in ttl]
             self.assertEqual(len(texts), 1)
-            self.assertEqual("▶01:02:05 " in texts[0], flag)
+            self.assertEqual("[01:02:05] " in texts[0], flag)
 
     def test_ingest_cli_flag(self):
         note = ROOT / "research" / "2026-10-10-BStkW1HTfmk-obsidian-preliminary.md"
@@ -360,7 +406,7 @@ class TestParagraphAnchorsWiring(unittest.TestCase):
                                        paragraph_anchors=flag)
             self.assertEqual(res["status"], "DRY_RUN_PLAN")
             self.assertIs(res["notebook_ingest"]["paragraph_anchors"], expect)
-            self.assertIn(f"字幕の段落目印（▶HH:MM:SS）: {'ON' if expect else 'OFF'}", out.getvalue())
+            self.assertIn(f"字幕の段落目印（[HH:MM:SS]）: {'ON' if expect else 'OFF'}", out.getvalue())
             self.assertEqual(res["notebook_ingest"]["writes"], [])
 
 

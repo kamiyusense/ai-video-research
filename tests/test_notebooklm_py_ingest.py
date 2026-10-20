@@ -390,7 +390,7 @@ class TestCliAdapterAddText(unittest.TestCase):
         self.assertEqual(res["status"], "WRITE_RESULT_UNKNOWN")
 
 
-ANCHOR_BODY = "▶00:00:00 https://www.youtube.com/watch?v=abcdefghijk&t=0s\n本文\n"
+ANCHOR_BODY = "[00:00:00] https://www.youtube.com/watch?v=abcdefghijk&t=0s\n本文\n"
 
 
 class TestHealthCheck(unittest.TestCase):
@@ -463,7 +463,7 @@ class TestHealthCheck(unittest.TestCase):
         self.assertEqual(rep["status"], "ATTENTION")
 
     def test_transcript_without_anchors_is_attention_but_notes_need_none(self):
-        """T15: 目印（▶HH:MM:SS）のない字幕全文OKF（時刻なし形式の15本＋RAG字幕など）を ATTENTION で報告。研究ノートは対象外。"""
+        """T15: 目印（[HH:MM:SS]）のない字幕全文OKF（時刻なし形式の15本＋RAG字幕など）を ATTENTION で報告。研究ノートは対象外。"""
         srcs = self.with_published(real_sources())
         for s in srcs:
             if s["id"].startswith(("a32a70ec", "af697c8c")):   # 字幕(a32a70ec)と研究ノート(af697c8c)の両方から目印を外す
@@ -487,6 +487,32 @@ class TestHealthCheck(unittest.TestCase):
         rep = ing.health_check(c, self.registry)
         self.assertEqual(rep["transcripts_without_anchors_count"], 0)
         self.assertEqual(len(c.fulltext_calls), len(set(c.fulltext_calls)))   # 本文の読み取りは1ソース1回
+
+    def test_anchor_check_accepts_both_the_real_machine_form_and_the_old_form(self):
+        """T16: 実機の `[HH:MM:SS] URL` と旧 `▶HH:MM:SS URL` のどちらの字幕全文でも health は OK。どちらか一方に頼らない。"""
+        u = "https://www.youtube.com/watch?v=abcdefghijk"
+        forms = {
+            "real": f"[00:05:12] {u}&t=312s\n本文",
+            "old": f"▶00:05:12 {u}&t=312s\n本文",
+            "real_reflowed": f"[00:05:12]\n\n{u}&t=312s\n\n本文",
+            "marks_dropped": f"00:05:12\n\n{u}&t=312s\n\n本文",
+        }
+        for name, anchor in forms.items():
+            srcs = self.with_published(real_sources())
+            for s in srcs:
+                if s["id"].startswith("a32a70ec"):
+                    s["body"] = f'published_at: "2026-07-25"\n\n{anchor}'
+            rep = ing.health_check(self.client(srcs), self.registry)
+            self.assertEqual(rep["transcripts_without_anchors_count"], 0, name)
+            self.assertEqual(rep["status"], "OK", name)
+
+    def test_time_links_of_the_old_per_utterance_form_do_not_count_as_anchors(self):
+        srcs = self.with_published(real_sources())
+        for s in srcs:
+            if s["id"].startswith("a32a70ec"):
+                s["body"] = 'published_at: "2026-07-25"\n- [00:01:05](https://www.youtube.com/watch?v=abcdefghijk&t=65s) 発話'
+        rep = ing.health_check(self.client(srcs), self.registry)
+        self.assertEqual(rep["transcripts_without_anchors_count"], 1)
 
     def test_published_at_of_tolerates_notebook_formatting(self):
         self.assertEqual(ing.published_at_of('---\npublished_at: "2026-07-25"\n---'), "2026-07-25")
@@ -528,7 +554,7 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         u = f"https://www.youtube.com/watch?v={VID}"
         self.assertIn(
             "## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n"
-            f"▶00:00:00 {u}&t=0s\n最初 続き\n\n▶00:08:16 {u}&t=496s\n荷札の話\n\n▶01:02:05 {u}&t=3725s\n1時間超え", text)
+            f"[00:00:00] {u}&t=0s\n最初 続き\n\n[00:08:16] {u}&t=496s\n荷札の話\n\n[01:02:05] {u}&t=3725s\n1時間超え", text)
         self.assertNotIn("- [", text)   # 発話ごとの時刻リンク（旧形式）は無い
         for line in ('published_at: "2026-10-01"', f'logical_id: "youtube:{VID}:transcript"', "cue_count: 4",
                      'acquisition_method: "YOUTUBE_TIMEDTEXT_API"', 'transcript_format: "PARAGRAPHS_WITH_ANCHORS"',
@@ -543,11 +569,11 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         self.assertIn('transcript_format: "UNTIMED_PARAGRAPHS"', text)
 
     def test_readback_tolerates_the_anchor_mark_being_dropped_or_reflowed(self):
-        """T15: 段落先頭の `▶HH:MM:SS URL` が読み戻しで ▶ を落とす・改行が変わる場合でも、正規化一致で合格にする。"""
+        """T15: 段落先頭の `[HH:MM:SS] URL` が読み戻しで [ ] を落とす（旧形式の ▶ も同様）・改行が変わる場合でも、正規化一致で合格にする。"""
         cues = [(0.0, 1.0, "最初"), (70.0, 71.0, "次の段落")]
         expected = ing.build_transcript_text(VID, TITLE, cues, "2026-10-01")["text"]
         u = f"https://www.youtube.com/watch?v={VID}"
-        shown = expected.replace(f"▶00:00:00 {u}&t=0s\n", f"00:00:00\n\n{u}&t=0s\n\n").replace(f"▶00:01:10 {u}&t=70s\n", f"00:01:10 {u}&t=70s\n\n")
+        shown = expected.replace(f"[00:00:00] {u}&t=0s\n", f"00:00:00\n\n{u}&t=0s\n\n").replace(f"[00:01:10] {u}&t=70s\n", f"00:01:10 {u}&t=70s\n\n")
         self.assertNotEqual(shown, expected)
         self.assertTrue(ing.readback_matches(expected, shown)["match"])
         self.assertFalse(ing.readback_matches(expected, shown.replace("次の段落", "別の段落"))["match"])
@@ -584,7 +610,7 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
     def test_cue_text_is_not_modified(self):
         raw = "えーと、Q&A は <b>ここ</b>  で…（笑）"
         text = ing.build_transcript_text(VID, TITLE, [(12.0, 13.0, raw)], None)["text"]
-        self.assertTrue(text.endswith(f"▶00:00:12 https://www.youtube.com/watch?v={VID}&t=12s\n{raw.strip()}"))
+        self.assertTrue(text.endswith(f"[00:00:12] https://www.youtube.com/watch?v={VID}&t=12s\n{raw.strip()}"))
         off = ing.build_transcript_text(VID, TITLE, [(12.0, 13.0, raw)], None, paragraph_anchors=False)["text"]
         self.assertTrue(off.endswith(f"## 字幕全文 (取得全量・時刻なし)\n\n{raw.strip()}"))
 
@@ -699,7 +725,7 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         self.assertEqual(out["published_at"], "2026-10-01")
         self.assertEqual([round(c[0]) for c in out["cues"]], [0, 496])
         text = ing.build_transcript_text(VID, TITLE, out["cues"], out["published_at"])["text"]
-        self.assertTrue(text.endswith(f"▶00:08:16 https://www.youtube.com/watch?v={VID}&t=496s\n荷札の話"))  # T15: 段落先頭の目印
+        self.assertTrue(text.endswith(f"[00:08:16] https://www.youtube.com/watch?v={VID}&t=496s\n荷札の話"))  # T15: 段落先頭の目印
         off = ing.build_transcript_text(VID, TITLE, out["cues"], out["published_at"], paragraph_anchors=False)["text"]
         self.assertTrue(off.endswith("はじめまして\n\n荷札の話"))  # OFF: 時刻なしの段落本文
 
@@ -735,7 +761,7 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         self.assertEqual(res["transcript_acquisition_method"], ing.ACQ_TRANSCRIPT_API)
         body = c.add_calls[0][1]
         self.assertIn(f'acquisition_method: "{ing.ACQ_TRANSCRIPT_API}"', body)
-        self.assertTrue(body.endswith(f"## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n▶00:08:16 https://www.youtube.com/watch?v={VID}&t=496s\n荷札の話"))  # T15
+        self.assertTrue(body.endswith(f"## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n[00:08:16] https://www.youtube.com/watch?v={VID}&t=496s\n荷札の話"))  # T15
 
     def test_include_youtube_url_is_rejected(self):
         import auto_research_pipeline as arp
@@ -1083,7 +1109,7 @@ class TestPipelineEndToEndMocked(unittest.TestCase):
         u = f"https://www.youtube.com/watch?v={self.E2E_VID}"
         self.assertTrue(body.endswith(
             "## 字幕全文 (取得全量・段落先頭に時刻目印)\n\n"
-            f"▶00:00:00 {u}&t=0s\nこんにちは\n\n▶00:01:05 {u}&t=65s\nOKFは荷札です\n\n▶01:02:05 {u}&t=3725s\nまとめ"))
+            f"[00:00:00] {u}&t=0s\nこんにちは\n\n[00:01:05] {u}&t=65s\nOKFは荷札です\n\n[01:02:05] {u}&t=3725s\nまとめ"))
         self.assertEqual(body.count("&t="), 3)   # 目印の3つだけ（発話ごとの時刻リンクは無い）
         self.assertIn("cue_count: 3", body)
 

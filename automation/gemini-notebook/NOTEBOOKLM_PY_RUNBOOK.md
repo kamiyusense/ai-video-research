@@ -420,27 +420,27 @@ ID: index:related
 
 ### 目印行の形式（字幕の段落ごとの時刻目印・仕様）
 
-相棒の決定（2026-10-20 02:37 JST）で既定ON。相棒PC側で字幕を作り直すときもこの形式にそろえる。
+相棒の決定（2026-10-20 02:37 JST）で既定ON。形式は相棒PCの実機（2026-10-21、15本を登録・読み戻し済み）の `[HH:MM:SS] <URL>&t=<秒>s` に1本化した（ロードマップ R3・§3.1）。出力するのはこの形式だけで、旧 `▶HH:MM:SS` は作らない。
 
 | 項目 | 決まり |
 |---|---|
-| 行の形式 | `▶HH:MM:SS <動画URL>&t=<秒>s`（例: `▶00:08:16 https://www.youtube.com/watch?v=u3ka_AAb8qE&t=496s`）。`▶` と時刻の間に空白は入れない。時刻とURLの間は半角空白1つ |
+| 行の形式 | `[HH:MM:SS] <動画URL>&t=<秒>s`（例: `[00:08:16] https://www.youtube.com/watch?v=u3ka_AAb8qE&t=496s`）。時刻は角かっこで囲み、`]` とURLの間は半角空白1つ |
 | 時刻 | その段落の最初の発話の開始位置。`HH:MM:SS` と `<秒>` は同じ値（1時間以上は `01:02:05` ↔ `3725`）。小数は切り捨て |
 | 位置 | 約60秒ごとの段落の先頭に1行だけ。段落の本文は次の行から（同じブロック、空行は入れない）。文の途中・発話ごとには入れない |
 | 段落の切り方 | 段落の最初の発話から60秒以上たった発話の切れ目で次の段落（保険として1000字超でも分ける）。発話テキストは変えず、空白1つでつなぐ |
 | 見出し | `## 字幕全文 (取得全量・段落先頭に時刻目印)`。荷札 `transcript_format: "PARAGRAPHS_WITH_ANCHORS"` |
-| 機械で見る正規表現 | `ANCHOR_LINE_RE`（`notebook_auto_ingest.py`）：`^▶(\d{2,}):([0-5]\d):([0-5]\d) (https://www\.youtube\.com/watch\?v=[\w-]{11}&t=(\d+)s)$` |
-| 読み戻しの許容 | NotebookLMの表示で `▶` が落ちる・改行が変わっても、記号と空白を除く正規化一致で合格にする（`▶` は除去する記号に入れてある）。`health` の目印判定はゆるめ（`▶` と時刻があれば可） |
+| 機械で見る正規表現 | `ANCHOR_LINE_RE`（`notebook_auto_ingest.py`）：`^(?:(▶)|(\[))(\d{2,}):([0-5]\d):([0-5]\d)(?(2)\]) (https://www\.youtube\.com/watch\?v=[\w-]{11}&t=(\d+)s)$`。出力の `[HH:MM:SS] URL` に一致し、読み取り用に旧形式 `▶HH:MM:SS URL` にも一致する |
+| 読み戻しの許容 | 読み取り側（`ANCHOR_LINE_RE`・`has_paragraph_anchors`・`health`・`migrate-plan`）は新形式 `[HH:MM:SS] URL` と旧形式 `▶HH:MM:SS URL` のどちらも目印とみなす（過去に旧形式で登録した資料を取りこぼさないため。旧形式を新しく作ることはない）。NotebookLMの表示で `[` `]` や `▶` が落ちる・改行が変わっても、記号と空白を除く正規化一致で合格にする（これらは除去する記号に入れてある）。`health` の目印判定はゆるめ（`[時刻]` か `▶時刻` があるか、時刻の直後に時刻つき動画URLが続けば可。`[00:01:05](URL)` の時刻リンクは目印に数えない） |
 
 - 目印なしの形式（従来）は `--no-paragraph-anchors` か `paragraph_anchors=False` で出せる。見出しは `## 字幕全文 (取得全量・時刻なし)`、荷札は `transcript_format: "UNTIMED_PARAGRAPHS"`。この出力は固定のゴールデンテストで従来と完全に同じ。
 - 既定は1か所：`notebooklm_py_ingest.DEFAULT_PARAGRAPH_ANCHORS`（今は `True`）。`notebooklm_py_ingest.py` と `auto_research_pipeline.py` の `--paragraph-anchors / --no-paragraph-anchors` が優先する。どちらで組むかは dry-run の計画（`paragraph_anchors`、字幕の `plan_details` 行にも）といつも一緒に表示される。
 - `health`：目印のない字幕全文OKF（時刻なし形式の15本＋`pRfC1DILDEM` の `a32a70ec` など）を `transcripts_without_anchors` に載せて `ATTENTION` にする（既定ONの間。`--no-paragraph-anchors` で対象外）。置き換えの前後の確認に使う。
 - `migrate-plan`：追加する字幕は目印つき（`to_add` の字幕の行に `paragraph_anchors: true`）。目印のない既存の字幕全文OKFは、`published_at` があっても `ADD_THEN_DELETE`（置き換えは相棒の承認待ち）になり、URLソースの削除は新形式の読み戻し一致の後だけ。
-- 実機でNotebookLMが `▶` やURLをどう表示するかは未確認（UNKNOWN）。
+- 実機でNotebookLMが `[HH:MM:SS]` やURLをどう表示するかは、相棒PCの報告（15本の読み戻しで目印を確認）だけが根拠で、この作業環境では未確認（UNKNOWN）。
 
 字幕全文OKFの本文は、見出しの直後に見える2行 `ID: AI_VIDEO_TRANSCRIPT_RAW:<動画ID>` と `動画: <URL>` から始まる（ロードマップ v2.0 §3.1。HTMLコメントはNotebookの読み戻しで消えるため）。
 
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 
-- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T11時点で231件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
+- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T11時点で231件、T16時点で273件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
 - **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。 `migrate-plan` と `related_links.py` も実機未実行（Notebook内YouTubeソースの本文が実際に取れるか・その文字数はUNKNOWN）。

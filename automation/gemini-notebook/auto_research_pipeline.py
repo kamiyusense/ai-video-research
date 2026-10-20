@@ -762,7 +762,7 @@ def run_pipeline(
         for p in nb_res.get("plan_details", []):
             print(f"  - 追加予定: {p['kind']} / {p['title']} / {p['logical_id']}")
         if "paragraph_anchors" in nb_res:
-            print(f"  - 字幕の段落目印（▶HH:MM:SS）: {'ON' if nb_res['paragraph_anchors'] else 'OFF'}")
+            print(f"  - 字幕の段落目印（[HH:MM:SS]）: {'ON' if nb_res['paragraph_anchors'] else 'OFF'}")
         print(f"\n[DRY RUN] Notebook計画: {nb_res['status']}。GitHub・Notebook・Driveへの書き込みゼロで終了します。")
         return {
             "status": NOTEBOOKLM_PY_RESUME_STATUS.get(nb_res["status"], nb_res["status"]),
@@ -1137,7 +1137,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--notebook-id", help="notebooklm-py で登録するNotebookのID")
     parser.add_argument("--live", action="store_true", help="notebooklm-py でNotebookへ実際に書き込む（--notebook-id 必須）")
     parser.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
-                        help="字幕の各段落の先頭に時刻目印 ▶HH:MM:SS とURLを付ける（未指定なら notebooklm_py_ingest の既定。現在ON）")
+                        help="字幕の各段落の先頭に時刻目印 [HH:MM:SS] とURLを付ける（未指定なら notebooklm_py_ingest の既定。現在ON）")
     args = parser.parse_args(args_list)
     if args.live and args.notebook_backend != "notebooklm-py":
         parser.error("--live は --notebook-backend notebooklm-py のときだけ使えます。")
