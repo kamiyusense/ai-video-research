@@ -17,7 +17,7 @@
 | R1 | Notebookには **1動画につき「OKF化した字幕全文」＋「OKF化した研究ノート」の2ソース**を置く（方式A・既定） | 2つが別のソースIDで存在し、互いの論理ID（`youtube:<id>:transcript` ↔ `youtube:<id>:research`）を持つ |
 | R1-B | 例外：GitHubの研究ノートとNotebookの字幕が**リンクで辿れて、質問時に両方を相互参照できる**と実証できたら、Notebook側は字幕だけでもよい（方式B） | 実機で「質問→GitHub研究ノートとNotebook字幕の両方を引用した回答」を確認し、相棒が承認するまでは方式A |
 | R2 | 字幕・研究ノートとも**OKF形式**にし、**両方にYouTube URLを書く**。**URLだけのソース（YouTube URLソース）はNotebookに登録しない** | 新しく `type=youtube` のソースが増えない。両資料の荷札に `resource` と `canonical_url` がある |
-| R3 | **字幕本文に発話ごとの時刻は入れない**（人が読みやすいように）。発話テキストは改変せず、つなげて約1分ごとの段落に分け、**各段落の先頭に時刻目印を1行だけ**付ける（`▶HH:MM:SS <動画URL>&t=<秒>s`。形式は [RUNBOOK](../automation/gemini-notebook/NOTEBOOKLM_PY_RUNBOOK.md) の「目印行の形式」） | 発話ごとの時刻が無い。動画URLは荷札と本文先頭にある。目印は約1分ごとの段落の先頭に1行だけで、文の途中には無い。確認済みの場面の時刻リンクは研究ノートにある。秒単位の位置が分からないときは回答でそう言う |
+| R3 | 字幕は**段落（約60秒）ごとに時刻目印を1つ**付ける（2026-10-21 相棒決定：AIが探しやすく、該当時刻のリンクを出せるように。1行ごとの時刻は検索のノイズになるので付けない）。発話テキストは改変しない | 各段落の先頭に `[hh:mm:ss] https://www.youtube.com/watch?v=<id>&t=<秒>s` がある。回答では段落の時刻（誤差最大約1分）を示し、秒単位ではないことを分かるようにする |
 | R4 | 古い動画を参照しなくて済むよう、**OKFの段階で動画の投稿日時を記録**する | 字幕・研究ノート両方の荷札に `published_at`（YouTube視聴ページの公開日時と取得元）がある。取れなければ `UNKNOWN` |
 | R5 | URL貼付 → 字幕取得 → OKF化 → Notebook登録 → GitHub保存 → 読み戻し → 質問回答 までを**人手なしで完走** | 新しいURL1本で全段が通り、各段を読み戻しで確認 |
 | R6 | **別の動画でも同じテーマを語っている関連動画どうしを互いにリンク**し、まとめて参照して精度を上げる | 研究ノートの `related_records` に相手の論理ID・関係ラベル・理由・根拠があり、逆向きも揃っている |
@@ -27,8 +27,8 @@
 ### 3.1 字幕原文OKF `youtube:<video_id>:transcript`
 
 - **荷札（YAMLフロントマター）の必須項目**: `okf_version: "0.2"` / `type: "TRANSCRIPT"` / `title` / `logical_id` / `research_logical_id` / `video_id` / `resource` / `canonical_url` / `published_at`（＋`published_at_jst`・`publication_date`・`published_at_source`） / `language` / `acquired_at` / `acquisition_method` / `cue_count` / `transcript_status` / `cue_text_sha256`。分かれば `research_notebook_source_id`。
-- **本文**: 先頭に見える形で `ID: AI_VIDEO_TRANSCRIPT_RAW:<video_id>` と `動画: <URL>` の2行（HTMLコメントはNotebookの読み戻しで消えるため使わない）。続けて字幕の発話テキストを**改変・清書・補完せず**連結し、約60秒ごとに段落を分け、各段落の先頭に時刻目印 `▶HH:MM:SS <URL>&t=<秒>s` を1行だけ付ける（その段落の最初の発話の位置。発話ごとの時刻・文の途中の目印は入れない。R3）。
-- **取得方法**: YouTubeの字幕（日本語トラック）を直接取得する。投稿者がつけた字幕があればそれを、無ければ自動生成字幕を使う。自動生成字幕は誤変換を含むので `transcript_status: "UNVERIFIED"`。取得できた全量を保存し、欠けた箇所を創作しない。取得元の順は「渡されたcue → YouTube字幕（youtube-transcript-api → timedtext）→ Notebook内YouTubeソース本文」。最後の本文由来は、URLソースが残っている既存動画だけの最終手段（単語の間に空白が入る読みにくい版）で、新規動画では使わない。どれで取ったかは `acquisition_method` に記録する。どこからも取れなければ `TRANSCRIPT_UNAVAILABLE` で止め、書き込みは0件（創作しない）。
+- **本文**: 先頭に見える形で `ID: AI_VIDEO_TRANSCRIPT_RAW:<video_id>` と `動画: <URL>` の2行（HTMLコメントはNotebookの読み戻しで消えるため使わない）。続けて字幕の発話テキストを**改変・清書・補完せず**連結し、約60秒ごとに段落を分け、各段落の先頭に時刻目印の行 `[hh:mm:ss] <URL>&t=<秒>s` を置く（R3）。
+- **取得方法**: YouTubeの字幕（日本語トラック）を直接取得する。投稿者がつけた字幕があればそれを、無ければ自動生成字幕を使う。自動生成字幕は誤変換を含むので `transcript_status: "UNVERIFIED"`。取得できた全量を保存し、欠けた箇所を創作しない。取得元の順は「渡されたcue → YouTube字幕（youtube-transcript-api → timedtext）→ Notebook内YouTubeソース本文」。最後の本文由来は、URLソースが残っている既存動画だけの最終手段（単語の間に空白が入る読みにくい版）で、URLソースが0件の今は事実上使わず、新規動画では使わない。どれで取ったかは `acquisition_method` に記録する。どこからも取れなければ `TRANSCRIPT_UNAVAILABLE` で止め、書き込みは0件（創作しない）。
 - **Notebookのタイトル**: `【字幕原文】<動画タイトル先頭40字> [<video_id>]`
 
 ### 3.2 研究ノートOKF `youtube:<video_id>:research`
@@ -80,28 +80,28 @@
 
 Notebookへの読み戻しは完全一致にならない（NotebookLMがMarkdown記号を外し改行を足すため）。**記号・空白を除いた比較で一致すれば合格**とする（2026-10-20 検品で合意）。
 
-## 7. 現在地（2026-10-20 23:00 時点・実機の読み戻しにもとづく）
+## 7. 現在地（2026-10-21 02:45 時点・実機の読み戻しにもとづく）
 
 | 項目 | 状態 |
 |---|---|
-| Notebookのソース | 作業前54件。うちYouTube URLソース15件 |
-| 字幕原文OKF | `pRfC1DILDEM` のみ登録済み（`a32a70ec`、旧形式：Notebook内YouTube本文由来で単語間に空白、`published_at` なし）。新形式15本は登録・読み戻し済み（T1。`published_at` 入りだが段落の時刻目印が無い形式。目印つきへの作り直しは相棒PCで予定） |
-| 研究ノートOKF（`【研究ノート】`形式） | `pRfC1DILDEM`（`af697c8c`）、`u3ka_AAb8qE`（`65b634f5`）、`CnkEROU7fZw`（`bfeee73b`）。他の動画は旧形式の `動画研究_…` 資料が研究ノート相当 |
-| `published_at` | 研究ノート側は `pRfC1DILDEM` 以外まだ |
-| 関連動画リンク（R6） | 確定済みで検証に合格するのは `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ。GitHub研究ノートは31本で `related_records` は計65件、検証不合格は33件（根拠なし・自己リンク。既存ノートは書き換えていない）。registry全体からの候補は、汎用語だけ・固有語2語未満・該当箇所が対応しない組を外して49件（未登録35件。外す前は147件）で、並び順は経験則・人の確認は未実施（`related_links.py` のdry-run） |
-| 自動化（R5） | `notebooklm_py_ingest.py` は計画だけのdry-runが実機で動いた（書き込み0件）。本番（`--live`）は未実行。作業ブランチ（PR #14）のコードは、字幕を約60秒ごとの段落で組んで各段落の先頭に時刻目印を付け（既定ON。`--no-paragraph-anchors` でOFF）、投稿日 `published_at` を両資料に入れ、`health` が目印のない字幕全文を ATTENTION で報告し、`TRANSCRIPT_UNAVAILABLE` で書き込み0のまま止まり、URLソース15件の移行順を `migrate-plan`（読み取りのみ）で出す。これらはオフラインのテスト（Mock）で確認済みで、実機は未実行 |
+| Notebookのソース | 53件（markdown 50・gemini_chat 3）。**YouTube URLソースは0件**（15件すべて、字幕原文OKFの読み戻し確認後に削除） |
+| 字幕原文OKF | 15本（段落ごとの時刻目印・`published_at` 入り、YouTube字幕から取得、14本は自動生成字幕＝`UNVERIFIED`）。15本とも正規化一致・ID行・時刻目印・`published_at` を読み戻しで確認 |
+| 研究ノートOKF（`【研究ノート】`形式） | `pRfC1DILDEM`（新版 `0c14a49d`、新しい字幕ID `2e263d34`・`published_at` 入り）、`u3ka_AAb8qE`（`65b634f5`）、`CnkEROU7fZw`（`bfeee73b`）。他の12本は旧形式の `動画研究_…` 資料が研究ノート相当 |
+| `published_at` | 字幕は15本すべて。研究ノートは `pRfC1DILDEM` のみ |
+| 関連動画リンク（R6） | 確定済みで検証に合格するのは `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ。GitHub研究ノートは31本で `related_records` は計65件、検証不合格は33件（根拠なし・自己リンク。既存ノートは書き換えていない）。registry全体からの候補は、汎用語だけ・固有語2語未満・該当箇所が対応しない組を外して49件（未登録35件）で、並び順は経験則・人の確認は未実施（`related_links.py` のdry-run） |
+| 自動化（R5） | `notebooklm_py_ingest.py` は計画だけのdry-runが実機で動いた。今回の登録は相棒PCの手作業スクリプト。作業ブランチ（PR #14）のコードは、段落の時刻目印（`[hh:mm:ss] <URL>&t=<秒>s`。読み取りは旧 `▶` 形式も許す）・`published_at`・`health` の目印検査・`TRANSCRIPT_UNAVAILABLE` 停止・`migrate-plan` を持つが、オフラインのテスト（Mock）のみで実機は未実行 |
 | 質問回答の確認 | 未実施 |
+| 注意 | Notebookのログインが1〜2時間で切れる（2026-10-20〜21に3回）。切れたら作業は止まる |
 
 ## 8. 次にやること
 
 | # | やること | 状態 |
 |---|---|---|
-| T1 | 15本の字幕原文OKF（新形式）をNotebookへ登録し、読み戻して確認 | DONE（2026-10-20 23:05、15本とも正規化一致・ID行・URL・published_atを読み戻しで確認、54→69件） |
-| T2 | 確認できた動画のYouTube URLソースを削除 | T1の後 |
-| T3 | `pRfC1DILDEM` の旧字幕 `a32a70ec` と研究ノート `af697c8c` を新版に入れ替え（新しい字幕IDと `published_at` 入り） | T1の後 |
-| T4 | 自動化コードに反映：字幕はYouTubeから直接取得・発話ごとの時刻なし＋段落先頭の時刻目印・`published_at` 必須・URLソースを使わない | コードDONE（PR #14、オフラインのテストのみ。実機は未実行） |
-| T5 | 研究ノート全件に `published_at` を追加（GitHub正本→Notebookコピー） | TODO |
+| T1 | 15本の字幕原文OKFを登録し読み戻し確認 | DONE（2026-10-21、段落時刻版） |
+| T2 | 確認できた動画のYouTube URLソースを削除 | DONE（15件、残り0件） |
+| T3 | `pRfC1DILDEM` の旧字幕・旧研究ノートを新版に入れ替え | DONE（旧 `a32a70ec`・`af697c8c` 削除） |
+| T4 | 自動化コードに反映：字幕はYouTubeから直接取得・段落時刻目印・`published_at` 必須・URLソースを使わない | コードDONE（PR #14、オフラインのテストのみ。実機は未実行） |
+| T5 | 研究ノート全件に `published_at` を追加し、新形式（`【研究ノート】`・字幕IDつき）にそろえる | TODO |
 | T6 | 関連動画リンク（R6）：まず `CANDIDATE` で付け、根拠を確かめて `CONFIRMED` に | 検証器・候補づくり・関連索引のdry-runはコードDONE（PR #14）。ノートへの反映は相棒の判断待ち |
 | T7 | 質問回答の確認（研究ノートと字幕の両方を引用できるか） | TODO |
 | T8 | 方式B（R1-B）の実証は、T7 の後に必要なら | 保留 |
-| T9 | 目印のない字幕全文（登録済みの15本＋`pRfC1DILDEM`）を目印つきに置き換え。置き換えの前後は `health` の `transcripts_without_anchors` と `migrate-plan` で確認 | 相棒PCの再作成と承認待ち |
