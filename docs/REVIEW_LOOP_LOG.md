@@ -34,6 +34,7 @@
 | 17 | T10 修正（2周目） | 作業役（PR #14 `efe019d`） | PASS | 独立実測212件OK・差分なし。ロードマップv1.3で旧記述（v1.2改訂行・Cue全量・取り消し線・「30組」の誤読）を解消、段落は約60秒ごと（保険1000字）、字幕取得順は cue→字幕API→timedtext→Notebook本文（最後の手段）、README と AGENTS.md の `--include-youtube-url` 記述なし。UNKNOWN：migrate-plan・health本文読み・タイトル取得は実機未実行、相棒PCで作成済み15本との段落形式の一致は未照合 |
 | 18 | T11 関連動画リンク（R6）検証器・全件候補・関連索引（dry-run） | 作業役（PR #14 `5dcfd99`） | PASS（1周目・条件付き） | 独立実測231件OK・差分なし。related_links.py は読み取り専用（書き込み・削除コードなし、`files_modified: false`）。現registryで validate：related_records 65件中33件が不合格（根拠なし33、自己リンク2）、合格の確定ペアは pRfC↔u3ka の1組のみ。candidates 147件（未登録118）、すべてCANDIDATEで根拠に共通語と両ノートの該当箇所。UNKNOWN：候補の並びの品質は人の目で未確認（確定済みペアが6位）、実Notebookでの既存index検索は未検証。要判断：既存ノート33件の不合格 related_records の扱い |
 | 19 | T12 ロードマップv2.0統合・repair-plan・段落の時刻目印（任意） | 作業役（PR #14 `c36978e`） | PASS（1周目・条件付き） | 独立実測243件OK・差分なし。ロードマップは相棒PC側 v2.0（e50590c）を採用、見出し1つ・旧版併存なし、AGENTS.md・HANDOVER の旧記述も解消。repair-plan は読み取りのみ（`files_modified:false`、削除予定33件は validate の不合格と一致、確定ペア温存）。時刻目印は既定OFFで従来出力を固定。UNKNOWN：repo の字幕ビルダーは v2.0 §3.1 が求める本文先頭2行（ID・動画URL）をまだ出さない（相棒PCの15本は対応済み）＝T13、目印ONのNotebook読み戻しは実機未確認 |
+| 20 | T13 字幕先頭2行（ID・動画URL）・時刻目印の切替配線・repair-plan --summary | 作業役（PR #14 `e074821`） | PASS（1周目・条件付き） | 独立実測252件OK・差分なし、registry.json／research 無変更。repair-plan --summary は読み取りのみで人が読める一覧が出る。時刻目印は既定OFF、`DEFAULT_PARAGRAPH_ANCHORS` 1か所で切替。要改善：置換候補の質がまちまち（共通語が「mac・mini・computer・use」など汎用語だけの候補あり）→T14。UNKNOWN：先頭2行の実機読み戻し・相棒PCの15本との行並び一致は未照合 |
 
 ## 次のタスク（作業役向け）
 
