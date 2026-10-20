@@ -7,7 +7,9 @@ docs/OKF_KNOWLEDGE_ROADMAP.md R6（2026-10-20 相棒了承「その感じで」�
 - Notebook側は登録済みソースを書き換えられないため、逆リンクは「関連索引OKF」1ソースにまとめ、
   新版追加→読み戻し一致→旧版削除で差し替える（このモジュールは計画を出すだけで、書き込み・削除はしない）。
 
-このモジュールはファイルを書き換えない（研究ノート・registry.json は読むだけ）。外部通信もしない。
+このモジュールは既定ではファイルを書き換えない（研究ノート・registry.json は読むだけ）。外部通信もしない。
+例外は `repair-apply --write` だけで、研究ノートの related_records（荷札の related_records ブロックと、本文の
+関連レコード行）以外は1バイトも変えない。registry.json・Notebook・GAS には触れない。
 """
 from __future__ import annotations
 
@@ -564,6 +566,343 @@ def format_repair_summary(plan: Dict[str, Any], corpus: Dict[str, Dict[str, Any]
     return "\n".join(lines).rstrip() + "\n"
 
 
+# ---------------------------------------------------------------- 2.6 修復の自動適用（--write のときだけ研究ノートを書き換える）
+
+# 相棒の決定（2026-10-21）：目視確認が必要な作りにはしない。人の取捨選択なしで自動適用し、CONFIRMED は自動では付けない。
+REL_SECTION_HEADING = "## 関連する既存研究・課題との接続"
+_FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", re.S)
+
+
+def _one_line(text: Any, n: int = 600) -> str:
+    """荷札・本文の1行に収める（改行・本文の区切り ` | ` を避ける）。"""
+    t = re.sub(r"\s+", " ", str(text or "")).strip().replace(" | ", " / ")
+    return t if len(t) <= n else t[: n - 1] + "…"
+
+
+def _swap_viewpoint(evidence: str) -> str:
+    """逆向きの根拠：「本ノート」と「相手」を入れ替える（共通語・投稿日時の部分はそのまま）。"""
+    out = []
+    for part in str(evidence or "").split(" ／ "):
+        if part.startswith("本ノート:"):
+            part = "相手:" + part[len("本ノート:"):]
+        elif part.startswith("相手:"):
+            part = "本ノート:" + part[len("相手:"):]
+        out.append(part)
+    return " ／ ".join(out)
+
+
+def _line_record_key(line: str) -> Optional[Tuple[str, str, str]]:
+    """本文の関連レコード行 → (target_id, relation, status)。query_research の読み方に合わせる。"""
+    m = query_research.RELATED_RECORD_LINE_RE.match(line.rstrip("\r\n"))
+    if not m:
+        return None
+    note = m.group("note").strip()
+    status, evidence = "CANDIDATE", None
+    if " | status: " in note:
+        _, rem = note.split(" | status: ", 1)
+        if " | evidence: " in rem:
+            st, evidence = rem.split(" | evidence: ", 1)
+            status = st.strip().upper()
+        else:
+            status = rem.strip().upper()
+    elif " | evidence: " in note:
+        evidence = note.split(" | evidence: ", 1)[1].strip()
+    if status == "CONFIRMED" and (not evidence or evidence.upper() in ("UNKNOWN", "NONE") or evidence.startswith("キーワード一致")):
+        status = "CANDIDATE"
+    tid = (m.group("target_id") or m.group("target_link_text") or "").strip()
+    return tid, m.group("relation").strip(), status
+
+
+def _fm_block_bounds(lines: List[str]) -> Optional[Tuple[int, int]]:
+    """荷札（先頭の ---〜---）の中の `related_records:` ブロックの行範囲 [start, end)。無ければ None。"""
+    if not lines or lines[0].rstrip("\r\n") != "---":
+        return None
+    end = next((i for i in range(1, len(lines)) if lines[i].rstrip("\r\n") == "---"), None)
+    if end is None:
+        return None
+    for i in range(1, end):
+        if lines[i].startswith("related_records:"):
+            j = i + 1
+            while j < end and (lines[j].startswith((" ", "\t")) or not lines[j].strip()):
+                j += 1
+            return i, j
+    return None
+
+
+def _fm_items(lines: List[str], start: int, end: int) -> List[Tuple[int, int, Dict[str, str]]]:
+    """related_records ブロックの各項目 (開始行, 終了行, 項目) を返す。"""
+    items, cur = [], None
+    for i in range(start + 1, end):
+        if re.match(r"^\s{2}-\s", lines[i]):
+            cur = [i, i + 1, {}]
+            items.append(cur)
+        elif cur is not None:
+            cur[1] = i + 1
+        if cur is not None:
+            m = re.match(r"^\s*(?:-\s+)?([A-Za-z0-9_-]+):\s*(.*)$", lines[i])
+            if m:
+                cur[2][m.group(1)] = query_research.parse_yaml_scalar(m.group(2))
+    return [(a, b, d) for a, b, d in items]
+
+
+def _fm_item_text(rec: Dict[str, Any]) -> List[str]:
+    q = lambda v: json.dumps(_one_line(v), ensure_ascii=False)
+    return [
+        f"  - target_id: {q(rec['target_id'])}\n",
+        f"    relation: {q(rec['relation'])}\n",
+        f"    note: {q(rec['note'])}\n",
+        f"    status: {q(rec['status'])}\n",
+        f"    evidence: {q(rec['evidence'])}\n",
+    ]
+
+
+def _body_line_text(rec: Dict[str, Any]) -> str:
+    return (f"- `{rec['target_id']}` ({rec['relation']}): {_one_line(rec['note'])}"
+            f" | status: {rec['status']} | evidence: {_one_line(rec['evidence'])}\n")
+
+
+def edit_note_text(text: str, remove_keys: set, add_records: List[Dict[str, Any]]) -> str:
+    """研究ノート1本の本文に対して、関連レコードの削除と追加だけを行う。他の行は一切変えない。
+
+    削除：key=(target_id, relation, status) が remove_keys にある、荷札の項目と本文の関連レコード行。
+    追加：荷札（---〜---）があるノートは荷札の related_records へ、無いノートは本文の
+    「## 関連する既存研究・課題との接続」節の関連レコード行の後ろ（節が無ければ末尾に節ごと追加）へ。
+    """
+    lines = text.splitlines(keepends=True)
+    # 1) 本文の関連レコード行を削除
+    lines = [ln for ln in lines if _line_record_key(ln) not in remove_keys]
+    # 2) 荷札の項目を削除
+    b = _fm_block_bounds(lines)
+    if b:
+        drop = []
+        for a, z, d in _fm_items(lines, b[0], b[1]):
+            if (str(d.get("target_id", "")).strip(), str(d.get("relation", "")).strip(), str(d.get("status", "")).strip()) in remove_keys:
+                drop += list(range(a, z))
+        lines = [ln for i, ln in enumerate(lines) if i not in set(drop)]
+    if not add_records:
+        return "".join(lines)
+    # 3) 追加
+    if lines and lines[0].rstrip("\r\n") == "---" and _FRONTMATTER_RE.match("".join(lines)):
+        b = _fm_block_bounds(lines)
+        new = [ln for rec in add_records for ln in _fm_item_text(rec)]
+        if b:
+            at = b[1]
+            while at > b[0] + 1 and not lines[at - 1].strip():
+                at -= 1
+            lines[at:at] = new
+        else:
+            end = next(i for i in range(1, len(lines)) if lines[i].rstrip("\r\n") == "---")
+            lines[end:end] = ["related_records:\n"] + new
+        return "".join(lines)
+    new = [_body_line_text(rec) for rec in add_records]
+    sec = next((i for i, ln in enumerate(lines) if ln.startswith(REL_SECTION_HEADING)), None)
+    if sec is None:
+        if lines and not lines[-1].endswith("\n"):
+            lines[-1] += "\n"
+        return "".join(lines) + ("\n" if lines and lines[-1].strip() else "") + REL_SECTION_HEADING + "\n\n" + "".join(new)
+    end = next((i for i in range(sec + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    last = max((i for i in range(sec + 1, end) if query_research.RELATED_RECORD_LINE_RE.match(lines[i].rstrip("\r\n"))), default=None)
+    if last is not None:
+        at = last + 1
+    else:
+        at = end
+        while at > sec + 1 and not lines[at - 1].strip():
+            at -= 1
+        if at == sec + 1:
+            new = ["\n"] + new
+    if at > 0 and not lines[at - 1].endswith("\n"):
+        lines[at - 1] += "\n"
+    lines[at:at] = new
+    return "".join(lines)
+
+
+def _strip_related(text: str) -> List[str]:
+    """関連レコードに当たる行・荷札のブロック・追加された節の見出しを除き、空行も捨てた行のリスト（差分検査用）。"""
+    lines = text.splitlines(keepends=True)
+    b = _fm_block_bounds(lines)
+    skip = set(range(b[0], b[1])) if b else set()
+    out = []
+    for i, ln in enumerate(lines):
+        if i in skip or not ln.strip() or ln.rstrip("\r\n") == REL_SECTION_HEADING:
+            continue
+        if query_research.RELATED_RECORD_LINE_RE.match(ln.rstrip("\r\n")):
+            continue
+        out.append(ln)
+    return out
+
+
+def only_related_records_changed(old: str, new: str) -> bool:
+    """old → new の差が関連レコード（荷札の related_records と本文の関連レコード行）だけか。機械で検査する。"""
+    return _strip_related(old) == _strip_related(new)
+
+
+def _record_key(rec: Dict[str, Any]) -> Tuple[str, str, str]:
+    return str(rec.get("target_id") or "").strip(), str(rec.get("relation") or ""), str(rec.get("status") or "")
+
+
+def repair_apply_plan(
+    corpus: Dict[str, Dict[str, Any]], root: Path = ROOT, limit: int = DEFAULT_REPAIR_LIMIT,
+) -> Dict[str, Any]:
+    """related_records の修復を、人の取捨選択なしで適用できる形（ノートごとの新しい本文）にまとめる。書き込みはしない。
+
+    - 削除：検証に通らない記録（根拠なし・自己リンク・宛先なしなど）。確定済みの合格ペアは温存。
+      CONFIRMED で不合格のものは自動では消さず needs_human に数える（判断は人）。
+    - 追加：候補づくり（evaluate_pair の条件）を通った上位 limit 件を status=CANDIDATE で。削除した宛先と同じ候補は
+      limit に関係なく入れ直す。CONFIRMED は自動では付けない。
+    - 逆リンク：追加した記録、温存した記録とも、相手側に自分への記録が無ければ相手側に CANDIDATE で追加する。
+    同じ入力から同じ結果になり、適用後にもう一度出すと変更は0件（冪等）。
+    """
+    report = validate_related_records(corpus, root)
+    protected = {frozenset(pair) for pair in report["confirmed_valid_pairs"]}
+    bad = {(i["source"], i["target_id"], i["relation"], i["status"]): i["errors"] for i in report["items"] if i["errors"]}
+    notes: Dict[str, Dict[str, Any]] = {}
+    for vid in sorted(corpus):
+        doc = corpus[vid]
+        me = f"youtube:{vid}:research"
+        keep, remove = [], []
+        for rec in doc["related_records"]:
+            key = _record_key(rec)
+            errors = bad.get((me, *key))
+            if not errors or frozenset((me, key[0])) in protected:
+                keep.append(rec)
+            elif key[2] == "CONFIRMED":
+                keep.append(rec)
+                notes.setdefault(vid, {}).setdefault("needs_human", []).append(dict(zip(("target_id", "relation", "status"), key), reasons=errors))
+            else:
+                remove.append(dict(zip(("target_id", "relation", "status"), key), reasons=errors))
+        keep_vids = {target_video_id(r.get("target_id")) for r in keep}
+        removed_vids = {target_video_id(r["target_id"]) for r in remove}
+        ranked = infer_candidates(doc, corpus, limit=max(len(corpus), limit))
+        picked, seen = [], set()
+        for n, c in enumerate(ranked):
+            tv = target_video_id(c["target_id"])
+            if tv in keep_vids or tv in seen:
+                continue
+            if n < limit or tv in removed_vids:
+                seen.add(tv)
+                picked.append(dict(c, direction="FORWARD", same_target_as_removed=tv in removed_vids))
+        n = notes.setdefault(vid, {})
+        n.update(keep=keep, remove=remove, add=picked)
+    # 逆リンク：相手側に自分への記録が無ければ CANDIDATE で足す
+    present = {vid: {target_video_id(r.get("target_id")) for r in n["keep"]} | {target_video_id(r["target_id"]) for r in n["add"]}
+               for vid, n in notes.items()}
+    reverse_added = 0
+    for vid in sorted(notes):
+        for rec in list(notes[vid]["keep"]) + list(notes[vid]["add"]):
+            tv = target_video_id(rec.get("target_id"))
+            if tv is None or tv == vid or tv not in notes or vid in present[tv]:
+                continue
+            original = rec.get("evidence") or ""
+            notes[tv]["add"].append({
+                "target_id": f"youtube:{vid}:research", "relation": rec.get("relation") or "COMPLEMENTS", "status": "CANDIDATE",
+                "note": "逆向きの候補（自動・未確認）：" + _one_line(str(rec.get("note") or "").replace("自動推定の候補（未確認）：", ""), 160),
+                "evidence": _swap_viewpoint(original) if rec.get("direction") == "FORWARD" else f"相手ノートの記載: {original}",
+                "direction": "REVERSE", "score": rec.get("score"),
+            })
+            present[tv].add(vid)
+            reverse_added += 1
+    changed = []
+    for vid in sorted(notes):
+        n = notes[vid]
+        if not n["remove"] and not n["add"]:
+            continue
+        path = Path(root) / corpus[vid]["research_path"]
+        old = path.read_text(encoding="utf-8")
+        remove_keys = {_record_key(r) for r in n["remove"]}
+        new = edit_note_text(old, remove_keys, n["add"])
+        changed.append({
+            "video_id": vid, "title": corpus[vid]["title"], "research_path": corpus[vid]["research_path"],
+            "removed": n["remove"], "added": n["add"], "old_text": old, "new_text": new,
+            "only_related_records_changed": only_related_records_changed(old, new),
+        })
+    return {
+        "status": "DRY_RUN_REPAIR_APPLY",
+        "note_count": len(corpus),
+        "notes_changed": len(changed),
+        "removed_count": sum(len(c["removed"]) for c in changed),
+        "added_forward_count": sum(1 for c in changed for a in c["added"] if a["direction"] == "FORWARD"),
+        "added_reverse_count": reverse_added,
+        "needs_human": [dict(video_id=vid, **x) for vid, n in sorted(notes.items()) for x in n.get("needs_human", [])],
+        "protected_pairs": sorted(sorted(p) for p in protected),
+        "changed": changed,
+    }
+
+
+def _summarize_validation(rep: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "status": rep["status"], "record_count": rep["record_count"], "error_record_count": rep["error_record_count"],
+        "error_counts": rep["error_counts"], "self_link_count": rep["error_counts"].get("SELF_LINK", 0),
+        "target_not_found_count": rep["error_counts"].get("TARGET_NOT_FOUND", 0),
+        "missing_backlink_count": rep["missing_backlink_count"], "confirmed_count": rep["confirmed_count"],
+        "confirmed_valid_pairs": [list(p) for p in rep["confirmed_valid_pairs"]],
+    }
+
+
+def repair_apply(root: Path = ROOT, write: bool = False, limit: int = DEFAULT_REPAIR_LIMIT) -> Dict[str, Any]:
+    """修復を計画し、write=True のときだけ research/*.md の related_records を書き換える。
+
+    書く前に、各ファイルの差が関連レコードだけか（only_related_records_changed）を機械で確かめ、1本でも違えば何も書かない。
+    書いた後は読み直して validate（エラー0・自己リンク0・宛先実在・逆リンク欠落0）を確かめる。
+    dry-run のときは同じ検査を一時コピーの上で行い、「適用したらこうなる」を出す（元のファイルは変えない）。
+    registry.json は読むだけで、書き換えない。
+    """
+    import shutil
+    import tempfile
+
+    root = Path(root)
+    corpus = load_corpus(root)
+    before = _summarize_validation(validate_related_records(corpus, root))
+    plan = repair_apply_plan(corpus, root, limit=limit)
+    unsafe = [c["research_path"] for c in plan["changed"] if not c["only_related_records_changed"]]
+    if unsafe:
+        return dict({k: v for k, v in plan.items() if k != "changed"}, status="BLOCKED_NON_RECORD_DIFF", blocked_files=unsafe,
+                    files_modified=False, validate_before=before)
+    if write:
+        for c in plan["changed"]:
+            (root / c["research_path"]).write_text(c["new_text"], encoding="utf-8", newline="")
+        check_root = root
+        tmp = None
+    else:
+        tmp = tempfile.TemporaryDirectory()
+        check_root = Path(tmp.name)
+        for name in ("registry.json",):
+            if (root / name).exists():
+                shutil.copy2(root / name, check_root / name)
+        if (root / "proposals").is_dir():
+            shutil.copytree(root / "proposals", check_root / "proposals")
+        (check_root / "research").mkdir()
+        for f in (root / "research").glob("*.md"):
+            shutil.copy2(f, check_root / "research" / f.name)
+        for c in plan["changed"]:
+            (check_root / c["research_path"]).write_text(c["new_text"], encoding="utf-8", newline="")
+    after_corpus = load_corpus(check_root)
+    after = _summarize_validation(validate_related_records(after_corpus, check_root))
+    again = repair_apply_plan(after_corpus, check_root, limit=limit)
+    if tmp:
+        tmp.cleanup()
+    return {
+        "status": "APPLIED" if write else "DRY_RUN_REPAIR_APPLY",
+        "files_modified": bool(write and plan["changed"]),
+        "note_count": plan["note_count"],
+        "notes_changed": plan["notes_changed"],
+        "removed_count": plan["removed_count"],
+        "added_forward_count": plan["added_forward_count"],
+        "added_reverse_count": plan["added_reverse_count"],
+        "needs_human": plan["needs_human"],
+        "protected_pairs": plan["protected_pairs"],
+        "validate_before": before,
+        "validate_after": after,
+        "second_run_changes": again["notes_changed"],   # 適用後にもう一度計画して変更0なら冪等
+        "changed": [{
+            "video_id": c["video_id"], "research_path": c["research_path"],
+            "removed": [{k: r[k] for k in ("target_id", "relation", "status", "reasons")} for r in c["removed"]],
+            "added": [{k: a.get(k) for k in ("target_id", "relation", "status", "direction", "note", "evidence")} for a in c["added"]],
+            "only_related_records_changed": c["only_related_records_changed"],
+        } for c in plan["changed"]],
+        "_texts": {c["research_path"]: (c["old_text"], c["new_text"]) for c in plan["changed"]},
+    }
+
+
 # ---------------------------------------------------------------- 3. 関連索引OKF
 
 def build_related_index_okf(
@@ -682,7 +1021,7 @@ def plan_related_index_replacement(client: Any, index: Dict[str, Any]) -> Dict[s
 # ---------------------------------------------------------------- CLI
 
 def main(argv: Optional[List[str]] = None) -> int:
-    ap = argparse.ArgumentParser(description="関連動画リンク（R6）の検査・候補・関連索引（読み取り専用・dry-run）")
+    ap = argparse.ArgumentParser(description="関連動画リンク（R6）の検査・候補・関連索引（既定は読み取り専用・dry-run。repair-apply --write だけ研究ノートの related_records を書く）")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("validate", help="研究ノート荷札の related_records を検査する")
     c = sub.add_parser("candidates", help="台帳全件について関連候補（CANDIDATE）を出す")
@@ -695,6 +1034,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     r.add_argument("--limit", type=int, default=DEFAULT_REPAIR_LIMIT, help="1ノートあたりの置換候補の上限")
     r.add_argument("--print-diff", action="store_true", help="差分を読みやすい文字列でも出す")
     r.add_argument("--summary", action="store_true", help="JSONではなく、ノートごとの件数と根拠の一文だけの人が読める一覧を出す")
+    a = sub.add_parser("repair-apply", help="修復を人の取捨選択なしで適用する（既定はdry-run。--write のときだけ research/*.md の related_records を書き換える）")
+    a.add_argument("--write", action="store_true", help="研究ノートの related_records だけを書き換える（本文・他の荷札項目・registry.json は変えない）")
+    a.add_argument("--limit", type=int, default=DEFAULT_REPAIR_LIMIT, help="1ノートあたり追加する候補の上限（削除した宛先と同じ候補は別に入れ直す）")
+    a.add_argument("--print-diff", action="store_true", help="ノートごとの差分（unified diff）も出す")
     i = sub.add_parser("index", help="関連索引OKFを組み立て、差し替え計画を出す")
     i.add_argument("--with-candidates", action="store_true", help="自動候補も「自動推定・未登録」として載せる")
     i.add_argument("--notebook-id", help="指定すると既存の関連索引ソースを一覧で探す（読み取りのみ）")
@@ -720,6 +1063,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0
         if args.print_diff:
             rep["diff_text"] = "\n\n".join(v["diff"] for v in rep["videos"])
+    elif args.cmd == "repair-apply":
+        rep = repair_apply(ROOT, write=args.write, limit=args.limit)
+        texts = rep.pop("_texts", {})
+        if args.print_diff:
+            import difflib
+            rep["diff_text"] = "".join(
+                "".join(difflib.unified_diff(o.splitlines(keepends=True), n.splitlines(keepends=True), f"a/{p}", f"b/{p}", n=1))
+                for p, (o, n) in sorted(texts.items()))
     else:
         idx = build_related_index_okf(corpus, ROOT, include_auto_candidates=args.with_candidates)
         client = None

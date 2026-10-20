@@ -47,3 +47,9 @@ OpenAI DevDay 2026における最新発表を徹底解説。専用クラウドPC
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。
+
+## 関連する既存研究・課題との接続
+
+- `youtube:JMoByqOlftc:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「dots・plus・月額」 | status: CANDIDATE | evidence: 共通語: dots, plus, 月額, 自律, pro ／ 本ノート: 章「自律型AIアシスタント「dots」の仕組み（専用クラウドPC・4000アプリ接…」 ／ 相手: 章「注意点：自律AI「dots」はPlusには含まれずPro（月500ドル）対象」
+- `youtube:j3Cyvbfn9_k:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「astra・gpt-6.1・sol」 | status: CANDIDATE | evidence: 共通語: astra, gpt-6.1, sol, pro, openai ／ 本ノート: 章「「GPT-6.1 Sol」の性能と価格（入力2ドル/出力10ドル、総合5位）」 ／ 相手: 章「普段使いモデル（GPT-6.1 Sol / Sonnet 5.5 / Gemi…」
+- `youtube:sodTFSuV4zY:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「codex・コードレビュー・cli」 | status: CANDIDATE | evidence: 共通語: codex, コードレビュー, cli, pro, openai ／ 本ノート: 章「「ウルトラファストモード」（Codex最大8倍・API最大6倍）」 ／ 相手: タグ「Codex」

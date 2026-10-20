@@ -47,8 +47,15 @@ Claude Code単体での調査によるコンテキスト圧迫と利用枠枯渇
 - 未確認事項(UNKNOWN): 言及された非公式NotebookLM CLIの正確なGitHubリポジトリURL。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:BStkW1HTfmk` (COMPLEMENTS): ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完
-- `youtube:ZjUJ-35acaU` (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完
+
+- `youtube:RZLAP2CLUM8:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「markdown・神連携・cli」 | status: CANDIDATE | evidence: 共通語: markdown, 神連携, cli, obsidian, リサーチ ／ 本ノート: 題名「【天才AI化】ClaudeのフルMAXパワーを出すAI神連携はNotebook…」 ／ 相手: 題名「【情報収集を完全自動化】NotebookLM・Claude Code・Obsi…」
+- `youtube:BStkW1HTfmk:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「vault・markdown・claude.md」 | status: CANDIDATE | evidence: 共通語: vault, markdown, claude.md, mcp, obsidian ／ 本ノート: 章「CLAUDE.md 単体記憶の限界とObsidianテーマ別分割（LLM Wi…」 ／ 相手: 章「CLAUDE.md / AGENTS.md / MEMORY.md の基本構成…」
+- `youtube:ZY7YuYHLlIQ:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「文字編集不可・画像出力・studio」 | status: CANDIDATE | evidence: 共通語: 文字編集不可, 画像出力, studio, notebooklm, スライド ／ 本ノート: 章「Studio機能9種生成の実演」 ／ 相手: 章「Studioスライドの罠：画像出力であり文字編集不可の仕様解説」
+- `youtube:JXmk7hmbS3c:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：共通の主題「claude.md・cli・mcp」 | status: CANDIDATE | evidence: 共通語: claude.md, cli, mcp, obsidian, サブエージェント ／ 相手: 章「⑤ CLAUDE.md への行動指針とスキル別エージェントマッピング記載」 ／ 本ノート: 章「CLAUDE.md 単体記憶の限界とObsidianテーマ別分割（LLM Wi…」
+- `youtube:MnzEE0fLxBs:research` (UPDATES): 逆向きの候補（自動・未確認）：共通の主題「studio・notebooklm・powerpoint」 | status: CANDIDATE | evidence: 共通語: studio, notebooklm, powerpoint, スライド, notebook ／ 相手: 章「UI構成（左：ソース、中央：チャット、右：Studio）」 ／ 本ノート: 章「Studio機能9種生成の実演」 ／ 投稿日時: 2026-09-17 → 2026-06-21
+- `youtube:NCQZiT0e59g:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：共通の主題「obsidian・studio・mcp」 | status: CANDIDATE | evidence: 共通語: obsidian, studio, mcp ／ 相手: 章「視聴者Q&A②：Obsidianへの評価とGemini TTS（音声読み上げ）…」 ／ 本ノート: 章「3ツールの役割分担（NotebookLM＝調査、Obsidian＝社内DB、C…」
+- `youtube:XckM9eFa_vg:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：共通の主題「vault・claude.md・obsidian」 | status: CANDIDATE | evidence: 共通語: vault, claude.md, obsidian, markdown ／ 相手: 章「ObsidianでのVaultオープンとマークダウン視覚化デモ」 ／ 本ノート: 章「Obsidian Vault構築と前月差分抽出プロンプト」
+- `youtube:ZjUJ-35acaU:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CANDIDATE | evidence: 相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

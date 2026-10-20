@@ -81,7 +81,6 @@ AIへの毎回の説明し直しを解消するため、ローカルMarkdown（O
 - 未確認事項(UNKNOWN): Leo氏が実験で使用したGoogleドライブMCPサーバーの実装コード全文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ### 追加・更新された関連研究・課題接続
-- `youtube:BStkW1HTfmk` (UPDATES): 既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合
 - [youtube:Vr3JkAT9mo8:research](2026-10-10-Vr3JkAT9mo8-work-specialists.md) (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 - [youtube:2-8cXaRHlqI:research](2026-10-17-2-8cXaRHlqI-gemini-notebook.md) (COMPLEMENTS): ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 - [youtube:JXmk7hmbS3c:research](2026-10-17-JXmk7hmbS3c-gemini-notebook.md) (COMPLEMENTS): ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）

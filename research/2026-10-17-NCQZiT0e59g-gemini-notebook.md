@@ -29,6 +29,26 @@ related_records:
     evidence: "両研究ノートの独自要約（CLAUDE.md・MEMORY.md・00_Resources／二層記憶）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:sodTFSuV4zY:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「codex・mcp・ディスパッチ」"
+    status: "CANDIDATE"
+    evidence: "共通語: codex, mcp, ディスパッチ ／ 本ノート: 章「スマホ画面からのClaude / Codex選択ディスパッチとMac Stud…」 ／ 相手: タグ「Codex」"
+  - target_id: "youtube:2-8cXaRHlqI:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「obsidian・studio・mcp」"
+    status: "CANDIDATE"
+    evidence: "共通語: obsidian, studio, mcp ／ 本ノート: 章「視聴者Q&A②：Obsidianへの評価とGemini TTS（音声読み上げ）…」 ／ 相手: 章「3ツールの役割分担（NotebookLM＝調査、Obsidian＝社内DB、C…」"
+  - target_id: "youtube:ZjUJ-35acaU:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
+  - target_id: "youtube:lC5jxpYmatE:research"
+    relation: "EXTENDS"
+    note: "逆向きの候補（自動・未確認）：課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # 【最新トレンド】自分より頭良く働き続ける！AI社員の作り方を大公開
 
@@ -87,9 +107,6 @@ related_records:
 - 未確認事項(UNKNOWN): 自作iPhone録音アプリおよび自己改善ループの内部ソースコード全文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張
-- `proposal:P006` (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完
-- `youtube:ZjUJ-35acaU` (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

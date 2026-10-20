@@ -13,6 +13,8 @@ FIXTURE = ROOT / "tests" / "fixtures" / "notebook_sources_20261020.json"
 AUTO_DIR = ROOT / "automation" / "gemini-notebook"
 sys.path.insert(0, str(AUTO_DIR))
 import notebooklm_py_ingest as ing  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import branch_pin  # noqa: E402
 
 VID = "u3ka_AAb8qE"
 TITLE = "OKFで作るAI知識ベースの設計"
@@ -875,6 +877,7 @@ class TestPipelineNotebookLmPyBackend(unittest.TestCase):
     def setUp(self):
         import auto_research_pipeline as arp
         self.arp = arp
+        branch_pin.pin_target_branch(self, arp)      # 実リポジトリの今の枝には依存しない
         self.net_calls = []
 
         def _blocked(*args, **kwargs):
@@ -1159,6 +1162,7 @@ class TestPipelineDryRunNotebookPlan(unittest.TestCase):
     def setUp(self):
         import auto_research_pipeline as arp
         self.arp = arp
+        branch_pin.pin_target_branch(self, arp)      # 実リポジトリの今の枝には依存しない
         self.net_calls = []
 
         def _blocked(*args, **kwargs):

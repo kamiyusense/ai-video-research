@@ -23,6 +23,11 @@ related_records:
     evidence: "両研究ノートの独自要約（高さ・深さ・広さの3次元／トップダウン枝刈り思考）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:lC5jxpYmatE:research"
+    relation: "EXTENDS"
+    note: "逆向きの候補（自動・未確認）：課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # 【未来でガチ伸びる】AI時代で天才と呼ばれる人間になるための必須条件をまとめた
 
@@ -79,8 +84,6 @@ AI普及に伴う人間の知能二極化を指摘し、AI時代に突き抜け�
 - 未確認事項(UNKNOWN): AI仙人氏が社内実務で使用している8ターミナル並列管理ツールの構成詳細。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張
-- `proposal:P006` (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

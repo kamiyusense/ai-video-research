@@ -99,7 +99,6 @@ Chrome拡張機能「YouTube to NotebookLM」によるYouTube動画の高速イ�
 - 未確認事項(UNKNOWN): 拡張機能作者の今後のアップデート予定と保守方針。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ### 追加・更新された関連研究・課題接続
-- `youtube:ZjUJ-35acaU` (UPDATES): 既存研究記録に対し、Gemini Notebook調査知見・一次メタデータおよび時刻検証結果を差分統合
 - [youtube:2-8cXaRHlqI:research](2026-10-17-2-8cXaRHlqI-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 - [youtube:BvbkOQWgAw8:research](2026-10-17-BvbkOQWgAw8-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 - [youtube:D0B-l7A69nI:research](2026-10-17-D0B-l7A69nI-gemini-notebook.md) (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CANDIDATE | evidence: キーワード・テーマ類似による候補接続（動画本編言及未検証）

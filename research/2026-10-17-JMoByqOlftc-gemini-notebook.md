@@ -47,3 +47,7 @@
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。
+
+## 関連する既存研究・課題との接続
+
+- `youtube:YrTVpJ1ebUk:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「dots・plus・月額」 | status: CANDIDATE | evidence: 共通語: dots, plus, 月額, 自律, pro ／ 本ノート: 章「注意点：自律AI「dots」はPlusには含まれずPro（月500ドル）対象」 ／ 相手: 章「自律型AIアシスタント「dots」の仕組み（専用クラウドPC・4000アプリ接…」
