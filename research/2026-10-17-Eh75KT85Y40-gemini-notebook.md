@@ -1,3 +1,29 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 【実演】指示する相手は1人、働くのはAIチーム。年商30億社長がClaude Code「プロジェクト」を徹底解説"
+logical_id: "youtube:Eh75KT85Y40:research"
+record_id: "youtube:Eh75KT85Y40"
+video_id: "Eh75KT85Y40"
+resource: "https://www.youtube.com/watch?v=Eh75KT85Y40"
+canonical_url: "https://www.youtube.com/watch?v=Eh75KT85Y40"
+published_at: "2026-10-16T02:00:31-07:00"
+published_at_jst: "2026-10-16T18:00:31+09:00"
+publication_date: "2026-10-16"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:Eh75KT85Y40:transcript"
+transcript_notebook_source_id: "902583a8-97c5-44a3-95f0-5cdca26130dc"
+research_notebook_source_id: "985408bb-a2dc-44e4-8481-ac9b8141b567"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:cneFa24EFEk:research"
+    relation: "EXTENDS"
+    note: "同じ発信者（年商30億社長）。単体のClaude Codeでの自動化から、プロジェクト機能で複数のAIを並列に動かす形へ発展"
+    evidence: "両研究ノートの独自要約（Claude Codeに実装を委譲／メインスレッド＋7サブスレッド並列）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # 【実演】指示する相手は1人、働くのはAIチーム。年商30億社長がClaude Code「プロジェクト」を徹底解説
 
 - record_id: `youtube:Eh75KT85Y40`

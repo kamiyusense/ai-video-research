@@ -1,6 +1,6 @@
 # 📺 AI技術研究室
 
-> **【最新の引継ぎ入口・必読（2026-10-19）】** 新チャットで「GitHub見て引き継いで」と言われた場合は、GitHub current stateを確認し、必ず **[docs/HANDOVER_CURRENT.md](docs/HANDOVER_CURRENT.md) → [docs/OKF_KNOWLEDGE_ROADMAP.md](docs/OKF_KNOWLEDGE_ROADMAP.md)** を全文読む。続いて [RESEARCH_ROADMAP.md](RESEARCH_ROADMAP.md)、[AGENTS.md](AGENTS.md) も確認。最新方針は「原字幕のNotebook内独立保存（許可範囲・完全性の確認）＋OKF研究ノート＋関連研究リンク＋根拠付きQA」。古い逐次動画リレーやGitHub→Notebook逆同期の記述を優先しない。静的・LIVE・UNKNOWNを区別する。
+> **【最新の引継ぎ入口・必読（2026-10-20）】** 新チャットで「GitHub見て引き継いで」と言われた場合は、GitHub current stateを確認し、必ず **[docs/HANDOVER_CURRENT.md](docs/HANDOVER_CURRENT.md) → [docs/OKF_KNOWLEDGE_ROADMAP.md](docs/OKF_KNOWLEDGE_ROADMAP.md)** を全文読む。続いて [RESEARCH_ROADMAP.md](RESEARCH_ROADMAP.md)、[AGENTS.md](AGENTS.md) も確認。最新方針は「原字幕のNotebook内独立保存（許可範囲・完全性の確認）＋OKF研究ノート＋関連研究リンク＋根拠付きQA」。古い逐次動画リレーやGitHub→Notebook逆同期の記述を優先しない。静的・LIVE・UNKNOWNを区別する。
 
 
 AI関連全般を学び、知識と検証結果を蓄積し、最終的に安全なAI自動化へつなげる研究室。

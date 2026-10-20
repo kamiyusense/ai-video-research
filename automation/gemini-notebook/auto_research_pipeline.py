@@ -298,95 +298,28 @@ def infer_semantic_related_records(
     summary_ja: str,
     detailed_findings_ja: str = "",
     chapters: Optional[List[Dict[str, Any]]] = None,
+    claims: Optional[List[Dict[str, Any]]] = None,
+    published_at: Optional[str] = None,
+    corpus: Optional[Dict[str, Any]] = None,
+    limit: int = 5,
 ) -> List[Dict[str, Any]]:
-    """Dynamically infer meaningful related records based on video knowledge topics with objective evidence.
-    
-    Conforms to docs/OKF_KNOWLEDGE_ROADMAP.md v1.1. Status is always 'CANDIDATE' until confirmed.
+    """台帳全件を対象に、章・タグ・主張・要約の語の重なりから関連動画の候補（CANDIDATE）を出す。
+
+    R6（docs/OKF_KNOWLEDGE_ROADMAP.md）: 固定の数本×単語一致ではなく related_links.infer_candidates を使う。
+    根拠にした共通語と両ノートの該当箇所を evidence に入れ、自己リンクは除外し、上限 limit 件。
+    CONFIRMED には自動でしない。UPDATES は投稿日時の新旧で向きを決める。
     """
-    ch_text = " ".join(
-        (c.get("title", "") + " " + c.get("summary_ja", "") + " " + " ".join(c.get("key_topics", [])))
-        for c in (chapters or [])
+    import related_links
+
+    if corpus is None:
+        corpus = related_links.load_corpus(ROOT)
+    source = related_links.source_from_fields(
+        video_id, title, summary_ja, detailed_findings_ja, chapters, claims, published_at
     )
-    corpus = f"{title} {summary_ja} {detailed_findings_ja} {ch_text}".lower()
-
-    candidates = []
-    seen = set()
-
-    def _add_candidate(target_id: str, relation: str, note: str, evidence: str):
-        if target_id == f"youtube:{video_id}":
-            return  # Exclude self-link
-        key = (target_id, relation)
-        if key not in seen and len(candidates) < 6:
-            seen.add(key)
-            candidates.append({
-                "target_id": target_id,
-                "relation": relation,
-                "note": note,
-                "status": "CANDIDATE",
-                "evidence": evidence,
-            })
-
-    # 1. OKF Knowledge Management & Standardization (u3ka_AAb8qE)
-    okf_kws = [k for k in ["okf", "知識管理", "荷札", "オープンナレッジ", "資料整理", "体系化"] if k in corpus]
-    if okf_kws:
-        _add_candidate(
-            target_id="youtube:u3ka_AAb8qE",
-            relation="EXTENDS",
-            note="OKF（Open Knowledge Format）による知識資料の体系化・荷札・相互リンク設計を拡張・照合",
-            evidence=f"キーワード一致: {', '.join(okf_kws)}",
-        )
-
-    # 2. RAG & Context Engineering (pRfC1DILDEM)
-    rag_kws = [k for k in ["rag", "検索", "コンテキスト", "ベクトル", "ハイブリッド探索", "情報検索"] if k in corpus]
-    if rag_kws:
-        _add_candidate(
-            target_id="youtube:pRfC1DILDEM",
-            relation="COMPLEMENTS",
-            note="RAG（検索拡張生成）による文脈取得・問いに応じた資料探索設計を補完",
-            evidence=f"キーワード一致: {', '.join(rag_kws)}",
-        )
-
-    # 3. Autonomous Loop, Skill & Evaluation (lC5jxpYmatE)
-    harness_kws = [k for k in ["skill", "ハーネス", "computer use", "自律", "評価", "eval", "自己改善", "playwright"] if k in corpus]
-    if harness_kws:
-        _add_candidate(
-            target_id="youtube:lC5jxpYmatE",
-            relation="EXTENDS",
-            note="自律ループ・Skill設計・Computer Use・課題評価アーキテクチャを拡張",
-            evidence=f"キーワード一致: {', '.join(harness_kws)}",
-        )
-
-    # 4. Prompt Decoupling & Structured Automation (CnkEROU7fZw)
-    prompt_kws = [k for k in ["プロンプト脱却", "型", "自動化", "ワークフロー", "プロンプトから抜け出", "固定化"] if k in corpus]
-    if prompt_kws:
-        _add_candidate(
-            target_id="youtube:CnkEROU7fZw",
-            relation="COMPLEMENTS",
-            note="プロンプトへの依存を脱却し「型」と「自動化」による確実なタスク実行設計を補完",
-            evidence=f"キーワード一致: {', '.join(prompt_kws)}",
-        )
-
-    # 5. Multi-Agent & Specialist AI Roles (Vr3JkAT9mo8)
-    agent_kws = [k for k in ["サブエージェント", "マルチエージェント", "分業", "担当制", "右腕", "専門家", "コーディネーター"] if k in corpus]
-    if agent_kws:
-        _add_candidate(
-            target_id="youtube:Vr3JkAT9mo8",
-            relation="COMPLEMENTS",
-            note="専門担当AIによる分業体制・AGENTS.md運用アーキテクチャを補完",
-            evidence=f"キーワード一致: {', '.join(agent_kws)}",
-        )
-
-    # 6. Unresolved Task Backlog Proposal (proposal:P006)
-    backlog_kws = [k for k in ["未解決", "課題", "制約", "限界", "再挑戦", "バックログ"] if k in corpus]
-    if backlog_kws:
-        _add_candidate(
-            target_id="proposal:P006",
-            relation="COMPLEMENTS",
-            note="未解決課題バックログ(P006)に対する新技術適合・再評価アプローチを補完",
-            evidence=f"キーワード一致: {', '.join(backlog_kws)}",
-        )
-
-    return candidates
+    return [
+        {k: c[k] for k in ("target_id", "relation", "note", "status", "evidence")}
+        for c in related_links.infer_candidates(source, corpus, limit=limit)
+    ]
 
 
 def build_research_receipt(
@@ -451,6 +384,8 @@ def build_research_receipt(
         summary_ja=summary_ja,
         detailed_findings_ja=detailed_findings_ja,
         chapters=chapters,
+        claims=claims,
+        published_at=publish_date,
     )
 
     today_str = date.today().isoformat()
@@ -502,6 +437,8 @@ def run_notebook_registration_only(
     include_youtube_url: bool = False,
 ) -> Dict[str, Any]:
     """Resume notebook registration for videos already committed to GitHub."""
+    if include_youtube_url:
+        raise ValueError("YouTube URL単体ソースの登録は廃止されました（2026-10-20 ユーザー確定仕様）。")
     print(f"\n[RESUME NOTEBOOK INGEST] GitHub登録済み動画 '{video_id}' のNotebook登録状態を確認・再開します。")
     v_url = f"https://www.youtube.com/watch?v={video_id}"
 
@@ -529,7 +466,6 @@ def run_notebook_registration_only(
         cues=cues,
         mock_cdp=mock_cdp,
         mock_sources=mock_sources,
-        add_youtube_source=include_youtube_url,
     )
     return nb_res
 
@@ -637,8 +573,29 @@ def run_pipeline(
     relay_via_drive: bool = False,
     mock_cdp: bool = False,
     include_youtube_url: bool = False,
+    notebook_backend: str = "cdp",
+    notebook_id: Optional[str] = None,
+    notebook_live: bool = False,
+    notebook_client: Any = None,
+    fetch_transcript: Any = None,
+    fetch_video_meta: Any = None,
+    paragraph_anchors: Optional[bool] = None,
 ) -> Dict[str, Any]:
-    """Execute complete automated research pipeline from URL to GitHub commit & verification."""
+    """Execute complete automated research pipeline from URL to GitHub commit & verification.
+
+    notebook_backend="notebooklm-py" のときは Notebook 登録を notebooklm_py_ingest.run_ingest で行う
+    （既定は計画のみ。書き込みは notebook_live と notebook_id の両方が必要）。
+    """
+    if include_youtube_url:
+        raise ValueError("YouTube URL単体ソースの登録は廃止されました（2026-10-20 ユーザー確定仕様）。")
+    if notebook_backend not in NOTEBOOK_BACKENDS:
+        raise ValueError(f"notebook_backend は {NOTEBOOK_BACKENDS} のいずれか: {notebook_backend}")
+    if notebook_live and notebook_backend != "notebooklm-py":
+        raise ValueError("Notebookへの --live 書き込みは notebook_backend='notebooklm-py' のときだけ使えます。")
+    if notebook_live and not notebook_id:
+        return {"status": "LIVE_REQUIRES_NOTEBOOK_ID", "notebook_ingest": {"status": "LIVE_REQUIRES_NOTEBOOK_ID", "writes": []}}
+    py_nb = dict(notebook_id=notebook_id, live=notebook_live, client=notebook_client, fetch_transcript=fetch_transcript,
+                 paragraph_anchors=paragraph_anchors)  # None=notebooklm_py_ingest.DEFAULT_PARAGRAPH_ANCHORS
     today_str = date.today().isoformat()
     print("=" * 70)
     print(f"[PIPELINE START] AI技術研究室 完全自動化研究パイプライン 開始 (v2.2, Model: {gemini_model})")
@@ -671,6 +628,20 @@ def run_pipeline(
         reg_data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8")) if REGISTRY_PATH.exists() else {}
         reg_records = reg_data.get("records", [])
         reg_record = next((r for r in reg_records if r.get("video_id") == video_id), {})
+
+        if res_path and res_path.exists() and notebook_backend == "notebooklm-py":
+            print(f"\n[ALREADY_REGISTERED] 動画 '{video_id}' のGitHub研究ノートは確認済み。notebooklm-py でNotebookの不足分を確認します...")
+            nb_res = run_notebooklm_py_step(
+                video_id, dedup_res.get("title") or f"YouTube Video {video_id}", res_path, **py_nb
+            )
+            return {
+                "status": NOTEBOOKLM_PY_RESUME_STATUS.get(nb_res["status"], nb_res["status"]),
+                "video_id": video_id,
+                "notebook_backend": notebook_backend,
+                "notebook_ingest": nb_res,
+                "is_2_source_okf_verified": nb_res["status"] in ("SUCCESS_2_SOURCE_OKF", "NO_OP"),
+                "details": dedup_res,
+            }
 
         if res_path and res_path.exists():
             print(f"\n[ALREADY_REGISTERED] 動画 '{video_id}' のGitHub研究ノートは確認済みです。Notebook登録状態を実画面から読み戻します...")
@@ -731,12 +702,32 @@ def run_pipeline(
         }
 
     # 2. Fetch YouTube metadata & captions
-    print(f"[2/8] YouTubeメタデータ＆字幕本文取得中 ({video_id})...")
-    player_data = verify_timestamps.fetch_player(video_id)
-    if not player_data or "videoDetails" not in player_data:
-        raise RuntimeError(f"YouTubeプレイヤーデータの取得に失敗しました: {video_id}")
+    meta_note = None
+    if dry_run and notebook_backend == "notebooklm-py" and notebook_id:
+        # 棚を読む dry-run（読み取りのみの通信あり）では、計画の題名を本物にするため題名・投稿日時だけ取る。
+        # 字幕トラック情報は捨てて、研究レシート側で字幕を取りに行かない。
+        print(f"[2/8] [DRY RUN] YouTubeの題名・投稿日時だけを読み取ります ({video_id})...")
+        try:
+            meta = (fetch_video_meta or fetch_video_meta_readonly)(video_id) or {}
+        except Exception as ex:  # 取れなければ仮の題名で計画を続ける
+            meta, meta_note = {}, f"題名の取得に失敗（{type(ex).__name__}）。計画の題名は仮名。"
+        details = (meta.get("player_data") or {}).get("videoDetails") or {}
+        player_data = {"videoDetails": dict(details, videoId=video_id)}
+        publish_date = meta.get("published_at")
+        if not details.get("title") and not meta_note:
+            meta_note = "題名を取得できなかったため、計画の題名は仮名。"
+    elif dry_run:
+        # Dry run must be fully offline: no YouTube player/watch/caption requests.
+        print(f"[2/8] [DRY RUN] 外部通信を行わず、動画IDのみのメタデータでプレビューします ({video_id})。")
+        player_data = {"videoDetails": {"videoId": video_id}}
+        publish_date = None
+    else:
+        print(f"[2/8] YouTubeメタデータ＆字幕本文取得中 ({video_id})...")
+        player_data = verify_timestamps.fetch_player(video_id)
+        if not player_data or "videoDetails" not in player_data:
+            raise RuntimeError(f"YouTubeプレイヤーデータの取得に失敗しました: {video_id}")
 
-    publish_date = verify_timestamps.fetch_watch_publish_date(video_id)
+        publish_date = verify_timestamps.fetch_watch_publish_date(video_id)
     vd = player_data.get("videoDetails", {})
     print(f"  - タイトル: {vd.get('title')}")
     print(f"  - 投稿者: {vd.get('author')}")
@@ -755,6 +746,33 @@ def run_pipeline(
         enable_live_gemini=enable_live_gemini,
         dry_run=dry_run,
     )
+
+    if dry_run and notebook_backend == "notebooklm-py":
+        # 手順8の計画だけを出す（書き込み0）。--notebook-id が無ければ棚も読まない（DRY_RUN_PLAN_OFFLINE）。
+        print("[8/8] [DRY RUN] notebooklm-py でNotebookへの追加予定を確認します（書き込みなし）...")
+        receipt_vids = receipt.get("videos") or [{}]
+        note_preview = receipt_to_research.render(receipt_vids[0], today_str) if receipt_vids[0] else ""
+        nb_res = run_notebooklm_py_step(
+            video_id, vd.get("title") or f"YouTube Video {video_id}", None,
+            published_at=publish_date, research_note_text=note_preview,
+            **dict(py_nb, live=False),
+        )
+        if meta_note:
+            nb_res.setdefault("notes", []).append(meta_note)
+        for p in nb_res.get("plan_details", []):
+            print(f"  - 追加予定: {p['kind']} / {p['title']} / {p['logical_id']}")
+        if "paragraph_anchors" in nb_res:
+            print(f"  - 字幕の段落目印（[HH:MM:SS]）: {'ON' if nb_res['paragraph_anchors'] else 'OFF'}")
+        print(f"\n[DRY RUN] Notebook計画: {nb_res['status']}。GitHub・Notebook・Driveへの書き込みゼロで終了します。")
+        return {
+            "status": NOTEBOOKLM_PY_RESUME_STATUS.get(nb_res["status"], nb_res["status"]),
+            "video_id": video_id,
+            "notebook_backend": notebook_backend,
+            "notebook_ingest": nb_res,
+            "receipt": receipt,
+            "engine_used": engine_used,
+            "model_used": model_used,
+        }
 
     if dry_run:
         print("\n[DRY RUN] プレビュー完了。外部・Drive・ローカルファイルへの副作用ゼロで終了します。")
@@ -909,20 +927,33 @@ def run_pipeline(
     raw_cues_data = receipt.get("raw_cues", [])
     cues_for_ingest = [(c["start"], c["end"], c["text"]) for c in raw_cues_data] if raw_cues_data else None
 
-    nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
-        video_id=video_id,
-        video_url=f"https://www.youtube.com/watch?v={video_id}",
-        video_title=vd.get("title", f"YouTube Video {video_id}"),
-        research_md_path=ROOT / research_md_path,
-        cues=cues_for_ingest,
-        mock_cdp=mock_cdp,
-        add_youtube_source=include_youtube_url,
-    )
-    nb_rb = nb_res.get("readback", {})
-    notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
-    notebook_research_readback = bool(nb_rb.get("research_note_found"))
-    notebook_transcript_readback = bool(nb_rb.get("transcript_source_found"))
-    is_2_source_okf_verified = bool(nb_res.get("is_2_source_okf_verified"))
+    if notebook_backend == "notebooklm-py":
+        nb_res = run_notebooklm_py_step(
+            video_id, vd.get("title", f"YouTube Video {video_id}"), ROOT / research_md_path,
+            cues=cues_for_ingest, published_at=publish_date, **py_nb
+        )
+        nb_ok = nb_res["status"] in ("SUCCESS_2_SOURCE_OKF", "NO_OP")
+        notebook_youtube_readback = False  # URL単体ソースは登録しない（R2）
+        notebook_research_readback = nb_ok
+        notebook_transcript_readback = nb_ok
+        is_2_source_okf_verified = nb_ok
+        nb_res.setdefault("independent_sources_distinct", nb_ok)
+        nb_res.setdefault("is_mock", False)
+    else:
+        nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
+            video_id=video_id,
+            video_url=f"https://www.youtube.com/watch?v={video_id}",
+            video_title=vd.get("title", f"YouTube Video {video_id}"),
+            research_md_path=ROOT / research_md_path,
+            cues=cues_for_ingest,
+            mock_cdp=mock_cdp,
+            published_at=publish_date,
+        )
+        nb_rb = nb_res.get("readback", {})
+        notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
+        notebook_research_readback = bool(nb_rb.get("research_note_found"))
+        notebook_transcript_readback = bool(nb_rb.get("transcript_source_found"))
+        is_2_source_okf_verified = bool(nb_res.get("is_2_source_okf_verified"))
 
     # Final Strict SUCCESS Evaluation (11 Mandatory Conditions + 2-Source OKF + Metadata Integrity)
     receipt_vids = receipt.get("videos", [])
@@ -1006,11 +1037,75 @@ def run_pipeline(
         "qa_verified": qa_verified,
         "engine_used": engine_used,
         "model_used": model_used,
+        "notebook_backend": notebook_backend,
         "notebook_ingest": nb_res,
         "is_2_source_okf_verified": is_2_source_okf_verified,
         "is_full_success": (final_status == "SUCCESS_2_SOURCE_OKF"),
         "fail_reasons": fail_reasons,
     }
+
+
+NOTEBOOK_BACKENDS = ("cdp", "notebooklm-py")
+# notebooklm-py の結果を、登録済み動画の再開時のパイプライン状態名へ寄せる（それ以外はそのまま返す）
+NOTEBOOKLM_PY_RESUME_STATUS = {
+    "NO_OP": "ALREADY_REGISTERED",
+    "SUCCESS_2_SOURCE_OKF": "SUCCESS_2_SOURCE_OKF",
+}
+
+
+def fetch_video_meta_readonly(video_id: str) -> Dict[str, Any]:
+    """YouTubeの題名などと投稿日時を読み取る（書き込みなし）。dry-run の計画表示用。"""
+    return {
+        "player_data": verify_timestamps.fetch_player(video_id),
+        "published_at": verify_timestamps.fetch_watch_publish_date(video_id),
+    }
+
+
+def run_notebooklm_py_step(
+    video_id: str,
+    video_title: str,
+    research_md_path: Optional[Path],
+    cues: Optional[List[Any]] = None,
+    published_at: Optional[str] = None,
+    notebook_id: Optional[str] = None,
+    live: bool = False,
+    client: Any = None,
+    fetch_transcript: Any = None,
+    research_note_text: Optional[str] = None,
+    paragraph_anchors: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """notebooklm_py_ingest.run_ingest で字幕取得・不足分の登録・読み戻しを1回で行う。
+
+    client を渡さなければ notebook_id から実CLIクライアントを作る（notebook_id も無ければ未接続の計画のみ）。
+    fetch_transcript を渡さなければ実行PCからYouTubeの字幕と投稿日時を取る（youtube-transcript-api→timedtext）。
+    字幕全文OKFは約1分ごとの段落本文で、各段落の先頭に時刻目印の1行が付く（paragraph_anchors 既定ON。発話ごとの時刻は入れない）。
+    """
+    import notebooklm_py_ingest
+
+    if client is None and notebook_id:
+        client = notebooklm_py_ingest.NotebookLmCliClient(notebook_id)
+    if fetch_transcript is None:
+        fetch_transcript = notebooklm_py_ingest.fetch_youtube_transcript
+    if research_note_text is not None:
+        note_text = research_note_text  # dry-run: 保存前の研究ノート（メモリ上）
+    else:
+        note_text = research_md_path.read_text(encoding="utf-8") if research_md_path and research_md_path.exists() else ""
+    res = notebooklm_py_ingest.run_ingest(
+        client,
+        video_id=video_id,
+        video_title=video_title,
+        research_note_text=note_text,
+        cues=cues,
+        live=live,
+        notebook_id=notebook_id,
+        published_at=published_at,
+        fetch_transcript=fetch_transcript,
+        paragraph_anchors=paragraph_anchors,
+    )
+    res.pop("precheck", None)
+    res.pop("postcheck", None)
+    res["new_source_ids"] = [w["source_id"] for w in res.get("writes", []) if w.get("source_id")]
+    return res
 
 
 SUCCESS_CLI_STATUSES = (
@@ -1020,6 +1115,8 @@ SUCCESS_CLI_STATUSES = (
     "RESUMED_NOTEBOOK_INGEST",
     "DRY_RUN_COMPLETE",
     "DRIVE_RELAY_DISPATCHED",
+    "DRY_RUN_PLAN",  # notebooklm-py: 計画のみ（書き込み0）
+    "DRY_RUN_PLAN_OFFLINE",
 )
 
 
@@ -1035,8 +1132,19 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--enable-live-gemini", action="store_true", help="Gemini APIのLIVE実行を明示的に許可する（デフォルトは安全のため無効）")
     parser.add_argument("--relay-via-drive", action="store_true", help="ローカルGit Pushを行わずDrive配置によるGASリレーを優先する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
-    parser.add_argument("--include-youtube-url", action="store_true", help="YouTube URLソースもNotebookへ追加登録する（デフォルトは字幕原文OKF＋研究ノートOKFの純粋2ソース登録原則）")
+    parser.add_argument("--include-youtube-url", action="store_true", help="廃止（2026-10-20）：指定するとエラーで停止する")
+    parser.add_argument("--notebook-backend", choices=NOTEBOOK_BACKENDS, default="cdp", help="Notebook登録の方式（既定: cdp）")
+    parser.add_argument("--notebook-id", help="notebooklm-py で登録するNotebookのID")
+    parser.add_argument("--live", action="store_true", help="notebooklm-py でNotebookへ実際に書き込む（--notebook-id 必須）")
+    parser.add_argument("--paragraph-anchors", action=argparse.BooleanOptionalAction, default=None,
+                        help="字幕の各段落の先頭に時刻目印 [HH:MM:SS] とURLを付ける（未指定なら notebooklm_py_ingest の既定。現在ON）")
     args = parser.parse_args(args_list)
+    if args.live and args.notebook_backend != "notebooklm-py":
+        parser.error("--live は --notebook-backend notebooklm-py のときだけ使えます。")
+    if args.live and not args.notebook_id:
+        parser.error("--live には --notebook-id の明示が必要です。")
+    if args.include_youtube_url:
+        parser.error("--include-youtube-url は廃止されました。YouTube URL単体ソースは登録しません（2026-10-20 ユーザー確定仕様）。")
 
     target_url = args.url or args.url_opt
     if not target_url:
@@ -1054,6 +1162,10 @@ def main(args_list: Optional[List[str]] = None) -> int:
         relay_via_drive=args.relay_via_drive,
         mock_cdp=args.mock_cdp,
         include_youtube_url=args.include_youtube_url,
+        notebook_backend=args.notebook_backend,
+        notebook_id=args.notebook_id,
+        notebook_live=args.live,
+        paragraph_anchors=args.paragraph_anchors,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("status") in SUCCESS_CLI_STATUSES else 1

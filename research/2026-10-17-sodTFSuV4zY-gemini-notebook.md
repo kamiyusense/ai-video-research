@@ -1,3 +1,29 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介"
+logical_id: "youtube:sodTFSuV4zY:research"
+record_id: "youtube:sodTFSuV4zY"
+video_id: "sodTFSuV4zY"
+resource: "https://www.youtube.com/watch?v=sodTFSuV4zY"
+canonical_url: "https://www.youtube.com/watch?v=sodTFSuV4zY"
+published_at: "2026-10-14T04:59:23-07:00"
+published_at_jst: "2026-10-14T20:59:23+09:00"
+publication_date: "2026-10-14"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:sodTFSuV4zY:transcript"
+transcript_notebook_source_id: "9d3fbe09-c40e-41ab-a351-31bd527681ed"
+research_notebook_source_id: "9d2e470f-736e-401e-8d2e-daed0df46fe1"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:JXmk7hmbS3c:research"
+    relation: "COMPLEMENTS"
+    note: "Claude Codeの実務環境づくり。どちらもPlaywright MCPと常時稼働のMac miniを使う構成を紹介"
+    evidence: "両研究ノートの独自要約（⑨Playwright MCP・⑩常時稼働Mac mini／Mac mini常時稼働・Playwright MCP）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介
 
 - record_id: `youtube:sodTFSuV4zY`

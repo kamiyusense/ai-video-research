@@ -1,3 +1,29 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 AIの使用枠がすぐになくなる？ChatGPTとClaudeの利用枠を節約するキャッシュの仕組みを解説してみた"
+logical_id: "youtube:t22FELAl-BM:research"
+record_id: "youtube:t22FELAl-BM"
+video_id: "t22FELAl-BM"
+resource: "https://www.youtube.com/watch?v=t22FELAl-BM"
+canonical_url: "https://www.youtube.com/watch?v=t22FELAl-BM"
+published_at: "2026-09-12T02:00:38-07:00"
+published_at_jst: "2026-09-12T18:00:38+09:00"
+publication_date: "2026-09-12"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:t22FELAl-BM:transcript"
+transcript_notebook_source_id: "eac41387-c894-4f56-834d-0cb1cee1b0d9"
+research_notebook_source_id: "7c5c996e-1dfc-4001-9a63-84368b885a14"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:W35UQZL2w7E:research"
+    relation: "COMPLEMENTS"
+    note: "どちらもChatGPT/Codex/Claudeの利用枠・トークン節約がテーマ。片方はプロンプトキャッシュの仕組み、もう片方は日々の節約テクニック"
+    evidence: "両研究ノートの独自要約（キャッシュの前方一致・TTL／会話リセット・差分出力・簡潔化）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # AIの使用枠がすぐになくなる？ChatGPTとClaudeの利用枠を節約するキャッシュの仕組みを解説してみた
 
 - record_id: `youtube:t22FELAl-BM`

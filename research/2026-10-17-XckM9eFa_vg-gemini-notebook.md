@@ -1,3 +1,35 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 どんなAIが来ても困らない「一生モノのAI」の作り方"
+logical_id: "youtube:XckM9eFa_vg:research"
+record_id: "youtube:XckM9eFa_vg"
+video_id: "XckM9eFa_vg"
+resource: "https://www.youtube.com/watch?v=XckM9eFa_vg"
+canonical_url: "https://www.youtube.com/watch?v=XckM9eFa_vg"
+published_at: "2026-06-09T13:30:02-07:00"
+published_at_jst: "2026-06-10T05:30:02+09:00"
+publication_date: "2026-06-10"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:XckM9eFa_vg:transcript"
+transcript_notebook_source_id: "827e1870-d69a-4ac9-b775-fe3d941ee73c"
+research_notebook_source_id: "49b6f3fd-6c90-4a41-82cb-a501638ed3e7"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:NCQZiT0e59g:research"
+    relation: "COMPLEMENTS"
+    note: "AIに渡す知識・記憶の置き方。階層フォルダとCLAUDE.md/MEMORY.mdと、雑なコンテキスト＋マスターコンテキストの二層記憶"
+    evidence: "両研究ノートの独自要約（CLAUDE.md・MEMORY.md・00_Resources／二層記憶）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+  - target_id: "youtube:u3ka_AAb8qE:research"
+    relation: "COMPLEMENTS"
+    note: "Markdownで知識を整理し索引を付けてAIに読ませる考え方。右腕AIフォルダとOKF形式"
+    evidence: "両研究ノートの独自要約（Markdown知識と武器目録（索引）／OKFの荷札・資料分割・リンク・目次）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # どんなAIが来ても困らない「一生モノのAI」の作り方
 
 - record_id: `youtube:XckM9eFa_vg`

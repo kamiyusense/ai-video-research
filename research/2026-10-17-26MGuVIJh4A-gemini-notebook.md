@@ -1,3 +1,29 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 【未来でガチ伸びる】AI時代で天才と呼ばれる人間になるための必須条件をまとめた"
+logical_id: "youtube:26MGuVIJh4A:research"
+record_id: "youtube:26MGuVIJh4A"
+video_id: "26MGuVIJh4A"
+resource: "https://www.youtube.com/watch?v=26MGuVIJh4A"
+canonical_url: "https://www.youtube.com/watch?v=26MGuVIJh4A"
+published_at: "2026-10-16T05:20:14-07:00"
+published_at_jst: "2026-10-16T21:20:14+09:00"
+publication_date: "2026-10-16"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:26MGuVIJh4A:transcript"
+transcript_notebook_source_id: "c7803e75-5bb8-4cf3-a9b2-62228910084c"
+research_notebook_source_id: "86780b90-9bbe-40b1-95de-344d60d6a7a7"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:gD6UZ4wG8OM:research"
+    relation: "COMPLEMENTS"
+    note: "AIへの期待値を上げて大きな目標から使う姿勢。野心的なプロンプトと、無茶な頂点ゴールから逆算する思考"
+    evidence: "両研究ノートの独自要約（高さ・深さ・広さの3次元／トップダウン枝刈り思考）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # 【未来でガチ伸びる】AI時代で天才と呼ばれる人間になるための必須条件をまとめた
 
 - record_id: `youtube:26MGuVIJh4A`

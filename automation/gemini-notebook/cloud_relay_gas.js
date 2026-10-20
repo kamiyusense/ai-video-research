@@ -1627,6 +1627,7 @@ function renderOkfFrontmatter_(v, checkedAt) {
     "original_url: " + JSON.stringify(v.url),
     "url: " + JSON.stringify(canon),
     "publication_date: " + JSON.stringify(clean_(v.published_at || "UNKNOWN")),
+    "published_at: " + JSON.stringify(clean_(v.published_at || "UNKNOWN")),
     "checked_at: " + JSON.stringify(checkedAt),
     "source_scope: " + JSON.stringify(clean_(v.source_scope)),
     "transcript_logical_id: " + JSON.stringify(transcriptLogicalId),
@@ -1663,6 +1664,46 @@ function renderOkfFrontmatter_(v, checkedAt) {
   }
   lines.push("---");
   return lines;
+}
+
+function linkifyTimestamps_(text, videoId) {
+  // receipt_to_research.linkify_timestamps と同じ規則（Python/JS出力一致）。
+  if (!text || !videoId) return text;
+  const protectRe = /(\[[^\]]*\]\([^)]*\)|`[^`]*`|<!--.*?-->|https?:\/\/[^\s)\]>]+)/;
+  const timeRe = /(?<![0-9:])([0-9]{1,2}):([0-5][0-9])(?::([0-5][0-9]))?(?![0-9:])/g;
+  const toLink = function (m, a, b, c) {
+    const sec = c !== undefined
+      ? parseInt(a, 10) * 3600 + parseInt(b, 10) * 60 + parseInt(c, 10)
+      : parseInt(a, 10) * 60 + parseInt(b, 10);
+    return "[" + m + "](https://www.youtube.com/watch?v=" + videoId + "&t=" + sec + "s)";
+  };
+  const lines = String(text).split("\n");
+  const out = [];
+  let inFront = lines.length > 0 && lines[0].trim() === "---";
+  let inCode = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (inFront) {
+      out.push(line);
+      if (i > 0 && line.trim() === "---") inFront = false;
+      continue;
+    }
+    if (line.trim().startsWith("```")) {
+      inCode = !inCode;
+      out.push(line);
+      continue;
+    }
+    if (inCode) {
+      out.push(line);
+      continue;
+    }
+    const parts = line.split(protectRe);
+    for (let j = 0; j < parts.length; j += 2) {
+      parts[j] = parts[j].replace(timeRe, toLink);
+    }
+    out.push(parts.join(""));
+  }
+  return out.join("\n");
 }
 
 function renderResearchMarkdown_(v, checkedAt) {
@@ -1724,7 +1765,7 @@ function renderResearchMarkdown_(v, checkedAt) {
     "Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。",
     "",
   ]);
-  return lines.join("\n");
+  return linkifyTimestamps_(lines.join("\n"), vid);
 }
 
 function renderDeltaSection_(v, checkedAt) {
@@ -3675,6 +3716,7 @@ if (typeof module !== "undefined" && module.exports) {
     scanForbiddenKeys: scanForbiddenKeys_,
     validateReceipt: validateReceipt_,
     renderResearchMarkdown: renderResearchMarkdown_,
+    linkifyTimestamps: linkifyTimestamps_,
     formatRelatedRecordsLines: formatRelatedRecordsLines_,
     renderDeltaSection: renderDeltaSection_,
     extractVideoIdsFromMarkdownText: extractVideoIdsFromMarkdownText_,
