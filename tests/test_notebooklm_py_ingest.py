@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Tests for notebooklm_py_ingest.py (offline, fake client only)."""
+import json
 import socket
 import sys
 import unittest
@@ -8,6 +9,7 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
+FIXTURE = ROOT / "tests" / "fixtures" / "notebook_sources_20261020.json"
 AUTO_DIR = ROOT / "automation" / "gemini-notebook"
 sys.path.insert(0, str(AUTO_DIR))
 import notebooklm_py_ingest as ing  # noqa: E402
@@ -40,31 +42,45 @@ class FakeClient:
         self.mangle = mangle or (lambda t: t)
         self.add_calls = []
         self.auth_calls = 0
+        self.fulltext_calls = []
 
     def auth_check_passive(self):
         self.auth_calls += 1
         return self.auth_ok
 
     def list_sources(self):
-        return [{"id": s["id"], "title": s["title"]} for s in self.sources]
+        return [{"id": s["id"], "type": s.get("type", ""), "title": s["title"]} for s in self.sources]
 
     def get_fulltext(self, source_id):
-        return self.bodies[source_id]
+        self.fulltext_calls.append(source_id)
+        return self.bodies.get(source_id, "")
 
     def add_text(self, title, text):
         self.add_calls.append((title, text))
         sid = f"new-{len(self.add_calls)}"
         if self.add_lands:
-            self.sources.append({"id": sid, "title": title})
+            self.sources.append({"id": sid, "type": "text", "title": title})
             self.bodies[sid] = self.mangle(text)
         if self.add_raises:
             raise TimeoutError("network timeout after send")
         return sid
 
 
-YT_SOURCE = {"id": "yt-1", "title": TITLE, "body": "動画の文字起こし本文"}
-TR_SOURCE = {"id": "tr-1", "title": ing.transcript_title(VID, TITLE)}
-NOTE_SOURCE = {"id": "rn-1", "title": ing.research_note_title(VID)}
+YT_SOURCE = {"id": "yt-1", "type": "youtube", "title": TITLE, "body": "動画の文字起こし本文"}
+TR_SOURCE = {"id": "tr-1", "type": "markdown", "title": ing.transcript_title(VID, TITLE)}
+NOTE_SOURCE = {"id": "rn-1", "type": "markdown", "title": ing.research_note_title(VID, TITLE)}
+
+
+def real_sources():
+    return json.loads(FIXTURE.read_text(encoding="utf-8"))["sources"]
+
+
+REAL_TITLES = {
+    "pRfC1DILDEM": "【AI中級】RAGのその先。巨大な資料をAIで精度高く取り扱いたい。",
+    "u3ka_AAb8qE": "AIが資料整理する新ルールOKFをサクッと理解する",
+    "sodTFSuV4zY": "デスクツアーならぬソフトウェアツアー！AIエンジニアが仕事で使ってるアプリ・サービスを一式紹介",
+    "YrTVpJ1ebUk": "2026年10月AI最新ニュースと3社比較",
+}
 
 
 class TestNotebookLmPyIngest(unittest.TestCase):
@@ -175,6 +191,103 @@ class TestNotebookLmPyIngest(unittest.TestCase):
                 mock.patch.object(ing.subprocess, "run", blocked):
             res = self.run_live(c)
         self.assertEqual(res["status"], "SUCCESS_2_SOURCE_OKF")
+
+
+class TestRealNotebookTitles(unittest.TestCase):
+    """2026-10-20 の実Notebook一覧（id/type/titleのみ）での回帰テスト。"""
+
+    def plan(self, vid, cues=CUES):
+        c = FakeClient(real_sources())
+        res = ing.run_ingest(c, vid, REAL_TITLES[vid], NOTE, cues=cues)
+        self.assertEqual(c.add_calls, [])
+        return res
+
+    def test_pRfC1DILDEM_all_three_found_no_op(self):
+        res = self.plan("pRfC1DILDEM")
+        self.assertEqual(res["status"], "NO_OP")
+        pre = res["precheck"]
+        self.assertTrue(pre["youtube_source_id"].startswith("25c0f62e"))
+        self.assertTrue(pre["transcript_source_id"].startswith("a32a70ec"))
+        self.assertTrue(pre["research_note_source_id"].startswith("af697c8c"))
+
+    def test_u3ka_AAb8qE_plans_transcript_only(self):
+        res = self.plan("u3ka_AAb8qE", cues=None)
+        self.assertEqual(res["status"], "DRY_RUN_PLAN")
+        self.assertEqual(res["plan"], ["transcript"])
+        self.assertTrue(res["precheck"]["research_note_source_id"].startswith("65b634f5"))
+        self.assertTrue(res["precheck"]["youtube_source_id"].startswith("d1fef625"))
+        self.assertEqual(res["transcript_acquisition_method"], ing.ACQ_NOTEBOOK_YOUTUBE)
+
+    def test_sodTFSuV4zY_plans_transcript_only_and_ignores_markdown_as_youtube(self):
+        res = self.plan("sodTFSuV4zY")
+        self.assertEqual(res["status"], "DRY_RUN_PLAN")
+        self.assertEqual(res["plan"], ["transcript"])
+        pre = res["precheck"]
+        self.assertTrue(pre["research_note_source_id"].startswith("9d2e470f"))
+        self.assertNotEqual(pre["youtube_source_id"], pre["research_note_source_id"])
+        if pre["youtube_source_id"]:
+            self.assertTrue(pre["youtube_source_id"].startswith("2a738296"))
+
+    def test_YrTVpJ1ebUk_combined_note_detected(self):
+        res = self.plan("YrTVpJ1ebUk")
+        self.assertTrue(res["precheck"]["research_note_source_id"].startswith("cedf6421"))
+        self.assertEqual(res["plan"], ["transcript"])
+
+    def test_every_registry_research_note_is_detected(self):
+        """registry.json に実IDが記録された研究ノートは、すべて検出されること（二重登録の防止）。"""
+        reg = json.loads((ROOT / "registry.json").read_text(encoding="utf-8"))
+        sources = real_sources()
+        checked = 0
+        for r in reg["records"]:
+            sid = (r.get("notebook_sources") or {}).get("research_note")
+            if not sid or not any(s["id"] == sid for s in sources):
+                continue
+            pre = ing.classify_sources(sources, r["video_id"], "", FakeClient(sources))
+            self.assertEqual(pre["research_note_source_id"], sid, r["video_id"])
+            checked += 1
+        self.assertGreater(checked, 0)
+
+    def test_new_titles_are_detected_by_classifier(self):
+        srcs = [
+            {"id": "a", "type": "text", "title": ing.transcript_title(VID, TITLE)},
+            {"id": "b", "type": "text", "title": ing.research_note_title(VID, TITLE)},
+        ]
+        pre = ing.classify_sources(srcs, VID, TITLE)
+        self.assertEqual((pre["transcript_source_id"], pre["research_note_source_id"]), ("a", "b"))
+
+    def test_unknown_markdown_resolved_by_okf_tag_in_body(self):
+        srcs = [{"id": "m1", "type": "markdown", "title": f"memo_{VID}.md",
+                 "body": f'---\ntype: "TRANSCRIPT"\nlogical_id: "youtube:{VID}:transcript"\n---\n'}]
+        c = FakeClient(srcs)
+        pre = ing.classify_sources(c.list_sources(), VID, TITLE, c)
+        self.assertEqual(pre["transcript_source_id"], "m1")
+        self.assertFalse(pre["ambiguous"])
+
+    def test_unresolvable_sources_halt_without_writes(self):
+        srcs = [YT_SOURCE, {"id": "m1", "type": "markdown", "title": f"memo_{VID}.md", "body": "なにかのメモ"}]
+        c = FakeClient(srcs)
+        res = ing.run_ingest(c, VID, TITLE, NOTE, cues=CUES, live=True, notebook_id="nb-1")
+        self.assertEqual(res["status"], "AMBIGUOUS_EXISTING_SOURCES")
+        self.assertEqual(c.add_calls, [])
+
+    def test_duplicate_notes_resolved_by_body_or_halt(self):
+        n2 = {"id": "rn-2", "type": "markdown", "title": f"動画研究_{VID}_old.md",
+              "body": f'logical_id: "youtube:{VID}:research"'}
+        c = FakeClient([YT_SOURCE, dict(NOTE_SOURCE, body="本文に荷札なし"), n2, TR_SOURCE])
+        res = ing.run_ingest(c, VID, TITLE, NOTE, cues=CUES, live=True, notebook_id="nb-1")
+        self.assertEqual(res["status"], "NO_OP")
+        self.assertEqual(res["precheck"]["research_note_source_id"], "rn-2")
+        n2["body"] = "荷札なし"
+        c = FakeClient([YT_SOURCE, NOTE_SOURCE, n2, TR_SOURCE])
+        res = ing.run_ingest(c, VID, TITLE, NOTE, cues=CUES, live=True, notebook_id="nb-1")
+        self.assertEqual(res["status"], "AMBIGUOUS_EXISTING_SOURCES")
+        self.assertEqual(c.add_calls, [])
+
+    def test_no_cues_and_no_youtube_source_halts(self):
+        c = FakeClient([NOTE_SOURCE])
+        res = ing.run_ingest(c, VID, TITLE, NOTE, cues=None, live=True, notebook_id="nb-1")
+        self.assertEqual(res["status"], "TRANSCRIPT_SOURCE_MISSING")
+        self.assertEqual(c.add_calls, [])
 
 
 if __name__ == "__main__":

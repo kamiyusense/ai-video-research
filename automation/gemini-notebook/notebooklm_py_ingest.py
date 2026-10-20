@@ -5,11 +5,14 @@
 docs/OKF_KNOWLEDGE_ROADMAP.md v1.1「1動画2ソースMVP完成契約」に沿って、
 字幕原文OKF と 研究ノートOKF を別々のソースとしてNotebookへ登録し、読み戻して確認する。
 2026-10-20 にユーザーPCの notebooklm-py 0.8.5 で行った実機作業を再実行可能にしたもの。
-既存の notebook_auto_ingest.py（CDP方式）は変更せず、判定・組み立て関数だけ再利用する。
+既存の notebook_auto_ingest.py（CDP方式）は変更せず、字幕原文OKFの組み立て関数だけ再利用する。
+（CDP用の evaluate_2_source_okf_independence は実Notebookのタイトル形式を拾えないため使わない。2026-10-20 検品T2）
 
 流れ:
 1. ログイン点検（auth_check_passive）。失敗なら書き込み0件で AUTH_EXPIRED_HALT。login/refresh は呼ばない。
-2. 事前読み戻し（list_sources）→ evaluate_2_source_okf_independence で有無を判定。揃っていれば NO_OP。
+2. 事前読み戻し（list_sources）→ classify_sources で種類（type）とタイトルから有無を判定。
+   タイトルで決めきれなければ本文の荷札（type / logical_id）を読み、それでも曖昧なら書き込み0で
+   AMBIGUOUS_EXISTING_SOURCES。揃っていれば NO_OP。
 3. 足りない方だけ組み立てる（字幕原文は build_transcript_okf_content を再利用）。
 4. 既定は dry-run（計画のみ）。live=True かつ notebook_id 指定時だけ add_text する。
 5. 書き込み結果が不明（例外・ID無し）でも再送しない。一覧の読み戻しで有無を確認する。
@@ -34,10 +37,7 @@ AUTO_DIR = Path(__file__).resolve().parent
 if str(AUTO_DIR) not in sys.path:
     sys.path.insert(0, str(AUTO_DIR))
 
-from notebook_auto_ingest import (  # noqa: E402
-    build_transcript_okf_content,
-    evaluate_2_source_okf_independence,
-)
+from notebook_auto_ingest import build_transcript_okf_content  # noqa: E402
 
 ACQ_TIMEDTEXT = "YOUTUBE_TIMEDTEXT_API"
 ACQ_NOTEBOOK_YOUTUBE = "NOTEBOOK_YOUTUBE_SOURCE_FULLTEXT"
@@ -48,7 +48,7 @@ class NotebookClient(Protocol):
 
     def auth_check_passive(self) -> bool: ...
 
-    def list_sources(self) -> List[Dict[str, Any]]: ...  # [{"id": str, "title": str}, ...]
+    def list_sources(self) -> List[Dict[str, Any]]: ...  # [{"id": str, "type": str, "title": str}, ...]
 
     def get_fulltext(self, source_id: str) -> str: ...
 
@@ -93,7 +93,10 @@ class NotebookLmCliClient:
             raise RuntimeError(f"source list failed (rc={cp.returncode})")
         data = json.loads(cp.stdout)
         rows = data.get("sources", data) if isinstance(data, dict) else data
-        return [{"id": str(r.get("id", "")), "title": str(r.get("title", ""))} for r in rows]
+        return [
+            {"id": str(r.get("id", "")), "type": str(r.get("type", "")).lower(), "title": str(r.get("title", ""))}
+            for r in rows
+        ]
 
     def get_fulltext(self, source_id: str) -> str:
         cp = self._run("get_fulltext", source_id=source_id)
@@ -121,12 +124,20 @@ class NotebookLmCliClient:
 # 判定ヘルパー
 
 
+SHORT_TITLE_MAX = 40
+
+
+def _short_title(video_title: str) -> str:
+    t = " ".join((video_title or "").split())
+    return t if len(t) <= SHORT_TITLE_MAX else t[:SHORT_TITLE_MAX].rstrip() + "…"
+
+
 def transcript_title(video_id: str, video_title: str) -> str:
-    return f"AI_VIDEO_TRANSCRIPT_RAW:{video_id} 【字幕原文】 {video_title}"
+    return f"【字幕原文】{_short_title(video_title)} [{video_id}]"
 
 
-def research_note_title(video_id: str) -> str:
-    return f"AI_VIDEO_RESEARCH_NOTE:{video_id}"
+def research_note_title(video_id: str, video_title: str) -> str:
+    return f"【研究ノート】{_short_title(video_title)} [{video_id}]"
 
 
 _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
@@ -166,17 +177,106 @@ def readback_matches(expected: str, actual: str) -> Dict[str, Any]:
     return {"exact_match": exact, "normalized_match": normalized, "match": normalized}
 
 
-def classify_sources(sources: List[Dict[str, Any]], video_id: str, video_title: str) -> Dict[str, Any]:
-    """既存の evaluate_2_source_okf_independence でソース一覧（タイトル）を判定する。
+def _title_kind(title: str, video_id: str) -> Optional[str]:
+    """実Notebookのタイトル形式（2026-10-20 一覧）から種類を決める。決めきれなければ None。"""
+    bracket = f"[{video_id}]"
+    if (
+        (title.startswith("【字幕原文】") and bracket in title)
+        or f"AI_VIDEO_TRANSCRIPT_RAW:{video_id}" in title
+        or f"youtube:{video_id}:transcript" in title
+    ):
+        return "transcript"
+    if (
+        (title.startswith("【研究ノート】") and bracket in title)
+        or (title.startswith(("動画研究_", "研究動画_")) and video_id in title)
+        or f"AI_VIDEO_RESEARCH_NOTE:{video_id}" in title
+        or f"youtube:{video_id}:research" in title
+    ):
+        return "research_note"
+    return None
 
-    has_actual_cues=True で呼ぶ：ここで知りたいのは「字幕原文ソースがあるか」で、
-    cue有無の合否は事後読み戻しで別に判定するため。
+
+def _body_kind(body: str, video_id: str) -> Optional[str]:
+    """本文の荷札（logical_id / type）から種類を決める。関連リンクの記載に引っ張られないよう行頭の項目だけ見る。"""
+    vid = re.escape(video_id)
+    m = re.search(rf'^\s*logical_id:\s*"?youtube:{vid}:(transcript|research)"?\s*$', body or "", re.M)
+    if m:
+        return "transcript" if m.group(1) == "transcript" else "research_note"
+    if video_id in (body or "") and re.search(r'^\s*type:\s*"?TRANSCRIPT"?\s*$', body or "", re.M):
+        return "transcript"
+    return None
+
+
+def _same_title(a: str, b: str) -> bool:
+    na, nb = normalize_for_readback(a), normalize_for_readback(b)
+    return bool(na) and bool(nb) and (na == nb or na in nb or nb in na)
+
+
+def classify_sources(
+    sources: List[Dict[str, Any]],
+    video_id: str,
+    video_title: str,
+    client: Optional[NotebookClient] = None,
+) -> Dict[str, Any]:
+    """ソース一覧を YouTube / 字幕原文OKF / 研究ノートOKF に振り分ける。
+
+    - YouTube は type=="youtube" かつタイトル一致のものだけ（IDを含むmarkdownをYouTube扱いしない）。
+    - 字幕原文・研究ノートは youtube 以外の type からタイトル形式で判定。
+    - 種類不明（IDを含むがタイトル形式に合わない）や同じ種類が複数ある場合は、client があれば本文の荷札で判定。
+    - それでも決めきれなければ ambiguous=True。
     """
-    items = [
-        {"index": i, "text": str(s.get("title", "")), "source_id": s.get("id")}
-        for i, s in enumerate(sources)
-    ]
-    return evaluate_2_source_okf_independence(items, video_id, video_title, has_actual_cues=True)
+    youtube = [s for s in sources if s.get("type") == "youtube" and _same_title(str(s.get("title", "")), video_title)]
+    kinds: Dict[str, List[Dict[str, Any]]] = {"transcript": [], "research_note": []}
+    unknown: List[Dict[str, Any]] = []
+    for s in sources:
+        if s.get("type") == "youtube":
+            continue
+        title = str(s.get("title", ""))
+        k = _title_kind(title, video_id)
+        if k:
+            kinds[k].append(s)
+        elif video_id in title:
+            unknown.append(s)
+
+    reasons: List[str] = []
+    # (source, タイトル上の種類 or None)。同じ種類が複数あるものは本文の荷札で絞り込む
+    to_inspect = [(s, None) for s in unknown]
+    for k, cands in kinds.items():
+        if len(cands) > 1:
+            to_inspect.extend((s, k) for s in cands)
+            kinds[k] = []
+    if to_inspect:
+        if client is None:
+            reasons.append("タイトルで決めきれないソースがあるが、本文を読めない")
+        else:
+            unresolved: List[tuple] = []
+            for s, title_k in to_inspect:
+                k = _body_kind(client.get_fulltext(s["id"]), video_id)
+                if k:
+                    kinds[k].append(s)
+                else:
+                    unresolved.append((s, title_k))
+            for s, title_k in unresolved:
+                # タイトル上同じ種類の重複で、別の1件が荷札で確定したなら、それを正とする
+                if title_k and len(kinds[title_k]) == 1:
+                    continue
+                reasons.append(f"種類不明: {s.get('title')}")
+    for k, cands in kinds.items():
+        if len(cands) > 1:
+            reasons.append(f"{k} の候補が複数: " + ", ".join(str(c.get("title")) for c in cands))
+    if len(youtube) > 1:
+        reasons.append("YouTubeソースの候補が複数")
+
+    def _one(cands: List[Dict[str, Any]]) -> Optional[str]:
+        return str(cands[0]["id"]) if len(cands) == 1 else None
+
+    return {
+        "youtube_source_id": _one(youtube),
+        "transcript_source_id": _one(kinds["transcript"]),
+        "research_note_source_id": _one(kinds["research_note"]),
+        "ambiguous": bool(reasons),
+        "ambiguous_reasons": reasons,
+    }
 
 
 def build_transcript_text(
@@ -228,29 +328,33 @@ def run_ingest(
         return result
 
     before = client.list_sources()
-    pre = classify_sources(before, video_id, video_title)
+    pre = classify_sources(before, video_id, video_title, client)
     result["precheck"] = pre
-    need_transcript = not pre["transcript_source_found"]
-    need_note = not pre["research_note_found"]
+    if pre["ambiguous"]:
+        result["status"] = "AMBIGUOUS_EXISTING_SOURCES"
+        return result
+    need_transcript = pre["transcript_source_id"] is None
+    need_note = pre["research_note_source_id"] is None
 
     if not need_transcript and not need_note:
-        if pre["transcript_source_id"] == pre["research_note_source_id"]:
-            result["status"] = "NEEDS_REVIEW_SAME_SOURCE_ID"
-        else:
-            result["status"] = "NO_OP"
+        result["status"] = "NO_OP"
         return result
 
     planned: Dict[str, Dict[str, str]] = {}
     if need_transcript:
         yt_text = None
-        if not cues and pre["youtube_found"] and pre["youtube_source_id"] != "UNKNOWN":
+        if not cues:
+            if not pre["youtube_source_id"]:
+                result["status"] = "TRANSCRIPT_SOURCE_MISSING"
+                result["notes"].append("字幕cueも、NotebookのYouTubeソースも無いため字幕原文を作れない。")
+                return result
             yt_text = client.get_fulltext(pre["youtube_source_id"])
         tr = build_transcript_text(video_id, video_title, cues, yt_text)
         result["transcript_acquisition_method"] = tr["acquisition_method"]
         result["transcript_cue_count"] = tr["cue_count"]
         planned["transcript"] = {"title": transcript_title(video_id, video_title), "text": tr["text"]}
     if need_note:
-        planned["research_note"] = {"title": research_note_title(video_id), "text": research_note_text}
+        planned["research_note"] = {"title": research_note_title(video_id, video_title), "text": research_note_text}
     result["plan"] = list(planned)
 
     if not live:
@@ -282,7 +386,7 @@ def run_ingest(
 
     # 事後読み戻し
     after = client.list_sources()
-    post = classify_sources(after, video_id, video_title)
+    post = classify_sources(after, video_id, video_title, client)
     result["postcheck"] = post
     checks: Dict[str, Any] = {}
     for w in result["writes"]:
@@ -291,8 +395,9 @@ def run_ingest(
     result["readback"] = checks
 
     distinct = (
-        post["transcript_source_found"]
-        and post["research_note_found"]
+        not post["ambiguous"]
+        and post["transcript_source_id"] is not None
+        and post["research_note_source_id"] is not None
         and post["transcript_source_id"] != post["research_note_source_id"]
     )
     result["distinct_source_ids"] = bool(distinct)
