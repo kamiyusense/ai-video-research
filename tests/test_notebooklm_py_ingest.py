@@ -595,6 +595,21 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         with self.assertRaises(ValueError):
             nai.ingest_and_verify_notebook(VID, "u", "t", ROOT / "README.md", mock_cdp=True, add_youtube_source=True)
 
+    def test_drive_sync_transcript_records_published_at(self):
+        import tempfile
+        import notebook_auto_ingest as nai
+        with tempfile.TemporaryDirectory() as tmp:
+            note = Path(tmp) / "note.md"
+            note.write_text("# note\n", encoding="utf-8")
+            res = nai.sync_to_drive_notebook_sources(
+                VID, f"https://www.youtube.com/watch?v={VID}", TITLE, note,
+                target_dir=Path(tmp) / "drive", cues=[{"start": 496.0, "text": "荷札の話"}], published_at="2026-10-01",
+            )
+            tr = next(Path(f["path"]) for f in res["synced_files"] if f["path"].endswith("_transcript_okf.md"))
+            body = tr.read_text(encoding="utf-8")
+        self.assertIn('published_at: "2026-10-01"', body)
+        self.assertIn(f"&t=496s) 荷札の話", body)
+
     def test_youtube_url_source_add_is_always_disabled(self):
         import notebook_auto_ingest as nai
         res = nai.add_youtube_source_via_cdp(None, {}, VID, "https://www.youtube.com/watch?v=" + VID)

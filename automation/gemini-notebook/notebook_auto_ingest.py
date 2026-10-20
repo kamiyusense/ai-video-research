@@ -1099,6 +1099,7 @@ def sync_to_drive_notebook_sources(
     target_dir: Path = DEFAULT_NOTEBOOK_SOURCES_DIR,
     transcript_content: Optional[str] = None,
     cues: Optional[List[Dict[str, Any]]] = None,
+    published_at: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Place the sources (YouTube reference, Research Markdown & Transcript OKF) into Drive folder."""
     if not target_dir.parent.exists():
@@ -1145,6 +1146,7 @@ def sync_to_drive_notebook_sources(
             cues=cues,
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
     else:
         tr_text = build_transcript_okf_content(
@@ -1154,6 +1156,7 @@ def sync_to_drive_notebook_sources(
             raw_text="- (字幕発話データ未指定)",
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
     tr_file.write_text(tr_text, encoding="utf-8")
 
@@ -1258,6 +1261,7 @@ def ingest_and_verify_notebook(
         research_md_path=research_md_path,
         target_dir=drive_dir,
         transcript_content=final_transcript_text,
+        published_at=published_at,
     )
     print(f"[1/3] Google Drive同期フォルダ連携: {drive_res.get('status')}")
 
