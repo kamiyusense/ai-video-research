@@ -99,7 +99,7 @@ YouTube URLをNotebookへ登録した場合は **別のURLソース** として�
 | **4: 保存経路・索引整備** | GAS/GitHubに研究OKF、関係索引、更新記録を安全保存 | 既存API/JSON後方互換、重複防止、非default write readback。LIVEは新規承認 | TODO | **CODE_UPDATED** (GAS/Python完全同期、catalog networkでconfirmed/candidate/unresolvedを独立集計) |
 | **5: 既存知識の非破壊移行** | 既存登録を棚卸ししてOKF化・関連候補生成 | 個別動画ID照合、原文未取得はUNKNOWN、既存資料上書き・重複なし | TODO | **BACKWARD_COMPATIBLE_VERIFIED / BACKLINKS_PARITY_COMPLETE** (既存資産透過パース維持、主要ハブ5件への逆リンク整備・全30ペア双方向整合性検査PASS・欠落ゼロ実証) |
 | **6: 質問回答品質の検証** | 関連探索・件数・時系列・全体傾向・元発言確認 | 出典付き回答、誤リンク/過剰一般化検出、UNKNOWNと根拠時刻を正しく扱う | TODO | **TEST_PASSED** (5分類ルーター＋条件付き決定論的集計＋時系列区別＋1ホップ探索免責、全85テストPASS) |
-| **7: 省力化・継続運用** | 新規入力で字幕原文OKF＋研究ノートOKFを別々に登録し、保存・質問回答まで運用 | 2ソース独立readback、双方の元URL・相互参照、GitHub保存/readback、QA、復旧を実機確認。従来のURL＋研究ノートだけでは正式完了不可 | TODO | **2_SOURCE_OKF_INGEST_READY**（`u3ka_AAb8qE` および `pRfC1DILDEM` にて純粋2ソースOKF登録・読み戻しをMock/静的検証済み、全121テストPASS。新規動画での純粋2ソースOKF原則化・12大受入条件網羅完了、実機LIVE読み戻しは承認待ち） |
+| **7: 省力化・継続運用** | 新規入力で字幕原文OKF＋研究ノートOKFを別々に登録し、保存・質問回答まで運用 | 2ソース独立readback、双方の元URL・相互参照、GitHub保存/readback、QA、復旧を実機確認。従来のURL＋研究ノートだけでは正式完了不可 | TODO | **2026-10-20 更新（事実のみ）**: `pRfC1DILDEM` は字幕原文OKF（`a32a70ec`）＋研究ノートOKF（`af697c8c`）を別ソースで実機登録し、正規化読み戻しで一致（2026-10-20、ユーザーPCの notebooklm-py 0.8.5、[検品ループ記録](REVIEW_LOOP_LOG.md) 2・3）。字幕は時刻なしのNotebook内YouTubeソース本文由来で `UNVERIFIED`・cue数0。自然言語QA確認は未実施のため `SUCCESS_2_SOURCE_OKF` は未確定。他の30動画は字幕原文OKF未登録（健康診断の実一覧写しでの集計）。再実行用ツール `notebooklm_py_ingest.py`（登録・health）はオフラインテストのみで、実Notebookでは未実行（[手順書](../automation/gemini-notebook/NOTEBOOKLM_PY_RUNBOOK.md)）。テスト152件OK（PR #14 `011d719`、ネット遮断・同名ブランチで実測）。 |
 
 **Phaseの省略不可という意味ではない**: 許可済みの静的設計・mock・安全な非defaultコード変更は一括実行してよい。未実施のLIVEだけ明確に切る。1件の成功で全件の完全性を推定しない。
 
