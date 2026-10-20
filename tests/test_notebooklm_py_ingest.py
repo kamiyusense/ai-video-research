@@ -290,5 +290,67 @@ class TestRealNotebookTitles(unittest.TestCase):
         self.assertEqual(c.add_calls, [])
 
 
+class TestHealthCheck(unittest.TestCase):
+    """T3: 読み取り専用のNotebook健康診断。"""
+
+    def setUp(self):
+        self.registry = json.loads((ROOT / "registry.json").read_text(encoding="utf-8"))
+
+    def client(self, sources, **kw):
+        c = FakeClient(sources, **kw)
+
+        def no_write(*a, **k):
+            raise AssertionError("health check must not write")
+
+        c.add_text = no_write
+        return c
+
+    def test_auth_expired_stops_without_reading_or_writing(self):
+        c = self.client(real_sources(), auth_ok=False)
+        with mock.patch.object(c, "list_sources", side_effect=AssertionError("must not list")):
+            rep = ing.health_check(c, self.registry)
+        self.assertEqual(rep["status"], "AUTH_EXPIRED")
+        self.assertIn("ログイン", rep["user_action"])
+        self.assertEqual(c.add_calls, [])
+
+    def test_cli_auth_expired_exits_nonzero(self):
+        with mock.patch.object(ing.NotebookLmCliClient, "auth_check_passive", return_value=False), \
+                mock.patch.object(ing.NotebookLmCliClient, "list_sources", side_effect=AssertionError), \
+                mock.patch.object(ing.NotebookLmCliClient, "add_text", side_effect=AssertionError):
+            rc = ing.main(["health", "--notebook-id", "nb-1"])
+        self.assertNotEqual(rc, 0)
+
+    def test_current_fixture_counts(self):
+        rep = ing.health_check(self.client(real_sources()), self.registry)
+        self.assertEqual(rep["registry_ids_missing_in_notebook_count"], 0)
+        self.assertEqual(rep["notebook_sources_not_in_registry_count"], 0)
+        self.assertEqual(rep["videos_without_transcript_okf_count"], 30)
+        self.assertNotIn("pRfC1DILDEM", rep["videos_without_transcript_okf"])
+        self.assertEqual(rep["status"], "OK")
+
+    def test_one_id_removed_reports_one_missing(self):
+        srcs = [s for s in real_sources() if not s["id"].startswith("65b634f5")]
+        rep = ing.health_check(self.client(srcs), self.registry)
+        self.assertEqual(rep["registry_ids_missing_in_notebook_count"], 1)
+        self.assertEqual(rep["registry_ids_missing_in_notebook"][0]["video_id"], "u3ka_AAb8qE")
+        self.assertEqual(rep["status"], "ATTENTION")
+
+    def test_unregistered_note_in_notebook_is_reported(self):
+        srcs = real_sources() + [{"id": "x-1", "type": "text", "title": "【研究ノート】新しい動画 [abcdefghijk]"}]
+        rep = ing.health_check(self.client(srcs), self.registry)
+        self.assertEqual(rep["notebook_sources_not_in_registry_count"], 1)
+        self.assertEqual(rep["notebook_sources_not_in_registry"][0]["kind"], "research_note")
+
+    def test_health_is_offline(self):
+        def blocked(*a, **k):
+            raise AssertionError("network call")
+
+        with mock.patch.object(urllib.request, "urlopen", blocked), \
+                mock.patch.object(socket, "create_connection", blocked), \
+                mock.patch.object(ing.subprocess, "run", blocked):
+            rep = ing.health_check(self.client(real_sources()), self.registry)
+        self.assertEqual(rep["status"], "OK")
+
+
 if __name__ == "__main__":
     unittest.main()

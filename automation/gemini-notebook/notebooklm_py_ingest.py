@@ -34,6 +34,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol
 
 AUTO_DIR = Path(__file__).resolve().parent
+ROOT = AUTO_DIR.parents[1]
+REGISTRY_PATH = ROOT / "registry.json"
 if str(AUTO_DIR) not in sys.path:
     sys.path.insert(0, str(AUTO_DIR))
 
@@ -408,7 +410,86 @@ def run_ingest(
     return result
 
 
+# ---------------------------------------------------------------------------
+# 健康診断（読み取り専用）
+
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+_NOTE_TITLE_RE = re.compile(r"^(【研究ノート】|動画研究_|研究動画_)|AI_VIDEO_RESEARCH_NOTE:|youtube:[\w-]{11}:research")
+_TRANSCRIPT_TITLE_RE = re.compile(r"^【字幕原文】|AI_VIDEO_TRANSCRIPT_RAW:|youtube:[\w-]{11}:transcript")
+REGISTRY_SOURCE_KEYS = ("research_note", "transcript_okf", "youtube_url_source")
+
+
+def health_check(client: NotebookClient, registry: Dict[str, Any]) -> Dict[str, Any]:
+    """Notebookと台帳 registry.json の notebook_sources を照合する。書き込み系は一切呼ばない。"""
+    if not client.auth_check_passive():
+        return {
+            "status": "AUTH_EXPIRED",
+            "user_action": "相棒のPCでNotebookLMにログインし直してください（このツールはログインを自動で行いません）。",
+        }
+
+    sources = client.list_sources()
+    notebook_ids = {str(s.get("id")) for s in sources}
+    records = registry.get("records", [])
+
+    registry_ids: Dict[str, Dict[str, str]] = {}
+    for r in records:
+        ns = r.get("notebook_sources") or {}
+        for key in REGISTRY_SOURCE_KEYS:
+            sid = str(ns.get(key) or "")
+            if _UUID_RE.match(sid):
+                registry_ids.setdefault(sid, {"video_id": r.get("video_id"), "kind": key})
+
+    missing = [
+        {"source_id": sid, **meta} for sid, meta in registry_ids.items() if sid not in notebook_ids
+    ]
+
+    unregistered = []
+    for s in sources:
+        if s.get("type") == "youtube" or str(s.get("id")) in registry_ids:
+            continue
+        title = str(s.get("title", ""))
+        kind = (
+            "transcript_okf" if _TRANSCRIPT_TITLE_RE.search(title)
+            else "research_note" if _NOTE_TITLE_RE.search(title)
+            else None
+        )
+        if kind:
+            unregistered.append({"source_id": s.get("id"), "kind": kind, "title": title})
+
+    transcript_missing = []
+    for r in records:
+        sid = str((r.get("notebook_sources") or {}).get("transcript_okf") or "")
+        if not (_UUID_RE.match(sid) and sid in notebook_ids):
+            transcript_missing.append(r.get("video_id"))
+
+    return {
+        "status": "OK" if not missing and not unregistered else "ATTENTION",
+        "notebook_source_count": len(sources),
+        "registry_record_count": len(records),
+        "registry_ids_missing_in_notebook": missing,
+        "registry_ids_missing_in_notebook_count": len(missing),
+        "notebook_sources_not_in_registry": unregistered,
+        "notebook_sources_not_in_registry_count": len(unregistered),
+        "videos_without_transcript_okf": transcript_missing,
+        "videos_without_transcript_okf_count": len(transcript_missing),
+    }
+
+
+def main_health(argv: List[str]) -> int:
+    ap = argparse.ArgumentParser(prog="notebooklm_py_ingest.py health", description="Notebook健康診断（読み取り専用）")
+    ap.add_argument("--notebook-id", required=True)
+    ap.add_argument("--registry", type=Path, default=REGISTRY_PATH)
+    args = ap.parse_args(argv)
+    registry = json.loads(args.registry.read_text(encoding="utf-8"))
+    rep = health_check(NotebookLmCliClient(args.notebook_id), registry)
+    print(json.dumps(rep, ensure_ascii=False, indent=2))
+    return 0 if rep["status"] == "OK" else (3 if rep["status"] == "AUTH_EXPIRED" else 1)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["health"]:
+        return main_health(argv[1:])
     ap = argparse.ArgumentParser(description="notebooklm-py 経由の1動画2ソース登録（既定はdry-run）")
     ap.add_argument("--video-id", required=True)
     ap.add_argument("--video-title", required=True)
