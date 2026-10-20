@@ -5029,8 +5029,9 @@ process.stdout.write(JSON.stringify(res));
         # 3. 原文保持規約・分離検証
         self.assertIn("発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。", text)
         self.assertIn("## 字幕発話タイムライン (取得全量)", text)
-        self.assertIn("- **[08:16]** (496.0s) 荷札のメタデータ原則", text)
-        self.assertIn("- **[09:35]** (575.0s) 関係の意味付けリンク", text)
+        # 2026-10-20 ユーザー確定仕様（ロードマップv1.2）で cue 行は時刻リンク形式に変更されたため期待値を更新
+        self.assertIn(f"- [00:08:16](https://www.youtube.com/watch?v={vid}&t=496s) 荷札のメタデータ原則", text)
+        self.assertIn(f"- [00:09:35](https://www.youtube.com/watch?v={vid}&t=575s) 関係の意味付けリンク", text)
 
     def test_extract_metadata_from_research_md_aligns_transcript_with_research(self):
         """研究ノートからメタデータ（status, related_records）が自動抽出され、字幕OKFに反映されることを検証。"""
@@ -5143,7 +5144,8 @@ class TestTwelveAcceptanceCriteriaContract(unittest.TestCase):
         tr_text = nai.build_transcript_okf_content(self.vid, self.v_url, "タイトル", cues=cues)
         self.assertIn("cue_count: 3", tr_text)
         self.assertIn("- **総Cue数**: 3 件", tr_text)
-        self.assertEqual(tr_text.count("- **[00:"), 3)
+        # 2026-10-20 ユーザー確定仕様（ロードマップv1.2）で cue 行は時刻リンク形式に変更されたため期待値を更新
+        self.assertEqual(tr_text.count("- [00:00:"), 3)
 
     def test_item5_mutual_logical_links_between_transcript_and_research(self):
         """5. 字幕と研究ノートの相互リンクがあること。"""

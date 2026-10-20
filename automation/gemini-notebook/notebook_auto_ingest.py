@@ -455,8 +455,13 @@ def build_transcript_okf_content(
     notebook_source_id: Optional[str] = "UNKNOWN",
     notebook_open_link: Optional[str] = None,
     related_records: Optional[List[Dict[str, Any]]] = None,
+    published_at: Optional[str] = None,
 ) -> str:
-    """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter."""
+    """Generate exact verbatim transcript OKF document with OKF v0.2 frontmatter.
+
+    2026-10-20 ユーザー確定仕様: 各cue行は `- [HH:MM:SS](<URL>&t=<秒>s) <発話>`（秒は切り捨て）、
+    荷札に `published_at`（不明なら "UNKNOWN"）、cueが無ければ `transcript_status: "TIMESTAMPS_MISSING"`。
+    """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     transcript_logical_id = f"youtube:{video_id}:transcript"
     research_logical_id = f"youtube:{video_id}:research"
@@ -470,6 +475,10 @@ def build_transcript_okf_content(
         has_actual_cues = False
 
     cue_count = len(cues_list) if has_actual_cues else 0
+    if not has_actual_cues:
+        # 時刻つきcueが無い字幕は正式登録しない（暫定扱い）
+        status = "TIMESTAMPS_MISSING"
+    clean_published = str(published_at).strip() if published_at and str(published_at).strip() else "UNKNOWN"
 
     clean_source_id = str(notebook_source_id).strip() if notebook_source_id else "UNKNOWN"
     if not clean_source_id or clean_source_id.upper() in ("", "NONE", "NULL"):
@@ -499,6 +508,7 @@ def build_transcript_okf_content(
     if valid_open_link:
         lines.append(f'notebook_open_link: "{valid_open_link}"')
     lines.extend([
+        f'published_at: "{clean_published}"',
         f'language: "{language}"',
         f'acquired_at: "{today}"',
         f"cue_count: {cue_count}",
@@ -551,6 +561,7 @@ def build_transcript_okf_content(
         f"- **対応研究ノート論理ID**: `{research_logical_id}`",
         f"- **元YouTube URL**: {video_url}",
         f"- **動画URL**: {video_url}",
+        f"- **投稿日時**: {clean_published}",
         f"- **総Cue数**: {cue_count} 件",
         f"- **検証状態**: {status}",
         "- **原文保持規約**: 発話テキストは要約・清書・改変を行わず、取得全量をそのまま記録しています。",
@@ -589,10 +600,9 @@ def build_transcript_okf_content(
             else:
                 st_sec = 0.0
                 txt = str(c).strip()
-            m = int(st_sec // 60)
-            s = int(st_sec % 60)
-            mmss = f"{m:02d}:{s:02d}"
-            lines.append(f"- **[{mmss}]** ({st_sec:.1f}s) {txt}")
+            sec = int(st_sec)
+            hhmmss = f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
+            lines.append(f"- [{hhmmss}](https://www.youtube.com/watch?v={video_id}&t={sec}s) {txt}")
     elif raw_text:
         lines.append(raw_text)
     else:
@@ -873,7 +883,11 @@ def add_youtube_source_via_cdp(
     video_id: str,
     video_url: str,
 ) -> Dict[str, Any]:
-    """Open Notebook source modal and add YouTube URL source via CDP DOM interaction."""
+    """Open Notebook source modal and add YouTube URL source via CDP DOM interaction.
+
+    2026-10-20 ユーザー確定仕様によりYouTube URL単体ソースの登録は廃止。常に何もせず無効を返す。
+    """
+    return {"success": False, "status": "DISABLED_BY_SPEC", "note": "YouTube URL単体ソースの登録は廃止（2026-10-20 ユーザー確定仕様）"}
     js_add_youtube = f"""
     (async () => {{
         // 1. Ensure source dialog is open
@@ -1187,8 +1201,11 @@ def ingest_and_verify_notebook(
     cues: Optional[List[Dict[str, Any]]] = None,
     transcript_content: Optional[str] = None,
     add_youtube_source: bool = False,
+    published_at: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Execute complete notebook ingestion workflow: pre-readback, conditional UI ingest & post-readback."""
+    if add_youtube_source:
+        raise ValueError("YouTube URL単体ソースの登録は廃止されました（2026-10-20 ユーザー確定仕様）。")
     print("=" * 60)
     print("AI技術研究室 | Gemini Notebook 自動ソース登録・読み戻し検証 (2-Source OKF)")
     print(f"対象Notebook: {NOTEBOOK_URL}")
@@ -1210,6 +1227,7 @@ def ingest_and_verify_notebook(
             cues=cues,
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
     else:
         final_transcript_text = build_transcript_okf_content(
@@ -1219,6 +1237,7 @@ def ingest_and_verify_notebook(
             raw_text="- (字幕発話データ未指定)",
             status=extracted_status,
             related_records=extracted_rel,
+            published_at=published_at,
         )
 
     has_actual_cues = (
@@ -1525,7 +1544,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--research-md", help="研究ノートMarkdownファイルのパス", default=None)
     parser.add_argument("--transcript-file", help="字幕原文Markdown/テキストファイルのパス", default=None)
     parser.add_argument("--transcript-text", help="字幕原文テキスト", default=None)
-    parser.add_argument("--include-youtube-url", action="store_true", help="追加参考としてYouTube URLソースもNotebookへ登録する（通常は2ソースOKFのみ）")
+    parser.add_argument("--include-youtube-url", action="store_true", help="廃止（2026-10-20）：指定するとエラーで停止する")
     parser.add_argument("--launch-chrome", action="store_true", help="専用プロファイルでChromeを起動する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
     return parser
@@ -1539,6 +1558,9 @@ def main(args_list: Optional[List[str]] = None) -> int:
         res = launch_dedicated_chrome()
         print(json.dumps(res, ensure_ascii=False, indent=2))
         return 0
+
+    if args.include_youtube_url:
+        parser.error("--include-youtube-url は廃止されました。YouTube URL単体ソースは登録しません（2026-10-20 ユーザー確定仕様）。")
 
     if not args.video_id:
         parser.error("登録処理には video_id が必要です（--launch-chrome 時は不要）")
@@ -1558,7 +1580,6 @@ def main(args_list: Optional[List[str]] = None) -> int:
         video_title=args.title,
         research_md_path=md_p,
         transcript_content=tr_content,
-        add_youtube_source=args.include_youtube_url,
         mock_cdp=args.mock_cdp,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))

@@ -14,13 +14,17 @@ docs/OKF_KNOWLEDGE_ROADMAP.md v1.1「1動画2ソースMVP完成契約」に沿�
    タイトルで決めきれなければ本文の荷札（type / logical_id）を読み、それでも曖昧なら書き込み0で
    AMBIGUOUS_EXISTING_SOURCES。揃っていれば NO_OP。
 3. 足りない方だけ組み立てる（字幕原文は build_transcript_okf_content を再利用）。
+   2026-10-20 ユーザー確定仕様（docs/OKF_KNOWLEDGE_ROADMAP.md v1.2 冒頭）: 字幕は実行PCからYouTubeの
+   時刻つき字幕を取り、各cueに時刻リンクを付ける。取れなければ書き込み0で TRANSCRIPT_TIMESTAMPS_UNAVAILABLE
+   （Notebook内本文への時刻なしフォールバックは廃止）。両OKFに published_at を記録する。
 4. 既定は dry-run（計画のみ）。live=True かつ notebook_id 指定時だけ add_text する。
 5. 書き込み結果が不明（例外・ID無し）でも再送しない。一覧の読み戻しで有無を確認する。
 6. 事後読み戻し：完全一致、または Markdown記号・空白を除いた正規化一致で合格。両ソースが別IDであることも確認。
 
 安全:
 - クライアントは削除メソッドを持たない。
-- このモジュール自体はネットワーク通信を行わない（実機通信は CLI アダプタの subprocess のみ）。
+- 外部通信は CLI アダプタの subprocess と、CLI実行時の YouTube 字幕・投稿日時の取得（fetch_youtube_transcript）だけ。
+  run_ingest は fetch_transcript を渡されない限り通信しない。
 """
 from __future__ import annotations
 
@@ -31,7 +35,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
 AUTO_DIR = Path(__file__).resolve().parent
 ROOT = AUTO_DIR.parents[1]
@@ -42,7 +46,6 @@ if str(AUTO_DIR) not in sys.path:
 from notebook_auto_ingest import build_transcript_okf_content  # noqa: E402
 
 ACQ_TIMEDTEXT = "YOUTUBE_TIMEDTEXT_API"
-ACQ_NOTEBOOK_YOUTUBE = "NOTEBOOK_YOUTUBE_SOURCE_FULLTEXT"
 
 
 class NotebookClient(Protocol):
@@ -291,20 +294,47 @@ def classify_sources(
 def build_transcript_text(
     video_id: str,
     video_title: str,
-    cues: Optional[List[Any]],
-    youtube_fulltext: Optional[str],
+    cues: List[Any],
+    published_at: Optional[str],
 ) -> Dict[str, Any]:
     url = f"https://www.youtube.com/watch?v={video_id}"
-    if cues:
-        text = build_transcript_okf_content(video_id, url, video_title, cues=cues)
-        method = ACQ_TIMEDTEXT
-    else:
-        text = build_transcript_okf_content(
-            video_id, url, video_title, cues=None, raw_text=youtube_fulltext, status="UNVERIFIED"
-        )
-        method = ACQ_NOTEBOOK_YOUTUBE
-        text = text.replace(f'acquisition_method: "{ACQ_TIMEDTEXT}"', f'acquisition_method: "{method}"', 1)
-    return {"text": text, "acquisition_method": method, "cue_count": len(cues) if cues else 0}
+    text = build_transcript_okf_content(video_id, url, video_title, cues=cues, published_at=published_at)
+    return {"text": text, "acquisition_method": ACQ_TIMEDTEXT, "cue_count": len(cues)}
+
+
+def ensure_published_at(research_note_text: str, published_at: Optional[str]) -> str:
+    """研究ノートの荷札に published_at が無ければ1行足す（既にあれば変えない）。"""
+    value = str(published_at).strip() if published_at and str(published_at).strip() else "UNKNOWN"
+    line = f'published_at: "{value}"'
+    text = research_note_text or ""
+    if text.startswith("---"):
+        parts = text.split("---", 2)
+        if len(parts) == 3:
+            if re.search(r"^\s*published_at:", parts[1], re.M):
+                return text
+            fm = parts[1].rstrip("\n") + "\n" + line + "\n"
+            return "---" + fm + "---" + parts[2]
+    return "---\n" + line + "\n---\n" + text
+
+
+def fetch_youtube_transcript(video_id: str) -> Dict[str, Any]:
+    """実行PCから YouTube の時刻つき字幕と投稿日時を取る（既存の取得関数を再利用）。失敗は空で返す。"""
+    import auto_research_pipeline
+    import verify_timestamps
+
+    out: Dict[str, Any] = {"cues": [], "published_at": None}
+    try:
+        player = verify_timestamps.fetch_player(video_id)
+        if player:
+            _, cues, _ = auto_research_pipeline.fetch_actual_captions(player)
+            out["cues"] = list(cues or [])
+    except Exception as ex:
+        out["error"] = type(ex).__name__
+    try:
+        out["published_at"] = verify_timestamps.fetch_watch_publish_date(video_id)
+    except Exception:
+        pass
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -319,8 +349,13 @@ def run_ingest(
     cues: Optional[List[Any]] = None,
     live: bool = False,
     notebook_id: Optional[str] = None,
+    published_at: Optional[str] = None,
+    fetch_transcript: Optional[Callable[[str], Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
-    """1動画2ソースの不足分を登録する。live=False（既定）では書き込みを一切行わない。"""
+    """1動画2ソースの不足分を登録する。live=False（既定）では書き込みを一切行わない。
+
+    cues / published_at が無く fetch_transcript があれば、それで時刻つき字幕と投稿日時を取る。
+    """
     result: Dict[str, Any] = {"video_id": video_id, "live": live, "writes": [], "notes": []}
 
     if live and not notebook_id:
@@ -349,21 +384,30 @@ def run_ingest(
         result["status"] = "NO_OP"
         return result
 
+    if fetch_transcript and ((need_transcript and not cues) or not published_at):
+        fetched = fetch_transcript(video_id) or {}
+        if not cues:
+            cues = fetched.get("cues") or None
+        if not published_at:
+            published_at = fetched.get("published_at")
+    result["published_at"] = published_at or "UNKNOWN"
+
     planned: Dict[str, Dict[str, str]] = {}
     if need_transcript:
-        yt_text = None
         if not cues:
-            if not pre["youtube_source_id"]:
-                result["status"] = "TRANSCRIPT_SOURCE_MISSING"
-                result["notes"].append("字幕cueも、NotebookのYouTubeソースも無いため字幕原文を作れない。")
-                return result
-            yt_text = client.get_fulltext(pre["youtube_source_id"])
-        tr = build_transcript_text(video_id, video_title, cues, yt_text)
+            # 時刻の無い字幕は正式に登録しない（2026-10-20 ユーザー確定仕様）
+            result["status"] = "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE"
+            result["notes"].append("YouTubeの時刻つき字幕を取得できなかったため、何も書き込まずに停止。")
+            return result
+        tr = build_transcript_text(video_id, video_title, cues, published_at)
         result["transcript_acquisition_method"] = tr["acquisition_method"]
         result["transcript_cue_count"] = tr["cue_count"]
         planned["transcript"] = {"title": transcript_title(video_id, video_title), "text": tr["text"]}
     if need_note:
-        planned["research_note"] = {"title": research_note_title(video_id, video_title), "text": research_note_text}
+        planned["research_note"] = {
+            "title": research_note_title(video_id, video_title),
+            "text": ensure_published_at(research_note_text, published_at),
+        }
     result["plan"] = list(planned)
 
     if not live:
@@ -501,7 +545,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--video-id", required=True)
     ap.add_argument("--video-title", required=True)
     ap.add_argument("--research-md", required=True, type=Path)
-    ap.add_argument("--cues-json", type=Path, help="字幕cueのJSON（[[start, dur, text], ...]）。無ければNotebookのYouTubeソース本文を使う")
+    ap.add_argument("--cues-json", type=Path, help="字幕cueのJSON（[[start, end, text], ...]）。無ければ実行PCからYouTubeの時刻つき字幕を取る")
     ap.add_argument("--notebook-id")
     ap.add_argument("--live", action="store_true", help="実際にNotebookへ書き込む（--notebook-id 必須）")
     args = ap.parse_args(argv)
@@ -519,6 +563,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         cues=cues,
         live=args.live,
         notebook_id=args.notebook_id,
+        fetch_transcript=fetch_youtube_transcript,
     )
     res.pop("precheck", None)
     res.pop("postcheck", None)

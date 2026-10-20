@@ -162,16 +162,14 @@ class TestNotebookLmPyIngest(unittest.TestCase):
         self.assertTrue(ing.readback_matches(NOTE, NOTE)["exact_match"])
         self.assertTrue(ing.readback_matches("a &gt; b", "a > b")["match"])
 
-    def test_transcript_without_cues_uses_notebook_youtube_fulltext(self):
+    def test_transcript_without_cues_halts_instead_of_notebook_fulltext(self):
+        """2026-10-20 ユーザー確定仕様で、Notebook内YouTube本文（時刻なし）へのフォールバックは廃止。
+        旧テスト（フォールバックで登録できること）は意味が逆転したため、停止すること・書き込み0に期待値を更新。"""
         c = FakeClient([YT_SOURCE, NOTE_SOURCE])
         res = self.run_live(c, cues=None)
-        self.assertEqual(res["transcript_acquisition_method"], ing.ACQ_NOTEBOOK_YOUTUBE)
-        self.assertEqual(res["transcript_cue_count"], 0)
-        text = c.add_calls[0][1]
-        self.assertIn(f'acquisition_method: "{ing.ACQ_NOTEBOOK_YOUTUBE}"', text)
-        self.assertIn('transcript_status: "UNVERIFIED"', text)
-        self.assertIn("cue_count: 0", text)
-        self.assertIn("動画の文字起こし本文", text)
+        self.assertEqual(res["status"], "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE")
+        self.assertEqual(c.add_calls, [])
+        self.assertNotIn("yt-1", c.fulltext_calls)
 
     def test_no_delete_capability(self):
         for obj in (ing.NotebookClient, ing.NotebookLmCliClient):
@@ -211,12 +209,13 @@ class TestRealNotebookTitles(unittest.TestCase):
         self.assertTrue(pre["research_note_source_id"].startswith("af697c8c"))
 
     def test_u3ka_AAb8qE_plans_transcript_only(self):
-        res = self.plan("u3ka_AAb8qE", cues=None)
+        # 2026-10-20 仕様で時刻なしフォールバックを廃止したため、時刻つきcueを渡す形に更新
+        res = self.plan("u3ka_AAb8qE")
         self.assertEqual(res["status"], "DRY_RUN_PLAN")
         self.assertEqual(res["plan"], ["transcript"])
         self.assertTrue(res["precheck"]["research_note_source_id"].startswith("65b634f5"))
         self.assertTrue(res["precheck"]["youtube_source_id"].startswith("d1fef625"))
-        self.assertEqual(res["transcript_acquisition_method"], ing.ACQ_NOTEBOOK_YOUTUBE)
+        self.assertEqual(res["transcript_acquisition_method"], ing.ACQ_TIMEDTEXT)
 
     def test_sodTFSuV4zY_plans_transcript_only_and_ignores_markdown_as_youtube(self):
         res = self.plan("sodTFSuV4zY")
@@ -286,7 +285,8 @@ class TestRealNotebookTitles(unittest.TestCase):
     def test_no_cues_and_no_youtube_source_halts(self):
         c = FakeClient([NOTE_SOURCE])
         res = ing.run_ingest(c, VID, TITLE, NOTE, cues=None, live=True, notebook_id="nb-1")
-        self.assertEqual(res["status"], "TRANSCRIPT_SOURCE_MISSING")
+        # 2026-10-20 仕様：時刻つき字幕が無ければ（YouTubeソースの有無に関係なく）この状態で停止
+        self.assertEqual(res["status"], "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE")
         self.assertEqual(c.add_calls, [])
 
 
@@ -359,7 +359,8 @@ class TestCliAdapterAddText(unittest.TestCase):
 
         c = ing.NotebookLmCliClient("nb-1")
         with mock.patch.object(ing.subprocess, "run", run):
-            res = ing.run_ingest(c, VID, TITLE, NOTE, cues=None, live=True, notebook_id="nb-1")
+            # 2026-10-20 仕様で時刻なしフォールバックを廃止したため cues を渡す形に更新
+            res = ing.run_ingest(c, VID, TITLE, NOTE, cues=CUES, live=True, notebook_id="nb-1")
         self.assertEqual(len(add_calls), 1)
         self.assertEqual(res["writes"][0]["result"], "CONFIRMED_BY_READBACK")
         self.assertEqual(res["writes"][0]["source_id"], "tr-new")
@@ -445,6 +446,129 @@ class TestHealthCheck(unittest.TestCase):
                 mock.patch.object(ing.subprocess, "run", blocked):
             rep = ing.health_check(self.client(real_sources()), self.registry)
         self.assertEqual(rep["status"], "OK")
+
+
+class TestUserConfirmedSpec20261020(unittest.TestCase):
+    """T6: ロードマップv1.2「ユーザー確定仕様」（時刻リンク・投稿日時・URL単体ソース廃止）。"""
+
+    def test_cue_line_has_time_link_with_truncated_seconds(self):
+        cues = [(0.0, 1.0, "最初"), (496.9, 500.0, "荷札の話"), (3725.4, 3730.0, "1時間超え")]
+        text = ing.build_transcript_text(VID, TITLE, cues, "2026-10-01")["text"]
+        self.assertIn(f"- [00:00:00](https://www.youtube.com/watch?v={VID}&t=0s) 最初", text)
+        self.assertIn(f"- [00:08:16](https://www.youtube.com/watch?v={VID}&t=496s) 荷札の話", text)
+        self.assertIn(f"- [01:02:05](https://www.youtube.com/watch?v={VID}&t=3725s) 1時間超え", text)
+
+    def test_cue_text_is_not_modified(self):
+        raw = "えーと、Q&A は <b>ここ</b>  で…（笑）"
+        text = ing.build_transcript_text(VID, TITLE, [(12.0, 13.0, raw)], None)["text"]
+        self.assertIn(f"&t=12s) {raw}", text)
+
+    def test_published_at_recorded_in_both_okfs(self):
+        c = FakeClient([])
+        res = ing.run_ingest(c, VID, TITLE, NOTE, cues=CUES, live=True, notebook_id="nb-1", published_at="2026-10-01")
+        bodies = dict((t.split("】")[0], b) for t, b in c.add_calls)
+        self.assertIn('published_at: "2026-10-01"', bodies["【字幕原文"])
+        self.assertIn('published_at: "2026-10-01"', bodies["【研究ノート"])
+        self.assertEqual(res["published_at"], "2026-10-01")
+
+    def test_published_at_unknown_when_not_available(self):
+        c = FakeClient([])
+        ing.run_ingest(c, VID, TITLE, NOTE, cues=CUES, live=True, notebook_id="nb-1",
+                       fetch_transcript=lambda vid: {"cues": [], "published_at": None})
+        for _, body in c.add_calls:
+            self.assertIn('published_at: "UNKNOWN"', body)
+
+    def test_research_note_published_at_added_once_to_frontmatter(self):
+        note = '---\ntype: "RESEARCH_NOTE"\n---\n# 本文\n'
+        out = ing.ensure_published_at(note, "2026-10-01")
+        self.assertTrue(out.startswith('---\ntype: "RESEARCH_NOTE"\npublished_at: "2026-10-01"\n---\n'))
+        self.assertTrue(out.endswith("# 本文\n"))
+        self.assertEqual(ing.ensure_published_at(out, "2027-01-01"), out)
+        self.assertIn('published_at: "UNKNOWN"', ing.ensure_published_at("# 荷札なし", None))
+
+    def test_no_cues_in_builder_marks_timestamps_missing(self):
+        import notebook_auto_ingest as nai
+        text = nai.build_transcript_okf_content(VID, f"https://www.youtube.com/watch?v={VID}", TITLE, raw_text="本文だけ")
+        self.assertIn('transcript_status: "TIMESTAMPS_MISSING"', text)
+        self.assertIn('published_at: "UNKNOWN"', text)
+
+    def test_fetcher_failure_stops_with_zero_writes(self):
+        c = FakeClient([YT_SOURCE, NOTE_SOURCE])
+        res = ing.run_ingest(c, VID, TITLE, NOTE, cues=None, live=True, notebook_id="nb-1",
+                             fetch_transcript=lambda vid: {"cues": [], "published_at": "2026-10-01"})
+        self.assertEqual(res["status"], "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE")
+        self.assertEqual(c.add_calls, [])
+
+    def fake_youtube_http(self, caption_xml, watch_html):
+        """urlopen を偽のYouTube応答に差し替える（player JSON / 字幕XML / watchページ）。"""
+        player = {"videoDetails": {"videoId": VID}, "captions": {"playerCaptionsTracklistRenderer": {
+            "captionTracks": [{"baseUrl": "https://www.youtube.com/api/timedtext?v=x", "languageCode": "ja"}]}}}
+
+        class Resp:
+            def __init__(self, body):
+                self.body = body.encode("utf-8")
+
+            def read(self):
+                return self.body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def urlopen(req, timeout=None):
+            url = req.full_url if hasattr(req, "full_url") else str(req)
+            if "youtubei/v1/player" in url:
+                return Resp(json.dumps(player))
+            if "timedtext" in url:
+                return Resp(caption_xml)
+            if "watch?v=" in url:
+                return Resp(watch_html)
+            raise AssertionError(url)
+
+        return urlopen
+
+    def test_fetch_youtube_transcript_with_fake_http(self):
+        xml = '<timedtext><body><p t="0" d="1500">はじめまして</p><p t="496000" d="2000">荷札の話</p></body></timedtext>'
+        html_page = '..."publishDate":"2026-10-01T09:00:00-07:00"...'
+        with mock.patch.object(urllib.request, "urlopen", self.fake_youtube_http(xml, html_page)), \
+                mock.patch.object(socket, "create_connection", side_effect=AssertionError("real network")):
+            out = ing.fetch_youtube_transcript(VID)
+        self.assertEqual(out["published_at"], "2026-10-01")
+        self.assertEqual([round(c[0]) for c in out["cues"]], [0, 496])
+        text = ing.build_transcript_text(VID, TITLE, out["cues"], out["published_at"])["text"]
+        self.assertIn(f"&t=496s) 荷札の話", text)
+
+    def test_fetch_youtube_transcript_without_captions_returns_empty(self):
+        def urlopen(req, timeout=None):
+            raise OSError("offline")
+
+        with mock.patch.object(urllib.request, "urlopen", urlopen):
+            out = ing.fetch_youtube_transcript(VID)
+        self.assertEqual(out["cues"], [])
+        self.assertIsNone(out["published_at"])
+
+    def test_include_youtube_url_is_rejected(self):
+        import auto_research_pipeline as arp
+        import notebook_auto_ingest as nai
+        for mod, argv in ((arp, ["https://www.youtube.com/watch?v=" + VID, "--include-youtube-url"]),
+                          (nai, [VID, "--include-youtube-url"])):
+            with mock.patch("sys.stderr"), self.assertRaises(SystemExit) as cm:
+                mod.main(argv)
+            self.assertNotEqual(cm.exception.code, 0)
+        with self.assertRaises(ValueError):
+            arp.run_pipeline("https://www.youtube.com/watch?v=" + VID, include_youtube_url=True)
+        with self.assertRaises(ValueError):
+            arp.run_notebook_registration_only(VID, ROOT / "README.md", include_youtube_url=True)
+        with self.assertRaises(ValueError):
+            nai.ingest_and_verify_notebook(VID, "u", "t", ROOT / "README.md", mock_cdp=True, add_youtube_source=True)
+
+    def test_youtube_url_source_add_is_always_disabled(self):
+        import notebook_auto_ingest as nai
+        res = nai.add_youtube_source_via_cdp(None, {}, VID, "https://www.youtube.com/watch?v=" + VID)
+        self.assertFalse(res["success"])
+        self.assertEqual(res["status"], "DISABLED_BY_SPEC")
 
 
 if __name__ == "__main__":

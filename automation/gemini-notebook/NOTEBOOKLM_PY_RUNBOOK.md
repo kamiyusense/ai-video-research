@@ -57,9 +57,9 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 python automation/gemini-notebo
   - `NO_OP`: 両方揃っている。
   - `DRY_RUN_PLAN`: `plan` に書いた分を足す予定。
   - `AMBIGUOUS_EXISTING_SOURCES`: 見分けがつかないので止まった。
-  - `TRANSCRIPT_SOURCE_MISSING`: 字幕も、NotebookのYouTubeソースも無いので、字幕原文を作れない。
+  - `TRANSCRIPT_TIMESTAMPS_UNAVAILABLE`: YouTubeの時刻つき字幕が取れなかったので、何も書かずに止まった（時刻の無い字幕は正式に登録しない）。
   - `AUTH_EXPIRED_HALT`: ログイン切れ。
-- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければNotebook内YouTubeソースの本文を使う。その場合は `acquisition_method: NOTEBOOK_YOUTUBE_SOURCE_FULLTEXT`、`UNVERIFIED`、cue数0 として記録される（時刻なし）。
+- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければ、実行しているPCからYouTubeの時刻つき字幕と投稿日時を取る（2026-10-20 ユーザー確定仕様。Notebook内YouTubeソースの時刻なし本文は使わない）。字幕の各行は `- [HH:MM:SS](https://www.youtube.com/watch?v=<ID>&t=<秒>s) 発話` になり、字幕原文・研究ノートの両方の荷札に `published_at`（取れなければ `UNKNOWN`）が入る。
 - `--video-title` はNotebookのYouTubeソースを見つけるのに使う。YouTube上のタイトルと同じものを渡す。
 - `--notebook-id` を付けないと、棚を読まずに「両方足す」とだけ出す（`DRY_RUN_PLAN_OFFLINE`）。
 

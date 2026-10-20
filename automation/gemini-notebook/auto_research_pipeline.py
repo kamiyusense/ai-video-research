@@ -502,6 +502,8 @@ def run_notebook_registration_only(
     include_youtube_url: bool = False,
 ) -> Dict[str, Any]:
     """Resume notebook registration for videos already committed to GitHub."""
+    if include_youtube_url:
+        raise ValueError("YouTube URL単体ソースの登録は廃止されました（2026-10-20 ユーザー確定仕様）。")
     print(f"\n[RESUME NOTEBOOK INGEST] GitHub登録済み動画 '{video_id}' のNotebook登録状態を確認・再開します。")
     v_url = f"https://www.youtube.com/watch?v={video_id}"
 
@@ -529,7 +531,6 @@ def run_notebook_registration_only(
         cues=cues,
         mock_cdp=mock_cdp,
         mock_sources=mock_sources,
-        add_youtube_source=include_youtube_url,
     )
     return nb_res
 
@@ -639,6 +640,8 @@ def run_pipeline(
     include_youtube_url: bool = False,
 ) -> Dict[str, Any]:
     """Execute complete automated research pipeline from URL to GitHub commit & verification."""
+    if include_youtube_url:
+        raise ValueError("YouTube URL単体ソースの登録は廃止されました（2026-10-20 ユーザー確定仕様）。")
     today_str = date.today().isoformat()
     print("=" * 70)
     print(f"[PIPELINE START] AI技術研究室 完全自動化研究パイプライン 開始 (v2.2, Model: {gemini_model})")
@@ -922,7 +925,7 @@ def run_pipeline(
         research_md_path=ROOT / research_md_path,
         cues=cues_for_ingest,
         mock_cdp=mock_cdp,
-        add_youtube_source=include_youtube_url,
+        published_at=publish_date,
     )
     nb_rb = nb_res.get("readback", {})
     notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
@@ -1041,8 +1044,10 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--enable-live-gemini", action="store_true", help="Gemini APIのLIVE実行を明示的に許可する（デフォルトは安全のため無効）")
     parser.add_argument("--relay-via-drive", action="store_true", help="ローカルGit Pushを行わずDrive配置によるGASリレーを優先する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
-    parser.add_argument("--include-youtube-url", action="store_true", help="YouTube URLソースもNotebookへ追加登録する（デフォルトは字幕原文OKF＋研究ノートOKFの純粋2ソース登録原則）")
+    parser.add_argument("--include-youtube-url", action="store_true", help="廃止（2026-10-20）：指定するとエラーで停止する")
     args = parser.parse_args(args_list)
+    if args.include_youtube_url:
+        parser.error("--include-youtube-url は廃止されました。YouTube URL単体ソースは登録しません（2026-10-20 ユーザー確定仕様）。")
 
     target_url = args.url or args.url_opt
     if not target_url:
