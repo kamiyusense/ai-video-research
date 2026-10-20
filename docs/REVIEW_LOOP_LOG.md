@@ -28,6 +28,7 @@
 | 11 | T6 ユーザー確定仕様（時刻リンク・投稿日時・URL単体登録廃止） | 作業役（PR #14 `bd515ca`） | NEEDS_FIX（1周目） | コードは良好：独立実測169件OK、cue行は `[HH:MM:SS](…&t=秒s)` で秒は切り捨て・発話は前後空白除去のみ、`published_at` を荷札に記録、時刻なしは登録せず停止、`--include-youtube-url` は拒否。不足：(1) 正とするドキュメント `claude/requirements-alignment-20261020` が未マージ（ロードマップに取り下げ済みの旧v1.2節が残る）、(2) 実機で取得実績のある youtube-transcript-api の取得元が未実装（既存timedtext経路は実機未確認）、(3) Drive経路の字幕OKFに `published_at` が渡らない |
 | 12 | T6 修正（2周目） | 作業役（PR #14 `4419d40`） | PASS | 独立実測171件OK。ロードマップの最上位節は requirements 側の「ユーザー確定要件R1〜R5」1つだけ（重複解消）。字幕取得は youtube-transcript-api → timedtext の順で、取得元を `acquisition_method` に記録。Drive経路の字幕OKFにも `published_at`。youtube-transcript-api 1.2.2 の実データとの属性照合は実機未確認 |
 | 13 | T7 研究ノート時刻リンク化／Drive YouTube参照ファイル廃止 | 作業役（PR #14 `8a90508`） | PASS（1周目） | 独立実測177件OK、テスト後の作業ツリー差分なし。荷札・既存リンク・URL・インラインコードは不変、二重適用で不変を確認。pRfC1DILDEM研究ノートに適用すると47か所が時刻リンク化（GitHubファイルは不変）。Python/GASの出力一致テストPASS |
+| 14 | T8 URL貼り付け経路へ notebooklm-py 接続＋研究ノート荷札に `published_at` | 作業役（PR #14 `f83dec0`） | PASS（1周目・条件付き） | 独立実測186件OK。手順8はGitHub保存後に `run_notebooklm_py_step` を呼び、字幕OKFのcueと `published_at` を渡す。成功判定は SUCCESS_2_SOURCE_OKF / NO_OP のみ、URL単体ソースの読み返しは常にFalse（登録しない）。既定はdry-run、書き込みは `--live` と notebook_id 必須。UNKNOWN：手順3〜8を通しで通すテストなし、dry-run時は手順8前に戻るため計画が出ない、実機 `--live` 未実行 |
 
 ## 次のタスク（作業役向け）
 
