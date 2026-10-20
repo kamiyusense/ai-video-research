@@ -1,6 +1,6 @@
 # AI技術研究室の作業指示
 
-> **最優先・新チャット引継ぎ規則（2026-10-19）**: 「GitHub見て引き継いで」「続きから」等の依頼では、GitHub current stateを確認後、ルート `README.md` → **`docs/HANDOVER_CURRENT.md`（全文）** → **`docs/OKF_KNOWLEDGE_ROADMAP.md`（全文）** → `RESEARCH_ROADMAP.md` を必ず確認。最新のOKF/字幕原文/研究ノート/関連動画リンク/根拠付きQA方針を、古い逐次動画リレーや逆同期案より優先。読めない場合はUNKNOWNと申告し、読んだふりをしない。文書導線があることと未来のチャットへ自動同期されることを混同しない。
+> **最優先・読む順番（2026-10-20更新）**: 引き継ぎは完了済み。新しいチャットでは、GitHub current stateを確認後、ルート `README.md` → この `AGENTS.md`（特に下の「検品ループ運用」）→ **`docs/OKF_KNOWLEDGE_ROADMAP.md`（全文）** → [docs/REVIEW_LOOP_LOG.md](docs/REVIEW_LOOP_LOG.md)（現在のタスクとユーザー待ちリスト）→ `RESEARCH_ROADMAP.md` を読む。`docs/HANDOVER_CURRENT.md` は経緯の参考で、HEAD・テスト数・完了状況の記載値は流用せず毎回実測する。読めない場合はUNKNOWNと申告し、読んだふりをしない。ルールが重なる場合は「検品ループ運用」の守りルールを優先する。
 
 ## 2026-10-20 検品ループ運用（作業役 × 検品指示役）
 
@@ -14,7 +14,7 @@ AI技術動画の字幕原文と独自研究を、OKF荷札つきの別資料と
 3. Googleの再ログインを自動でやらない。認証切れはそこで止めて「ユーザー待ちリスト」に積み、別の安全な作業へ迂回する。
 4. 課金・外部モデル起動は、対象と範囲を明示した承認が出るまでやらない。権限変更（PAT含む）は、ユーザーの明示的な許可があれば実施してよい。
 5. Notebook/Drive/GASへの書き込み・削除は承認制。既存のYouTube URLソース・研究カード・索引は削除しない。
-6. 直さずに同じ手順をリトライしない。失敗したら原因を特定・変更したうえでのリトライを2回まで認める。それでも駄目ならUNKNOWNで止めて迂回する。結果不明の書き込みは再送せず読み戻しで確認する（下記「継続と証拠」の「retry=0」は結果不明の書き込みに対して引き続き有効）。
+6. 直さずに同じ手順をリトライしない。失敗したら原因を特定・変更したうえでのリトライを2回まで認める。それでも駄目ならUNKNOWNで止めて迂回する。結果不明の書き込みは再送せず読み戻しで確認する（下記「継続と証拠」の「retry=0」は結果不明の書き込みだけに適用）。
 7. 検品と修正のループは1タスクにつき最大3周。3周で合格しなければユーザーに判断を求める。
 8. 作業役の「PASS」「成功」の自己申告を鵜呑みにしない。検品役が独立に読み戻して確認し、確認できないことはUNKNOWNとする。
 
@@ -43,7 +43,7 @@ kamiyusense/multi-ai-council-phase0 を含む他のrepositoryは変更しない�
 研究室に担当別運用を追加した。最初に `MEMORY.md`（共有索引）、`agents/README.md`（担当一覧）、`docs/SPECIALIST_WORKFLOW.md`（運用）を確認し、作業の種類に合う `agents/<role>/AGENTS.md` と `agents/<role>/MEMORY.md` を参照する。
 担当はcoordinator（受付）、visual（映像）、research（独立調査）、reviewer（検品）、archivist（記録）。**フォルダがあるだけで別のAIが自動起動・通信・同期するわけではない。** 外部AI実行はユーザーが手動で行う。
 `templates/handoff-envelope.md`に取得範囲・動画ID・時刻・根拠・UNKNOWN・次担当を短く記す。映像の確認範囲と公式の現行仕様を混同しない。動画台帳の重複を避け、ユーザーが保存不要なら記録しない。
-GitHub書込みはこの研究室の許可済み非default branchのみ。LIVE、自動起動、課金、Merge、他repo変更は禁止のまま。
+GitHub書込みはこの研究室の非default branchのみ。LIVE、自動起動、課金、他repo変更は禁止のまま。Merge・default branch書込み・force pushは守りルール1に従う。
 
 ## 再利用する学習アイデアの発見
 新AI・モデル・機能・Skill・ハーネス等を調査し、用途を評価するときは、必要なら `proposals/006-unresolved-task-backlog-revisit.md` を参照する。
@@ -62,15 +62,15 @@ CONFIRMED_DOC / CONFIRMED_TEST / CONTRADICTED / UNKNOWN を区別する。
 許可された調査・文書・静的検証・fixture・mockはまとめて進める。
 開始前にcurrent repo、visibility、default branch、head、既存ファイルと台帳をreadbackする。
 非default branchへ通常commitし、force=false、競合時停止、write後にheadとファイル内容をreadbackする。
-不明なwriteを再送しない。retry=0、fallback=disabled。
+結果不明のwriteは再送しない（retry=0、fallback=disabled）。失敗が確定した手順は守りルール6に従い、原因を変えて2回までリトライできる。
 動画IDは1件1レコード。同じ主張・同じ資料バージョンの重複は既存記録に統合する。
 terminal receiptがあれば同じ外部操作を再実行しない。UNKNOWNの実行結果は読み戻しで確認する。
 
 ## 自動実行しない
 課金・Billing・Credits・モデルや推論設定変更、外部モデル/Jules/providerのLIVE起動、
-LIVE Relay/app-server、新規外部送信、APIキー操作、権限変更、Merge/auto-merge、
-default branch直接write、force push、削除、履歴書換え。
-これらは対象・費用・範囲を明示したユーザー許可が必要。
+LIVE Relay/app-server、新規外部送信、APIキー操作、Notebook/Drive/GASへのLIVE書込み、削除、履歴書換え、
+権限変更、Merge/auto-merge、default branch直接write、force push。
+これらは対象・費用・範囲を明示したユーザー許可が必要（権限変更・Merge・default branch書込み・force pushは、ユーザーの明示的な許可があれば実施可。守りルール1・4）。
 本体の承認画面を代理承認しない。既存権限やGitHub接続だけでLIVE許可と解釈しない。
 
 ## 境界

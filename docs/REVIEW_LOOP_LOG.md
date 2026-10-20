@@ -15,16 +15,44 @@
 | 周 | タスク | 担当 | 判定 | 根拠 |
 |---|---|---|---|---|
 | 0 | AGENTS.md に目標・守りルール・ループ手順を追加 | 検品指示役 | PASS（自己点検） | 既存「retry=0」との矛盾を解消する一文を追加済み |
-| 1 | dry-runテストのネットワーク依存を除去 | 作業役（未着手） | — | 下記「次のタスク」 |
+| 1 | dry-runテストのネットワーク依存を除去 | 作業役（PR #14 `2f001d7`） | PASS（1周目） | 検品役が独立実測：YouTube通信不可の環境・同名ブランチで 122件OK。新テスト `test_dry_run_makes_no_network_calls` を旧コードに当てると失敗（検出力あり）。差分はdry-run分岐のみでLIVE経路は不変。dry-runの出力が動画IDだけのメタデータになる点は仕様変更として相棒に報告 |
+| 2 | pRfC1DILDEM 字幕原文OKFをNotebookへ登録（許可1） | 作業役（ユーザーPC） | PASS（本文）／一部UNKNOWN | 新ソース `a32a70ec`（研究ノートと別ID）。取得元はNotebook内YouTubeソース `25c0f62e` のfulltext（時刻cue無し・cue_count 0・`UNVERIFIED`）。NotebookLMの読み戻しはMarkdownを表示用に整形するためSHA-256完全一致は不可、記号・空白除去後の比較で一致。荷札の動画ID・URL・論理IDは読み戻しで確認。本文中のHTMLコメントID（`AI_VIDEO_TRANSCRIPT_RAW:`）は読み戻しに出ないためUNKNOWN |
+| 3 | RAG研究ノートを最新版へ置き換え（許可3） | 作業役（ユーザーPC） | 追加PASS・旧版削除を承認 | 新ソース `af697c8c`（GitHub `169dda0` 版 SHA-256 一致を確認後、`transcript_notebook_source_id` を1行追加して投入）。正規化比較で一致。件数53→55（増加は2件のみ）。旧 `610789c0` の削除を検品役が承認（バックアップ全文あり） |
 
 ## 次のタスク（作業役向け）
 
-**T1: dry-runを完全オフラインにする**
-- 対象: `automation/gemini-notebook/auto_research_pipeline.py`（`run_pipeline` の dry-run 経路）、必要なら `tests/test_auto_research_pipeline.py`
-- 受入条件: ネットワーク不可の環境で `test_dry_run_no_side_effects` がPASSする。dry-run中に外部通信が1回も起きないことをテストで固定する（例: `urllib.request.urlopen` を呼ばれたら失敗するよう差し替える）。既存121件のうち他のテストを壊さない。
-- 禁止: テストの削除・スキップ・無効化。LIVE通信、Notebook/Drive/GAS書き込み。
+**T2: notebooklm-py 経由の「2ソース自動登録」モジュール（オフライン実装＋テスト）**
+
+背景: 2026-10-20 の実機作業（ループ記録2・3）はユーザーPCの notebooklm-py 0.8.5 で手作業的に行った。これを再実行可能なコードにする。既存の `notebook_auto_ingest.py`（CDP方式）は壊さず、別モジュールとして追加する。
+
+- 対象: 新規 `automation/gemini-notebook/notebooklm_py_ingest.py`、新規 `tests/test_notebooklm_py_ingest.py`
+- 作るもの:
+  1. **クライアント差し替え口**：`list_sources()` / `get_fulltext(id)` / `add_text(title, text)` / `auth_check_passive()` だけを持つ小さなインターフェース。実装は (a) テスト用の偽クライアント、(b) `notebooklm` CLI をsubprocessで呼ぶ実機用アダプタ（コマンドの正確さは実機未確認＝`UNVERIFIED` とコメントで明記）。削除メソッドは持たせない。
+  2. **ログイン点検**：最初に `auth_check_passive()`。失敗なら書き込み0件で `AUTH_EXPIRED_HALT` を返して止まる。login/refresh は呼ばない。
+  3. **事前読み戻し・重複チェック**：既存の `evaluate_2_source_okf_independence` を再利用して、字幕原文OKF・研究ノートOKFの有無を判定。揃っていれば `NO_OP`、足りない方だけ追加する。
+  4. **字幕原文OKFの組み立て**：既存の `build_transcript_okf_content` を再利用。字幕cueが無い場合は、NotebookのYouTubeソース本文を使ったことを `acquisition_method` に記録し、`UNVERIFIED`・cue数0とする。
+  5. **事後読み戻し**：追加後に一覧と本文を読み戻す。完全一致に加えて「Markdown記号・空白を除いた正規化一致」を判定関数として実装する（NotebookLMの表示用整形への対応。今回の実機で合格基準にしたもの）。両ソースが別IDであることも確認する。
+  6. **安全**：既定は dry-run（計画だけ出す）。実書き込みには `--live` と `--notebook-id` の明示が必須。結果が不明な書き込みは再送せず、一覧の読み戻しで確認する。
+- 受入条件（検品役が確認する点）: 次の各ケースを偽クライアントでテストし、全部オフラインでPASS。
+  - 両方そろっている → 書き込み0の `NO_OP`
+  - 字幕原文だけ無い → 字幕原文だけ追加
+  - ログイン切れ → 書き込み0で停止
+  - 正規化一致：記号が消えた本文は合格、1文字欠けた本文は不合格
+  - 書き込み結果が不明 → 再送せず読み戻し
+  - 削除の呼び出しが存在しない
+  - 既存テスト（同名ブランチで122件）を壊さない
+- 禁止: 実Notebookへの接続・書き込み、Gemini呼び出し、テストの削除・スキップ。
+
+## ユーザー判断の記録
+
+- 2026-10-20 18:04（JST）相棒が待ちリスト1〜4をすべて明示許可。
+  - 2（権利判断）: 字幕原文をNotebookへ複製してよい。GitHubへの字幕全文保存は引き続き禁止。
+  - 1・3・4: ユーザーのPC上の作業役（Remote Control）がNotebook操作を担当し、検品指示役が読み戻し値で判定する。
 
 ## ユーザー待ちリスト
+
+（2026-10-20 20:08 JST：1〜4は完了。結果はループ記録2・3と `registry.json` の `notebook_sources`。現在の待ちは無し）
+
 
 | # | 何を | なぜ止めたか | 承認されたら進むこと |
 |---|---|---|---|
