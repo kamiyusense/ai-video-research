@@ -198,19 +198,27 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==
 
 > **たとえ**: 「動画のURLだけ書いた貼り紙」15枚を、本物の原本（字幕全文）に差し替える段取り表。原本を棚に置いて中身を確かめた貼り紙だけ、はがしてよい印を付ける。はがす作業そのものは、この表ではやらない。
 
-### 手順7: 関連動画リンク（R6）の検査・候補・関連索引（読み取りのみ・dry-run）
+### 手順7: 関連動画リンク（R6）の検査・候補・関連索引・修復の自動適用
 
-2026-10-20 に相棒が了承した「関連動画どうしを根拠つきでつなぐ」仕組みの下見用（T11、PR #14）。**研究ノート・`registry.json` は読むだけで書き換えない。Notebookへの書き込み・削除のコードも無い。**
+2026-10-20 に相棒が了承した「関連動画どうしを根拠つきでつなぐ」仕組み（T11、PR #14）。**`validate`・`candidates`・`repair-plan`・`index` は研究ノート・`registry.json` を読むだけ。書き換えるのは `repair-apply --write` だけで、それも研究ノートの `related_records` 以外は1バイトも変えない。Notebookへの書き込み・削除のコードは無い。**
 
 ```
 python3 automation/gemini-notebook/related_links.py validate
 python3 automation/gemini-notebook/related_links.py candidates [--video-id <動画ID>] [--limit 5] [--summary [--top 20]]
 python3 automation/gemini-notebook/related_links.py repair-plan [--video-id <動画ID>] [--limit 3] [--print-diff | --summary]
+python3 automation/gemini-notebook/related_links.py repair-apply [--write] [--limit 3] [--print-diff]
 python3 automation/gemini-notebook/related_links.py index [--with-candidates] [--print-text] [--notebook-id <ID>]
 ```
 
 - `validate`: 研究ノート荷札の `related_records` を検査する。宛先が台帳・提案に実在するか／自己リンク／関係ラベルが `COMPLEMENTS・EXTENDS・UPDATES・CONTRADICTS・RESOLVES_BACKLOG` のどれか／`status` が `CANDIDATE`・`CONFIRMED` か／`note`・`evidence` があるか／`CONFIRMED` の `evidence` に時刻（`08:16` など）か出典URLがあるか。逆リンク（相手側にも自分への関係があるか）の有無も数える。
-- `repair-plan`: 検査に通らない `related_records`（根拠なし・自己リンクなど）を、ノートごとに**差分の形で提案するだけ**（研究ノートは書き換えない）。`-` が削除予定、`+` が根拠つき `CANDIDATE` の置換候補、`=` が温存。検査に通る記録（確定済みの `pRfC1DILDEM ↔ u3ka_AAb8qE` を含む）は必ず温存する。`CONFIRMED` で不合格のものは自動で消す案にせず「人の確認」に回す。現registryでは、21本のノートの33件が削除予定、置換候補は1ノート3件までで合計27件（T14 の精度条件を入れた後。多くの削除予定には置換候補が付かない。2026-10-20 時点のdry-run）。置換候補の並びは経験則で、人の確認はまだ。`--summary` は差分ではなく人が読める一覧（ノートごとの削除予定／置換候補の件数と、候補ごとの根拠の一文）を出す。実際にノートを直すかどうかは相棒の判断。
+- `repair-plan`: 検査に通らない `related_records`（根拠なし・自己リンクなど）を、ノートごとに**差分の形で提案するだけ**（研究ノートは書き換えない）。`-` が削除予定、`+` が根拠つき `CANDIDATE` の置換候補、`=` が温存。検査に通る記録（確定済みの `pRfC1DILDEM ↔ u3ka_AAb8qE` を含む）は必ず温存する。`CONFIRMED` で不合格のものは自動で消す案にせず「人の確認」に回す。適用前の現registryでは、21本のノートの33件が削除予定、置換候補は1ノート3件までで合計27件（T14 の精度条件を入れた後。多くの削除予定には置換候補が付かない。2026-10-20 時点のdry-run）。置換候補の並びは経験則で、人の確認はまだ。`--summary` は差分ではなく人が読める一覧（ノートごとの削除予定／置換候補の件数と、候補ごとの根拠の一文）を出す。ノートを直すのは `repair-apply`（下記）で、一覧を見て取捨選択する手順は踏まない。
+- `repair-apply`: `repair-plan` と同じ判定を**人の取捨選択なしで適用する**（2026-10-21 相棒決定：目視確認が必要な作りにはしない）。**既定はdry-run**で、`--write` を付けたときだけ `research/*.md` を書き換える。
+  - 削除：検査に通らない記録（根拠なし・自己リンク・宛先なしなど）。確定済みで合格するペアは温存。`CONFIRMED` で不合格の記録は消さず、結果の `needs_human` に載せる。
+  - 追加：候補づくり（T14 の条件）を通った上位 `--limit` 件（既定3）だけを `status=CANDIDATE` で。削除した宛先と同じ候補は件数に関係なく入れ直す。`CONFIRMED` は自動では付けない。
+  - 逆リンク：追加した記録も温存した記録も、相手側に自分への記録が無ければ相手側に `CANDIDATE` で足す（根拠は「本ノート」と「相手」を入れ替える）。
+  - 書く場所：荷札（先頭の `---`〜`---`）のあるノートは荷札の `related_records`、荷札のない既存ノートは本文の「## 関連する既存研究・課題との接続」の関連レコード行（節が無ければ末尾に節ごと追加）。**この関連レコード以外は1バイトも変えない**。書く前に機械で検査し（`only_related_records_changed`）、1本でも違えば何も書かず `BLOCKED_NON_RECORD_DIFF` で止まる。`registry.json`・Notebook・GAS には触れない。
+  - 自己検査：結果に適用前後の `validate`（エラー数・自己リンク・宛先なし・逆リンク欠落）と、適用後にもう一度計画したときの変更数 `second_run_changes`（0なら冪等）が入る。dry-run は一時コピーの上で同じ検査をして「適用したらこうなる」を出す。
+  - 適用結果（2026-10-21・PR #14・実際の台帳）：相棒PCの追加分（`eb7adb6`：`published_at` などの荷札と根拠つき `CANDIDATE` 16件）を取り込んだ状態に対して、25本を変更／不合格33件を削除（根拠なし31・自己リンク2）／`CANDIDATE` を順方向30件・逆向き30件追加（相棒PCが付けた8組は「既存」として重ねない）／`validate` は 81件・不合格33 → 108件・不合格0（自己リンク0・宛先なし0・逆リンク欠落0）／`CONFIRMED` は2件のまま／`pRfC1DILDEM ↔ u3ka_AAb8qE` と相棒PCの16件・荷札は無変更／二度目は変更0件。削除した33件には、本文に手書きされていた `proposal:P006` への3件も含む（根拠が書かれていないため）。追加した候補の品質は自動推定で、人の目での確認は未実施（UNKNOWN）。
 - `candidates`: 台帳の全動画について、研究ノートの題名・章・タグ・主張・要約の語の重なりから関連の**候補（`CANDIDATE`）**を出す。根拠にした共通語と両ノートの該当箇所を `evidence` に入れる。自己リンクは除き、1動画あたり上限5件。`CONFIRMED` にはしない。`UPDATES` は、投稿日時が新しい側から古い側へで、新しい側の題名・章・タグに「新機能・アップデート」などがあるときだけ。**精度の条件（T14）**：①汎用語（モデル・自動・操作・画面・mac・mini・computer・use など、`related_links.py` の `_GENERIC_TERMS` に理由別に載せた語）と、多くのノート（3割5分超）に出る語は根拠に使わない。②共通語は3語以上で、そのうち固有語が2語以上。固有語＝製品名・技術名（英数字で台帳の7本以下）か、3字以上で台帳の3本以下にしか出ない日本語。Claude・Gemini・OpenAI など大手の名前は固有語に数えない。③共通語の該当箇所が、見出し同士（題名・章・タグ）か主張同士で対応していること（片方が要約にしかない、章と主張で食い違う、は出さない）。`--summary` は上位の組を根拠の一文つきで人が読める形にする。
 - `index`: 「関連索引OKF」（`logical_id: index:related`）の本文を組み立て、Notebookの差し替え計画（①新版を追加 →②読み戻し一致を確認 →③そのときだけ旧版を削除）を出す。検査を通らない関係は索引に載せない。`--notebook-id` を付けると既存の関連索引ソースを一覧で探す（読み取りのみ）。削除は相棒の承認後に相棒PCの作業役が行う。
 - パイプライン（`auto_research_pipeline.py`）が新しい動画の研究レシートを作るときの関連候補も、同じ候補生成を使う（固定の4〜5本×単語一致は廃止）。
@@ -332,7 +340,7 @@ ID: index:related
 差し替え計画: ①新版追加 →②読み戻し一致 →③旧版削除（一致後のみ・承認後・UNKNOWN）。writes_executed=False, deletion_executed=False
 ```
 
-- 読み方：既存の `CONFIRMED` は `pRfC1DILDEM ↔ u3ka_AAb8qE` の1組だけで、検査も通っている。それ以外の既存の関係33件は `evidence` が無い（31件）または自己リンク（2件）で、検査に引っかかる。**自動候補は確認前の推定で、確定の関連として扱わない。**
+- 読み方（下の出力例は `repair-apply` を適用する前の2026-10-20時点）：既存の `CONFIRMED` は `pRfC1DILDEM ↔ u3ka_AAb8qE` の1組だけで、検査も通っている。それ以外の既存の関係33件は `evidence` が無い（31件）または自己リンク（2件）で、検査に引っかかっていた（適用後は0件）。**自動候補は確認前の推定で、確定の関連として扱わない。**
 
 > **たとえ**: 「この動画とこの動画は同じ話をしている」という付箋を、根拠のメモ付きで貼っていく仕組み。まず付箋に不備が無いか点検し（validate）、貼る候補を挙げ（candidates）、全部を1冊の一覧表にまとめる（index）。一覧表を図書館の棚に出し直すのは、相棒の許可が出てから。
 
@@ -442,5 +450,5 @@ ID: index:related
 
 ## 3. 確認済み・未確認の区別（2026-10-20 時点）
 
-- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T11時点で231件、T16時点で273件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
+- **確認済み（テスト）**: 偽クライアントと実Notebook一覧の写し（`tests/fixtures/notebook_sources_20261020.json`、id/type/titleのみ）を使ったオフラインテスト。PR #14 `4831a12` 時点で158件、T9時点で195件、T11時点で231件、T16時点で273件、T17時点で294件OK（ネット遮断・同名ブランチのローカルコピー）。通し運転（手順3〜8）は字幕取得・研究ノート保存・Git・Notebookをすべて偽物にしたテストで確認。
 - **未確認（UNVERIFIED / UNKNOWN）**: 登録のdry-run（書き込み0）は相棒PCで実機実行済み（`1e128aa`、ループ記録7）。`--live`（書き込み）と `health` は実機ではまだ一度も実行していない。`add_text` 後にソースへ付く type も不明。 `migrate-plan` と `related_links.py` も実機未実行（Notebook内YouTubeソースの本文が実際に取れるか・その文字数はUNKNOWN）。

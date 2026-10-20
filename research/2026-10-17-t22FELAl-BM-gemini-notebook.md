@@ -23,6 +23,11 @@ related_records:
     evidence: "両研究ノートの独自要約（キャッシュの前方一致・TTL／会話リセット・差分出力・簡潔化）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:lC5jxpYmatE:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：Skill・ハーネス・権限分離・トークン節約の実務構成を補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # AIの使用枠がすぐになくなる？ChatGPTとClaudeの利用枠を節約するキャッシュの仕組みを解説してみた
 
@@ -71,7 +76,6 @@ ChatGPT（OpenAI）とClaude（Anthropic）におけるプロンプトキャッ�
 - 未確認事項(UNKNOWN): OpenAIのエンタープライズ向け拡張キャッシュ保持期間の正確な上限値。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

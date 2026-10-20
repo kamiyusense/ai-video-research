@@ -23,6 +23,16 @@ related_records:
     evidence: "両研究ノートの独自要約（④自己改善ループ（RSI）／build-eval・hillclimbによるRSI）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:JXmk7hmbS3c:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「skill・プラグイン・スキル」"
+    status: "CANDIDATE"
+    evidence: "共通語: skill, プラグイン, スキル ／ 本ノート: 章「Skill機能のアーキテクチャとコマンド拡張の仕組み」 ／ 相手: 章「① スキルクリエイター（Skill Creator）プラグインの導入」"
+  - target_id: "youtube:lC5jxpYmatE:research"
+    relation: "EXTENDS"
+    note: "逆向きの候補（自動・未確認）：課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # 【神機能】Claude Codeで『Evalの改善スキル』が登場！本当に教えたいSkillを徹底解説
 
@@ -70,8 +80,6 @@ Claude Codeのプラグイン機能「Skill」を用いたEval（評価関数）
 - 未確認事項(UNKNOWN): hillclimb内部アルゴリズムにおける収束判定の完全な自動閾値パラメータ。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (EXTENDS): 課題ドリブン・Skill・Computer Use・ハーネス設計に対する評価・自己改善・実行ループを拡張
-- `proposal:P006` (COMPLEMENTS): 未解決課題ストック(P006)の再評価・検証ループ設計を補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

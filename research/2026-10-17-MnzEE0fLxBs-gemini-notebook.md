@@ -43,7 +43,10 @@ Gemini Notebookの基本UI（ソース・チャット・Studio）と活用テク
 - 未確認事項(UNKNOWN): ここな氏が実務で使用している社内規定ソースのファイル名。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:ZjUJ-35acaU` (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完
+
+- `youtube:2-8cXaRHlqI:research` (UPDATES): 自動推定の候補（未確認）：共通の主題「studio・notebooklm・powerpoint」 | status: CANDIDATE | evidence: 共通語: studio, notebooklm, powerpoint, スライド, notebook ／ 本ノート: 章「UI構成（左：ソース、中央：チャット、右：Studio）」 ／ 相手: 章「Studio機能9種生成の実演」 ／ 投稿日時: 2026-09-17 → 2026-06-21
+- `youtube:ZY7YuYHLlIQ:research` (UPDATES): 自動推定の候補（未確認）：共通の主題「studio・notebooklm・スライド」 | status: CANDIDATE | evidence: 共通語: studio, notebooklm, スライド, notebook ／ 本ノート: 章「UI構成（左：ソース、中央：チャット、右：Studio）」 ／ 相手: 章「Studioスライドの罠：画像出力であり文字編集不可の仕様解説」 ／ 投稿日時: 2026-09-17 → 2026-08-19
+- `youtube:ZjUJ-35acaU:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CANDIDATE | evidence: 相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

@@ -29,6 +29,21 @@ related_records:
     evidence: "両研究ノートの独自要約（Markdown知識と武器目録（索引）／OKFの荷札・資料分割・リンク・目次）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:Vr3JkAT9mo8:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「resources・agents.md・csv」"
+    status: "CANDIDATE"
+    evidence: "共通語: resources, agents.md, csv, memory.md, スターターキット ／ 本ノート: 章「ステップ1：土台フォルダ作成とスターターキット（CLAUDE.md / MEM…」 ／ 相手: 章「AGENTS.md / MEMORY.md / Resources の役割分離…」"
+  - target_id: "youtube:BStkW1HTfmk:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「agents.md・memory.md・vault」"
+    status: "CANDIDATE"
+    evidence: "共通語: agents.md, memory.md, vault, markdown, claude.md ／ 本ノート: 章「モデル乗り換え時の作法（CLAUDE.md ↔ AGENTS.md のリネーム…」 ／ 相手: 章「CLAUDE.md / AGENTS.md / MEMORY.md の基本構成…」"
+  - target_id: "youtube:2-8cXaRHlqI:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「vault・claude.md・obsidian」"
+    status: "CANDIDATE"
+    evidence: "共通語: vault, claude.md, obsidian, markdown ／ 本ノート: 章「ObsidianでのVaultオープンとマークダウン視覚化デモ」 ／ 相手: 章「Obsidian Vault構築と前月差分抽出プロンプト」"
 ---
 # どんなAIが来ても困らない「一生モノのAI」の作り方
 
@@ -88,8 +103,6 @@ AIモデル（相棒）やツール（乗り物）が入れ替わっても引き
 - 未確認事項(UNKNOWN): 概要欄配布スターターキットZIPの1文字単位の原文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:Vr3JkAT9mo8` (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完
-- `youtube:BStkW1HTfmk` (COMPLEMENTS): ObsidianローカルVaultによる長期記憶・ナレッジ構造化設計を補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

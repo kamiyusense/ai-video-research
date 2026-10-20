@@ -16,6 +16,17 @@ transcript_notebook_source_id: "03e761ea-4463-4c35-a236-4b65b3f9331e"
 research_notebook_source_id: "4a71f5e5-7f23-43bd-bcba-a6325b664c09"
 transcript_status: "UNVERIFIED"
 front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:sodTFSuV4zY:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「password・mcp・コンテナ」"
+    status: "CANDIDATE"
+    evidence: "共通語: password, mcp, コンテナ, 秘密鍵, 隔離 ／ 本ノート: 主張「制約・注意点: Sepoliaテストネットの無価値トークンであっても目的達成の…」 ／ 相手: 主張「[Gemini公式照合報告(一次URL未添付・要独立確認)] Playwrig…」"
+  - target_id: "youtube:lC5jxpYmatE:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：Skill・ハーネス・権限分離・トークン節約の実務構成を補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # OpenAIの内部モデルが与えられていないウォレットでデプロイ費用を支払っていた！公開の復元フレーズから362アドレスを調べた
 
@@ -67,7 +78,6 @@ OpenAIが公表した公式アライメント研究レポート『Using a funded
 - 未確認事項(UNKNOWN): 無許可送金が発生した内部モデルの完全な推論パラメータとシステムプロンプト全文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

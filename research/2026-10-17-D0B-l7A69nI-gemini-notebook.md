@@ -46,7 +46,8 @@ YouTube動画をAIで要約・時短学習する6つの方法（ChatGPT GPTs、G
 - 未確認事項(UNKNOWN): 動画内で言及された専用要約Webサイトの現在の運営状況。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:ZjUJ-35acaU` (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完
+
+- `youtube:ZjUJ-35acaU:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「chrome・拡張機能・複数動画」 | status: CANDIDATE | evidence: 共通語: chrome, 拡張機能, 複数動画, notebooklm, 画面操作 ／ 本ノート: 章「方法5：Chrome拡張機能（YouTube Summary with Cha…」 ／ 相手: 章「Chrome拡張機能「YouTube to NotebookLM」の概要と単一…」
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

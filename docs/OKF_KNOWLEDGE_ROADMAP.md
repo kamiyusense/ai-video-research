@@ -44,7 +44,8 @@
 - `relation` は4種類だけ: `COMPLEMENTS`（補い合う）／`EXTENDS`（発展させている）／`UPDATES`（新しい情報で古い情報を更新している）／`CONTRADICTS`（主張が対立している）。
 - `status` は `CANDIDATE`（候補）と `CONFIRMED`（根拠を確かめた）を分ける。**確定の判定はAI（作業役が根拠を書き、検品役が字幕・研究ノートを読み戻して確認）で行い、相棒の確認は不要**（2026-10-21 相棒決定：相棒の確認が要る仕分けはやらない）。名前やタグが似ているだけでは確定しない。相手が存在しなければ `UNRESOLVED`。
 - **古い情報の扱い**: `UPDATES` と `published_at` を使い、回答では新しい方を優先し、古い方は「以前はこうだった」と区別する。
-- **コードの扱い**: `automation/gemini-notebook/related_links.py`（読み取り専用）が、`related_records` の検証（宛先の実在・`relation`・`status`・`note`/`evidence` 必須・`CONFIRMED` は時刻かURLが必須・自己リンク・逆リンク欠落の数）、registry全体からの候補づくり（章・タグ・主張の共通語の重なり。常に `CANDIDATE` で自動の `CONFIRMED` はしない。`UPDATES` は投稿日が新しく更新を示す語があるときだけ）、関連索引OKF `index:related`（動画ごとの投稿日・関連先・関係・状態・理由）のdry-run生成を行う。索引の入れ替え計画は「新版を追加 → 読み戻し → 旧版を削除」の3段で、計画を出すだけで書き込み・削除はしない。既存コードは上の4種に加えて `RESOLVES_BACKLOG`（積み残しの解消）も受け付ける。
+- **コードの扱い**: `automation/gemini-notebook/related_links.py`（既定は読み取り専用。書くのは `repair-apply --write` だけ）が、`related_records` の検証（宛先の実在・`relation`・`status`・`note`/`evidence` 必須・`CONFIRMED` は時刻かURLが必須・自己リンク・逆リンク欠落の数）、registry全体からの候補づくり（章・タグ・主張の共通語の重なり。常に `CANDIDATE` で自動の `CONFIRMED` はしない。`UPDATES` は投稿日が新しく更新を示す語があるときだけ）、関連索引OKF `index:related`（動画ごとの投稿日・関連先・関係・状態・理由）のdry-run生成を行う。索引の入れ替え計画は「新版を追加 → 読み戻し → 旧版を削除」の3段で、計画を出すだけで書き込み・削除はしない。既存コードは上の4種に加えて `RESOLVES_BACKLOG`（積み残しの解消）も受け付ける。
+- **修復の自動適用（2026-10-21 相棒決定：目視確認が必要な作りにはしない）**: `related_links.py repair-apply`（既定dry-run、`--write` のときだけ `research/*.md` の `related_records` を書き換える）が、人の取捨選択なしで ①根拠なし・自己リンクなど検証に通らない記録を削除、②候補づくりの条件（T14）を通った根拠つき候補だけを `status=CANDIDATE` で追加、③相手側に逆向きが無ければ相手側にも `CANDIDATE` で追加する。**`CONFIRMED` は自動では付けない**。確定済みで合格するペア（`pRfC1DILDEM` ↔ `u3ka_AAb8qE`）は温存し、`CONFIRMED` で不合格の記録は消さず「人の確認」に数える。書くのは関連レコード（荷札のある研究ノートは荷札の `related_records`、荷札のない既存ノートは本文の関連レコード行）だけで、それ以外は1バイトも変えない（書く前に機械で検査し、1本でも違えば何も書かない）。`registry.json`・Notebook・GAS には触れない。適用後に同じコマンドをもう一度出すと変更0件（冪等）。
 - **限界**: NotebookLMは資料内のリンクをたどって開くことはできない（IDで検索して見つけるだけ）。効果は「関連資料が見つけやすくなる」まで。
 
 ## 4. 保存先と境界
@@ -88,7 +89,7 @@ Notebookへの読み戻しは完全一致にならない（NotebookLMがMarkdown
 | 字幕原文OKF | 15本（段落ごとの時刻目印・`published_at` 入り、YouTube字幕から取得、14本は自動生成字幕＝`UNVERIFIED`）。15本とも正規化一致・ID行・時刻目印・`published_at` を読み戻しで確認 |
 | 研究ノートOKF（`【研究ノート】`形式） | `pRfC1DILDEM`（新版 `0c14a49d`、新しい字幕ID `2e263d34`・`published_at` 入り）、`u3ka_AAb8qE`（`65b634f5`）、`CnkEROU7fZw`（`bfeee73b`）。他の12本は旧形式の `動画研究_…` 資料が研究ノート相当 |
 | `published_at` | 字幕は15本すべて。研究ノートは `pRfC1DILDEM` のみ |
-| 関連動画リンク（R6） | 確定済みで検証に合格するのは `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ。GitHub研究ノートは31本で `related_records` は計65件、検証不合格は33件（根拠なし・自己リンク。既存ノートは書き換えていない）。registry全体からの候補は、汎用語だけ・固有語2語未満・該当箇所が対応しない組を外して49件（未登録35件）で、並び順は経験則・人の確認は未実施（`related_links.py` のdry-run） |
+| 関連動画リンク（R6） | 確定済みで検証に合格するのは `pRfC1DILDEM` ↔ `u3ka_AAb8qE`（`COMPLEMENTS`）の1組だけ。GitHub研究ノート31本の `related_records` は、`repair-apply --write`（PR #14、2026-10-21）で修復済み：適用前は計81件（相棒PCが付けた根拠つき `CANDIDATE` 16件を含む）で検証不合格33件（根拠なし31・自己リンク2）、適用後は計108件で不合格0・自己リンク0・逆リンク欠落0（25本を変更、不合格33件を削除、`CANDIDATE` を順方向30件＋逆向き30件追加。相棒PCが付けた16件・`published_at` などの荷札は無変更。`CONFIRMED` は2件のまま増やしていない）。追加した候補は自動推定で、人の目での品質確認は未実施（UNKNOWN）。直したのはGitHub側の研究ノートだけで、Notebook側の研究ノートは未差し替え（削除を伴う。相棒PC側で実施） |
 | 自動化（R5） | `notebooklm_py_ingest.py` は計画だけのdry-runが実機で動いた。今回の登録は相棒PCの手作業スクリプト。作業ブランチ（PR #14）のコードは、段落の時刻目印（`[hh:mm:ss] <URL>&t=<秒>s`。読み取りは旧 `▶` 形式も許す）・`published_at`・`health` の目印検査・`TRANSCRIPT_UNAVAILABLE` 停止・`migrate-plan` を持つが、オフラインのテスト（Mock）のみで実機は未実行 |
 | 質問回答の確認 | 未実施 |
 | 注意 | Notebookのログインが1〜2時間で切れる（2026-10-20〜21に3回）。切れたら作業は止まる |
@@ -102,6 +103,6 @@ Notebookへの読み戻しは完全一致にならない（NotebookLMがMarkdown
 | T3 | `pRfC1DILDEM` の旧字幕・旧研究ノートを新版に入れ替え | DONE（旧 `a32a70ec`・`af697c8c` 削除） |
 | T4 | 自動化コードに反映：字幕はYouTubeから直接取得・段落時刻目印・`published_at` 必須・URLソースを使わない | コードDONE（PR #14、オフラインのテストのみ。実機は未実行） |
 | T5 | 研究ノート全件に `published_at` を追加し、新形式（`【研究ノート】`・字幕IDつき）にそろえる | GitHub正本15本はDONE（2026-10-21、`08feab2`：旧形式12本に荷札を追加、`u3ka_AAb8qE` の公開日を2026-08-20→2026-07-25に訂正）。Notebook側の旧形式 `動画研究_…` 12本は未置換（置換には旧研究カードの削除が要る）。代わりに【関連リンク索引】に全15本の投稿日時を載せた |
-| T6 | 関連動画リンク（R6）：まず `CANDIDATE` で付け、根拠を確かめて `CONFIRMED` に | 検証器・候補づくり・関連索引のdry-runはコードDONE（PR #14）。2026-10-21 相棒の「進めてよい」でノートへ反映：CANDIDATE 8組を両方向でGitHub研究ノートに追加。Notebookに【関連リンク索引】（`5a19ca34`）を追加し読み戻し一致。CONFIRMED化は未着手 |
+| T6 | 関連動画リンク（R6）：まず `CANDIDATE` で付け、根拠を確かめて `CONFIRMED` に | 検証器・候補づくり・関連索引のdry-run・修復の自動適用（`repair-apply`）はコードDONE（PR #14）。2026-10-21 相棒の「進めてよい」でノートへ反映：CANDIDATE 8組を両方向でGitHub研究ノートに追加。Notebookに【関連リンク索引】（`5a19ca34`）を追加し読み戻し一致。CONFIRMED化は未着手 |
 | T7 | 質問回答の確認（研究ノートと字幕の両方を引用できるか） | 1問PASS（2026-10-21：RAG動画の件数の扱いを質問→字幕 `2e263d34`・研究ノート `0c14a49d`・索引 `5a19ca34` を引用し、段落時刻つきで回答）。他の動画は未確認 |
 | T8 | 方式B（R1-B）の実証は、T7 の後に必要なら | 保留 |

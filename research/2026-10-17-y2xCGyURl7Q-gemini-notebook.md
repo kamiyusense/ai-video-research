@@ -45,8 +45,10 @@ Googleの次世代フラグシップモデル「Gemini 4 Argon」の一般公開
 - 未確認事項(UNKNOWN): Argonの思考プロセストークンに対する厳密な内部課金レート。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:lC5jxpYmatE` (COMPLEMENTS): Skill・ハーネス・権限分離・トークン節約の実務構成を補完
-- `youtube:ZjUJ-35acaU` (COMPLEMENTS): Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完
+
+- `youtube:j3Cyvbfn9_k:research` (COMPLEMENTS): 自動推定の候補（未確認）：共通の主題「argon・flash・google」 | status: CANDIDATE | evidence: 共通語: argon, flash, google ／ 本ノート: 章「概要・Gemini 4 Argon一般公開ニュース」 ／ 相手: 章「比較対象モデル一覧（Opus 5.5, Sonnet 5.5, GPT-6 A…」
+- `youtube:ZjUJ-35acaU:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：Gemini Notebook / NotebookLMへの情報集約・Studio出力・知識索引運用を補完 | status: CANDIDATE | evidence: 相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）
+- `youtube:lC5jxpYmatE:research` (COMPLEMENTS): 逆向きの候補（自動・未確認）：Skill・ハーネス・権限分離・トークン節約の実務構成を補完 | status: CANDIDATE | evidence: 相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。

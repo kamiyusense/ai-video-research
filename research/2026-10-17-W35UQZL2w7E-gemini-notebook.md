@@ -23,6 +23,11 @@ related_records:
     evidence: "両研究ノートの独自要約（キャッシュの前方一致・TTL／会話リセット・差分出力・簡潔化）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:sodTFSuV4zY:research"
+    relation: "COMPLEMENTS"
+    note: "自動推定の候補（未確認）：共通の主題「git・codex・chatgpt」"
+    status: "CANDIDATE"
+    evidence: "共通語: git, codex, chatgpt, openai ／ 本ノート: 題名「【研究カード】 【Chat-GPT Codex】トークン（使用量）をムダなく使…」 ／ 相手: タグ「Codex」"
 ---
 # 【Chat-GPT Codex】トークン（使用量）をムダなく使う節約術10選｜今すぐできる実践テクニック
 

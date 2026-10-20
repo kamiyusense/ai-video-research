@@ -23,6 +23,11 @@ related_records:
     evidence: "両研究ノートの独自要約（Claude Codeに実装を委譲／メインスレッド＋7サブスレッド並列）"
     status: "CANDIDATE"
     added_at: "2026-10-21"
+  - target_id: "youtube:Vr3JkAT9mo8:research"
+    relation: "COMPLEMENTS"
+    note: "逆向きの候補（自動・未確認）：AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完"
+    status: "CANDIDATE"
+    evidence: "相手ノートの記載: キーワード・テーマ類似による候補接続（動画本編言及未検証）"
 ---
 # 【実演】指示する相手は1人、働くのはAIチーム。年商30億社長がClaude Code「プロジェクト」を徹底解説
 
@@ -77,7 +82,6 @@ Claude Codeの「プロジェクト（Projects）」機能を用い、人間は1
 - 未確認事項(UNKNOWN): 公式LINEで配布されるテンプレート内部プロンプト全文。 | UNKNOWN | time: UNKNOWN | official: UNKNOWN | time_source: UNKNOWN
 
 ## 関連する既存研究・課題との接続
-- `youtube:Vr3JkAT9mo8` (COMPLEMENTS): AGENTS.md・MEMORY.md・専門サブエージェント分業アーキテクチャを補完
 
 ## 限界
 Gemini報告を基にした研究候補。映像実見・GitHub側の独立照合は別。またGitHubへの保存はNotebook内の総合索引更新を意味しない。
