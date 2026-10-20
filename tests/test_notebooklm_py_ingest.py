@@ -683,3 +683,128 @@ class TestLinkifyTimestamps(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestPipelineNotebookLmPyBackend(unittest.TestCase):
+    """T8: URLを貼るだけの通し運転（auto_research_pipeline）に notebooklm-py 登録をつなぐ。"""
+
+    def setUp(self):
+        import auto_research_pipeline as arp
+        self.arp = arp
+        self.net_calls = []
+
+        def _blocked(*args, **kwargs):
+            self.net_calls.append(args[:1])
+            raise AssertionError(f"テスト中に外部通信が呼ばれました: {args[:1]}")
+
+        for target, name in ((urllib.request, "urlopen"), (socket, "create_connection")):
+            p = mock.patch.object(target, name, _blocked)
+            p.start()
+            self.addCleanup(p.stop)
+        self.addCleanup(lambda: self.assertEqual(self.net_calls, []))
+
+    def fetch_ok(self, vid):
+        return {"cues": CUES, "published_at": "2026-10-01", "acquisition_method": ing.ACQ_TRANSCRIPT_API}
+
+    def note_path(self):
+        import tempfile
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        p = Path(d.name) / "note.md"
+        p.write_text(NOTE, encoding="utf-8")
+        return p
+
+    def test_new_url_plans_transcript_and_research_note_without_writes(self):
+        c = FakeClient([YT_SOURCE])
+        res = self.arp.run_notebooklm_py_step(VID, TITLE, self.note_path(), notebook_id="nb-1",
+                                              client=c, fetch_transcript=self.fetch_ok)
+        self.assertEqual(res["status"], "DRY_RUN_PLAN")
+        self.assertEqual(sorted(p["kind"] if isinstance(p, dict) else p for p in res["plan"]),
+                         ["research_note", "transcript"])
+        self.assertEqual(c.add_calls, [])
+        self.assertEqual(res["new_source_ids"], [])
+
+    def test_live_step_returns_status_writes_and_new_source_ids(self):
+        c = FakeClient([YT_SOURCE])
+        res = self.arp.run_notebooklm_py_step(VID, TITLE, self.note_path(), notebook_id="nb-1", live=True,
+                                              client=c, fetch_transcript=self.fetch_ok)
+        self.assertEqual(res["status"], "SUCCESS_2_SOURCE_OKF")
+        self.assertEqual(res["new_source_ids"], ["new-1", "new-2"])
+        self.assertEqual(len(res["writes"]), 2)
+
+    def run_resume(self, client, fetch=None, **kw):
+        return self.arp.run_pipeline("https://www.youtube.com/watch?v=pRfC1DILDEM",
+                                     notebook_backend="notebooklm-py", notebook_client=client,
+                                     fetch_transcript=fetch or self.fetch_ok, **kw)
+
+    def test_already_complete_video_is_no_op(self):
+        c = FakeClient(real_sources())
+        res = self.run_resume(c, notebook_id="nb-1", notebook_live=True)
+        self.assertEqual(res["notebook_ingest"]["status"], "NO_OP")
+        self.assertEqual(res["status"], "ALREADY_REGISTERED")
+        self.assertEqual(res["notebook_backend"], "notebooklm-py")
+        self.assertTrue(res["is_2_source_okf_verified"])
+        self.assertEqual(c.add_calls, [])
+
+    def test_auth_expired_halts_with_zero_writes(self):
+        c = FakeClient(real_sources(), auth_ok=False)
+        res = self.run_resume(c, notebook_id="nb-1", notebook_live=True)
+        self.assertEqual(res["status"], "AUTH_EXPIRED_HALT")
+        self.assertFalse(res["is_2_source_okf_verified"])
+        self.assertEqual(c.add_calls, [])
+
+    def test_captions_unavailable_halts_with_zero_writes(self):
+        c = FakeClient([YT_SOURCE])
+        res = self.arp.run_pipeline("https://www.youtube.com/watch?v=u3ka_AAb8qE",
+                                    notebook_backend="notebooklm-py", notebook_client=c,
+                                    notebook_id="nb-1", notebook_live=True,
+                                    fetch_transcript=lambda vid: {"cues": [], "published_at": None})
+        self.assertEqual(res["status"], "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE")
+        self.assertEqual(c.add_calls, [])
+
+    def test_live_without_notebook_id_halts(self):
+        c = FakeClient([])
+        res = self.run_resume(c, notebook_live=True)
+        self.assertEqual(res["status"], "LIVE_REQUIRES_NOTEBOOK_ID")
+        self.assertEqual(res["notebook_ingest"]["writes"], [])
+        self.assertEqual(c.add_calls, [])
+        with mock.patch.object(self.arp, "run_pipeline", side_effect=AssertionError("呼ばれてはいけない")), \
+                mock.patch("sys.stderr"):
+            with self.assertRaises(SystemExit) as cm:
+                self.arp.main(["https://www.youtube.com/watch?v=pRfC1DILDEM",
+                               "--notebook-backend", "notebooklm-py", "--live"])
+            self.assertNotEqual(cm.exception.code, 0)
+            with self.assertRaises(SystemExit):
+                self.arp.main(["https://www.youtube.com/watch?v=pRfC1DILDEM", "--live",
+                               "--notebook-id", "nb-1"])
+
+    def test_live_requires_notebooklm_py_backend_in_api(self):
+        with self.assertRaises(ValueError):
+            self.arp.run_pipeline("https://www.youtube.com/watch?v=pRfC1DILDEM",
+                                  notebook_live=True, notebook_id="nb-1")
+
+    def test_cli_passes_backend_options_to_pipeline(self):
+        seen = {}
+
+        def fake_run(*a, **kw):
+            seen.update(kw)
+            return {"status": "DRY_RUN_PLAN"}
+
+        with mock.patch.object(self.arp, "run_pipeline", fake_run):
+            code = self.arp.main(["https://www.youtube.com/watch?v=pRfC1DILDEM",
+                                  "--notebook-backend", "notebooklm-py", "--notebook-id", "nb-1"])
+        self.assertEqual(code, 0)
+        self.assertEqual((seen["notebook_backend"], seen["notebook_id"], seen["notebook_live"]),
+                         ("notebooklm-py", "nb-1", False))
+
+    def test_research_note_frontmatter_has_published_at_and_transcript_logical_id(self):
+        import receipt_to_research as rtr
+        base = {"video_id": "abcdefghijk", "title": "t", "summary_ja": "0:05 から本題", "claims": [],
+                "url": "https://www.youtube.com/watch?v=abcdefghijk", "source_scope": "x",
+                "notebook_source_id": "UNKNOWN", "notebook_readback": "UNKNOWN", "changes": []}
+        for pub, want in (("2026-10-01", '"2026-10-01"'), (None, '"UNKNOWN"')):
+            v = dict(base, published_at=pub)
+            md = rtr.render(v, "2026-10-20")
+            front = md.split("\n---\n", 1)[0]
+            self.assertIn(f"published_at: {want}", front)
+            self.assertIn('transcript_logical_id: "youtube:abcdefghijk:transcript"', front)

@@ -1627,6 +1627,7 @@ function renderOkfFrontmatter_(v, checkedAt) {
     "original_url: " + JSON.stringify(v.url),
     "url: " + JSON.stringify(canon),
     "publication_date: " + JSON.stringify(clean_(v.published_at || "UNKNOWN")),
+    "published_at: " + JSON.stringify(clean_(v.published_at || "UNKNOWN")),
     "checked_at: " + JSON.stringify(checkedAt),
     "source_scope: " + JSON.stringify(clean_(v.source_scope)),
     "transcript_logical_id: " + JSON.stringify(transcriptLogicalId),

@@ -1252,6 +1252,7 @@ def render_okf_frontmatter(v, checked_at):
         f"original_url: {json.dumps(v['url'], ensure_ascii=False)}",
         f"url: {json.dumps(canon, ensure_ascii=False)}",
         f"publication_date: {json.dumps(clean(v.get('published_at') or 'UNKNOWN'), ensure_ascii=False)}",
+        f"published_at: {json.dumps(clean(v.get('published_at') or 'UNKNOWN'), ensure_ascii=False)}",
         f"checked_at: {json.dumps(checked_at, ensure_ascii=False)}",
         f"source_scope: {json.dumps(clean(v['source_scope']), ensure_ascii=False)}",
         f"transcript_logical_id: {json.dumps(transcript_logical_id, ensure_ascii=False)}",

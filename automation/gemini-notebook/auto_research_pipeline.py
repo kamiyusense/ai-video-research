@@ -638,10 +638,26 @@ def run_pipeline(
     relay_via_drive: bool = False,
     mock_cdp: bool = False,
     include_youtube_url: bool = False,
+    notebook_backend: str = "cdp",
+    notebook_id: Optional[str] = None,
+    notebook_live: bool = False,
+    notebook_client: Any = None,
+    fetch_transcript: Any = None,
 ) -> Dict[str, Any]:
-    """Execute complete automated research pipeline from URL to GitHub commit & verification."""
+    """Execute complete automated research pipeline from URL to GitHub commit & verification.
+
+    notebook_backend="notebooklm-py" のときは Notebook 登録を notebooklm_py_ingest.run_ingest で行う
+    （既定は計画のみ。書き込みは notebook_live と notebook_id の両方が必要）。
+    """
     if include_youtube_url:
         raise ValueError("YouTube URL単体ソースの登録は廃止されました（2026-10-20 ユーザー確定仕様）。")
+    if notebook_backend not in NOTEBOOK_BACKENDS:
+        raise ValueError(f"notebook_backend は {NOTEBOOK_BACKENDS} のいずれか: {notebook_backend}")
+    if notebook_live and notebook_backend != "notebooklm-py":
+        raise ValueError("Notebookへの --live 書き込みは notebook_backend='notebooklm-py' のときだけ使えます。")
+    if notebook_live and not notebook_id:
+        return {"status": "LIVE_REQUIRES_NOTEBOOK_ID", "notebook_ingest": {"status": "LIVE_REQUIRES_NOTEBOOK_ID", "writes": []}}
+    py_nb = dict(notebook_id=notebook_id, live=notebook_live, client=notebook_client, fetch_transcript=fetch_transcript)
     today_str = date.today().isoformat()
     print("=" * 70)
     print(f"[PIPELINE START] AI技術研究室 完全自動化研究パイプライン 開始 (v2.2, Model: {gemini_model})")
@@ -674,6 +690,20 @@ def run_pipeline(
         reg_data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8")) if REGISTRY_PATH.exists() else {}
         reg_records = reg_data.get("records", [])
         reg_record = next((r for r in reg_records if r.get("video_id") == video_id), {})
+
+        if res_path and res_path.exists() and notebook_backend == "notebooklm-py":
+            print(f"\n[ALREADY_REGISTERED] 動画 '{video_id}' のGitHub研究ノートは確認済み。notebooklm-py でNotebookの不足分を確認します...")
+            nb_res = run_notebooklm_py_step(
+                video_id, dedup_res.get("title") or f"YouTube Video {video_id}", res_path, **py_nb
+            )
+            return {
+                "status": NOTEBOOKLM_PY_RESUME_STATUS.get(nb_res["status"], nb_res["status"]),
+                "video_id": video_id,
+                "notebook_backend": notebook_backend,
+                "notebook_ingest": nb_res,
+                "is_2_source_okf_verified": nb_res["status"] in ("SUCCESS_2_SOURCE_OKF", "NO_OP"),
+                "details": dedup_res,
+            }
 
         if res_path and res_path.exists():
             print(f"\n[ALREADY_REGISTERED] 動画 '{video_id}' のGitHub研究ノートは確認済みです。Notebook登録状態を実画面から読み戻します...")
@@ -918,20 +948,33 @@ def run_pipeline(
     raw_cues_data = receipt.get("raw_cues", [])
     cues_for_ingest = [(c["start"], c["end"], c["text"]) for c in raw_cues_data] if raw_cues_data else None
 
-    nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
-        video_id=video_id,
-        video_url=f"https://www.youtube.com/watch?v={video_id}",
-        video_title=vd.get("title", f"YouTube Video {video_id}"),
-        research_md_path=ROOT / research_md_path,
-        cues=cues_for_ingest,
-        mock_cdp=mock_cdp,
-        published_at=publish_date,
-    )
-    nb_rb = nb_res.get("readback", {})
-    notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
-    notebook_research_readback = bool(nb_rb.get("research_note_found"))
-    notebook_transcript_readback = bool(nb_rb.get("transcript_source_found"))
-    is_2_source_okf_verified = bool(nb_res.get("is_2_source_okf_verified"))
+    if notebook_backend == "notebooklm-py":
+        nb_res = run_notebooklm_py_step(
+            video_id, vd.get("title", f"YouTube Video {video_id}"), ROOT / research_md_path,
+            cues=cues_for_ingest, published_at=publish_date, **py_nb
+        )
+        nb_ok = nb_res["status"] in ("SUCCESS_2_SOURCE_OKF", "NO_OP")
+        notebook_youtube_readback = False  # URL単体ソースは登録しない（R2）
+        notebook_research_readback = nb_ok
+        notebook_transcript_readback = nb_ok
+        is_2_source_okf_verified = nb_ok
+        nb_res.setdefault("independent_sources_distinct", nb_ok)
+        nb_res.setdefault("is_mock", False)
+    else:
+        nb_res = notebook_auto_ingest.ingest_and_verify_notebook(
+            video_id=video_id,
+            video_url=f"https://www.youtube.com/watch?v={video_id}",
+            video_title=vd.get("title", f"YouTube Video {video_id}"),
+            research_md_path=ROOT / research_md_path,
+            cues=cues_for_ingest,
+            mock_cdp=mock_cdp,
+            published_at=publish_date,
+        )
+        nb_rb = nb_res.get("readback", {})
+        notebook_youtube_readback = bool(nb_rb.get("youtube_source_found"))
+        notebook_research_readback = bool(nb_rb.get("research_note_found"))
+        notebook_transcript_readback = bool(nb_rb.get("transcript_source_found"))
+        is_2_source_okf_verified = bool(nb_res.get("is_2_source_okf_verified"))
 
     # Final Strict SUCCESS Evaluation (11 Mandatory Conditions + 2-Source OKF + Metadata Integrity)
     receipt_vids = receipt.get("videos", [])
@@ -1015,11 +1058,60 @@ def run_pipeline(
         "qa_verified": qa_verified,
         "engine_used": engine_used,
         "model_used": model_used,
+        "notebook_backend": notebook_backend,
         "notebook_ingest": nb_res,
         "is_2_source_okf_verified": is_2_source_okf_verified,
         "is_full_success": (final_status == "SUCCESS_2_SOURCE_OKF"),
         "fail_reasons": fail_reasons,
     }
+
+
+NOTEBOOK_BACKENDS = ("cdp", "notebooklm-py")
+# notebooklm-py の結果を、登録済み動画の再開時のパイプライン状態名へ寄せる（それ以外はそのまま返す）
+NOTEBOOKLM_PY_RESUME_STATUS = {
+    "NO_OP": "ALREADY_REGISTERED",
+    "SUCCESS_2_SOURCE_OKF": "SUCCESS_2_SOURCE_OKF",
+}
+
+
+def run_notebooklm_py_step(
+    video_id: str,
+    video_title: str,
+    research_md_path: Path,
+    cues: Optional[List[Any]] = None,
+    published_at: Optional[str] = None,
+    notebook_id: Optional[str] = None,
+    live: bool = False,
+    client: Any = None,
+    fetch_transcript: Any = None,
+) -> Dict[str, Any]:
+    """notebooklm_py_ingest.run_ingest で字幕取得・不足分の登録・読み戻しを1回で行う。
+
+    client を渡さなければ notebook_id から実CLIクライアントを作る（notebook_id も無ければ未接続の計画のみ）。
+    fetch_transcript を渡さなければ実行PCからYouTubeの時刻つき字幕を取る（youtube-transcript-api→timedtext）。
+    """
+    import notebooklm_py_ingest
+
+    if client is None and notebook_id:
+        client = notebooklm_py_ingest.NotebookLmCliClient(notebook_id)
+    if fetch_transcript is None:
+        fetch_transcript = notebooklm_py_ingest.fetch_youtube_transcript
+    note_text = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else ""
+    res = notebooklm_py_ingest.run_ingest(
+        client,
+        video_id=video_id,
+        video_title=video_title,
+        research_note_text=note_text,
+        cues=cues,
+        live=live,
+        notebook_id=notebook_id,
+        published_at=published_at,
+        fetch_transcript=fetch_transcript,
+    )
+    res.pop("precheck", None)
+    res.pop("postcheck", None)
+    res["new_source_ids"] = [w["source_id"] for w in res.get("writes", []) if w.get("source_id")]
+    return res
 
 
 SUCCESS_CLI_STATUSES = (
@@ -1029,6 +1121,8 @@ SUCCESS_CLI_STATUSES = (
     "RESUMED_NOTEBOOK_INGEST",
     "DRY_RUN_COMPLETE",
     "DRIVE_RELAY_DISPATCHED",
+    "DRY_RUN_PLAN",  # notebooklm-py: 計画のみ（書き込み0）
+    "DRY_RUN_PLAN_OFFLINE",
 )
 
 
@@ -1045,7 +1139,14 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser.add_argument("--relay-via-drive", action="store_true", help="ローカルGit Pushを行わずDrive配置によるGASリレーを優先する")
     parser.add_argument("--mock-cdp", action="store_true", help="テスト用Mock CDPモード")
     parser.add_argument("--include-youtube-url", action="store_true", help="廃止（2026-10-20）：指定するとエラーで停止する")
+    parser.add_argument("--notebook-backend", choices=NOTEBOOK_BACKENDS, default="cdp", help="Notebook登録の方式（既定: cdp）")
+    parser.add_argument("--notebook-id", help="notebooklm-py で登録するNotebookのID")
+    parser.add_argument("--live", action="store_true", help="notebooklm-py でNotebookへ実際に書き込む（--notebook-id 必須）")
     args = parser.parse_args(args_list)
+    if args.live and args.notebook_backend != "notebooklm-py":
+        parser.error("--live は --notebook-backend notebooklm-py のときだけ使えます。")
+    if args.live and not args.notebook_id:
+        parser.error("--live には --notebook-id の明示が必要です。")
     if args.include_youtube_url:
         parser.error("--include-youtube-url は廃止されました。YouTube URL単体ソースは登録しません（2026-10-20 ユーザー確定仕様）。")
 
@@ -1065,6 +1166,9 @@ def main(args_list: Optional[List[str]] = None) -> int:
         relay_via_drive=args.relay_via_drive,
         mock_cdp=args.mock_cdp,
         include_youtube_url=args.include_youtube_url,
+        notebook_backend=args.notebook_backend,
+        notebook_id=args.notebook_id,
+        notebook_live=args.live,
     )
     print(json.dumps(res, ensure_ascii=False, indent=2))
     return 0 if res.get("status") in SUCCESS_CLI_STATUSES else 1
