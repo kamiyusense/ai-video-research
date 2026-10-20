@@ -24,21 +24,11 @@
 | 7 | T2 実機dry-run（相棒PC、書き込み0） | 作業役（ユーザーPC、`1e128aa`） | PASS（計画）／add_textは不合格 | ログイン確認PASS、一覧54件→54件で変化なし。pRfC1DILDEM → `NO_OP`、u3ka_AAb8qE → 字幕原文だけ追加の計画（元本文 `d1fef625` 10201文字、`NOTEBOOK_YOUTUBE_SOURCE_FULLTEXT`）。CLIアダプタの list/fulltext/auth は実CLIと一致。ただし notebooklm-py 0.8.5 に `source add-text` は無く、live だと必ず失敗 → T5で修正 |
 | 8 | T4 手順書とロードマップ現在地 | 作業役（PR #14 `3ff322b`） | NEEDS_FIX（1周目・軽微） | 152件OK。内容はループ記録2〜6と整合。ただし執筆後に判明した事実が未反映：(1) 実機dry-run済み（ループ記録7）なのに「実Notebookでは未実行」と記載、(2) 実CLIで確認済みは auth/list に加えて fulltext も、(3) add_text は実CLIに無い（T5で修正予定）ことを手順書に明記、(4) 旧 `610789c0` は削除済み（ループ記録3を追記済み） |
 | 9 | T5 add_text を実CLIに合わせる | 作業役（PR #14 `4831a12`） | PASS（1周目） | 独立実測：ネット遮断・同名ブランチで158件OK。コマンドは `source add - --type text --title … --json --notebook …`（本文は標準入力・シェルを通さない引数列）、IDは `source.id`→`id` の順、失敗・タイムアウトは結果不明として再送せず一覧で確認。add 待ち時間は既定600秒。実際の `--live` 書き込みは未実行（UNVERIFIED） |
+| 10 | T4 修正（2周目） | 作業役（PR #14 `4d6950b`） | PASS | 指摘4点すべて反映を差分で確認（実機dry-run済み・`--live`/health未実行、実CLI確認3コマンド、旧版の add-text 不具合とT5修正、旧 `610789c0` 置き換え済み）。差分はドキュメント3ファイルのみ、158件OK |
 
 ## 次のタスク（作業役向け）
 
-**T4: 使い方の手順書と、ロードマップ現在地の更新（ドキュメントのみ）**
-- 対象: 新規 `automation/gemini-notebook/NOTEBOOKLM_PY_RUNBOOK.md`、`automation/gemini-notebook/README.md` への1行リンク、`docs/OKF_KNOWLEDGE_ROADMAP.md` の Phase 7「現在状況」欄
-- 手順書に書くこと: 相棒のPCでの起動方法（`uv run --python 3.12 --with notebooklm-py==0.8.5 ...`）、`health` → dry-run計画 → 相棒の承認 → `--live` の順番、ログイン切れ時は止めて相棒にログインし直してもらうこと、結果不明の書き込みは再送せず読み戻すこと、削除はこの道具ではできないこと、CLIコマンドは実機未確認（UNVERIFIED）であること。非技術者向けに日常のたとえを1行ずつ添える。
-- ロードマップ: Phase 7 の現在状況を事実だけで更新する。pRfC1DILDEM は「字幕原文OKF＋研究ノートOKFを別ソースで実機登録・正規化読み戻し一致（2026-10-20）。字幕は時刻なしのNotebook本文由来で `UNVERIFIED`、自然言語QA確認は未実施のため `SUCCESS_2_SOURCE_OKF` は未確定」。数値（テスト数・HEAD）は実測値のみ。
-- 受入条件: 書いた内容がループ記録2〜6と矛盾しない。「成功」「完了」を根拠なしに書かない。既存テスト152件を壊さない。
-- 禁止: コード変更、実Notebook接続。
-
-**T5（T4の次）: CLIアダプタの add_text を実CLIに合わせる**
-- 実機調査（ループ記録7）による正しい形: `notebooklm source add - --type text --title {title} --json --notebook {notebook_id}`（本文は標準入力。`--type text` のときだけ `-` が使える）。出力JSONは `{"source": {...}}` の入れ子なので、IDは `data["source"]["id"]`（無ければ `data["id"]`）で読む。
-- 追加: add 用の timeout を設定可能にする（既定は長め、例: 600秒）。
-- 受入条件: subprocess を偽物に差し替えたテストで、渡す引数列・標準入力・入れ子JSONからのID取得・ID無し時の「結果不明→一覧で確認」経路を固定。既存テスト非破壊。
-- 禁止: 実Notebook接続・書き込み。
+（T1〜T5完了。次は相棒の承認待ち5（u3ka_AAb8qE の字幕原文を `--live` で追加）。承認が出たら、相棒PCで health → dry-run → `--live` → 事後読み戻し → health を手順書どおりに実行し、検品役が読み戻し値で判定する）
 
 ## ユーザー判断の記録
 
