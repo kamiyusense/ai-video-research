@@ -21,7 +21,27 @@
 
 ## 次のタスク（作業役向け）
 
-（現在なし。T1は完了。なお、整形後の読み戻しでも既存の重複検知は荷札の論理IDとタイトルの「【字幕原文】」「字幕＋動画ID」で `a32a70ec` を拾えることをコード上で確認済み：`notebook_auto_ingest.py` の `evaluate_2_source_okf_independence`）
+**T2: notebooklm-py 経由の「2ソース自動登録」モジュール（オフライン実装＋テスト）**
+
+背景: 2026-10-20 の実機作業（ループ記録2・3）はユーザーPCの notebooklm-py 0.8.5 で手作業的に行った。これを再実行可能なコードにする。既存の `notebook_auto_ingest.py`（CDP方式）は壊さず、別モジュールとして追加する。
+
+- 対象: 新規 `automation/gemini-notebook/notebooklm_py_ingest.py`、新規 `tests/test_notebooklm_py_ingest.py`
+- 作るもの:
+  1. **クライアント差し替え口**：`list_sources()` / `get_fulltext(id)` / `add_text(title, text)` / `auth_check_passive()` だけを持つ小さなインターフェース。実装は (a) テスト用の偽クライアント、(b) `notebooklm` CLI をsubprocessで呼ぶ実機用アダプタ（コマンドの正確さは実機未確認＝`UNVERIFIED` とコメントで明記）。削除メソッドは持たせない。
+  2. **ログイン点検**：最初に `auth_check_passive()`。失敗なら書き込み0件で `AUTH_EXPIRED_HALT` を返して止まる。login/refresh は呼ばない。
+  3. **事前読み戻し・重複チェック**：既存の `evaluate_2_source_okf_independence` を再利用して、字幕原文OKF・研究ノートOKFの有無を判定。揃っていれば `NO_OP`、足りない方だけ追加する。
+  4. **字幕原文OKFの組み立て**：既存の `build_transcript_okf_content` を再利用。字幕cueが無い場合は、NotebookのYouTubeソース本文を使ったことを `acquisition_method` に記録し、`UNVERIFIED`・cue数0とする。
+  5. **事後読み戻し**：追加後に一覧と本文を読み戻す。完全一致に加えて「Markdown記号・空白を除いた正規化一致」を判定関数として実装する（NotebookLMの表示用整形への対応。今回の実機で合格基準にしたもの）。両ソースが別IDであることも確認する。
+  6. **安全**：既定は dry-run（計画だけ出す）。実書き込みには `--live` と `--notebook-id` の明示が必須。結果が不明な書き込みは再送せず、一覧の読み戻しで確認する。
+- 受入条件（検品役が確認する点）: 次の各ケースを偽クライアントでテストし、全部オフラインでPASS。
+  - 両方そろっている → 書き込み0の `NO_OP`
+  - 字幕原文だけ無い → 字幕原文だけ追加
+  - ログイン切れ → 書き込み0で停止
+  - 正規化一致：記号が消えた本文は合格、1文字欠けた本文は不合格
+  - 書き込み結果が不明 → 再送せず読み戻し
+  - 削除の呼び出しが存在しない
+  - 既存テスト（同名ブランチで122件）を壊さない
+- 禁止: 実Notebookへの接続・書き込み、Gemini呼び出し、テストの削除・スキップ。
 
 ## ユーザー判断の記録
 
@@ -31,7 +51,7 @@
 
 ## ユーザー待ちリスト
 
-（2026-10-20 時点で1〜4は許可済み・実施中。結果はループ記録に追記する）
+（2026-10-20 20:08 JST：1〜4は完了。結果はループ記録2・3と `registry.json` の `notebook_sources`。現在の待ちは無し）
 
 
 | # | 何を | なぜ止めたか | 承認されたら進むこと |
