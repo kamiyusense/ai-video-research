@@ -400,6 +400,189 @@ class TestAutoResearchPipeline(unittest.TestCase):
             self.assertEqual(code2, 0)
             self.assertEqual(mock_run.call_args[0][0], "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 
+    def test_evaluate_final_status_fails_on_missing_or_mismatched_mutual_links(self):
+        """相互論理リンク（:transcript ↔ :research）の欠落・不一致では完全SUCCESSにならないこと。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
+            has_mutual_logical_links=False,  # 相互リンク欠落
+        )
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
+        self.assertEqual(status, "PARTIAL_METADATA_INCOMPLETE")
+        self.assertTrue(any("相互論理リンク" in r for r in reasons))
+
+    def test_evaluate_final_status_fails_on_missing_canonical_url(self):
+        """元YouTube URL（canonical_url）の欠落では完全SUCCESSにならないこと。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
+            has_canonical_url=False,  # 元URL欠落
+        )
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
+        self.assertEqual(status, "PARTIAL_METADATA_INCOMPLETE")
+        self.assertTrue(any("元YouTube URL" in r for r in reasons))
+
+    def test_evaluate_final_status_fails_on_sources_not_distinct(self):
+        """2ソースが同一要素二重カウント（independent_sources_distinct=False）では完全SUCCESSにならないこと。"""
+        status, reasons = auto_research_pipeline.evaluate_final_status(
+            real_content_acquired=True,
+            engine_used="GEMINI_API_LIVE",
+            model_used="gemini-3.8-flash",
+            research_note_generated=True,
+            github_push_success=True,
+            remote_head_matched=True,
+            remote_research_readback_matched=True,
+            remote_registry_readback_matched=True,
+            notebook_youtube_readback=True,
+            notebook_research_readback=True,
+            qa_verified=True,
+            no_push=False,
+            is_2_source_okf_verified=True,
+            notebook_transcript_readback=True,
+            independent_sources_distinct=False,  # 二重カウント・非独立
+        )
+        self.assertNotEqual(status, "SUCCESS_2_SOURCE_OKF")
+        self.assertTrue(any("二重カウント排除" in r for r in reasons))
+
+    def test_rag_and_okf_videos_complements_cross_linking_and_parity(self):
+        """RAG動画(pRfC1DILDEM)とOKF動画(u3ka_AAb8qE)の2資料構造、双方向リンク、COMPLEMENTS関係を実証。"""
+        import notebook_auto_ingest as nai
+
+        rag_md = ROOT / "research" / "2026-10-18-pRfC1DILDEM-gemini-notebook.md"
+        okf_md = ROOT / "research" / "2026-10-19-u3ka_AAb8qE-gemini-notebook.md"
+        self.assertTrue(rag_md.exists(), "RAG research note exists")
+        self.assertTrue(okf_md.exists(), "OKF research note exists")
+
+        rag_text = rag_md.read_text(encoding="utf-8")
+        okf_text = okf_md.read_text(encoding="utf-8")
+
+        # 1. RAG Research Note checks
+        self.assertIn('logical_id: "youtube:pRfC1DILDEM:research"', rag_text)
+        self.assertIn('transcript_logical_id: "youtube:pRfC1DILDEM:transcript"', rag_text)
+        self.assertIn('resource: "https://www.youtube.com/watch?v=pRfC1DILDEM"', rag_text)
+        self.assertIn('target_id: "youtube:u3ka_AAb8qE:research"', rag_text)
+        self.assertIn('relation: "COMPLEMENTS"', rag_text)
+        self.assertIn('status: "CONFIRMED"', rag_text)
+
+        # 2. OKF Research Note checks
+        self.assertIn('logical_id: "youtube:u3ka_AAb8qE:research"', okf_text)
+        self.assertIn('transcript_logical_id: "youtube:u3ka_AAb8qE:transcript"', okf_text)
+        self.assertIn('resource: "https://www.youtube.com/watch?v=u3ka_AAb8qE"', okf_text)
+        self.assertIn('target_id: "youtube:pRfC1DILDEM:research"', okf_text)
+        self.assertIn('relation: "COMPLEMENTS"', okf_text)
+        self.assertIn('status: "CONFIRMED"', okf_text)
+
+        # 3. Generate Transcript OKF for RAG
+        rag_tr = nai.build_transcript_okf_content(
+            video_id="pRfC1DILDEM",
+            video_url="https://www.youtube.com/watch?v=pRfC1DILDEM",
+            video_title="【AI中級】RAGのその先。巨大な資料をAIで精度高く取り扱いたい。",
+            cues=[{"start": 0.0, "end": 10.0, "text": "RAGの限界と構造"}],
+            status="UNVERIFIED",
+            related_records=[{
+                "target_id": "youtube:u3ka_AAb8qE:research",
+                "relation": "COMPLEMENTS",
+                "note": "OKFとRAGの相互補完",
+                "status": "CONFIRMED",
+                "evidence": "13:16過去回言及"
+            }]
+        )
+        self.assertIn('type: "TRANSCRIPT"', rag_tr)
+        self.assertIn('logical_id: "youtube:pRfC1DILDEM:transcript"', rag_tr)
+        self.assertIn('research_logical_id: "youtube:pRfC1DILDEM:research"', rag_tr)
+        self.assertIn('related_research_id: "youtube:pRfC1DILDEM:research"', rag_tr)
+        self.assertIn('canonical_url: "https://www.youtube.com/watch?v=pRfC1DILDEM"', rag_tr)
+        self.assertIn('target_id: "youtube:u3ka_AAb8qE:research"', rag_tr)
+
+        # 4. Generate Transcript OKF for OKF
+        okf_tr = nai.build_transcript_okf_content(
+            video_id="u3ka_AAb8qE",
+            video_url="https://www.youtube.com/watch?v=u3ka_AAb8qE",
+            video_title="【OKF実践】AI時代の知識管理とオープンナレッジフォーマット v0.2",
+            cues=[{"start": 496.0, "end": 548.0, "text": "YAMLフロントマターによる荷札"}],
+            status="UNVERIFIED",
+            related_records=[{
+                "target_id": "youtube:pRfC1DILDEM:research",
+                "relation": "COMPLEMENTS",
+                "note": "RAGとOKFの相互補完",
+                "status": "CONFIRMED",
+                "evidence": "08:16荷札とpRfC1DILDEM言及"
+            }]
+        )
+        self.assertIn('type: "TRANSCRIPT"', okf_tr)
+        self.assertIn('logical_id: "youtube:u3ka_AAb8qE:transcript"', okf_tr)
+        self.assertIn('research_logical_id: "youtube:u3ka_AAb8qE:research"', okf_tr)
+        self.assertIn('related_research_id: "youtube:u3ka_AAb8qE:research"', okf_tr)
+        self.assertIn('canonical_url: "https://www.youtube.com/watch?v=u3ka_AAb8qE"', okf_tr)
+        self.assertIn('target_id: "youtube:pRfC1DILDEM:research"', okf_tr)
+
+        # 5. Distinctness: Transcript OKF != Research Note
+        self.assertNotEqual(rag_tr, rag_text)
+        self.assertNotEqual(okf_tr, okf_text)
+
+    def test_evaluate_2_source_okf_independence_edge_cases(self):
+        """2ソースの取り違え、重複カウント、異動画ID混入が正しく弾かれること。"""
+        import notebook_auto_ingest as nai
+
+        vid = "pRfC1DILDEM"
+        v_title = "RAG Video"
+
+        # (a) 同一要素二重カウント -> False
+        items_dup = [{"index": 0, "text": f"AI_VIDEO_RESEARCH_NOTE:{vid} AI_VIDEO_TRANSCRIPT_RAW:{vid}"}]
+        res_dup = nai.evaluate_2_source_okf_independence(items_dup, vid, v_title)
+        self.assertFalse(res_dup["is_2_source_okf_verified"])
+
+        # (b) 2つとも研究ノート（取り違え/字幕欠落） -> False
+        items_two_notes = [
+            {"index": 0, "text": f"AI_VIDEO_RESEARCH_NOTE:{vid} part 1"},
+            {"index": 1, "text": f"AI_VIDEO_RESEARCH_NOTE:{vid} part 2"},
+        ]
+        res_two_notes = nai.evaluate_2_source_okf_independence(items_two_notes, vid, v_title)
+        self.assertFalse(res_two_notes["is_2_source_okf_verified"])
+        self.assertFalse(res_two_notes["transcript_source_found"])
+
+        # (c) 2つとも字幕原文（取り違え/ノート欠落） -> False
+        items_two_tr = [
+            {"index": 0, "text": f"AI_VIDEO_TRANSCRIPT_RAW:{vid} part 1"},
+            {"index": 1, "text": f"AI_VIDEO_TRANSCRIPT_RAW:{vid} part 2"},
+        ]
+        res_two_tr = nai.evaluate_2_source_okf_independence(items_two_tr, vid, v_title)
+        self.assertFalse(res_two_tr["is_2_source_okf_verified"])
+        self.assertFalse(res_two_tr["research_note_found"])
+
+        # (d) 異なる動画IDのソース混入（リンク先・対象不一致） -> False
+        items_mismatch = [
+            {"index": 0, "text": "AI_VIDEO_RESEARCH_NOTE:OTHER_VID_999"},
+            {"index": 1, "text": f"AI_VIDEO_TRANSCRIPT_RAW:{vid}"},
+        ]
+        res_mismatch = nai.evaluate_2_source_okf_independence(items_mismatch, vid, v_title)
+        self.assertFalse(res_mismatch["is_2_source_okf_verified"])
+        self.assertFalse(res_mismatch["research_note_found"])
+
 
 if __name__ == "__main__":
     unittest.main()

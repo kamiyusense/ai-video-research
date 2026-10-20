@@ -5,7 +5,7 @@
 - **作業ブランチ（策定時）**: `feature/gemini-notebook-research-loop-20261016`。**固定SHAを信用しない。必ずGitHub current stateをfresh readback。**
 - **最優先ロードマップ**: [OKF知識図書館・根拠付き質問回答ロードマップ](OKF_KNOWLEDGE_ROADMAP.md)
 - **別目的の広域研究計画**: [../RESEARCH_ROADMAP.md](../RESEARCH_ROADMAP.md)
-- **状態**: ロードマップの「1動画2ソースMVP完成契約」を正本として確定。CLI引数柔軟化（位置引数/--urlフラグ両対応）と受入条件判定を反映し、全111テストPASS。次回の本当のLIVE E2E（1動画2ソースの実機保存・読み戻し）への準備完了状態。
+- **状態**: ロードマップの「1動画2ソースMVP完成契約」を正本として確定。RAG動画（pRfC1DILDEM）とOKF動画（u3ka_AAb8qE）の実例による2資料構造・双方向リンク・COMPLEMENTS関係の実証、および失敗系・エッジケース判定（元URL欠落、二重カウント、2資料取り違え、異動画ID混入）のガードを拡充し、全116テストPASS。次回の本当のLIVE E2E（1動画2ソースの実機保存・読み戻し）への準備完了状態。
 - **最優先の最新指示（2026-10-20）**: 新規動画では「字幕原文OKF ＋ 研究ノートOKF」の2ソース登録を原則とする（YouTube URLは追加参考オプトイン）。1ノート300ソース枠（最大150動画相当）を厳格に保護。**新SUCCESS条件（2-Source OKF完全成功基準）に準拠し、既存ソース削除厳禁、重複回避・不足差分追加、登録後2ソース独立確認、Drive配置/タブ検出/同一二重カウント/Mockのみでの偽PASS完全禁止を徹底する**。正式完成に必要な最低限の9大条件（字幕OKF生成、研究ノートOKF生成、元YouTube URL存在、相互論理リンク、Notebook 2ソース独立実画面登録、GitHub研究ノートreadback、台帳・索引保存、GitHub remote readback、QA確認）を厳格に順守する。大規模知識グラフ開発は凍結とし、Markdown相互参照（65エッジ・30組双方向ペア・欠落ゼロ）を維持する。
 
 ## 0. 「GitHub見て引き継いで」と言われたときの必須行動
@@ -62,7 +62,7 @@ GitHubに接続・読取できなければ完了や引継ぎ成功を断言せ�
    - **Phase 5 (既存資産の非破壊移行・逆リンク整備)**: `BACKWARD_COMPATIBLE_VERIFIED / BACKLINKS_PARITY_COMPLETE`。既存29動画・263章資産の下位互換を完全維持（未移行28動画はハイブリッド透過パース）。主要ハブ5件への逆リンク整備により、全30ペア・60本の有向エッジにおける逆リンク欠落0件・完全双方向整合性を達成。リポジトリ内全140件のMarkdown相対リンク実在確認完了。
    - **Phase 6 (質問回答品質の検証・最終整合性是正)**: `TEST_PASSED`。5分類ルーター、条件付き決定論的件数集計（RAG/OKF/字幕5状態等）、時系列ソート区別（公開日/確認日）、1ホップ探索免責表示、Markdownリンク化パリティ、OKFフロントマターtype欠落FAIL検査、字幕証拠判定、および逆リンク双方向性アサーションを実装。全85テストPASS。
 2. **次はPhase 7（最速実機稼働実証・1本の完全通過）**:
-   - ステータス: `2_SOURCE_OKF_INGEST_READY`（`u3ka_AAb8qE` を対象に、既存実装 `build_transcript_okf_content` および `notebook_auto_ingest.py` を再利用し、必須2ソース『字幕原文OKF (`AI_VIDEO_TRANSCRIPT_RAW:u3ka_AAb8qE`)』＋『研究ノートOKF (`AI_VIDEO_RESEARCH_NOTE:u3ka_AAb8qE`)』の登録・読み戻し完全立証仕様へ移行完了。全110テストPASS）。
+   - ステータス: `2_SOURCE_OKF_INGEST_READY`（`u3ka_AAb8qE` および `pRfC1DILDEM` を対象に、既存実装 `build_transcript_okf_content` および `notebook_auto_ingest.py` を再利用し、必須2ソース『字幕原文OKF (`AI_VIDEO_TRANSCRIPT_RAW:<video_id>`)』＋『研究ノートOKF (`AI_VIDEO_RESEARCH_NOTE:<video_id>`)』の登録・読み戻し完全立証仕様へ移行完了。全116テストPASS）。
    - **対象動画**: OKF動画 `u3ka_AAb8qE`（第2号として取り込み完了）および RAG動画 `pRfC1DILDEM`（第1号）。
    - **実行状況**:
      1. Geminiで取得可能な元資料を取得（字幕テキスト）：`DONE`（ローカルreceiptおよびタイムスタンプ付き区間データ作成済み）。
