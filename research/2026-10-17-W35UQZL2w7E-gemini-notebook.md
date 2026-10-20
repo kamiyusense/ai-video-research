@@ -1,3 +1,29 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 【Chat-GPT Codex】トークン（使用量）をムダなく使う節約術10選｜今すぐできる実践テクニック"
+logical_id: "youtube:W35UQZL2w7E:research"
+record_id: "youtube:W35UQZL2w7E"
+video_id: "W35UQZL2w7E"
+resource: "https://www.youtube.com/watch?v=W35UQZL2w7E"
+canonical_url: "https://www.youtube.com/watch?v=W35UQZL2w7E"
+published_at: "2026-08-02T00:08:22-07:00"
+published_at_jst: "2026-08-02T16:08:22+09:00"
+publication_date: "2026-08-02"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:W35UQZL2w7E:transcript"
+transcript_notebook_source_id: "0ba79fd1-e86f-42c9-81a3-9ce74c0ae60d"
+research_notebook_source_id: "1c20abd2-ca54-4fbc-87ab-69d51b2320fe"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:t22FELAl-BM:research"
+    relation: "COMPLEMENTS"
+    note: "どちらもChatGPT/Codex/Claudeの利用枠・トークン節約がテーマ。片方はプロンプトキャッシュの仕組み、もう片方は日々の節約テクニック"
+    evidence: "両研究ノートの独自要約（キャッシュの前方一致・TTL／会話リセット・差分出力・簡潔化）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # 【Chat-GPT Codex】トークン（使用量）をムダなく使う節約術10選｜今すぐできる実践テクニック
 
 - record_id: `youtube:W35UQZL2w7E`

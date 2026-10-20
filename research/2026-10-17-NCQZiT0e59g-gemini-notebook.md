@@ -1,3 +1,35 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 【最新トレンド】自分より頭良く働き続ける！AI社員の作り方を大公開"
+logical_id: "youtube:NCQZiT0e59g:research"
+record_id: "youtube:NCQZiT0e59g"
+video_id: "NCQZiT0e59g"
+resource: "https://www.youtube.com/watch?v=NCQZiT0e59g"
+canonical_url: "https://www.youtube.com/watch?v=NCQZiT0e59g"
+published_at: "2026-10-13T04:58:15-07:00"
+published_at_jst: "2026-10-13T20:58:15+09:00"
+publication_date: "2026-10-13"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:NCQZiT0e59g:transcript"
+transcript_notebook_source_id: "0df6e48a-50cc-40f9-ba98-0ed4355b49b1"
+research_notebook_source_id: "23b4f3fd-dcd7-464c-8623-8caf30d22594"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:X9Zk68AII4A:research"
+    relation: "COMPLEMENTS"
+    note: "どちらもAIの自己改善ループ（RSI）を扱う。片方はAI社員の構成要素の1つとして、もう片方はEval改善スキルの実装として"
+    evidence: "両研究ノートの独自要約（④自己改善ループ（RSI）／build-eval・hillclimbによるRSI）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+  - target_id: "youtube:XckM9eFa_vg:research"
+    relation: "COMPLEMENTS"
+    note: "AIに渡す知識・記憶の置き方。階層フォルダとCLAUDE.md/MEMORY.mdと、雑なコンテキスト＋マスターコンテキストの二層記憶"
+    evidence: "両研究ノートの独自要約（CLAUDE.md・MEMORY.md・00_Resources／二層記憶）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # 【最新トレンド】自分より頭良く働き続ける！AI社員の作り方を大公開
 
 - record_id: `youtube:NCQZiT0e59g`

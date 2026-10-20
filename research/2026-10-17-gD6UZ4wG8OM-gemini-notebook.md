@@ -1,3 +1,35 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 AIを低く見積もる世の中へ。― Claude開発者が書いた野心の手引き"
+logical_id: "youtube:gD6UZ4wG8OM:research"
+record_id: "youtube:gD6UZ4wG8OM"
+video_id: "gD6UZ4wG8OM"
+resource: "https://www.youtube.com/watch?v=gD6UZ4wG8OM"
+canonical_url: "https://www.youtube.com/watch?v=gD6UZ4wG8OM"
+published_at: "2026-10-16T04:08:50-07:00"
+published_at_jst: "2026-10-16T20:08:50+09:00"
+publication_date: "2026-10-16"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:gD6UZ4wG8OM:transcript"
+transcript_notebook_source_id: "5406c715-c9e7-4203-bdf8-61b399acd6e6"
+research_notebook_source_id: "2f6d897c-2796-443d-9904-db11e50df1ea"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:26MGuVIJh4A:research"
+    relation: "COMPLEMENTS"
+    note: "AIへの期待値を上げて大きな目標から使う姿勢。野心的なプロンプトと、無茶な頂点ゴールから逆算する思考"
+    evidence: "両研究ノートの独自要約（高さ・深さ・広さの3次元／トップダウン枝刈り思考）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+  - target_id: "youtube:CnkEROU7fZw:research"
+    relation: "COMPLEMENTS"
+    note: "プロンプトの書き方を超えた指示の設計。型と自動化への移行と、野心的なプロンプト設計論"
+    evidence: "両研究ノートの要約（指示は型と自動化で／Prompting with Ambition）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # AIを低く見積もる世の中へ。― Claude開発者が書いた野心の手引き
 
 - record_id: `youtube:gD6UZ4wG8OM`

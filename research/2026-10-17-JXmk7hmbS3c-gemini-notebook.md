@@ -1,3 +1,29 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 Claude Codeをインストールしたら必ず準備しときたいこと１０選！"
+logical_id: "youtube:JXmk7hmbS3c:research"
+record_id: "youtube:JXmk7hmbS3c"
+video_id: "JXmk7hmbS3c"
+resource: "https://www.youtube.com/watch?v=JXmk7hmbS3c"
+canonical_url: "https://www.youtube.com/watch?v=JXmk7hmbS3c"
+published_at: "2026-03-31T03:01:04-07:00"
+published_at_jst: "2026-03-31T19:01:04+09:00"
+publication_date: "2026-03-31"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:JXmk7hmbS3c:transcript"
+transcript_notebook_source_id: "16a3469f-59a2-4c31-8aaa-0f8afa5137fd"
+research_notebook_source_id: "4fbeac98-f8bd-49c5-bfe3-6d060d17378c"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:sodTFSuV4zY:research"
+    relation: "COMPLEMENTS"
+    note: "Claude Codeの実務環境づくり。どちらもPlaywright MCPと常時稼働のMac miniを使う構成を紹介"
+    evidence: "両研究ノートの独自要約（⑨Playwright MCP・⑩常時稼働Mac mini／Mac mini常時稼働・Playwright MCP）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # Claude Codeをインストールしたら必ず準備しときたいこと１０選！
 
 - record_id: `youtube:JXmk7hmbS3c`

@@ -1,3 +1,29 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 【神機能】Claude Codeで『Evalの改善スキル』が登場！本当に教えたいSkillを徹底解説"
+logical_id: "youtube:X9Zk68AII4A:research"
+record_id: "youtube:X9Zk68AII4A"
+video_id: "X9Zk68AII4A"
+resource: "https://www.youtube.com/watch?v=X9Zk68AII4A"
+canonical_url: "https://www.youtube.com/watch?v=X9Zk68AII4A"
+published_at: "2026-10-03T03:00:04-07:00"
+published_at_jst: "2026-10-03T19:00:04+09:00"
+publication_date: "2026-10-03"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:X9Zk68AII4A:transcript"
+transcript_notebook_source_id: "c456adc4-0e0c-47ac-ba15-18519676f937"
+research_notebook_source_id: "ac71a06b-1dc5-43ec-994a-e164ce7dd669"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+related_records:
+  - target_id: "youtube:NCQZiT0e59g:research"
+    relation: "COMPLEMENTS"
+    note: "どちらもAIの自己改善ループ（RSI）を扱う。片方はAI社員の構成要素の1つとして、もう片方はEval改善スキルの実装として"
+    evidence: "両研究ノートの独自要約（④自己改善ループ（RSI）／build-eval・hillclimbによるRSI）"
+    status: "CANDIDATE"
+    added_at: "2026-10-21"
+---
 # 【神機能】Claude Codeで『Evalの改善スキル』が登場！本当に教えたいSkillを徹底解説
 
 - record_id: `youtube:X9Zk68AII4A`

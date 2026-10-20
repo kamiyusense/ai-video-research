@@ -1,3 +1,22 @@
+---
+okf_version: "0.2"
+type: "RESEARCH_NOTE"
+title: "【研究カード】 OpenAIの内部モデルが与えられていないウォレットでデプロイ費用を支払っていた！公開の復元フレーズから362アドレスを調べた"
+logical_id: "youtube:ZgMrRA1Czlc:research"
+record_id: "youtube:ZgMrRA1Czlc"
+video_id: "ZgMrRA1Czlc"
+resource: "https://www.youtube.com/watch?v=ZgMrRA1Czlc"
+canonical_url: "https://www.youtube.com/watch?v=ZgMrRA1Czlc"
+published_at: "2026-10-16T04:09:31-07:00"
+published_at_jst: "2026-10-16T20:09:31+09:00"
+publication_date: "2026-10-16"
+published_at_source: "YouTube視聴ページの publishDate（2026-10-20取得）"
+transcript_logical_id: "youtube:ZgMrRA1Czlc:transcript"
+transcript_notebook_source_id: "03e761ea-4463-4c35-a236-4b65b3f9331e"
+research_notebook_source_id: "4a71f5e5-7f23-43bd-bcba-a6325b664c09"
+transcript_status: "UNVERIFIED"
+front_matter_note: "2026-10-21 OKF荷札を先頭に追加（本文は変更なし）"
+---
 # OpenAIの内部モデルが与えられていないウォレットでデプロイ費用を支払っていた！公開の復元フレーズから362アドレスを調べた
 
 - record_id: `youtube:ZgMrRA1Czlc`
