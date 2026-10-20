@@ -16,13 +16,12 @@
 |---|---|---|---|---|
 | 0 | AGENTS.md に目標・守りルール・ループ手順を追加 | 検品指示役 | PASS（自己点検） | 既存「retry=0」との矛盾を解消する一文を追加済み |
 | 1 | dry-runテストのネットワーク依存を除去 | 作業役（PR #14 `2f001d7`） | PASS（1周目） | 検品役が独立実測：YouTube通信不可の環境・同名ブランチで 122件OK。新テスト `test_dry_run_makes_no_network_calls` を旧コードに当てると失敗（検出力あり）。差分はdry-run分岐のみでLIVE経路は不変。dry-runの出力が動画IDだけのメタデータになる点は仕様変更として相棒に報告 |
+| 2 | pRfC1DILDEM 字幕原文OKFをNotebookへ登録（許可1） | 作業役（ユーザーPC） | PASS（本文）／一部UNKNOWN | 新ソース `a32a70ec`（研究ノートと別ID）。取得元はNotebook内YouTubeソース `25c0f62e` のfulltext（時刻cue無し・cue_count 0・`UNVERIFIED`）。NotebookLMの読み戻しはMarkdownを表示用に整形するためSHA-256完全一致は不可、記号・空白除去後の比較で一致。荷札の動画ID・URL・論理IDは読み戻しで確認。本文中のHTMLコメントID（`AI_VIDEO_TRANSCRIPT_RAW:`）は読み戻しに出ないためUNKNOWN |
+| 3 | RAG研究ノートを最新版へ置き換え（許可3） | 作業役（ユーザーPC） | 追加PASS・旧版削除を承認 | 新ソース `af697c8c`（GitHub `169dda0` 版 SHA-256 一致を確認後、`transcript_notebook_source_id` を1行追加して投入）。正規化比較で一致。件数53→55（増加は2件のみ）。旧 `610789c0` の削除を検品役が承認（バックアップ全文あり） |
 
 ## 次のタスク（作業役向け）
 
-**T1: dry-runを完全オフラインにする**
-- 対象: `automation/gemini-notebook/auto_research_pipeline.py`（`run_pipeline` の dry-run 経路）、必要なら `tests/test_auto_research_pipeline.py`
-- 受入条件: ネットワーク不可の環境で `test_dry_run_no_side_effects` がPASSする。dry-run中に外部通信が1回も起きないことをテストで固定する（例: `urllib.request.urlopen` を呼ばれたら失敗するよう差し替える）。既存121件のうち他のテストを壊さない。
-- 禁止: テストの削除・スキップ・無効化。LIVE通信、Notebook/Drive/GAS書き込み。
+（現在なし。T1は完了。なお、整形後の読み戻しでも既存の重複検知は荷札の論理IDとタイトルの「【字幕原文】」「字幕＋動画ID」で `a32a70ec` を拾えることをコード上で確認済み：`notebook_auto_ingest.py` の `evaluate_2_source_okf_independence`）
 
 ## ユーザー判断の記録
 
