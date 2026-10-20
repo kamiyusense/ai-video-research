@@ -26,17 +26,17 @@
 | 9 | T5 add_text を実CLIに合わせる | 作業役（PR #14 `4831a12`） | PASS（1周目） | 独立実測：ネット遮断・同名ブランチで158件OK。コマンドは `source add - --type text --title … --json --notebook …`（本文は標準入力・シェルを通さない引数列）、IDは `source.id`→`id` の順、失敗・タイムアウトは結果不明として再送せず一覧で確認。add 待ち時間は既定600秒。実際の `--live` 書き込みは未実行（UNVERIFIED） |
 | 10 | T4 修正（2周目） | 作業役（PR #14 `4d6950b`） | PASS | 指摘4点すべて反映を差分で確認（実機dry-run済み・`--live`/health未実行、実CLI確認3コマンド、旧版の add-text 不具合とT5修正、旧 `610789c0` 置き換え済み）。差分はドキュメント3ファイルのみ、158件OK |
 | 11 | T6 ユーザー確定仕様（時刻リンク・投稿日時・URL単体登録廃止） | 作業役（PR #14 `bd515ca`） | NEEDS_FIX（1周目） | コードは良好：独立実測169件OK、cue行は `[HH:MM:SS](…&t=秒s)` で秒は切り捨て・発話は前後空白除去のみ、`published_at` を荷札に記録、時刻なしは登録せず停止、`--include-youtube-url` は拒否。不足：(1) 正とするドキュメント `claude/requirements-alignment-20261020` が未マージ（ロードマップに取り下げ済みの旧v1.2節が残る）、(2) 実機で取得実績のある youtube-transcript-api の取得元が未実装（既存timedtext経路は実機未確認）、(3) Drive経路の字幕OKFに `published_at` が渡らない |
+| 12 | T6 修正（2周目） | 作業役（PR #14 `4419d40`） | PASS | 独立実測171件OK。ロードマップの最上位節は requirements 側の「ユーザー確定要件R1〜R5」1つだけ（重複解消）。字幕取得は youtube-transcript-api → timedtext の順で、取得元を `acquisition_method` に記録。Drive経路の字幕OKFにも `published_at`。youtube-transcript-api 1.2.2 の実データとの属性照合は実機未確認 |
 
 ## 次のタスク（作業役向け）
 
-**T6: ユーザー確定仕様（2026-10-20）に合わせる：字幕の時刻リンク・投稿日時・URL単体ソース廃止**（仕様は `claude/requirements-alignment-20261020` @`acfd234` の `docs/OKF_KNOWLEDGE_ROADMAP.md` v1.2 冒頭「ユーザー確定要件 R1〜R5」。このブランチのドキュメント修正をPR #14へマージしてから作業する）
-- 対象: `notebook_auto_ingest.py`（`build_transcript_okf_content`）、`notebooklm_py_ingest.py`、`auto_research_pipeline.py`、関連テスト
+**T7: 研究ノートの根拠時刻をリンク化／Drive経路のYouTube参照ファイル廃止（R2・R3）**
+- 対象: `notebooklm_py_ingest.py`、`notebook_auto_ingest.py`、`receipt_to_research.py`（新規研究ノートの生成）、テスト
 - やること:
-  1. 字幕OKFの各cue行を `- [HH:MM:SS](https://www.youtube.com/watch?v=<id>&t=<秒>s) <発話テキスト>` にする（発話テキストは改変しない。秒は切り捨ての整数）。荷札に `published_at`（取得できなければ `"UNKNOWN"`）を追加。cueが無いときは `transcript_status: "TIMESTAMPS_MISSING"`。
-  2. `notebooklm_py_ingest.py` に字幕取得を足す：字幕取得関数を差し替え可能にし、(a) 既存の `auto_research_pipeline.fetch_actual_captions`／`verify_timestamps.fetch_watch_publish_date`、(b) `youtube-transcript-api`（相棒PCで 1.2.2 により pRfC1DILDEM 275 cue・u3ka_AAb8qE 381 cue の取得を実機確認済み。`uv run --with` で一時利用、無ければ (a)）の順で時刻つき字幕と投稿日時を取る。取れなければNotebook内本文へのフォールバックはやめ、`TRANSCRIPT_TIMESTAMPS_UNAVAILABLE` で書き込み0で止める（時刻なし字幕は正式に登録しない）。研究ノート本文に `published_at` が無ければ荷札に1行足してから登録する。
-  3. YouTube URL単体ソースの登録経路を廃止：`--include-youtube-url` を削除（指定されたらエラーで止める）、`add_youtube_source` 経路は常に無効。
-  4. テスト（オフライン・偽HTTP）：cue行の形式とURL秒数、発話テキスト非改変、`published_at` の記録と `UNKNOWN`、字幕が取れない時の停止と書き込み0、`--include-youtube-url` 指定時のエラー。既存テスト非破壊（新仕様で意味が変わるテストは、理由を書いて期待値を更新。削除・スキップは禁止）。
-- 禁止: 実Notebook接続・書き込み、Gemini呼び出し。
+  1. `linkify_timestamps(text, video_id)`：本文中の `MM:SS` / `HH:MM:SS` 形式の時刻（既にリンクになっているもの・URL内・コードブロック内・荷札内は除く）を `[MM:SS](https://www.youtube.com/watch?v=<id>&t=<秒>s)` に置き換える。研究ノートをNotebookへ登録する直前と、`receipt_to_research.py` が新しい研究ノートを書くときに適用する。GitHubの既存研究ノートは書き換えない（Notebook側のコピーだけ）。
+  2. Drive同期の `<id>_youtube_source.txt` の書き出しをやめる（R2：URL単体の資料を作らない）。
+  3. テスト：時刻の置換と秒数、除外ケース（既存リンク・URL・荷札・コードブロック・「12:00開始」のような時刻でない用法は対象外にできなくても、少なくとも既存リンクとURLは壊さない）、二重適用しても変わらない、Drive同期で youtube_source.txt が作られない。既存テスト非破壊。
+- 禁止: 実Notebook接続・書き込み、GitHub既存研究ノートの書き換え。
 
 ## ユーザー判断の記録
 
