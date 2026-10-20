@@ -795,6 +795,29 @@ def run_pipeline(
         dry_run=dry_run,
     )
 
+    if dry_run and notebook_backend == "notebooklm-py":
+        # 手順8の計画だけを出す（書き込み0）。--notebook-id が無ければ棚も読まない（DRY_RUN_PLAN_OFFLINE）。
+        print("[8/8] [DRY RUN] notebooklm-py でNotebookへの追加予定を確認します（書き込みなし）...")
+        receipt_vids = receipt.get("videos") or [{}]
+        note_preview = receipt_to_research.render(receipt_vids[0], today_str) if receipt_vids[0] else ""
+        nb_res = run_notebooklm_py_step(
+            video_id, vd.get("title") or f"YouTube Video {video_id}", None,
+            published_at=publish_date, research_note_text=note_preview,
+            **dict(py_nb, live=False),
+        )
+        for p in nb_res.get("plan_details", []):
+            print(f"  - 追加予定: {p['kind']} / {p['title']} / {p['logical_id']}")
+        print(f"\n[DRY RUN] Notebook計画: {nb_res['status']}。GitHub・Notebook・Driveへの書き込みゼロで終了します。")
+        return {
+            "status": NOTEBOOKLM_PY_RESUME_STATUS.get(nb_res["status"], nb_res["status"]),
+            "video_id": video_id,
+            "notebook_backend": notebook_backend,
+            "notebook_ingest": nb_res,
+            "receipt": receipt,
+            "engine_used": engine_used,
+            "model_used": model_used,
+        }
+
     if dry_run:
         print("\n[DRY RUN] プレビュー完了。外部・Drive・ローカルファイルへの副作用ゼロで終了します。")
         return {
@@ -1077,13 +1100,14 @@ NOTEBOOKLM_PY_RESUME_STATUS = {
 def run_notebooklm_py_step(
     video_id: str,
     video_title: str,
-    research_md_path: Path,
+    research_md_path: Optional[Path],
     cues: Optional[List[Any]] = None,
     published_at: Optional[str] = None,
     notebook_id: Optional[str] = None,
     live: bool = False,
     client: Any = None,
     fetch_transcript: Any = None,
+    research_note_text: Optional[str] = None,
 ) -> Dict[str, Any]:
     """notebooklm_py_ingest.run_ingest で字幕取得・不足分の登録・読み戻しを1回で行う。
 
@@ -1096,7 +1120,10 @@ def run_notebooklm_py_step(
         client = notebooklm_py_ingest.NotebookLmCliClient(notebook_id)
     if fetch_transcript is None:
         fetch_transcript = notebooklm_py_ingest.fetch_youtube_transcript
-    note_text = research_md_path.read_text(encoding="utf-8") if research_md_path.exists() else ""
+    if research_note_text is not None:
+        note_text = research_note_text  # dry-run: 保存前の研究ノート（メモリ上）
+    else:
+        note_text = research_md_path.read_text(encoding="utf-8") if research_md_path and research_md_path.exists() else ""
     res = notebooklm_py_ingest.run_ingest(
         client,
         video_id=video_id,

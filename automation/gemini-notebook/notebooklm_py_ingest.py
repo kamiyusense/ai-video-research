@@ -381,6 +381,18 @@ def fetch_youtube_transcript(video_id: str, sources=None) -> Dict[str, Any]:
 # 本体
 
 
+PLAN_LOGICAL_SUFFIX = {"transcript": "transcript", "research_note": "research"}
+
+
+def plan_details(video_id: str, video_title: str, kinds: List[str]) -> List[Dict[str, str]]:
+    """追加予定ソースの種類・タイトル・logical_id（計画の表示用。本文は含めない）。"""
+    titles = {"transcript": transcript_title, "research_note": research_note_title}
+    return [
+        {"kind": k, "title": titles[k](video_id, video_title), "logical_id": f"youtube:{video_id}:{PLAN_LOGICAL_SUFFIX[k]}"}
+        for k in kinds
+    ]
+
+
 def run_ingest(
     client: Optional[NotebookClient],
     video_id: str,
@@ -404,6 +416,7 @@ def run_ingest(
     if client is None:
         result["status"] = "DRY_RUN_PLAN_OFFLINE"
         result["plan"] = ["transcript", "research_note"]
+        result["plan_details"] = plan_details(video_id, video_title, result["plan"])
         result["notes"].append("Notebook未接続のため、既存ソースの有無は未確認（UNKNOWN）。")
         return result
 
@@ -452,6 +465,7 @@ def run_ingest(
             "text": linkify_timestamps(ensure_published_at(research_note_text, published_at), video_id),
         }
     result["plan"] = list(planned)
+    result["plan_details"] = plan_details(video_id, video_title, result["plan"])
 
     if not live:
         result["status"] = "DRY_RUN_PLAN"

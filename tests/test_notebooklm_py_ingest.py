@@ -808,3 +808,206 @@ class TestPipelineNotebookLmPyBackend(unittest.TestCase):
             front = md.split("\n---\n", 1)[0]
             self.assertIn(f"published_at: {want}", front)
             self.assertIn('transcript_logical_id: "youtube:abcdefghijk:transcript"', front)
+
+
+class TestPipelineEndToEndMocked(unittest.TestCase):
+    """T9: run_pipeline を手順3〜8まで通す（字幕取得・研究ノート保存・Git・NotebookClient はすべて偽物）。"""
+
+    E2E_VID = "e2eTestVid1"
+    E2E_TITLE = "OKFで作るAI知識ベースの設計（E2E）"
+    E2E_CUES = [(0.0, 2.0, "こんにちは"), (65.4, 70.0, "OKFは荷札です"), (3725.9, 3730.0, "まとめ")]
+
+    def setUp(self):
+        import tempfile
+        from datetime import date
+        import auto_research_pipeline as arp
+        import receipt_to_research as rtr
+        self.arp, self.rtr, self.today = arp, rtr, date.today().isoformat()
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        self.tmp = Path(d.name)
+        self.net_calls, self.saved_notes, self.git_calls = [], [], []
+
+        def _blocked(*args, **kwargs):
+            self.net_calls.append(args[:1])
+            raise AssertionError(f"テスト中に外部通信が呼ばれました: {args[:1]}")
+
+        def _forbidden(name):
+            def f(*a, **kw):
+                raise AssertionError(f"{name} は呼ばれてはいけない")
+            return f
+
+        def fake_save(data, root, **kw):  # 手順4「GitHub保存」の代わり：研究ノートを一時フォルダへ書くだけ
+            path = Path(root) / "research" / f"{self.today}-{self.E2E_VID}-gemini-notebook.md"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(rtr.render(data["videos"][0], self.today), encoding="utf-8")
+            self.saved_notes.append(path)
+            return {"new_records": 1}, [path]
+
+        def fake_catalog(root, write_path):
+            Path(write_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(write_path).write_text("{}\n", encoding="utf-8")
+            return {"total_records": 1, "total_video_records": 1}, None
+
+        def fake_git_out(cmd, **kw):
+            self.git_calls.append(cmd)
+            return {"branch": arp.DEFAULT_TARGET_BRANCH, "rev-parse": "0" * 40}.get(cmd[1], "")
+
+        player = {"videoDetails": {"videoId": self.E2E_VID, "title": self.E2E_TITLE,
+                                   "author": "テスト投稿者", "lengthSeconds": "3730"}}
+        self.player_cues = list(self.E2E_CUES)
+        patches = [
+            (urllib.request, "urlopen", _blocked),
+            (socket, "create_connection", _blocked),
+            (arp, "ROOT", self.tmp),
+            (arp, "SCRATCH_DIR", self.tmp / "scratch"),
+            (arp, "verify_target_branch_early", lambda **kw: None),
+            (arp.intake_url, "check_url_intake", lambda url, root=None: {"status": "NEW"}),
+            (arp.verify_timestamps, "fetch_player", lambda vid: player),
+            (arp.verify_timestamps, "fetch_watch_publish_date", lambda vid: "2026-10-01"),
+            (arp, "fetch_actual_captions",
+             lambda pd: ("ACQUIRED" if self.player_cues else "NOT_ACQUIRED", list(self.player_cues), "ja")),
+            (arp, "analyze_with_gemini_api", _forbidden("Gemini API")),
+            (arp.receipt_to_research, "process_receipt_data", fake_save),
+            (arp.query_research, "build_video_knowledge_catalog", fake_catalog),
+            (arp.query_research, "answer_question", lambda q, root=None: {"step2_matched_records": []}),
+            (arp.subprocess, "check_output", fake_git_out),
+            (arp.subprocess, "check_call", lambda cmd, **kw: self.git_calls.append(cmd) or 0),
+            (arp.notebook_auto_ingest, "ingest_and_verify_notebook", _forbidden("CDP登録")),
+            (arp.notebook_auto_ingest, "add_youtube_source_via_cdp", _forbidden("URL単体ソース登録")),
+        ]
+        for target, name, value in patches:
+            p = mock.patch.object(target, name, value)
+            p.start()
+            self.addCleanup(p.stop)
+        self.addCleanup(lambda: self.assertEqual(self.net_calls, []))
+
+    def fetch_none(self, vid):
+        return {"cues": [], "published_at": None}
+
+    def run_e2e(self, client, fetch=None, **kw):
+        kw.setdefault("notebook_id", "nb-1")
+        kw.setdefault("notebook_live", True)
+        res = self.arp.run_pipeline(f"https://www.youtube.com/watch?v={self.E2E_VID}", no_push=True,
+                                    notebook_backend="notebooklm-py", notebook_client=client,
+                                    fetch_transcript=fetch or self.fetch_none, **kw)
+        self.assertFalse([c for c in self.git_calls if "push" in c], "git push は呼ばれてはいけない")
+        return res
+
+    def yt(self):
+        return {"id": "yt-e2e", "type": "youtube", "title": self.E2E_TITLE}
+
+    def test_adds_only_transcript_and_research_note_okf(self):
+        c = FakeClient([self.yt()])
+        res = self.run_e2e(c)
+        nb = res["notebook_ingest"]
+        self.assertEqual(nb["status"], "SUCCESS_2_SOURCE_OKF")
+        self.assertEqual(len(c.add_calls), 2)
+        self.assertEqual(sorted(t.split("】")[0] + "】" for t, _ in c.add_calls), ["【字幕原文】", "【研究ノート】"])
+        self.assertEqual([s for s in c.sources if s["type"] == "youtube"], [self.yt()])  # URL単体の追加0件
+        self.assertEqual(nb["new_source_ids"], ["new-1", "new-2"])
+        self.assertTrue(res["is_2_source_okf_verified"])
+        self.assertEqual(res["notebook_backend"], "notebooklm-py")
+        self.assertEqual(len(self.saved_notes), 1)
+
+    def test_both_bodies_have_youtube_url_and_published_at(self):
+        c = FakeClient([self.yt()])
+        self.run_e2e(c)
+        for title, body in c.add_calls:
+            self.assertIn(f"https://www.youtube.com/watch?v={self.E2E_VID}", body, title)
+            self.assertIn('published_at: "2026-10-01"', body, title)
+
+    def test_transcript_cue_lines_are_time_links(self):
+        import re
+        c = FakeClient([self.yt()])
+        self.run_e2e(c)
+        body = next(b for t, b in c.add_calls if t.startswith("【字幕原文】"))
+        url = re.escape(f"https://www.youtube.com/watch?v={self.E2E_VID}")
+        lines = re.findall(rf"^- \[(\d\d:\d\d:\d\d)\]\({url}&t=(\d+)s\) (.+)$", body, re.M)
+        self.assertEqual(lines, [("00:00:00", "0", "こんにちは"), ("00:01:05", "65", "OKFは荷札です"),
+                                 ("01:02:05", "3725", "まとめ")])
+
+    def test_already_registered_in_notebook_is_no_op(self):
+        tr = {"id": "tr-e2e", "type": "markdown", "title": ing.transcript_title(self.E2E_VID, self.E2E_TITLE)}
+        rn = {"id": "rn-e2e", "type": "markdown", "title": ing.research_note_title(self.E2E_VID, self.E2E_TITLE)}
+        c = FakeClient([self.yt(), tr, rn])
+        res = self.run_e2e(c)
+        self.assertEqual(res["notebook_ingest"]["status"], "NO_OP")
+        self.assertEqual(c.add_calls, [])
+        self.assertTrue(res["is_2_source_okf_verified"])
+
+    def test_untimed_captions_stop_without_registration(self):
+        self.player_cues = []  # 時刻つき字幕が取れない（YouTube側・取得関数とも0件）
+        c = FakeClient([self.yt()])
+        res = self.run_e2e(c)
+        self.assertEqual(res["notebook_ingest"]["status"], "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE")
+        self.assertEqual(c.add_calls, [])
+        self.assertFalse(res["is_2_source_okf_verified"])
+        self.assertNotIn(res["status"], ("SUCCESS_2_SOURCE_OKF", "SUCCESS"))
+
+
+class TestPipelineDryRunNotebookPlan(unittest.TestCase):
+    """T9: dry-run でも手順8の notebooklm-py 計画（タイトル・logical_id）を返し、書き込み系は呼ばない。"""
+
+    URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    VID = "dQw4w9WgXcQ"
+
+    def setUp(self):
+        import auto_research_pipeline as arp
+        self.arp = arp
+        self.net_calls = []
+
+        def _blocked(*args, **kwargs):
+            self.net_calls.append(args[:1])
+            raise AssertionError(f"dry-run中に外部通信が呼ばれました: {args[:1]}")
+
+        for target, name in ((urllib.request, "urlopen"), (socket, "create_connection")):
+            p = mock.patch.object(target, name, _blocked)
+            p.start()
+            self.addCleanup(p.stop)
+        self.addCleanup(lambda: self.assertEqual(self.net_calls, []))
+        scratch = ROOT / "scratch" / f"receipt_{self.VID}.json"
+        self.assertFalse(scratch.exists())
+        self.addCleanup(lambda: self.assertFalse(scratch.exists()))
+
+    def write_guard(self, client):
+        def no_write(*a, **kw):
+            raise AssertionError("dry-run中に add_text が呼ばれました")
+        client.add_text = no_write
+        return client
+
+    def test_dry_run_returns_plan_with_titles_and_logical_ids(self):
+        c = self.write_guard(FakeClient([]))
+        fetch = lambda vid: {"cues": CUES, "published_at": "2026-10-01"}
+        res = self.arp.run_pipeline(self.URL, dry_run=True, notebook_backend="notebooklm-py",
+                                    notebook_id="nb-1", notebook_client=c, fetch_transcript=fetch)
+        self.assertEqual(res["status"], "DRY_RUN_PLAN")
+        nb = res["notebook_ingest"]
+        self.assertEqual(nb["writes"], [])
+        title = f"YouTube Video {self.VID}"
+        self.assertEqual(nb["plan_details"], [
+            {"kind": "transcript", "title": ing.transcript_title(self.VID, title),
+             "logical_id": f"youtube:{self.VID}:transcript"},
+            {"kind": "research_note", "title": ing.research_note_title(self.VID, title),
+             "logical_id": f"youtube:{self.VID}:research"},
+        ])
+
+    def test_dry_run_without_notebook_id_is_offline_plan(self):
+        res = self.arp.run_pipeline(self.URL, dry_run=True, notebook_backend="notebooklm-py",
+                                    fetch_transcript=lambda vid: self.fail("棚を読まない計画で字幕取得は不要"))
+        self.assertEqual(res["status"], "DRY_RUN_PLAN_OFFLINE")
+        self.assertEqual([p["logical_id"] for p in res["notebook_ingest"]["plan_details"]],
+                         [f"youtube:{self.VID}:transcript", f"youtube:{self.VID}:research"])
+
+    def test_dry_run_ignores_live_flag_and_never_writes(self):
+        c = self.write_guard(FakeClient([]))
+        res = self.arp.run_pipeline(self.URL, dry_run=True, notebook_backend="notebooklm-py",
+                                    notebook_id="nb-1", notebook_live=True, notebook_client=c,
+                                    fetch_transcript=lambda vid: {"cues": CUES, "published_at": None})
+        self.assertEqual(res["status"], "DRY_RUN_PLAN")
+        self.assertFalse(res["notebook_ingest"]["live"])
+
+    def test_cdp_dry_run_unchanged(self):
+        res = self.arp.run_pipeline(self.URL, dry_run=True)
+        self.assertEqual(res["status"], "DRY_RUN_COMPLETE")
+        self.assertNotIn("notebook_ingest", res)
