@@ -534,7 +534,13 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         html_page = '..."publishDate":"2026-10-01T09:00:00-07:00"...'
         with mock.patch.object(urllib.request, "urlopen", self.fake_youtube_http(xml, html_page)), \
                 mock.patch.object(socket, "create_connection", side_effect=AssertionError("real network")):
-            out = ing.fetch_youtube_transcript(VID)
+            # youtube-transcript-api を使えない状態にして、既存timedtext経路を偽HTTPで通す
+            out = ing.fetch_youtube_transcript(VID, sources=(
+                (ing.ACQ_TRANSCRIPT_API, mock.Mock(side_effect=ImportError)),
+                (ing.ACQ_TIMEDTEXT, ing.fetch_cues_timedtext),
+            ))
+        self.assertEqual(out["acquisition_method"], ing.ACQ_TIMEDTEXT)
+        self.assertIn(ing.ACQ_TRANSCRIPT_API, out["errors"])
         self.assertEqual(out["published_at"], "2026-10-01")
         self.assertEqual([round(c[0]) for c in out["cues"]], [0, 496])
         text = ing.build_transcript_text(VID, TITLE, out["cues"], out["published_at"])["text"]
@@ -544,10 +550,35 @@ class TestUserConfirmedSpec20261020(unittest.TestCase):
         def urlopen(req, timeout=None):
             raise OSError("offline")
 
-        with mock.patch.object(urllib.request, "urlopen", urlopen):
+        fake_api = mock.MagicMock()
+        fake_api.YouTubeTranscriptApi.return_value.fetch.side_effect = OSError("offline")
+        with mock.patch.object(urllib.request, "urlopen", urlopen), \
+                mock.patch.dict(sys.modules, {"youtube_transcript_api": fake_api}):
             out = ing.fetch_youtube_transcript(VID)
         self.assertEqual(out["cues"], [])
         self.assertIsNone(out["published_at"])
+
+    def test_transcript_api_source_is_used_first(self):
+        """youtube-transcript-api（偽モジュール）が取れればそれを使い、荷札の取得方法にも記録する。"""
+        snippet = mock.Mock(start=496.4, duration=2.0, text="荷札の話")
+        fake_api = mock.MagicMock()
+        fake_api.YouTubeTranscriptApi.return_value.fetch.return_value = [snippet]
+        timedtext = mock.Mock(side_effect=AssertionError("timedtext must not be called"))
+        with mock.patch.dict(sys.modules, {"youtube_transcript_api": fake_api}), \
+                mock.patch.object(urllib.request, "urlopen", side_effect=OSError("offline")):
+            out = ing.fetch_youtube_transcript(VID, sources=(
+                (ing.ACQ_TRANSCRIPT_API, ing.fetch_cues_transcript_api),
+                (ing.ACQ_TIMEDTEXT, timedtext),
+            ))
+        self.assertEqual(out["acquisition_method"], ing.ACQ_TRANSCRIPT_API)
+        self.assertEqual(out["cues"], [(496.4, 498.4, "荷札の話")])
+        fake_api.YouTubeTranscriptApi.return_value.fetch.assert_called_once_with(VID, languages=["ja", "en"])
+        c = FakeClient([NOTE_SOURCE])
+        res = ing.run_ingest(c, VID, TITLE, NOTE, live=True, notebook_id="nb-1", fetch_transcript=lambda v: out)
+        self.assertEqual(res["transcript_acquisition_method"], ing.ACQ_TRANSCRIPT_API)
+        body = c.add_calls[0][1]
+        self.assertIn(f'acquisition_method: "{ing.ACQ_TRANSCRIPT_API}"', body)
+        self.assertIn(f"- [00:08:16](https://www.youtube.com/watch?v={VID}&t=496s) 荷札の話", body)
 
     def test_include_youtube_url_is_rejected(self):
         import auto_research_pipeline as arp

@@ -22,13 +22,13 @@
 
 ## 1. 起動方法
 
-リポジトリのフォルダで、次の形で起動する（`uv` が notebooklm-py 0.8.5 入りの一時的な環境を用意してくれる）。
+リポジトリのフォルダで、次の形で起動する（`uv` が notebooklm-py 0.8.5 と youtube-transcript-api 1.2.2 入りの一時的な環境を用意してくれる）。
 
 ```
-uv run --python 3.12 --with notebooklm-py==0.8.5 python automation/gemini-notebook/notebooklm_py_ingest.py <引数>
+uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==1.2.2 python automation/gemini-notebook/notebooklm_py_ingest.py <引数>
 ```
 
-> **たとえ**: 道具箱（Python 3.12 と notebooklm-py 0.8.5）をその場で借りてきて、作業が終わったら返す。
+> **たとえ**: 道具箱（Python 3.12・notebooklm-py 0.8.5・youtube-transcript-api 1.2.2）をその場で借りてきて、作業が終わったら返す。
 
 NotebookのIDは `e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7`（`registry.json` の `notebook_sources.notebook_id` と同じ）。
 
@@ -37,7 +37,7 @@ NotebookのIDは `e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7`（`registry.json` の `n
 ### 手順1: 健康診断（health・読み取りのみ）
 
 ```
-uv run --python 3.12 --with notebooklm-py==0.8.5 python automation/gemini-notebook/notebooklm_py_ingest.py health --notebook-id e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
+uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==1.2.2 python automation/gemini-notebook/notebooklm_py_ingest.py health --notebook-id e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
 ```
 
 - 結果はJSON。`status` が `OK`（終了コード0）か `ATTENTION`（1）か `AUTH_EXPIRED`（3）。
@@ -49,7 +49,7 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 python automation/gemini-notebo
 ### 手順2: 計画を見る（dry-run・既定）
 
 ```
-uv run --python 3.12 --with notebooklm-py==0.8.5 python automation/gemini-notebook/notebooklm_py_ingest.py --video-id <動画ID> --video-title "<YouTubeのタイトル>" --research-md research/<研究ノート>.md --notebook-id e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
+uv run --python 3.12 --with notebooklm-py==0.8.5 --with youtube-transcript-api==1.2.2 python automation/gemini-notebook/notebooklm_py_ingest.py --video-id <動画ID> --video-title "<YouTubeのタイトル>" --research-md research/<研究ノート>.md --notebook-id e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7
 ```
 
 - `--live` を付けないので書き込まない。棚の一覧を読んで、足りない方だけを `plan` に出す。
@@ -59,7 +59,7 @@ uv run --python 3.12 --with notebooklm-py==0.8.5 python automation/gemini-notebo
   - `AMBIGUOUS_EXISTING_SOURCES`: 見分けがつかないので止まった。
   - `TRANSCRIPT_TIMESTAMPS_UNAVAILABLE`: YouTubeの時刻つき字幕が取れなかったので、何も書かずに止まった（時刻の無い字幕は正式に登録しない）。
   - `AUTH_EXPIRED_HALT`: ログイン切れ。
-- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければ、実行しているPCからYouTubeの時刻つき字幕と投稿日時を取る（2026-10-20 ユーザー確定仕様。Notebook内YouTubeソースの時刻なし本文は使わない）。字幕の各行は `- [HH:MM:SS](https://www.youtube.com/watch?v=<ID>&t=<秒>s) 発話` になり、字幕原文・研究ノートの両方の荷札に `published_at`（取れなければ `UNKNOWN`）が入る。
+- 字幕cueのJSONがあれば `--cues-json` で渡す。無ければ、実行しているPCからYouTubeの時刻つき字幕と投稿日時を取る（字幕は youtube-transcript-api → 既存のYouTube字幕取得の順に試す。2026-10-20 ユーザー確定仕様。Notebook内YouTubeソースの時刻なし本文は使わない）。字幕の各行は `- [HH:MM:SS](https://www.youtube.com/watch?v=<ID>&t=<秒>s) 発話` になり、字幕原文・研究ノートの両方の荷札に `published_at`（取れなければ `UNKNOWN`）が入る。
 - `--video-title` はNotebookのYouTubeソースを見つけるのに使う。YouTube上のタイトルと同じものを渡す。
 - `--notebook-id` を付けないと、棚を読まずに「両方足す」とだけ出す（`DRY_RUN_PLAN_OFFLINE`）。
 

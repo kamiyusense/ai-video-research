@@ -46,6 +46,7 @@ if str(AUTO_DIR) not in sys.path:
 from notebook_auto_ingest import build_transcript_okf_content  # noqa: E402
 
 ACQ_TIMEDTEXT = "YOUTUBE_TIMEDTEXT_API"
+ACQ_TRANSCRIPT_API = "YOUTUBE_TRANSCRIPT_API"
 
 
 class NotebookClient(Protocol):
@@ -296,10 +297,13 @@ def build_transcript_text(
     video_title: str,
     cues: List[Any],
     published_at: Optional[str],
+    acquisition_method: str = ACQ_TIMEDTEXT,
 ) -> Dict[str, Any]:
     url = f"https://www.youtube.com/watch?v={video_id}"
     text = build_transcript_okf_content(video_id, url, video_title, cues=cues, published_at=published_at)
-    return {"text": text, "acquisition_method": ACQ_TIMEDTEXT, "cue_count": len(cues)}
+    if acquisition_method != ACQ_TIMEDTEXT:
+        text = text.replace(f'acquisition_method: "{ACQ_TIMEDTEXT}"', f'acquisition_method: "{acquisition_method}"', 1)
+    return {"text": text, "acquisition_method": acquisition_method, "cue_count": len(cues)}
 
 
 def ensure_published_at(research_note_text: str, published_at: Optional[str]) -> str:
@@ -317,19 +321,54 @@ def ensure_published_at(research_note_text: str, published_at: Optional[str]) ->
     return "---\n" + line + "\n---\n" + text
 
 
-def fetch_youtube_transcript(video_id: str) -> Dict[str, Any]:
-    """実行PCから YouTube の時刻つき字幕と投稿日時を取る（既存の取得関数を再利用）。失敗は空で返す。"""
+def fetch_cues_transcript_api(video_id: str, languages: tuple = ("ja", "en")) -> List[Any]:
+    """youtube-transcript-api で時刻つき字幕を取る（未インストールなら ImportError）。
+
+    相棒PCで 1.2.2 により pRfC1DILDEM 275 cue・u3ka_AAb8qE 381 cue の取得を確認済み（検品ループ記録 T6）。
+    `YouTubeTranscriptApi().fetch(...)` の呼び方は 1.x 系のもの。
+    """
+    from youtube_transcript_api import YouTubeTranscriptApi
+
+    fetched = YouTubeTranscriptApi().fetch(video_id, languages=list(languages))
+    return [(float(c.start), float(c.start) + float(c.duration), c.text) for c in fetched]
+
+
+def fetch_cues_timedtext(video_id: str) -> List[Any]:
+    """既存の取得関数（YouTube player API → timedtext）で時刻つき字幕を取る。"""
     import auto_research_pipeline
     import verify_timestamps
 
-    out: Dict[str, Any] = {"cues": [], "published_at": None}
-    try:
-        player = verify_timestamps.fetch_player(video_id)
-        if player:
-            _, cues, _ = auto_research_pipeline.fetch_actual_captions(player)
-            out["cues"] = list(cues or [])
-    except Exception as ex:
-        out["error"] = type(ex).__name__
+    player = verify_timestamps.fetch_player(video_id)
+    if not player:
+        return []
+    _, cues, _ = auto_research_pipeline.fetch_actual_captions(player)
+    return list(cues or [])
+
+
+CUE_SOURCES = (
+    (ACQ_TRANSCRIPT_API, fetch_cues_transcript_api),
+    (ACQ_TIMEDTEXT, fetch_cues_timedtext),
+)
+
+
+def fetch_youtube_transcript(video_id: str, sources=None) -> Dict[str, Any]:
+    """実行PCから YouTube の時刻つき字幕と投稿日時を取る。失敗は空で返す。
+
+    字幕は sources を順に試し、最初に cue が取れたものを使う（既定: youtube-transcript-api → 既存timedtext）。
+    """
+    import verify_timestamps
+
+    out: Dict[str, Any] = {"cues": [], "published_at": None, "acquisition_method": None, "errors": {}}
+    for method, fn in (CUE_SOURCES if sources is None else sources):
+        try:
+            cues = fn(video_id)
+        except Exception as ex:
+            out["errors"][method] = type(ex).__name__
+            continue
+        if cues:
+            out["cues"] = list(cues)
+            out["acquisition_method"] = method
+            break
     try:
         out["published_at"] = verify_timestamps.fetch_watch_publish_date(video_id)
     except Exception:
@@ -384,10 +423,12 @@ def run_ingest(
         result["status"] = "NO_OP"
         return result
 
+    acquisition_method = ACQ_TIMEDTEXT
     if fetch_transcript and ((need_transcript and not cues) or not published_at):
         fetched = fetch_transcript(video_id) or {}
         if not cues:
             cues = fetched.get("cues") or None
+            acquisition_method = fetched.get("acquisition_method") or ACQ_TIMEDTEXT
         if not published_at:
             published_at = fetched.get("published_at")
     result["published_at"] = published_at or "UNKNOWN"
@@ -399,7 +440,7 @@ def run_ingest(
             result["status"] = "TRANSCRIPT_TIMESTAMPS_UNAVAILABLE"
             result["notes"].append("YouTubeの時刻つき字幕を取得できなかったため、何も書き込まずに停止。")
             return result
-        tr = build_transcript_text(video_id, video_title, cues, published_at)
+        tr = build_transcript_text(video_id, video_title, cues, published_at, acquisition_method)
         result["transcript_acquisition_method"] = tr["acquisition_method"]
         result["transcript_cue_count"] = tr["cue_count"]
         planned["transcript"] = {"title": transcript_title(video_id, video_title), "text": tr["text"]}
