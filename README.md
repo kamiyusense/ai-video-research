@@ -1,5 +1,11 @@
 # 📺 AI技術研究室
 
+> **📚 【研究図書館（Obsidian保管庫）の自動保存先・2026-10-21〜】** URLを渡すだけで自動作成される最新の研究ノートOKF＋台帳は、ここに集まる：
+> **https://github.com/kamiyusense/ai-video-research/tree/auto/video-research-notes/library/auto-research**
+> - 中身：研究ノートOKF（`youtube-<動画ID>-research.md`）と台帳（`registry.json`：投稿日・チャンネル・字幕の文字数とSHA-256）。**字幕原文は入っていない**（GitHub保存禁止。PCのObsidian保管庫とGoogleドライブ同期にのみ保存）
+> - ブランチ `auto/video-research-notes` は自動保存専用。main・本ブランチへは自動では書かない（Mergeはユーザー承認制）
+> - 非公開リポジトリなので、閲覧にはこのリポジトリへのアクセス権が必要
+
 > **【最新の引継ぎ入口・必読（2026-10-19）】** 新チャットで「GitHub見て引き継いで」と言われた場合は、GitHub current stateを確認し、必ず **[docs/HANDOVER_CURRENT.md](docs/HANDOVER_CURRENT.md) → [docs/OKF_KNOWLEDGE_ROADMAP.md](docs/OKF_KNOWLEDGE_ROADMAP.md)** を全文読む。続いて [RESEARCH_ROADMAP.md](RESEARCH_ROADMAP.md)、[AGENTS.md](AGENTS.md) も確認。最新方針は「原字幕のNotebook内独立保存（許可範囲・完全性の確認）＋OKF研究ノート＋関連研究リンク＋根拠付きQA」。古い逐次動画リレーやGitHub→Notebook逆同期の記述を優先しない。静的・LIVE・UNKNOWNを区別する。
 
 

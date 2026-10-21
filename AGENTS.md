@@ -1,5 +1,7 @@
 # AI技術研究室の作業指示
 
+> **📚 最新の研究ノート置き場（2026-10-21〜）**: 自動パイプラインが作る研究ノートOKFと台帳は https://github.com/kamiyusense/ai-video-research/tree/auto/video-research-notes/library/auto-research にある（字幕原文は含まない）。研究内容を調べる時はまずここを読む。詳細はルート `README.md` 冒頭。
+
 > **最優先・新チャット引継ぎ規則（2026-10-19）**: 「GitHub見て引き継いで」「続きから」等の依頼では、GitHub current stateを確認後、ルート `README.md` → **`docs/HANDOVER_CURRENT.md`（全文）** → **`docs/OKF_KNOWLEDGE_ROADMAP.md`（全文）** → `RESEARCH_ROADMAP.md` を必ず確認。最新のOKF/字幕原文/研究ノート/関連動画リンク/根拠付きQA方針を、古い逐次動画リレーや逆同期案より優先。読めない場合はUNKNOWNと申告し、読んだふりをしない。文書導線があることと未来のチャットへ自動同期されることを混同しない。
 
 
