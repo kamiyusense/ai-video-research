@@ -1,6 +1,7 @@
 # Claude向け研究室指示
 
-最初に AGENTS.md と OPERATIONS.md を読む。
+@AGENTS.md
+あわせて最初に OPERATIONS.md を読む。
 書き込み対象は kamiyusense/ai-video-research のみ。
 研究対象はAI関連全般。Claude×Julesは応用例の一つ。
 Claudeを使う場合は主張の整理、一次資料の照合、対象に合った自動化・作業仕様の準備を担う。
