@@ -1,6 +1,7 @@
 # AI技術研究室の作業指示
+rules_version: v0-2026-10-24
 
-> **最優先・読む順番（2026-10-20更新）**: 引き継ぎは完了済み。新しいチャットでは、GitHub current stateを確認後、ルート `README.md` → この `AGENTS.md`（特に下の「検品ループ運用」）→ **`docs/OKF_KNOWLEDGE_ROADMAP.md`（全文）** → [docs/REVIEW_LOOP_LOG.md](docs/REVIEW_LOOP_LOG.md)（現在のタスクとユーザー待ちリスト）→ `RESEARCH_ROADMAP.md` を読む。`docs/HANDOVER_CURRENT.md` は経緯の参考で、HEAD・テスト数・完了状況の記載値は流用せず毎回実測する。読めない場合はUNKNOWNと申告し、読んだふりをしない。ルールが重なる場合は「検品ループ運用」の守りルールを優先する。
+> **最優先・読む順番（2026-10-20更新）**: 新しいチャットでは、GitHub current stateを確認後、ルート `README.md` → この `AGENTS.md`（特に下の「検品ループ運用」）→ **`docs/OKF_KNOWLEDGE_ROADMAP.md`（全文）** → [docs/REVIEW_LOOP_LOG.md](docs/REVIEW_LOOP_LOG.md)（現在のタスクとユーザー待ちリスト）→ `RESEARCH_ROADMAP.md` を読む。`docs/HANDOVER_CURRENT.md` は経緯の参考で、HEAD・テスト数・完了状況の記載値は流用せず毎回実測する。読めない場合はUNKNOWNと申告し、読んだふりをしない。ルールが重なる場合は「検品ループ運用」の守りルールを優先する。
 
 ## 2026-10-20 検品ループ運用（作業役 × 検品指示役）
 
@@ -32,7 +33,6 @@ AI技術動画の字幕原文と独自研究を、OKF荷札つきの別資料と
 5. **記録**：各周の判定と根拠を[docs/REVIEW_LOOP_LOG.md](docs/REVIEW_LOOP_LOG.md) に追記する。テスト数・HEADは毎回実測し、文書の記載値を流用しない。
 
 注意：`tests/` の一部は現在ブランチ名が `feature/gemini-notebook-research-loop-20261016` であることを要求する。作業ブランチでは該当テストが「安全エラー」で落ちるのは想定内なので、検品時は同ブランチ名のローカルコピーでも実行して比較する。
-
 
 ## 目的と対象
 AI関連全般を研究し、最終的に安全なAI自動化につなげる。
