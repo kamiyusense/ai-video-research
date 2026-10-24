@@ -43,7 +43,7 @@ RESEARCH_ROADMAP.mdで未調査事項と次の研究を管理し、学習記録�
 kamiyusense/multi-ai-council-phase0 を含む他のrepositoryは変更しない。改善案はこの研究室に保存する。
 
 ## 担当制の共通契約（2026-10-10）
-研究室に担当別運用を追加した。最初に `MEMORY.md`（共有索引）、`agents/README.md`（担当一覧）、`docs/SPECIALIST_WORKFLOW.md`（運用）を確認し、作業の種類に合う `agents/<role>/AGENTS.md` と `agents/<role>/MEMORY.md` を参照する。
+研究室に担当別運用を追加した。先頭の読む順番を済ませたあと、担当の作業に入るときだけ `MEMORY.md`（共有索引）、`agents/README.md`（担当一覧）、`docs/SPECIALIST_WORKFLOW.md`（運用）を必要に応じて読み、作業の種類に合う `agents/<role>/AGENTS.md` と `agents/<role>/MEMORY.md` を参照する。
 担当はcoordinator（受付）、visual（映像）、research（独立調査）、reviewer（検品）、archivist（記録）。**フォルダがあるだけで別のAIが自動起動・通信・同期するわけではない。** 外部AI実行はユーザーが手動で行う。
 `templates/handoff-envelope.md`に取得範囲・動画ID・時刻・根拠・UNKNOWN・次担当を短く記す。映像の確認範囲と公式の現行仕様を混同しない。動画台帳の重複を避け、ユーザーが保存不要なら記録しない。
 GitHub書込みはこの研究室の非default branchのみ。LIVE、自動起動、課金、他repo変更は禁止のまま。Merge・default branch書込み・force pushは守りルール1に従う。
