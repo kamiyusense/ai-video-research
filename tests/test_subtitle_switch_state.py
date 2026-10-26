@@ -3,6 +3,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from datetime import date
 from pathlib import Path
 
@@ -98,6 +99,31 @@ class StateTests(unittest.TestCase):
         delivered = app.write_preferences(drive, document)
         # Simulate death after destination write but before removing the queue file.
         self.assertEqual(app.flush_preferences(outbox, drive), [delivered])
+        self.assertFalse(queued.exists())
+        self.assertEqual(len(list(drive.glob("preferences_*.json"))), 1)
+
+    def test_unexpected_preference_json_preserves_queue(self):
+        outbox, drive = self.root / "outbox", self.root / "drive"
+        queued = app.write_preferences(outbox, self.inventory().preferences())
+        drive.mkdir()
+        unexpected = drive / "preferences_20261026.json"
+        for content in ('[]', 'null', '42', '"text"'):
+            with self.subTest(content=content):
+                unexpected.write_text(content, encoding="utf-8")
+                self.assertEqual(app.flush_preferences(outbox, drive), [])
+                self.assertTrue(queued.exists())
+                self.assertEqual(unexpected.read_text(), content)
+        unexpected.unlink()
+        self.assertEqual(len(app.flush_preferences(outbox, drive)), 1)
+
+    def test_cleanup_failure_is_pending_and_next_delivery_does_not_duplicate(self):
+        outbox, drive = self.root / "outbox", self.root / "drive"
+        queued = app.write_preferences(outbox, self.inventory().preferences())
+        with patch.object(Path, "unlink", side_effect=PermissionError("locked")):
+            self.assertEqual(app.flush_preferences(outbox, drive), [])
+        self.assertTrue(queued.exists())
+        self.assertEqual(len(list(drive.glob("preferences_*.json"))), 1)
+        self.assertEqual(len(app.flush_preferences(outbox, drive)), 1)
         self.assertFalse(queued.exists())
         self.assertEqual(len(list(drive.glob("preferences_*.json"))), 1)
 

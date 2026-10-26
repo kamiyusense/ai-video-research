@@ -153,3 +153,12 @@
 - 継続20でも `.git` のST_RDONLY=True、Node検出なし。HEADは `6feddafa3558f595349b0bd81872eef6b691f2c6`、変更5ファイルを保持。環境条件は変わらずBLOCKED。
 - 最新の試験実測は関連58件OK／全体404件中Node起因20error。再実行なし。署名付きローカルcommitは未作成。変更の公開・チェックポイントはOfficial Symphonyに委ねる。
 - Draft PR #24の説明は更新済み。完了用Issueコメントと対象ラベル削除は未実施、Merge／main push／実サービス実行なし。環境復旧後は上記の再開条件から続ける。
+
+## GH-22 継続ターン5（2026-10-27・好みメモ配送失敗の隔離）
+
+- 開始HEAD実測 `035a2a649e63822ef746fddf20d00f6d81ef9c9c`、ブランチ `symphony/gh-22-design`、開始差分なし。許可された検索で main 宛て Draft PR #24 を再確認。
+- 修正：好みフォルダ内のJSONが配列・null・数値・文字列の場合は配送待ちへ戻す。送信済みPCファイルの削除失敗も配送待ちへ戻す。どちらも例外を動画保存へ伝播させない。次回はsession_idの読み戻しで配送済みを照合し、重複作成しない。既存ファイルは変更しない。
+- 受入検証：不正な形のJSON4種類、削除権限エラー、復旧後の配送・重複防止を追加。`python -m unittest discover -s tests -p 'test_subtitle_switch*.py'` は60件、0.078秒、OK。`git diff --check` 合格。すべてオフライン、モデル・外部通信なし。
+- 環境実測：`.git` のST_RDONLY=True、Node検出なし。前回と原因が同じため失敗commitと全体Node試験の再実行はしない。必須の署名付きローカルcommitは環境阻害で未作成。変更はSymphonyチェックポイント対象。
+- 判定：今回のMOCK回帰試験は合格。全体試験は前回実測404件中20errorから未解決で、全件合格としない。Windows実画面・実サービスはUNKNOWN。Issue完了コメント・ラベル削除は条件未達につき未実施。
+- 環境待ち：既存リストの.git書込み／Node実行環境の復旧後、全体試験・署名付きcommit・公開PR照合へ進む。実サービスの禁止は維持。

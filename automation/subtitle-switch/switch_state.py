@@ -134,11 +134,15 @@ def flush_preferences(outbox: Path, destination: Path):
     for path in sorted(outbox.glob("preferences_*.json")):
         try:
             document = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(document, dict):
+                break
             matches = []
             for existing in destination.glob("preferences_*.json"):
                 if existing.name == "preferences_seed.json":
                     continue
                 existing_doc = json.loads(existing.read_text(encoding="utf-8"))
+                if not isinstance(existing_doc, dict):
+                    raise ValueError("UNKNOWN: unsupported preference document")
                 if document.get("session_id") and existing_doc.get("session_id") == document["session_id"]:
                     matches.append(existing)
             if len(matches) > 1:
@@ -149,8 +153,10 @@ def flush_preferences(outbox: Path, destination: Path):
                 target = matches[0]
             else:
                 target = write_preferences(destination, document)
+            # If cleanup fails, retain the queue entry. Next time the session ID
+            # readback above confirms delivery without creating a second copy.
+            path.unlink()
         except (OSError, ValueError):
             break
-        path.unlink()
         delivered.append(target)
     return delivered
