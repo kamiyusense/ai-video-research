@@ -190,3 +190,20 @@ AI-Agent: codex
 - 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開後Draft PR照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス実行・Merge・main pushは禁止を維持。
 
 AI-Agent: codex
+
+## GH-22 継続ターン7（2026-10-27・公開状態と環境の再確認）
+
+- 開始HEAD実測 `527c4cb346e72eb87d40513226efd4d14854101c`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24とremote HEAD一致を確認。repositoryはpublic。
+- 関連オフライン試験を再実測：60件、0.089秒、OK。`git diff --check` 合格。モデル・外部サービス実行なし。
+- `.git` のST_RDONLY=True、node／nodejs検出なし。既知のcommit失敗と全体試験20errorの原因は変わっていないため再送しない。署名付きローカルcommitは環境阻害で未作成。全体試験の最新実測は前回の404件中20errorであり、今回の60件合格とは区別する。
+- BLOCKED（環境）。Official Symphony側の.git書込みとNode実行環境の復旧後に、全体試験・署名付きcommit・公開PR照合を再開する。実機はUNKNOWN。完了用Issueコメント・対象ラベル削除は未実施。今回の記録はSymphonyチェックポイントに引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・3・6・10・14・20で.gitのST_RDONLY=True、node／nodejs不在を再測定。環境は復旧していない。BLOCKED（環境）。
+- 最新の関連試験実測は60件、0.089秒、OK。全体試験の既知20errorと署名付きcommitは未解決。既知の失敗操作を再送せず、検品ログの差分を保持。
+- Official Symphony側で.git書込みとNode実行環境を復旧後、全体試験・AI-Agent署名付きcommit・公開Draft PR #24の照合から再開。Issue完了コメントと対象ラベル削除は未実施。実サービス実行なし、実機結果UNKNOWN。
+
+AI-Agent: codex
