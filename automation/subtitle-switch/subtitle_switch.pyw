@@ -1,11 +1,8 @@
-"""AI技術研究室・字幕保存スイッチ（Windows用の小さな操作画面）
+"""字幕保存スイッチのWindows起動入口。
 
-ボタン①「Claudeで最後まで」: 字幕取得 → 字幕原文OKF → Claudeが研究ノートOKF → 検品 → 台帳・目次 → GitHub保存
-ボタン②「字幕OKFまでで止める」: 字幕取得 → 字幕原文OKF まで。研究ノートは相棒が他のAIに頼む
-ボタン「手動用の指示文をコピー」: ChatGPT / Antigravity にそのまま貼れる指示文をクリップボードへ（画面には出さない＝書き換え不可）
-
-実際の処理は同じフォルダの research_from_url.ps1 と publish_to_github.ps1 が行う。この画面は呼ぶだけ。
-手動で書いた研究ノートは、次にどちらかのボタンを押したとき（URL欄が空でもよい）に自動で検品・台帳・目次・GitHub保存まで仕上げる。
+直接起動はswitch_appの1ボタン画面を使う。
+以下の旧2ボタン試作関数は既存テスト・移行参照用として残す。
+新アプリはPowerShell試作のprocess()を呼び出さない。
 """
 from __future__ import annotations
 
@@ -258,7 +255,7 @@ def process(
     return {"results": results, "published": published, "waiting": status["waiting"]}
 
 
-def main() -> None:
+def _legacy_main() -> None:
     import tkinter as tk
     from tkinter import scrolledtext
 
@@ -343,6 +340,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    if not SCRIPT.exists():
-        sys.exit(f"research_from_url.ps1 が見つかりません: {SCRIPT}")
-    main()
+    from switch_app import main as launch
+    launch(sys.argv[1] if len(sys.argv) > 1 else TOOLS / "config.local.json")

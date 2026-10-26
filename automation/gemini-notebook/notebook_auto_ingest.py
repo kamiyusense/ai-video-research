@@ -53,6 +53,16 @@ DEFAULT_NOTEBOOK_SOURCES_DIR = DEFAULT_DRIVE_ROOT / "AI技術研究室_Notebook�
 DEFAULT_CDP_PORT = 9222
 DEFAULT_CDP_HOST = "127.0.0.1"
 
+
+def lab_folder(name: str, drive_root: Path = DEFAULT_DRIVE_ROOT,
+               lab_name: str = "AI技術研究室", override: Optional[Path] = None) -> Path:
+    """Prefer the lab parent, falling back to an existing legacy root folder."""
+    if override is not None:
+        return Path(override)
+    preferred = Path(drive_root) / lab_name / name
+    legacy = Path(drive_root) / name
+    return preferred if preferred.exists() or not legacy.exists() else legacy
+
 # Dedicated profile path for isolation and session persistence
 DEFAULT_DEDICATED_PROFILE_DIR = (
     Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local")))

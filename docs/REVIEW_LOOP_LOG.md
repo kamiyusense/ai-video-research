@@ -86,3 +86,47 @@
 | 2 | 字幕原文をNotebookへ複製してよいかの権利・規約判断 | ロードマップが `BLOCKED_RIGHTS_OR_TERMS` 判定を要求 | 上記1の前提 |
 | 3 | Notebookの旧RAGノートを最新版で置き換えるか（現在は追記で補っただけ） | 置き換えはソース削除を伴いIDが変わる（守りルール5） | Notebook側の相互リンクが正式版になる |
 | 4 | 台帳 `registry.json` の「NOTEBOOK_READBACK_UNKNOWN」を、手元検品で読み戻せた29動画ぶん更新するか | 手元検品の生データ（ソースID対応表）がGitHubに無く、検品役が独立確認できない | 対応表を共有してもらえれば、作業役が台帳更新→検品役が照合 |
+
+## GH-22 字幕保存スイッチ（2026-10-27・作業継続）
+
+- 開始HEAD実測: `38c2beb19496a2a1c07efc8c7069aecfa6d3d89f`、ブランチ `symphony/gh-22-design`、開始時作業ツリー差分なし。
+- 受け箱・永続選別・状態・好みメモ部品追加。試作の画面はまだ新部品に未接続。
+- `python -m unittest discover -s tests -p 'test_subtitle_switch*.py'`: 17件、OK（0.007秒）。ローカル部品の試験のみ。独立GitHub検品・実機PASSではない。
+- GitHub current stateは許可されたDraft PR検索のみ実施し0件。visibility/default branchのremote照合は許可されたAPI範囲外のためUNKNOWN。
+- 次: 全工程のアダプター接続、1ボタン画面、lab_folder照合、既知3点修正、全体Mock試験、オーナー向け手順。
+- ユーザー待ち: Notebook/Drive/YouTubeの実機検証は本Issueで禁止。別途対象と範囲の許可後に実機確認可能。本作業はオフライン実装を続ける。
+
+## GH-22 継続ターン2（2026-10-27・環境阻害あり）
+
+- 判定：STATIC実装／MOCK試験は下記範囲で合格。独立GitHub検品・実機はUNKNOWN。Issueの完了条件は未達。
+- 追加：`pipeline.py`（工程保存・OSロック・再開・結果不明読戻し・原因変更後2回まで）、`captions.py`（json3・開始秒・重なった自動字幕だけ重複除去）、`services.py`（既存重複検査・OKF検品・索引・GitHubの対象限定保存とHEAD/本文読戻し・Notebook不足分登録と本文/DOM読戻し）、`switch_app.py`（1ボタン画面）、設定見本、研究用指示文。
+- `subtitle_switch.pyw` の直接起動を新画面へ接続。旧試作の関数／PowerShellは参照と既存テスト用に温存。READMEをオーナー向け起動・待ち理由・復旧手順に更新。
+- 既知修正：legacy pipelineに `--target-branch`（main/masterは明示しても拒否）、QA_WORKFLOWのURL単体登録方針を純粋2ソースへ訂正、RAG動画の既知の失効ソースIDをUNKNOWNへ。新しい完全IDの推測は禁止のため実機readback待ち。
+- このローカル版に `lab_folder()` は存在しなかったため既存notebook_auto_ingestに共通関数を追加し新アプリが再利用。新しい親フォルダ優先・旧直下・設定上書きを試験。
+- 実測：`python -m unittest discover -s tests -p 'test_subtitle_switch*.py'` 43件、0.041秒、OK。外部境界は偽物。実アダプターを通す2本のMock完走、字幕のGitHub排除、同一DOM不合格、本文不一致、上限前停止、既存2ソースNo-Op、応答不明時読戻しを含む。
+- 全体実測：389件、assertion failure 0、error 20。20件とも `PermissionError: [Errno 13] Permission denied: 'node'`。Nodeを導入・ダウンロードしていない。最終の状態更新後は関連43件とcompileを再実行して合格。全件合格とは認定しない。
+- 台帳変更で過去の画面fixtureとの比較が不整合になった健康診断テストは、2026-10-20の画面fixtureと対になる歴史台帳fixtureへ分離。現在台帳の失効IDがUNKNOWNかつ健康診断ATTENTIONになる試験も追加。偽の現行IDで合格させていない。
+- `git diff --check` とPython compile合格。WindowsのTk表示、外部CLIの実仕様適合、Notebook/Drive/YouTube/GitHub保存の実機動作はUNKNOWN。実サービス起動・モデル呼出しは0。
+- **環境阻害**：前ターンのgit add/commitは `.git/index.lock: Read-only file system`。今ターン `os.statvfs('.git').f_flag & os.ST_RDONLY` を実測しTrue。原因未変更のため同じ失敗操作を繰り返さず、コミット未作成。開始HEAD `38c2beb19496a2a1c07efc8c7069aecfa6d3d89f` のまま、全変更は作業ツリーに保持。
+- 次の作業：環境側で.git書込みとNode実行が可能になった後、全試験と差分を確認して署名付きローカルコミット。Symphonyの公開後にDraft PRを読み戻して独立検品し、合格した場合だけIssueコメント1件→対象ラベル削除。現時点ではコメント・ラベル削除をしていない。
+
+### GH-22 ユーザー／環境待ちリスト
+
+| 何を | なぜ | 解消後に進むこと |
+|---|---|---|
+| Symphony作業領域の.git書込み | ファイルシステムがread-onlyで必須commitを作れない | ローカルcommitとSymphonyによるDraft PR公開 |
+| Node実行可能な検証環境 | 既存20件がPermissionErrorで未検証 | 全体試験の全件合格確認 |
+| Notebook/Drive等の実機検証 | 本Issue内では実行禁止 | 別途対象・範囲の許可後にのみ実機確認（本Issueのオフライン完成判定とは分離） |
+
+## GH-22 継続ターン3（2026-10-27・安全境界再点検）
+
+- 開始時再実測：`.git`のST_RDONLY=True、`shutil.which('node')`=None。開始HEADは前ターンと同じ。コミット阻害の原因は未変更なので失敗コマンドを再送しない。環境迂回・別index等による制約回避もしていない。
+- 修正：結果不明writeの読戻しがno_writeの通信／認証エラーになっても元のinflightを消さない。Notebookの資料別送信印を照合し、不明な既送信があれば再送も未送信追加もしない。1資料目だけ確認でき、2資料目が未送信ならその不足分だけ継続。
+- 修正：後続動画でremote HEADが進んだ場合のGitHub読戻しは、元コミットがremoteの祖先であることと、その版の3ファイル・現行ノート本文一致で立証。再Pushしない。
+- 修正：字幕指紋／生成本文を研究前・検品前に再確認。根拠リンクの秒数を字幕開始秒と照合。Claudeの終了コード0のJSONエラーも枠切れ待ちとして扱う。API/provider環境変数は存在だけでモデル起動を拒否し、値を読まない。
+- 修正：検品した保管庫ノートだけでなく、実際にstageするrepositoryノートとの一致を必須化。既存receipt_to_research.scan_forbidden_keysをノート・registry・catalogに適用。台帳工程の日付またぎでも保存予定パスを固定。
+- 画面：工程・主な待ち理由を日本語化。完了・登録済みの再表示切替。偽境界のreceiptはis_mock=true。
+- 実測：`python -m unittest discover -s tests -p 'test_subtitle_switch*.py'` 55件、0.059秒、OK。前ターンより12件追加。検品対象との差し替え、台帳禁止キー、字幕改変、架空の秒数、0終了コード枠切れ、Notebook途中停止、読戻し失敗後の再送防止、祖先コミット読戻し、日付またぎ、API起動拒否、一覧表示を検証。
+- Python compile／`git diff --check` 合格。既存全体389件中Node起因20errorの記録は前ターン実測で、今回の55件を全体試験の全件合格へ読み替えない。
+- 判定：MOCK／STATIC合格範囲は上記。remote差分の独立検品・Windows画面・実サービスはUNKNOWN。署名付きcommit、Symphony公開、Draft PR確認、全試験合格が未達のためIssueコメント・ラベル削除は未実施。
+- ユーザー／環境待ち：前ターンの「.git書込み」「Node実行可能な環境」は継続。新しい実機承認は要求しない（本Issue内の実機禁止を維持）。

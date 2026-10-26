@@ -89,7 +89,7 @@ def verify_target_branch_early(root: Path = ROOT, target_branch: str = DEFAULT_T
     except Exception as ex:
         raise RuntimeError(f"Gitブランチの確認に失敗しました: {ex}")
 
-    if branch != target_branch:
+    if target_branch in ("main", "master", "HEAD", "") or branch != target_branch:
         raise RuntimeError(
             f"安全エラー: 現在のブランチ '{branch}' は許可された非default作業ブランチ '{target_branch}' ではありません。"
             f"default branch への直接書き込みや未許可ブランチでの操作は禁止されています。"
@@ -580,6 +580,7 @@ def run_pipeline(
     fetch_transcript: Any = None,
     fetch_video_meta: Any = None,
     paragraph_anchors: Optional[bool] = None,
+    target_branch: str = DEFAULT_TARGET_BRANCH,
 ) -> Dict[str, Any]:
     """Execute complete automated research pipeline from URL to GitHub commit & verification.
 
@@ -603,8 +604,8 @@ def run_pipeline(
     print("=" * 70)
 
     # 0. Early repository and branch verification BEFORE ANY FILE CHANGES
-    verify_target_branch_early(root=ROOT, target_branch=DEFAULT_TARGET_BRANCH)
-    print(f"[0/8] ブランチ検証合格: {DEFAULT_TARGET_BRANCH}")
+    verify_target_branch_early(root=ROOT, target_branch=target_branch)
+    print(f"[0/8] ブランチ検証合格: {target_branch}")
 
     # 1. Extract video ID & Check duplication (First line of defense)
     video_id = intake_url.extract_youtube_id(url)
@@ -1124,6 +1125,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="AI技術研究室 完全自動化研究パイプライン v2.2")
     parser.add_argument("url", nargs="?", default=None, help="YouTube動画URL (例: https://www.youtube.com/watch?v=...)")
     parser.add_argument("--url", dest="url_opt", default=None, help="YouTube動画URL (オプション形式)")
+    parser.add_argument("--target-branch", default=DEFAULT_TARGET_BRANCH, help="明示的に許可する非default保存ブランチ")
     parser.add_argument("--drive-inbox", help="Google Drive受信トレイのカスタムパス", default=None)
     parser.add_argument("--dry-run", action="store_true", help="保存・コミット・Push・外部APIをスキップしてプレビュー生成")
     parser.add_argument("--no-push", action="store_true", help="コミットまで行いリモートPushはスキップ")
@@ -1154,6 +1156,7 @@ def main(args_list: Optional[List[str]] = None) -> int:
     res = run_pipeline(
         target_url,
         drive_inbox=inbox_p,
+        target_branch=args.target_branch,
         dry_run=args.dry_run,
         no_push=args.no_push,
         gemini_api_key=args.gemini_api_key,

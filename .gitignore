@@ -15,3 +15,6 @@ private/
 .claude/settings.local.json
 .DS_Store
 __pycache__/
+# Owner-local subtitle switch configuration and runtime files
+automation/subtitle-switch/config.local.json
+subtitle-switch-state/

@@ -399,7 +399,16 @@ class TestHealthCheck(unittest.TestCase):
     """T3: 読み取り専用のNotebook健康診断。"""
 
     def setUp(self):
-        self.registry = json.loads((ROOT / "registry.json").read_text(encoding="utf-8"))
+        self.registry = json.loads((ROOT / "tests/fixtures/notebook_registry_20261020.json").read_text(encoding="utf-8"))
+
+    def test_current_registry_marks_known_stale_rag_ids_unknown(self):
+        current = json.loads((ROOT / "registry.json").read_text(encoding="utf-8"))
+        rag = next(row for row in current["records"] if row["video_id"] == "pRfC1DILDEM")
+        self.assertEqual(rag["notebook_sources"]["research_note"], "UNKNOWN_STALE_SOURCE_ID")
+        self.assertEqual(rag["notebook_sources"]["transcript_okf"], "UNKNOWN_STALE_SOURCE_ID")
+        report = ing.health_check(self.client(self.with_published(real_sources())), current)
+        self.assertEqual(report["status"], "ATTENTION")
+        self.assertIn("pRfC1DILDEM", report["videos_without_transcript_okf"])
 
     @staticmethod
     def with_published(sources, without=()):
@@ -434,7 +443,7 @@ class TestHealthCheck(unittest.TestCase):
             rc = ing.main(["health", "--notebook-id", "nb-1"])
         self.assertNotEqual(rc, 0)
 
-    def test_current_fixture_counts(self):
+    def test_historical_fixture_counts(self):
         # T10: 投稿日時の確認が加わったため、偽の本文（published_at入り）を付けて従来の件数とOKを確かめる
         rep = ing.health_check(self.client(self.with_published(real_sources())), self.registry)
         self.assertEqual(rep["registry_ids_missing_in_notebook_count"], 0)

@@ -9,8 +9,8 @@
 | 項目 | Gemini Notebook（元資料の図書館） | 非公開 GitHub `kamiyusense/ai-video-research`（構造化正本） |
 |---|---|---|
 | **主な役割** | 元動画の字幕由来情報・長文の一次資料・研究カードを保持し、細部の文脈や具体例を深掘り参照する「図書館」 | 検証済みの技術知識・章立て目次・確認済みタイムライン（`&t=XXs`）・公式資料照合結果・関連研究・更新履歴を厳格に管理する「唯一の研究正本」 |
-| **YouTube動画の扱い** | 公開・字幕ありのYouTube動画は可能な限り**動画URLをNotebookソースとして登録**し、あわせて章立て・時刻リンク・検証結果をまとめた**構造化研究カード**を登録する | **字幕全文や動画本体は保存しない**（禁止キー・正規表現で機械的にもブロック）。300文字の概要要約（`summary_ja`）に加え、最大2,500文字の構造化技術ノート（`detailed_findings_ja`）と章立て目次（`chapters`）を保存する |
-| **時刻（タイムスタンプ）の保持** | ⚠️ YouTube URLをNotebookソースに追加しただけでは、Notebook内部のテキストチャンク化で秒単位の時刻情報が失われる場合がある | 各章（`chapters`）および各主張（`claims`）に開始秒・終了秒と**時刻の確認根拠（`timestamp_source`）**を構造化して保存し、根拠確認済みの場合のみ `&t=XXs` リンクを生成する |
+| **YouTube動画の扱い** | Notebookには**字幕原文OKF＋研究ノートOKFの独立2ソース**を登録する。動画URLは両OKF本文・荷札に記載し、URL単体ソースは登録しない | **GitHubに字幕全文や動画本体は保存しない**（禁止キー・正規表現で機械的にもブロック）。300文字の概要要約（`summary_ja`）に加え、最大2,500文字の構造化技術ノート（`detailed_findings_ja`）と章立て目次（`chapters`）を保存する |
+| **時刻（タイムスタンプ）の保持** | 字幕原文OKFの開始秒と研究ノートの確認済み時刻リンクを保持する（GH-22経路は1行1字幕） | 各章（`chapters`）および各主張（`claims`）に開始秒・終了秒と**時刻の確認根拠（`timestamp_source`）**を構造化して保存し、根拠確認済みの場合のみ `&t=XXs` リンクを生成する |
 | **既存資産の保護** | 既存の研究ソース（先行16ソース等）やNotebook内総合索引 `AI技術研究室_知識索引.md` を保護し、削除・重複登録・無断上書きを行わない | `main` への直接書込み・強制プッシュ・削除を禁止し、非defaultブランチ上で履歴とSHA-256ダイジェストを追跡する |
 
 ---
@@ -84,9 +84,9 @@ py -3 automation/gemini-notebook/query_research.py -q "担当制AIのAGENTS.md�
 
 | 評価軸 | 方式A（推奨・日常の第一窓口）：<br>**ChatGPT（Project + GitHub参照）** | 方式B（最も正確・決定論的）：<br>**ローカルCLI / Antigravity (`query_research.py`)** | 方式C（元資料の深掘り専用）：<br>**Gemini Notebook（NotebookLM）単体** | 方式D（補助・新規動画のその場確認）：<br>**Gemini App（YouTube / Workspace拡張）** |
 |---|---|---|---|---|
-| **参照するデータ源** | 非公開GitHub `kamiyusense/ai-video-research` の `research/*.md`, `video_knowledge_catalog.json`, `github_knowledge_index_export.md` | ローカルまたはGit同期済みの `research/*.md`, `notes/*.md`, `registry.json`, `loop_state.json` | Notebook内に登録されたYouTube URLソース（字幕由来テキスト）＋研究カード＋`AI技術研究室_知識索引.md` | Google Workspace（DriveミラーDoc）＋YouTube拡張 |
+| **参照するデータ源** | 非公開GitHub `kamiyusense/ai-video-research` の `research/*.md`, `video_knowledge_catalog.json`, `github_knowledge_index_export.md` | ローカルまたはGit同期済みの `research/*.md`, `notes/*.md`, `registry.json`, `loop_state.json` | Notebook内の字幕原文OKF＋研究ノートOKF＋`AI技術研究室_知識索引.md` | Google Workspace（DriveミラーDoc）＋YouTube拡張 |
 | **①〜② 意図理解と構造化検索** | ◎ 自然文の意図理解に優れ、`video_knowledge_catalog.json` や `research/*.md` を読ませることで目的別の章・検証結果を正確に抽出可能 | ◎ 100%決定論的アルゴリズムで全ファイル・全チャプター・検証ステータスをミリ秒単位でスコアリング検索 | ○ 登録ソース内の横断検索・引用は得意だが、GitHub正本の検証ステータス（`CONFIRMED_DOC`等）を厳密に優先する制御はプロンプト依存 | △ 会話ごとに検索範囲が揺れやすく、GitHub正本を直接参照できない |
-| **⑥ 時刻付き再生リンク (`&t=XXs`) の正確性** | ◎ GitHub上の確認済みチャプター表・`video_knowledge_catalog.json` に記録された検証済み `&t=XXs` リンクをそのまま正確に提示可能 | ◎ `timestamp_source != "UNKNOWN"` の検証済み時刻のみから100%正確に `&t=XXs` リンクを生成（推測リンク混入ゼロ） | △ **要注意**：YouTube URLをNotebookに追加しただけでは秒単位の時刻が失われることが多く、**構造化研究カード（チャプター表付き）をソースとして併用した場合のみ**時刻リンクを返せる | ○ YouTube拡張経由で字幕タイムスタンプを参照できる場合があるが、未確認時刻を推測で答えるハルシネーションに注意が必要 |
+| **⑥ 時刻付き再生リンク (`&t=XXs`) の正確性** | ◎ GitHub上の確認済みチャプター表・`video_knowledge_catalog.json` に記録された検証済み `&t=XXs` リンクをそのまま正確に提示可能 | ◎ `timestamp_source != "UNKNOWN"` の検証済み時刻のみから100%正確に `&t=XXs` リンクを生成（推測リンク混入ゼロ） | 確認済み字幕時刻を研究ノートの再生リンクに記録し、両OKFを根拠に回答する。未確認時刻はUNKNOWN | ○ YouTube拡張経由で字幕タイムスタンプを参照できる場合があるが、未確認時刻を推測で答えるハルシネーションに注意が必要 |
 | **③ 元動画の細部・字幕ニュアンスの深掘り** | △ GitHubには字幕全文を保存しないため、記録されていない細部の発言内容は「Notebookの該当ソースを参照」と案内する | △ 同左（参照すべきNotebookソースIDと深掘り用プロンプトを自動出力する） | ◎ **最も得意**：Notebook自身が保持するYouTube字幕由来ソースから具体的な発言の文脈を引用付きで回答できる | ○ 単一動画のYouTube拡張照会には使えるが、研究室全体の蓄積との統合は弱い |
 | **④ 不足知識の検出と追加調査提案** | ◎ GitHubの `open_unknowns`・`P006` 未解決課題・`RESEARCH_ROADMAP.md` と照合して次の調査を提案可能 | ◎ カバレッジ判定（`SUFFICIENT_VERIFIED` / `PARTIAL` / `INSUFFICIENT`）と未確認事項を自動抽出 | △ 外部Webの最新公式ドキュメントをその場で検索・検証する機能は限定的 | ○ Google検索併用で新しい動画・公式記事を探す入口に向く |
 | **追加費用・権限** | 既存ChatGPT Plus契約内（追加費用なし） | 完全ローカル実行（API課金ゼロ・通信不要） | 既存Google AI Pro契約内（追加費用なし） | 既存Google AI Pro契約内（追加費用なし） |
@@ -95,7 +95,7 @@ py -3 automation/gemini-notebook/query_research.py -q "担当制AIのAGENTS.md�
 
 1. **Notebook単体でできること・限界**:
    - Notebook単体では、登録済みYouTubeソース（字幕由来情報）と研究ノートを横断して「動画の中でどんな具体例を話していたか」を引用付きで調べる**「図書館としての深掘り」**ができます。
-   - しかし、Notebookは非公開GitHubを直接読めず、またYouTube URLソース単体では秒単位の正確な再生リンク（`&t=XXs`）を安定して生成できません。これを補うため、Gemini Task実行時に**「確認済みチャプター時刻・`&t=XXs` リンク・検証結果を含む構造化研究カード」**もあわせてNotebookに登録します。
+   - しかし、Notebookは非公開GitHubを直接読めず、字幕原文OKFと研究ノートOKFを参照します。研究ノートには確認済みチャプター時刻・`&t=XXs`リンク・検証結果を記録します。
 2. **ChatGPT（GitHub参照）または `query_research.py` でできること（推奨の第一窓口）**:
    - 日常の質問（「ハーネスって何？どの動画のどこを見ればいい？」「スキル設計の失敗例を話していた箇所は？」）は、**ChatGPT（GitHubの `automation/gemini-notebook/state/video_knowledge_catalog.json` と `research/*.md` を参照）** または **ローカル/Antigravityの `query_research.py`** を第一窓口にします。
    - これにより、一次資料で裏付けられた回答（`CONFIRMED_DOC` と `VIDEO_REPORTED` の区別）と、時刻根拠が確認済みのYouTube再生リンク（`&t=XXs`）を推測なしで即座に取得できます。
