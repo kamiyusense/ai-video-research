@@ -135,12 +135,17 @@ def flush_preferences(outbox: Path, destination: Path):
         try:
             document = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(document, dict):
-                break
+                continue
             # A damaged local queue must not abort the next save session or
             # create an untraceable delivery that cannot be reconciled later.
             date.fromisoformat(document["updated"])
             if not isinstance(document.get("session_id"), str) or not document["session_id"]:
-                break
+                continue
+        except (OSError, ValueError, KeyError, TypeError):
+            # Isolate a broken local entry; unrelated sessions can still ship.
+            # Destination/readback failures below still stop delivery safely.
+            continue
+        try:
             matches = []
             for existing in destination.glob("preferences_*.json"):
                 if existing.name == "preferences_seed.json":

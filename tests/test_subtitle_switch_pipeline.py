@@ -171,16 +171,16 @@ class PipelineTests(unittest.TestCase):
         outbox.mkdir()
         queued = outbox / 'preferences_20261026.json'
         drive = self.root / 'drive'
-        for damaged in ({}, {'updated': None}, {'updated': []},
+        for attempt, damaged in enumerate(({}, {'updated': None}, {'updated': []},
                         {'updated': 'bad-date'}, {'updated': '2026-10-26'},
-                        {'updated': '2026-10-26', 'session_id': []}):
+                        {'updated': '2026-10-26', 'session_id': []}), start=1):
             with self.subTest(damaged=damaged):
                 queued.write_text(json.dumps(damaged), encoding='utf-8')
                 save_session(self.state, self.fake, drive)
                 self.assertTrue(all(row['status'] == 'complete'
                                     for row in self.state.data['videos'].values()))
                 self.assertEqual(json.loads(queued.read_text()), damaged)
-                self.assertEqual(list(drive.glob('preferences_*.json')), [])
+                self.assertEqual(len(list(drive.glob('preferences_*.json'))), attempt)
         # Preserve the damaged file for inspection; delivery can resume once
         # the owner has repaired it, without replaying the video saves.
         queued.unlink()

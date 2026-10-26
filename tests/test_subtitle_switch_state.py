@@ -102,6 +102,23 @@ class StateTests(unittest.TestCase):
         self.assertFalse(queued.exists())
         self.assertEqual(len(list(drive.glob("preferences_*.json"))), 1)
 
+    def test_damaged_local_entry_does_not_block_later_sessions(self):
+        outbox, drive = self.root / "outbox", self.root / "drive"
+        outbox.mkdir()
+        damaged = outbox / "preferences_20261026.json"
+        for content in ('{', 'null', '{}', '{"updated": null}',
+                        '{"updated": "2026-10-26"}'):
+            with self.subTest(content=content):
+                damaged.write_text(content, encoding="utf-8")
+                document = self.inventory().preferences(date(2026, 10, 27))
+                queued = app.write_preferences(outbox, document)
+                targets = app.flush_preferences(outbox, drive)
+                self.assertEqual(len(targets), 1)
+                self.assertEqual(json.loads(targets[0].read_text()), document)
+                self.assertFalse(queued.exists())
+                self.assertEqual(damaged.read_text(), content)
+                self.assertEqual(app.flush_preferences(outbox, drive), [])
+
     def test_unexpected_preference_json_preserves_queue(self):
         outbox, drive = self.root / "outbox", self.root / "drive"
         queued = app.write_preferences(outbox, self.inventory().preferences())
