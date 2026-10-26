@@ -162,3 +162,31 @@
 - 環境実測：`.git` のST_RDONLY=True、Node検出なし。前回と原因が同じため失敗commitと全体Node試験の再実行はしない。必須の署名付きローカルcommitは環境阻害で未作成。変更はSymphonyチェックポイント対象。
 - 判定：今回のMOCK回帰試験は合格。全体試験は前回実測404件中20errorから未解決で、全件合格としない。Windows実画面・実サービスはUNKNOWN。Issue完了コメント・ラベル削除は条件未達につき未実施。
 - 環境待ち：既存リストの.git書込み／Node実行環境の復旧後、全体試験・署名付きcommit・公開PR照合へ進む。実サービスの禁止は維持。
+
+## GH-22 継続ターン6（2026-10-27・環境復旧確認）
+
+- 開始HEAD `d710b8a7bcd631fc229dc2dbbe0da85d6d8e9895`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたDraft PR検索から #24、main宛て、remote HEAD一致、publicを再確認。
+- 関連オフライン試験を実測：60件、0.078秒、OK。外部通信・モデル実行なし。`git diff --check` 合格。Windows実画面・実サービスはUNKNOWN。
+- 環境実測：`.git` のST_RDONLY=True、node／nodejsとも検出なし。全体試験の既知20errorと署名付きcommitの阻害原因は解消していない。同じ失敗操作を再送せず、Node試験をskip扱いにも変更しない。
+- ユーザー待ち／環境待ち：Official Symphony側の.git書込み・Node実行環境の復旧が必要。復旧後に全体試験、AI-Agent署名付きcommit、公開PR照合へ進む。インストール・push・ワークスペース制約回避は行わない。
+- 完了条件未達のためIssueコメント・ラベル削除は未実施。この記録はSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続2：環境阻害継続
+
+- `.git` のST_RDONLY=True、node／nodejs検出なしを再測定。前ターンの作業記録のみ未コミットで保持。環境は復旧していないため、既知の失敗commit・全体試験は再送しない。
+- BLOCKED（環境）：Official Symphony側で.git書込みとNode実行環境が復旧したら、全体試験・署名付きcommit・PR照合を再開する。Issueコメント・ラベル削除は未実施。
+
+### 同一run継続3〜7：環境復旧なし
+
+- 各継続で.gitのST_RDONLY=TrueとNode不在を実測。継続7でも同じ。環境待ちのBLOCKEDを維持。既知の失敗操作の再送、試験のskip化、制約回避はしない。
+- 未コミットの作業記録を保持。Official Symphony側の環境復旧後に、全体試験とAI-Agent署名付きcommitから再開する。完了用Issueコメント・ラベル削除は未実施。
+
+### 同一run継続20：環境阻害の最終引継ぎ
+
+- 継続20で再測定：.gitのST_RDONLY=True、node／nodejs不在。継続14でも同条件を実測し、環境復旧なし。BLOCKED（環境）。
+- 最新の関連試験実測は60件OK。全体試験の既知Node起因20errorは未解消。署名付きローカルcommitは読取り専用マウントにより未作成。未コミットの作業記録を保持し、Official Symphonyのチェックポイントに委ねる。
+- 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開後Draft PR照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス実行・Merge・main pushは禁止を維持。
+
+AI-Agent: codex
