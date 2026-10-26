@@ -130,3 +130,26 @@
 - Python compile／`git diff --check` 合格。既存全体389件中Node起因20errorの記録は前ターン実測で、今回の55件を全体試験の全件合格へ読み替えない。
 - 判定：MOCK／STATIC合格範囲は上記。remote差分の独立検品・Windows画面・実サービスはUNKNOWN。署名付きcommit、Symphony公開、Draft PR確認、全試験合格が未達のためIssueコメント・ラベル削除は未実施。
 - ユーザー／環境待ち：前ターンの「.git書込み」「Node実行可能な環境」は継続。新しい実機承認は要求しない（本Issue内の実機禁止を維持）。
+
+## GH-22 継続ターン4（2026-10-27・再起動後の工程停止）
+
+- 開始HEAD実測 `6feddafa3558f595349b0bd81872eef6b691f2c6`、`symphony/gh-22-design`、作業ツリー差分なし。前ターンまでの変更はSymphonyチェックポイントに含まれる。
+- 許可されたDraft PR検索APIでmain宛てDraft PR #24を確認。検索レスポンスのrepo属性でvisibility=public、default_branch=mainを確認（古い資料の非公開表記は現状と異なる）。
+- 目的・受入条件：Notebook認証切れ／YouTubeロボット確認は再起動後の新着動画にも該当工程の待ちを適用し、明示的な原因変更後のみ再開。Notebook停止中の新着動画のGitHub工程は継続。実サービス禁止を維持。
+- 変更：`pipeline.py` に工程停止の永続化、`test_subtitle_switch_pipeline.py` に再起動・新着・同一原因選択の3試験。READMEと設計書へ復旧方法を追記。
+- 実測：関連58件、0.074秒、OK。全体404件、failure 0、error 20、skip 0。20件はすべて `PermissionError: [Errno 13] Permission denied: 'node'`。Node試験をskip／偽PASSに変更していない。全件合格は未達。
+- 環境再測定：`.git` のST_RDONLY=True、Node実行ファイル検出なし。commit不能の原因が変わっていないため既知の失敗コマンドを再送せず、署名付きcommitは未作成。変更は作業ツリーへ保持し、Symphonyのチェックポイント対象とする。
+- 判定：関連MOCK試験は合格、全体試験は環境阻害。Windows画面・モデル／外部CLI実行・実保存はUNKNOWN。Issueコメント・ラベル削除は未実施。
+- 次：.git書込みとNode実行が可能な作業環境で、全体試験と署名付きcommitを完了。Symphony公開後のDraft PRを照合して全条件を満たした場合だけ、Issueコメント1件→対象ラベル削除。
+
+### 同一runの継続2〜4：環境阻害の再確認
+
+- 3回の継続で `.git` のST_RDONLY=True、Node検出なしを再確認。HEADと未コミット5ファイルは変わっていない。nodejs／bun／denoも検出されない。
+- 状態：BLOCKED（環境）。新しいコード変更を理由なく増やさず、既知の失敗commit／Node試験の再実行や制約回避は行わない。試験結果は直近実測の関連58件OK／全体404件中20errorのままで、新しいPASSとして扱わない。
+- 再開条件：Official Symphony側で.git書込みとNode実行可能な環境を用意すること。復旧後、保持された差分を確認し、全体試験・署名付きcommit・公開後のPR照合を実施する。現環境からインストール・push・ライフサイクル変更はしない。Issueコメント／ラベル削除は引き続き未実施。
+
+### 同一runの継続20：最終引継ぎ
+
+- 継続20でも `.git` のST_RDONLY=True、Node検出なし。HEADは `6feddafa3558f595349b0bd81872eef6b691f2c6`、変更5ファイルを保持。環境条件は変わらずBLOCKED。
+- 最新の試験実測は関連58件OK／全体404件中Node起因20error。再実行なし。署名付きローカルcommitは未作成。変更の公開・チェックポイントはOfficial Symphonyに委ねる。
+- Draft PR #24の説明は更新済み。完了用Issueコメントと対象ラベル削除は未実施、Merge／main push／実サービス実行なし。環境復旧後は上記の再開条件から続ける。

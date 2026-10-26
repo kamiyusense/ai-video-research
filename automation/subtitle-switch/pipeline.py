@@ -58,7 +58,15 @@ class Pipeline:
         self.notify()
 
     def run(self, correction=''):
-        blocked = {}
+        # A restart or a newly discovered video must not bypass an unresolved
+        # service-wide login/robot barrier. Only an explicitly changed cause
+        # permits trying that stage again.
+        barriers = self.inventory.data.setdefault('blocked_stages', {})
+        for stage, barrier in list(barriers.items()):
+            if correction and correction != barrier.get('correction', ''):
+                del barriers[stage]
+        blocked = {stage: barrier['reason'] for stage, barrier in barriers.items()}
+        self.record()
         for row in self.inventory.data['videos'].values():
             if row['rejected'] or row['status'] in TERMINAL:
                 continue
@@ -113,6 +121,7 @@ class Pipeline:
                     row.update(status='waiting' if exc.waiting else 'attention', status_reason=exc.reason, failed=True)
                     if exc.global_stage:
                         blocked[stage] = exc.reason
+                        barriers[stage] = {'reason': exc.reason, 'correction': correction}
                     self.record()
                     break
                 except Exception:

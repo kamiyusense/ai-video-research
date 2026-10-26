@@ -106,11 +106,50 @@ class PipelineTests(unittest.TestCase):
         Pipeline(state, self.fake).run('設定を修正')
         self.assertNotIn(('aaaaaaaaaaa', 'github'), self.fake.calls)
 
+    def test_robot_barrier_survives_restart_and_covers_new_candidates(self):
+        self.fake.fail[('aaaaaaaaaaa', 'captions')] = StageFailure('YOUTUBE_ROBOT_CHECK', True, True)
+        Pipeline(self.state, self.fake).run()
+        state = Inventory(self.state.path)
+        candidate = dict(state.data['videos']['aaaaaaaaaaa'])
+        candidate.update(video_id='ccccccccccc', url='https://www.youtube.com/watch?v=ccccccccccc')
+        state.refresh([candidate])
+        self.fake.calls.clear()
+        self.fake.fail.clear()
+        Pipeline(state, self.fake).run()
+        self.assertEqual(self.fake.calls, [('ccccccccccc', 'intake')])
+        self.assertEqual(state.data['videos']['ccccccccccc']['status_reason'], 'YOUTUBE_ROBOT_CHECK')
+        Pipeline(state, self.fake).run('字幕取得条件を修正')
+        self.assertTrue(all(row['status'] == 'complete' for row in state.data['videos'].values()))
+        self.assertEqual(state.data['blocked_stages'], {})
+
+    def test_same_correction_cannot_clear_a_repeated_global_barrier(self):
+        self.fake.fail[('aaaaaaaaaaa', 'captions')] = StageFailure('YOUTUBE_ROBOT_CHECK', True, True)
+        Pipeline(self.state, self.fake).run()
+        Pipeline(self.state, self.fake).run('設定を修正')
+        state = Inventory(self.state.path)
+        self.fake.calls.clear()
+        Pipeline(state, self.fake).run('設定を修正')
+        self.assertEqual(self.fake.calls, [])
+        self.assertIn('captions', state.data['blocked_stages'])
+
     def test_notebook_auth_blocks_only_notebook_remaining(self):
         self.fake.fail[('aaaaaaaaaaa', 'notebook')] = StageFailure('NOTEBOOK_LOGIN_EXPIRED', True, True)
         Pipeline(self.state, self.fake).run()
         self.assertIn(('bbbbbbbbbbb', 'github'), self.fake.calls)
         self.assertNotIn(('bbbbbbbbbbb', 'notebook'), self.fake.calls)
+
+    def test_notebook_barrier_after_restart_still_allows_new_github_save(self):
+        self.fake.fail[('aaaaaaaaaaa', 'notebook')] = StageFailure('NOTEBOOK_LOGIN_EXPIRED', True, True)
+        Pipeline(self.state, self.fake).run()
+        state = Inventory(self.state.path)
+        candidate = dict(state.data['videos']['aaaaaaaaaaa'])
+        candidate.update(video_id='ccccccccccc', url='https://www.youtube.com/watch?v=ccccccccccc')
+        state.refresh([candidate])
+        self.fake.calls.clear()
+        Pipeline(state, self.fake).run()
+        self.assertIn(('ccccccccccc', 'github'), self.fake.calls)
+        self.assertNotIn(('ccccccccccc', 'notebook'), self.fake.calls)
+        self.assertEqual(state.data['videos']['ccccccccccc']['status_reason'], 'NOTEBOOK_LOGIN_EXPIRED')
 
     def test_lock_prevents_second_instance(self):
         with InstanceLock(self.root / 'instance.lock'):
