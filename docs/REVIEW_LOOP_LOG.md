@@ -338,3 +338,20 @@ AI-Agent: codex
 - Official Symphonyへ：Git書き込みとNode実行環境復旧後、保持差分の署名付きcommit、全体試験、公開Draft PR #24との照合を再開する。失敗済み操作の無変更再送や試験のskip化はしていない。
 
 AI-Agent: codex
+
+## GH-22 継続：環境と関連試験の確認（2026-10-27）
+
+- 開始HEAD `f8bcd5f449fe208e4188c0f71f9ebf4bb0f610cb`、`symphony/gh-22-design`、開始差分なし。許可されたGitHub PR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回の関連オフライン試験は61件、0.084秒、OK。コード変更なし。モデル・実サービス実行なし、実機UNKNOWN。
+- 実測でも.git ST_RDONLY=True、node/nodejs不在。既知の失敗commitと全体試験は原因未変更のため再送しない。全体試験の前回407件中20errorは未解決で、今回の関連試験合格とは区別する。
+- 環境待ち：Official Symphony側で.git書込みとNode実行環境を復旧後、署名付きcommit・全体試験・公開PR照合を再開する。本記録はチェックポイントへ引き継ぐ。全件合格未達につき、完了用Issueコメントと対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で再測定しても.git ST_RDONLY=True、node/nodejs不在。環境は未復旧。失敗済みcommit・全体試験の無変更再送や試験skip化は行わない。
+- 本runの関連試験実測は61件、0.084秒、OK。全体試験の既知20errorと署名付きcommitは未完了。実機UNKNOWN。検品ログ差分をOfficial Symphonyのチェックポイントへ引き継ぐ。
+- 復旧後は署名付きcommit・全体試験・公開Draft PR #24との照合を行い、全条件達成時のみIssueコメント1件と対象ラベル削除を行う。現時点では両操作とも未実施。
+
+AI-Agent: codex
