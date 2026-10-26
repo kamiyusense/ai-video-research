@@ -292,3 +292,22 @@ AI-Agent: codex
 - 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス未実行、実機結果UNKNOWN。
 
 AI-Agent: codex
+
+## GH-22 継続：選別理由の自由入力（2026-10-27）
+
+- 開始HEAD `b70caf1f7523eb65aac9adf1b80e8aaa8b23c298`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24とremote HEAD一致を確認。repositoryはpublic。
+- 弾く理由のComboboxがreadonlyだったため、候補選択に加えて自由入力・空欄を許可。日本語の使い方も更新。外部サービス実行なし。
+- 関連オフライン試験60件、0.076秒、OK。全体試験406件、10.928秒、failure 0 / error 20。Node不在の既知環境阻害は解消していない。`git diff --check` 合格。
+- `.git` ST_RDONLY=True、node/nodejsとも不在。以前と同じcommit失敗操作は再送しない。AI-Agent署名付きローカルcommitは環境阻害で未作成。変更をSymphonyチェックポイントへ引き継ぐ。
+- BLOCKED（環境）。全件合格と署名付きcommitが未達のため、完了用Issueコメントと対象ラベル削除は実施しない。Windows画面・実CLI適合・実機保存はUNKNOWN。
+
+AI-Agent: codex
+
+### GH-22 同一run継続20：環境復旧待ち
+
+- 継続20で再測定：.git ST_RDONLY=True、node/nodejs不在。環境阻害は未解消。
+- 自由入力可能な選別理由・日本語手順・本記録の3ファイルを作業ツリーに保持。署名付きcommitは作成不能。Official Symphonyのチェックポイントへ引き継ぐ。
+- 最新の試験実測は関連60件OK、全体406件中error 20。実機UNKNOWN。全件合格・署名付きcommit未達のためIssue完了コメントとラベル削除は未実施。
+- 再開条件：Official Symphony側で.git書込みとNode実行環境を復旧し、全体試験・AI-Agent署名付きcommit・Draft PR #24との照合を行う。
+
+AI-Agent: codex

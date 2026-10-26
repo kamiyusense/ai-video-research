@@ -104,7 +104,7 @@ def main(config_path):
         toolbar = ttk.Frame(root)
         toolbar.pack(fill='x', padx=10, pady=6)
         reject_reason = tk.StringVar(value='興味なし')
-        ttk.Combobox(toolbar, textvariable=reject_reason, state='readonly',
+        ttk.Combobox(toolbar, textvariable=reject_reason, state='normal',
                      values=('興味なし', 'もう知ってる', '長すぎる', '')).pack(side='left')
 
         def render():
