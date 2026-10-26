@@ -49,7 +49,17 @@ NOTEBOOK_ID = "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7"
 NOTEBOOK_URL = f"https://gemini.google.com/notebook/{NOTEBOOK_ID}"
 # AI_RESEARCH_DRIVE_ROOT overrides the Windows Drive mount (used by tests on machines without G:).
 DEFAULT_DRIVE_ROOT = Path(os.environ.get("AI_RESEARCH_DRIVE_ROOT") or "G:/マイドライブ")
-DEFAULT_NOTEBOOK_SOURCES_DIR = DEFAULT_DRIVE_ROOT / "AI技術研究室_Notebookソース"
+LAB_DRIVE_FOLDER = "AI技術研究室"
+
+
+def lab_folder(name: str) -> Path:
+    """Drive folder of the lab. Grouped under My Drive/AI技術研究室 on 2026-10-26; the old root location is still accepted."""
+    grouped = DEFAULT_DRIVE_ROOT / LAB_DRIVE_FOLDER / name
+    legacy = DEFAULT_DRIVE_ROOT / name
+    return legacy if legacy.exists() and not grouped.exists() else grouped
+
+
+DEFAULT_NOTEBOOK_SOURCES_DIR = lab_folder("AI技術研究室_Notebookソース")
 DEFAULT_CDP_PORT = 9222
 DEFAULT_CDP_HOST = "127.0.0.1"
 
@@ -1204,10 +1214,12 @@ def sync_to_drive_notebook_sources(
     published_at: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Place the sources (Research Markdown & Transcript OKF) into Drive folder."""
-    if not target_dir.parent.exists():
+    # The lab folders sit one level below the Drive mount, so check the mount itself.
+    drive_root = DEFAULT_DRIVE_ROOT if DEFAULT_DRIVE_ROOT in target_dir.parents else target_dir.parent
+    if not drive_root.exists():
         return {
             "status": "DRIVE_ROOT_NOT_FOUND",
-            "message": f"Google Driveマウントパス '{target_dir.parent}' が見つかりません。",
+            "message": f"Google Driveマウントパス '{drive_root}' が見つかりません。",
             "synced_files": [],
         }
 

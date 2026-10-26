@@ -495,5 +495,48 @@ class TestNotebookAutoIngest(unittest.TestCase):
         self.assertIn("動画ID (`vidRef123`)", content)
 
 
+
+class TestLabFolder(unittest.TestCase):
+    """Drive folders were grouped under My Drive/AI技術研究室 on 2026-10-26."""
+
+    def _with_root(self, tmp):
+        original = notebook_auto_ingest.DEFAULT_DRIVE_ROOT
+        notebook_auto_ingest.DEFAULT_DRIVE_ROOT = Path(tmp)
+        self.addCleanup(setattr, notebook_auto_ingest, "DEFAULT_DRIVE_ROOT", original)
+
+    def test_grouped_location_is_the_default(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._with_root(tmp)
+            self.assertEqual(
+                notebook_auto_ingest.lab_folder("AI技術研究室_受信トレイ"),
+                Path(tmp) / "AI技術研究室" / "AI技術研究室_受信トレイ",
+            )
+
+    def test_old_root_location_is_still_used_when_only_it_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._with_root(tmp)
+            (Path(tmp) / "AI技術研究室_受信トレイ").mkdir()
+            self.assertEqual(
+                notebook_auto_ingest.lab_folder("AI技術研究室_受信トレイ"),
+                Path(tmp) / "AI技術研究室_受信トレイ",
+            )
+
+    def test_sync_creates_grouped_folder_under_existing_drive_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._with_root(tmp)
+            target = notebook_auto_ingest.lab_folder("AI技術研究室_Notebookソース")
+            note = Path(tmp) / "note.md"
+            note.write_text("# note\n", encoding="utf-8")
+            res = notebook_auto_ingest.sync_to_drive_notebook_sources(
+                video_id="groupVid123",
+                video_url="https://www.youtube.com/watch?v=groupVid123",
+                video_title="t",
+                research_md_path=note,
+                target_dir=target,
+            )
+            self.assertEqual(res["status"], "DRIVE_SYNC_SUCCESS")
+            self.assertTrue(target.is_dir())
+
+
 if __name__ == "__main__":
     unittest.main()
