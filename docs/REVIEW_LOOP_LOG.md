@@ -241,3 +241,20 @@ AI-Agent: codex
 - 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス実行なし、実機結果UNKNOWN。
 
 AI-Agent: codex
+
+## GH-22 継続ターン10（2026-10-27・環境阻害確認）
+
+- 開始HEAD `87febd447cf0dc1a8d569e51755c58d7b65afce6`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回実測：字幕スイッチ関連60件、0.078秒、OK。モデル・外部通信なし。差分空白検査合格。アプリコード変更なし。
+- `.git` のST_RDONLY=True、node／nodejs検出なし。既知の署名付きcommitと全体試験20errorの阻害原因は未解消。同じ失敗操作は再送しない。全体試験の前回実測404件中20errorは未解決で、今回の関連60件の合格と区別する。
+- BLOCKED（環境）。Official Symphony側の.git書込みとNode実行環境復旧後、全体試験・AI-Agent署名付きcommit・公開PR照合を再開。実サービス未実行、実機結果UNKNOWN。完了用Issueコメント・対象ラベル削除は未実施。記録差分をSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で.gitのST_RDONLY=True、node／nodejs不在を再測定。環境復旧なし、BLOCKED（環境）。既知の失敗commit・全体試験の再送、試験skip化、制約回避は行っていない。
+- 今runの関連試験実測は60件、0.078秒、OK。全体試験の既知Node起因20errorと署名付きcommitは未完了。検品ログの差分を保持し、Official Symphonyのチェックポイントへ引き継ぐ。
+- 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス未実行、実機結果UNKNOWN。
+
+AI-Agent: codex
