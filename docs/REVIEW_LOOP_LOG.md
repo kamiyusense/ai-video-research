@@ -311,3 +311,30 @@ AI-Agent: codex
 - 再開条件：Official Symphony側で.git書込みとNode実行環境を復旧し、全体試験・AI-Agent署名付きcommit・Draft PR #24との照合を行う。
 
 AI-Agent: codex
+
+## GH-22 継続：送信待ち好みメモの破損を隔離（2026-10-27）
+
+- 開始HEAD `12e94bd72cef1d58f06d8e9f3840a0d8ce1e8e4e`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- PC送信待ちJSONの日付欠落・型違いがKeyError／TypeErrorで次回の動画保存を止める不具合を修正。配送前に日付とsession_idを確認し、不明なメモは送信・削除せず保留。6種類の破損と復旧後の配送を偽サービスで検証し、動画を再保存しないことも確認。
+- 関連オフライン試験61件、0.072秒、OK。モデル・外部サービス実行なし。Windows画面・実CLI適合・実機保存はUNKNOWN。
+- 環境待ち：.git ST_RDONLY=True、node/nodejs不在。署名付きローカルcommitは作成不能。既知の失敗操作を繰り返さず、変更をOfficial Symphonyチェックポイントへ引き継ぐ。全件合格まで完了用Issueコメントとラベル削除は保留。
+
+AI-Agent: codex
+
+- 今回の全体試験実測：407件、10.970秒、assertion failure 0／error 20。20件はすべてNode実行のPermissionError。差分空白検査合格。
+
+### 同一run継続2：環境復旧待ち
+
+- 前ターンの4ファイルの差分を保持。再測定でも.git ST_RDONLY=True、node/nodejs不在。署名付きcommitと全体試験の阻害条件は未解消。
+- コード変更後の最新実測は関連61件OK、全体407件中Node実行権限による20error。変更なしのため同じ試験・失敗操作は再送しない。
+- BLOCKED（環境）。Official Symphony側で.git書込みとNode実行環境が復旧するまで完了認定不能。実機UNKNOWN。Issue完了コメントとラベル削除は保留し、保持差分をチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：最終引継ぎ
+
+- 再測定でも.git ST_RDONLY=True、node/nodejs不在。破損した好みメモの隔離修正・回帰テスト・設計追記・本記録の4ファイルを保持。差分空白検査合格。
+- 最新実測は関連61件OK、全体407件中Node実行権限による20error。実機UNKNOWN。環境未復旧のため署名付きcommitと全件合格は未達。Issue完了コメント・対象ラベル削除は未実施。
+- Official Symphonyへ：Git書き込みとNode実行環境復旧後、保持差分の署名付きcommit、全体試験、公開Draft PR #24との照合を再開する。失敗済み操作の無変更再送や試験のskip化はしていない。
+
+AI-Agent: codex

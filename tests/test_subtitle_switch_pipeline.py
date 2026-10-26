@@ -166,6 +166,28 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(all(row['status'] == 'complete' for row in self.state.data['videos'].values()))
         self.assertEqual(len(list((self.root / 'preference_outbox').glob('*.json'))), 1)
 
+    def test_damaged_preference_queue_does_not_stop_batch_or_publish_bad_data(self):
+        outbox = self.root / 'preference_outbox'
+        outbox.mkdir()
+        queued = outbox / 'preferences_20261026.json'
+        drive = self.root / 'drive'
+        for damaged in ({}, {'updated': None}, {'updated': []},
+                        {'updated': 'bad-date'}, {'updated': '2026-10-26'},
+                        {'updated': '2026-10-26', 'session_id': []}):
+            with self.subTest(damaged=damaged):
+                queued.write_text(json.dumps(damaged), encoding='utf-8')
+                save_session(self.state, self.fake, drive)
+                self.assertTrue(all(row['status'] == 'complete'
+                                    for row in self.state.data['videos'].values()))
+                self.assertEqual(json.loads(queued.read_text()), damaged)
+                self.assertEqual(list(drive.glob('preferences_*.json')), [])
+        # Preserve the damaged file for inspection; delivery can resume once
+        # the owner has repaired it, without replaying the video saves.
+        queued.unlink()
+        save_session(self.state, self.fake, drive)
+        self.assertEqual(len(self.fake.calls), 2 * len(STAGES))
+        self.assertEqual(len(list(drive.glob('preferences_*.json'))), 7)
+
     def test_failure_requires_changed_cause_and_retries_at_most_twice(self):
         self.fake.fail[('aaaaaaaaaaa', 'research')] = StageFailure('RESEARCH_FAILED')
         Pipeline(self.state, self.fake).run()
