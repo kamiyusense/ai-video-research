@@ -55,7 +55,7 @@ import receipt_to_research
 import query_research
 import notebook_auto_ingest
 
-DEFAULT_DRIVE_INBOX = Path("G:/マイドライブ/AI技術研究室_受信トレイ")
+DEFAULT_DRIVE_INBOX = notebook_auto_ingest.lab_folder("AI技術研究室_受信トレイ")
 DEFAULT_TARGET_BRANCH = "feature/gemini-notebook-research-loop-20261016"
 NOTEBOOK_URL = "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7"
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
