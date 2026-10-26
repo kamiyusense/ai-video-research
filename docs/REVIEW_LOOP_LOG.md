@@ -501,3 +501,22 @@ AI-Agent: codex
 - Official Symphonyへ：Git書込み・Node実行環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達につきIssue完了コメント・対象ラベル削除は未実施。
 
 AI-Agent: codex
+
+
+## GH-22 継続：73c545f の検証（2026-10-27）
+
+- 開始HEAD `73c545f31a9f16a090f4fe9c8e4ba97d108848be`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 関連オフライン試験62件、0.087秒、OK。アプリコード変更なし。モデル・実サービス未実行、Windows画面・実機UNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejs不在。原因未変更の失敗commit・全体試験は再送しない。全体試験の既知20errorは今回未測定、解消未確認。
+- 環境待ち：Official Symphony側でGit書込みとNode環境を復旧後、AI-Agent署名付きcommitと全体試験を再開する。本記録をチェックポイントへ引き継ぐ。全件合格未達につき完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・5・10・15・20で実測しても.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化なし。
+- 本runの関連オフライン試験62件、0.087秒、OK。アプリコード変更なし。検品記録の差分を保持。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：Git書込みとNode環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未確認につきIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
