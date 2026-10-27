@@ -12,7 +12,7 @@ sys.path.insert(0, str(APP))
 from pipeline import Pipeline, StageFailure, STAGES, InstanceLock
 from switch_state import Inventory
 from captions import build_okf, parse_json3, select_track
-from switch_app import save_session, folders, display_row
+from switch_app import save_session, folders, display_row, save_targets
 from services import Services
 
 
@@ -48,13 +48,66 @@ class PipelineTests(unittest.TestCase):
                             for vid in ('aaaaaaaaaaa', 'bbbbbbbbbbb')])
         self.fake = FakeServices()
 
+    def test_manual_save_does_not_process_inventory_rows(self):
+        targets = save_targets(self.state, 'manual', 'https://youtu.be/ccccccccccc')
+        save_session(self.state, self.fake, self.root / 'drive', target_ids=targets)
+        self.assertEqual({vid for vid, _ in self.fake.calls}, {'ccccccccccc'})
+        self.assertEqual(self.state.data['videos']['aaaaaaaaaaa']['status'], 'pending')
+        self.assertEqual(self.state.data['videos']['bbbbbbbbbbb']['status'], 'pending')
+
+    def test_selected_save_ignores_manual_urls_unselected_and_rejected_rows(self):
+        self.state.reject('bbbbbbbbbbb', True, '興味なし')
+        targets = save_targets(self.state, 'selected', 'invalid manual URL',
+                               ('aaaaaaaaaaa', 'bbbbbbbbbbb'))
+        save_session(self.state, self.fake, self.root / 'drive', target_ids=targets)
+        self.assertEqual({vid for vid, _ in self.fake.calls}, {'aaaaaaaaaaa'})
+        self.assertEqual(self.state.data['videos']['bbbbbbbbbbb']['status'], 'pending')
+
+    def test_selected_save_does_not_process_unselected_eligible_row(self):
+        targets = save_targets(self.state, 'selected', selected=('aaaaaaaaaaa',))
+        save_session(self.state, self.fake, self.root / 'drive', target_ids=targets)
+        self.assertEqual({vid for vid, _ in self.fake.calls}, {'aaaaaaaaaaa'})
+        self.assertEqual(self.state.data['videos']['bbbbbbbbbbb']['status'], 'pending')
+
+    def test_saved_commit_retry_requires_changed_cause_and_stops_at_two(self):
+        row = self.state.data['videos']['aaaaaaaaaaa']
+        row.update(inflight='github', github_push_failed=True, failed=True,
+                   completed_stages=list(STAGES[:STAGES.index('github')]))
+        retries = []
+        def retry(row):
+            retries.append(row['video_id'])
+            raise StageFailure('GITHUB_PUSH_FAILED')
+        self.fake.retry_github_push = retry
+        pipeline = Pipeline(self.state, self.fake)
+        pipeline.run('原因1', {'aaaaaaaaaaa'})
+        pipeline.run('原因1', {'aaaaaaaaaaa'})
+        pipeline.run('原因2', {'aaaaaaaaaaa'})
+        pipeline.run('原因3', {'aaaaaaaaaaa'})
+        self.assertEqual(retries, ['aaaaaaaaaaa'] * 2)
+        self.assertEqual(row['corrected_retries'], 2)
+        self.assertEqual(row['inflight'], 'github')
+
+    def test_no_selection_no_urls_means_no_operations(self):
+        targets = save_targets(self.state, 'selected', 'https://youtu.be/ccccccccccc')
+        save_session(self.state, self.fake, self.root / 'drive', target_ids=targets)
+        self.assertEqual(self.fake.calls, [])
+        self.assertFalse((self.root / 'drive').exists())
+
+    def test_running_row_remains_visible_with_stage(self):
+        seen = []
+        def observe():
+            seen.extend((row['video_id'], row['status'], row['stage']) for row in self.state.visible())
+        Pipeline(self.state, self.fake, observe).run(target_ids={'aaaaaaaaaaa'})
+        self.assertIn(('aaaaaaaaaaa', 'running', 'research'), seen)
+        self.assertNotIn(('bbbbbbbbbbb', 'running', 'research'), seen)
+
     def test_one_click_multiple_videos_complete_and_preferences(self):
         save_session(self.state, self.fake, self.root / 'drive')
         self.assertTrue(all(row['status'] == 'complete' for row in self.state.data['videos'].values()))
         self.assertEqual(len(self.fake.calls), 2 * len(STAGES))
         preferences = list((self.root / 'drive').glob('preferences_*.json'))
         self.assertEqual(len(preferences), 1)
-        self.assertEqual(len(json.loads(preferences[0].read_text())['saved']), 2)
+        self.assertEqual(len(json.loads(preferences[0].read_text(encoding='utf-8'))['saved']), 2)
         self.assertEqual(list((self.root / 'preference_outbox').glob('*.json')), [])
 
     def test_no_subtitles_terminal_and_other_video_continues(self):
@@ -161,7 +214,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_preferences_drive_unavailable_does_not_stop_batch(self):
         blocked = self.root / 'not_a_folder'
-        blocked.write_text('x')
+        blocked.write_text('x', encoding='utf-8')
         save_session(self.state, self.fake, blocked)
         self.assertTrue(all(row['status'] == 'complete' for row in self.state.data['videos'].values()))
         self.assertEqual(len(list((self.root / 'preference_outbox').glob('*.json'))), 1)
@@ -179,7 +232,7 @@ class PipelineTests(unittest.TestCase):
                 save_session(self.state, self.fake, drive)
                 self.assertTrue(all(row['status'] == 'complete'
                                     for row in self.state.data['videos'].values()))
-                self.assertEqual(json.loads(queued.read_text()), damaged)
+                self.assertEqual(json.loads(queued.read_text(encoding='utf-8')), damaged)
                 self.assertEqual(len(list(drive.glob('preferences_*.json'))), attempt)
         # Preserve the damaged file for inspection; delivery can resume once
         # the owner has repaired it, without replaying the video saves.

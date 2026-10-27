@@ -547,3 +547,61 @@ AI-Agent: codex
 - .gitへの書込みは今回の契約で実施せず、文書差分はSymphonyホストフックがcommit/pushする。Merge・main書込みなし。
 
 AI-Agent: codex
+
+## GH-25 修正ラウンド1・最初の修正単位（2026-10-27）
+
+- 対象: lab_folder二重定義統合、研究ノートtagsのJSON形式リスト読取とブロック形式の生成指示、偽pushのPOSIXキー。
+- ローカル差分読み戻し: 呼出時DEFAULT_DRIVE_ROOT/LAB_DRIVE_FOLDER参照、明示override、旧配置fallbackを確認。tagsの既存ブロック形式・related_records非破壊の回帰試験追加。
+- オフライン全試験: 通常環境PASS。厳格ASCII環境は28 failed / 385 passedでNEEDS_FIX（項目7のencoding明示が残る）。スクリプト末尾RESULT: PASSのみで完成扱いしない。
+- 実機・remote readback・Windows見た目: UNKNOWN。外部サービスは実行していない。次は項目7と残りの修正。
+- ユーザー待ち追加なし。GitHub操作はGH-25の単一Workpadのみ、commit/pushはホストフック担当。
+
+AI-Agent: codex
+
+## GH-25 項目7・文字コード修正と環境Blockers（2026-10-27）
+
+- services.pyのgithub_head/manifest読み戻しと字幕スイッチ試験のtext I/OにUTF-8を明示。アプリ全体のtext I/O指定漏れ検出試験を追加。関連試験33 passed / 9 subtests passed。
+- 全体試験（指定漏れ検出試験追加前）: 通常413 passed、厳格27 failed / 386 passed。ENCODING-STRICT: FAIL、RESULT: PASS。項目7は未完了。
+- Blockers: strict ASCII環境はファイル内容だけでなくfilesystem/environment encodingもASCIIになる。日本語ディレクトリ作成・環境変数設定がUnicodeEncodeErrorとなるため、日本語Windows cp932の代用として全試験を通すことは確認不能。環境変更や試験スキップで隠していない。該当試験（異なる原因の混在は次回精査）:
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_okf_research_u3ka_2_source_ingestion_and_readback`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_adds_only_missing_source`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_fails_when_captions_missing`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_notebook_ingest_from_already_registered`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_with_two_sources_does_not_readd`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_08_cloud_payload_env_and_inbox_discovery`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_09_python_js_cross_language_contract_and_output_parity`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_10_gas_mock_atomic_commit_concurrency_conflict_and_drive_self_healing`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_11_pagination_truncated_tree_partial_scan_continuation_and_value_patterns`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_12_v06_chapters_detailed_findings_timestamp_provenance_and_qa_search`
+  - `tests/test_gemini_notebook_loop.py::TestGasConfigurationAndOperationsContract::test_cp5_cloud_relay_gas_comprehensive_mock_and_edge_cases`
+  - `tests/test_gemini_notebook_loop.py::TestGasConfigurationAndOperationsContract::test_gas_in_place_dedup_and_zero_duplicate_on_identical_receipt`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_anti_false_pass_guards_drive_tab_mock_and_double_counting`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_existing_youtube_source_is_preserved_and_never_deleted`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_idempotent_diff_ingest_skips_existing_and_adds_only_missing`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_legacy_youtube_plus_note_only_yields_partial_status`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_new_video_pure_2_source_okf_default_principle`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_phase_okf_knowledge_and_qa_pipeline`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_phase_okf_v02_spec_and_regression_verification`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_post_registration_2_source_independent_verification`
+  - `tests/test_gemini_notebook_loop.py::TestTwelveAcceptanceCriteriaContract::test_item10_single_source_registered_does_not_yield_success`
+  - `tests/test_gemini_notebook_loop.py::TestTwelveAcceptanceCriteriaContract::test_item6_youtube_url_only_does_not_yield_success`
+  - `tests/test_gemini_notebook_loop.py::TestTwelveAcceptanceCriteriaContract::test_item9_no_duplicate_registration_in_existing_notebook`
+  - `tests/test_notebook_auto_ingest.py::TestLabFolder::test_old_root_location_is_still_used_when_only_it_exists`
+  - `tests/test_notebook_auto_ingest.py::TestLabFolder::test_sync_creates_grouped_folder_under_existing_drive_root`
+  - `tests/test_notebooklm_py_ingest.py::TestLinkifyTimestamps::test_python_and_gas_linkify_match`
+  - `tests/test_subtitle_switch_pipeline.py::PipelineTests::test_folder_resolution_prefers_new_then_legacy_and_override`
+- 項目2〜5・9〜11・13は未着手で継続可能。Windows実機とcp932実行はUNKNOWN。
+
+AI-Agent: codex
+
+## GH-25 修正ラウンド1・保存経路と画面（2026-10-27）
+
+- 項目2: 非0終了したpushだけを識別。再開時の読み戻し後、原因変更と2回上限の範囲でgithub_head.jsonの同一SHAを再push。manifest照合・remote祖先確認・非forceを維持。結果不明の送信には適用しない。
+- 項目3〜5: usage集計をquota判定から除外。3 CLIをshutil.whichで解決し、Notebookの認証チェックでも名前つき未検出理由を保持。公式CLI referenceを照合し、空setting-sourcesとWindows CLI実受付はREADMEでUNKNOWNと明記。
+- 項目9〜11: 手動URLと選択行を独立した対象集合でPipelineへ渡す。空選択No-Op、未選択・弾いた行除外。処理中行を一覧に表示・スクロール、選択を保持。READMEの起動はpy -3または実体のフルパス。
+- 項目13: 見本画像参照。白・赤・ピンク、広い状態列とスクロール、カード枠、8理由、独自の書類・再生・カレンダー等のピクセル画、本＋右側の鉛筆をウィンドウと保存ボタンへ。Yu Gothic UI。実画面はUNKNOWN、Tk構築は偽ウィジェットで検証。角丸等はTkの近似表示。
+- 検証: 指定スクリプトの通常試験427 passed / 18 subtests passed。厳格試験28 failed / 399 passed（うち新規UI試験は日本語既定パス依存を除くため明示のASCIIテスト用inbox等へ変更後、サービス＋UIを厳格環境で再実行し30 passed / 3 subtests passed）。既存27件の環境Blockerは前項参照。cp932を既定text I/Oとして模した日本語ノート往復試験も合格。
+- Last full script: ENCODING-STRICT: FAIL / RESULT: PASS。項目7は未完了。ラベル削除・本番サービス実行・git commit/pushはしていない。
+- 迂回: strict filesystem/environment encodingの環境修正待ち。承認追加ではなく実行環境の変更が必要。任意項目12の旧互換コードは既存試験保護のため未変更。
+
+AI-Agent: codex

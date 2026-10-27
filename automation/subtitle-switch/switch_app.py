@@ -10,6 +10,7 @@ from pathlib import Path
 from pipeline import InstanceLock, Pipeline
 from switch_state import Inventory, read_inbox, write_preferences, flush_preferences
 from services import Services, browser, intake_url
+import ui_design as design
 
 
 STAGE_LABELS = {
@@ -61,18 +62,42 @@ def folders(config):
     }
 
 
-def save_session(inventory, services, preference_folder, notify=lambda: None, correction=""):
-    """Exactly one invocation handles the whole eligible inventory."""
+def save_session(inventory, services, preference_folder, notify=lambda: None, correction="", target_ids=None):
+    """Process only the authorized IDs; None retains the legacy internal API."""
+    if target_ids is not None:
+        target_ids = set(target_ids)
+        if not target_ids:
+            return
     already_complete = {vid for vid, row in inventory.data['videos'].items() if row['status'] == 'complete'}
     outbox = inventory.path.parent / 'preference_outbox'
     # Preference delivery problems must not stop research.
     flush_preferences(outbox, preference_folder)
     try:
-        Pipeline(inventory, services, notify).run(correction)
+        Pipeline(inventory, services, notify).run(correction, target_ids)
     finally:
         write_preferences(outbox, inventory.preferences(date.today(),
-                          saved_ids=set(inventory.data['videos']) - already_complete))
+                          saved_ids=(set(inventory.data['videos']) if target_ids is None else target_ids) - already_complete))
         flush_preferences(outbox, preference_folder)
+
+
+def save_targets(inventory, mode, manual_text='', selected=()):
+    """Validate all manual URLs before modifying state, or use selected IDs only."""
+    if mode == 'selected':
+        return {vid for vid in selected if vid in inventory.data['videos']
+                and not inventory.data['videos'][vid]['rejected']}
+    if mode != 'manual':
+        raise ValueError('UNKNOWN_SAVE_MODE')
+    manual = []
+    for line in manual_text.splitlines():
+        if not line.strip():
+            continue
+        vid = intake_url.extract_youtube_id(line)
+        if not vid:
+            raise ValueError('INVALID_YOUTUBE_URL')
+        manual.append({'video_id': vid, 'url': intake_url.canonical_youtube_url(vid),
+                       **{key: '' for key in ('title', 'channel', 'published_at', 'lang', 'theme', 'kind', 'reason')}})
+    inventory.refresh(manual)
+    return {row['video_id'] for row in manual if not inventory.data['videos'][row['video_id']]['rejected']}
 
 
 def main(config_path):
@@ -87,30 +112,75 @@ def main(config_path):
         locations = folders(config)
         root = tk.Tk()
         root.title('字幕保存スイッチ')
-        root.geometry('1180x650')
+        root.geometry('1420x800')
+        root.minsize(1050, 640)
+        root.configure(background=design.BACKGROUND)
+        root.option_add('*Font', ('Yu Gothic UI', 10))
+        style = ttk.Style(root)
+        style.theme_use('clam')
+        style.configure('TFrame', background=design.WHITE)
+        style.configure('TLabel', background=design.WHITE)
+        style.configure('TCheckbutton', background=design.WHITE)
+        style.configure('Treeview', background=design.WHITE, fieldbackground=design.WHITE, rowheight=36, font=('Yu Gothic UI', 10))
+        style.configure('Treeview.Heading', background='#f8f8fa', foreground='#202632', padding=8, font=('Yu Gothic UI', 10))
+        style.layout('Treeview.Heading', [('Treeheading.cell', {'sticky': 'nswe', 'children': [
+            ('Treeheading.border', {'sticky': 'nswe', 'children': [
+                ('Treeheading.padding', {'sticky': 'nswe', 'children': [
+                    ('Treeheading.image', {'side': 'left', 'sticky': ''}),
+                    ('Treeheading.text', {'side': 'left', 'sticky': 'we'})]})]})]})])
+        style.configure('Card.TFrame', background=design.WHITE, relief='solid', borderwidth=1)
+        style.configure('Accent.TButton', background=design.RED, foreground=design.WHITE, padding=(28, 12), font=('Yu Gothic UI', 14, 'bold'))
+        style.map('Accent.TButton', background=[('disabled', '#e59aa4'), ('active', '#d4182c')])
+        images = {kind: design.photo(tk, root, kind, 22) for kind in
+                  ('document','play','calendar','globe','tag','bulb','gear','wave','notebook','skip','back','refresh','info')}
+        images['app'] = design.photo(tk, root, 'app', 32, True)
+        images['save'] = design.photo(tk, root, 'book', 32, True)
+        root.iconphoto(True, images['app'])
         events = queue.Queue()
         busy = False
         show_rejected = tk.BooleanVar(value=False)
         show_processed = tk.BooleanVar(value=False)
-        explanation = tk.StringVar(value='保存開始を押すと、一覧の残った動画のGitHub・Notebook保存を許可します。')
-        ttk.Label(root, textvariable=explanation).pack(fill='x', padx=10, pady=8)
-        columns = ('title', 'channel', 'published_at', 'lang', 'theme', 'reason', 'stage', 'status', 'notebook')
-        table = ttk.Treeview(root, columns=columns, show='headings', selectmode='extended')
-        names = ('タイトル', 'チャンネル', '公開日', '言語', 'テーマ', '理由', '工程', '状態／待ち理由', 'Notebook使用数')
-        for key, name in zip(columns, names):
-            table.heading(key, text=name)
-            table.column(key, width=120 if key != 'title' else 210)
-        table.pack(fill='both', expand=True, padx=10)
-        toolbar = ttk.Frame(root)
-        toolbar.pack(fill='x', padx=10, pady=6)
-        reject_reason = tk.StringVar(value='興味なし')
-        ttk.Combobox(toolbar, textvariable=reject_reason, state='normal',
-                     values=('興味なし', 'もう知ってる', '長すぎる', '')).pack(side='left')
+        explanation = tk.StringVar(value='手動保存は入力URLだけ、選択保存は選択行だけを保存します。')
+        banner = tk.Frame(root, background=design.PINK, padx=16, pady=14)
+        banner.pack(fill='x', padx=18, pady=(14, 10))
+        tk.Label(banner, image=images['info'], background=design.PINK).pack(side='left', padx=(0, 12))
+        tk.Label(banner, textvariable=explanation, background=design.PINK, anchor='w', wraplength=1250).pack(side='left', fill='x', expand=True)
+        card = ttk.Frame(root, style='Card.TFrame', padding=8)
+        card.pack(fill='both', expand=True, padx=18, pady=6)
+        columns = tuple(col[0] for col in design.COLUMNS)
+        table = ttk.Treeview(card, columns=columns, show='headings', selectmode='extended')
+        for key, name, icon, width in design.COLUMNS:
+            table.heading(key, text=' ' + name, image=images[icon])
+            table.column(key, width=width, minwidth=65, stretch=key in ('title', 'status'))
+        table.tag_configure('attention', background=design.PINK)
+        table.tag_configure('running', background='#fff3f5')
+        scroll_x = ttk.Scrollbar(card, orient='horizontal', command=table.xview)
+        scroll_y = ttk.Scrollbar(card, orient='vertical', command=table.yview)
+        table.configure(xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
+        table.grid(row=0, column=0, sticky='nsew')
+        scroll_y.grid(row=0, column=1, sticky='ns')
+        scroll_x.grid(row=1, column=0, sticky='ew')
+        card.rowconfigure(0, weight=1)
+        card.columnconfigure(0, weight=1)
+        controls = ttk.Frame(root, style='Card.TFrame', padding=16)
+        controls.pack(fill='x', padx=18, pady=(8, 16))
+        toolbar = ttk.Frame(controls)
+        toolbar.pack(fill='x', pady=(0, 10))
+        reject_reason = tk.StringVar(value=design.REJECT_REASONS[0])
+        ttk.Combobox(toolbar, textvariable=reject_reason, state='normal', width=18,
+                     values=design.REJECT_REASONS).pack(side='left')
 
         def render():
+            selected = table.selection()
             table.delete(*table.get_children())
+            active = None
             for row in inventory.visible(show_rejected.get(), show_processed.get()):
-                table.insert('', 'end', iid=row['video_id'], values=display_row(row))
+                table.insert('', 'end', iid=row['video_id'], values=display_row(row), tags=(design.row_tag(row),))
+                if row['status'] == 'running':
+                    active = row['video_id']
+            table.selection_set([vid for vid in selected if table.exists(vid)])
+            if active:
+                table.see(active)
 
         def refresh():
             if busy:
@@ -120,7 +190,7 @@ def main(config_path):
             text = ' ／ '.join(error['file'] + '：要確認' for error in errors)
             if not locations['inbox'].is_dir():
                 text = '受け箱にアクセスできません（UNKNOWN）。設定とDrive同期を確認してください。'
-            explanation.set(text or '保存開始1回で、弾いていない動画を順番に保存します。')
+            explanation.set(text or '手動保存は入力URLだけ、選択保存は選択行だけを保存します。')
             render()
 
         def reject(value):
@@ -130,51 +200,56 @@ def main(config_path):
                 inventory.reject(vid, value, reject_reason.get())
             render()
 
-        ttk.Button(toolbar, text='弾く', command=lambda: reject(True)).pack(side='left', padx=4)
-        ttk.Button(toolbar, text='戻す', command=lambda: reject(False)).pack(side='left')
+        ttk.Button(toolbar, text='弾く', image=images['skip'], compound='left', command=lambda: reject(True)).pack(side='left', padx=4)
+        ttk.Button(toolbar, text='戻す', image=images['back'], compound='left', command=lambda: reject(False)).pack(side='left')
         ttk.Checkbutton(toolbar, text='弾いた動画も表示', variable=show_rejected, command=render).pack(side='left', padx=8)
         ttk.Checkbutton(toolbar, text='完了・登録済みも表示', variable=show_processed, command=render).pack(side='left', padx=8)
-        ttk.Button(toolbar, text='一覧を更新', command=refresh).pack(side='left')
+        ttk.Button(toolbar, text='一覧を更新', image=images['refresh'], compound='left', command=refresh).pack(side='left')
         correction = tk.StringVar(value='')
-        ttk.Label(root, text='失敗から再開する場合だけ、直した原因を選択（同じ原因の再試行はしません）').pack(anchor='w', padx=10)
-        ttk.Combobox(root, textvariable=correction, state='readonly', values=(
+        ttk.Label(controls, text='失敗から再開する場合だけ、直した原因を選択（同じ原因の再試行はしません）').pack(anchor='w', padx=10)
+        ttk.Combobox(controls, textvariable=correction, state='readonly', values=(
             '', '手動ログインを復旧', '設定を修正', '利用枠の回復を確認', '字幕取得条件を修正')).pack(fill='x', padx=10)
-        urls = tk.Text(root, height=3)
-        ttk.Label(root, text='手動URL（1行1本、短縮URL・時刻つきも可）').pack(anchor='w', padx=10)
+        urls = tk.Text(controls, height=3, relief='solid', borderwidth=1)
+        ttk.Label(controls, text='手動URL（1行1本、短縮URL・時刻つきも可）').pack(anchor='w', padx=10)
         urls.pack(fill='x', padx=10)
 
-        def start():
+        def start(mode):
             nonlocal busy
             if busy:
                 return
-            manual = []
-            for line in urls.get('1.0', 'end').splitlines():
-                if not line.strip():
-                    continue
-                vid = intake_url.extract_youtube_id(line)
-                if not vid:
-                    messagebox.showerror('URL要確認', 'YouTube URLを確認してください。')
-                    return
-                manual.append({'video_id': vid, 'url': intake_url.canonical_youtube_url(vid),
-                               **{key: '' for key in ('title', 'channel', 'published_at', 'lang', 'theme', 'kind', 'reason')}})
-            inventory.refresh(manual)
-            urls.delete('1.0', 'end')
+            try:
+                targets = save_targets(inventory, mode, urls.get('1.0', 'end'), table.selection())
+            except ValueError:
+                messagebox.showerror('URL要確認', 'YouTube URLを確認してください。')
+                return
+            if not targets:
+                return
+            if mode == 'manual':
+                urls.delete('1.0', 'end')
+            render()
             correction_value = correction.get()
             busy = True
-            save_button.configure(state='disabled')
+            for button in save_buttons:
+                button.configure(state='disabled')
 
             def worker():
                 try:
                     services = Services(config)
-                    save_session(inventory, services, locations['preferences'], lambda: events.put('render'), correction_value)
+                    save_session(inventory, services, locations['preferences'], lambda: events.put('render'), correction_value, targets)
                     pending = len(list((state_dir / 'preference_outbox').glob('preferences_*.json')))
                     events.put(('done', f'処理終了。好みメモ送信待ち：{pending}件。待ち／要確認は一覧を確認してください。'))
                 except Exception:
                     events.put(('done', '要確認：処理を停止しました。設定と状態を確認してください（UNKNOWN）。'))
             threading.Thread(target=worker, daemon=False).start()
 
-        save_button = ttk.Button(root, text='保存開始', command=start)
-        save_button.pack(pady=10)
+        button_bar = ttk.Frame(controls)
+        button_bar.pack(pady=(12, 0))
+        save_buttons = []
+        for mode, label in design.SAVE_BUTTONS:
+            button = ttk.Button(button_bar, text=label, image=images['save'], compound='left',
+                                style='Accent.TButton', command=lambda value=mode: start(value))
+            button.pack(side='left', padx=10)
+            save_buttons.append(button)
 
         def poll():
             nonlocal busy
@@ -182,7 +257,8 @@ def main(config_path):
                 event = events.get_nowait()
                 if isinstance(event, tuple):
                     busy = False
-                    save_button.configure(state='normal')
+                    for button in save_buttons:
+                        button.configure(state='normal')
                     explanation.set(event[1])
                 render()
             root.after(200, poll)

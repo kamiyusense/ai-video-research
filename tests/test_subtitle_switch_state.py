@@ -34,8 +34,8 @@ class StateTests(unittest.TestCase):
         return store
 
     def test_list_ignores_gdoc_and_isolates_bad_json(self):
-        (self.inbox / "ignored.gdoc").write_text("not JSON")
-        (self.inbox / "broken.json").write_text("{")
+        (self.inbox / "ignored.gdoc").write_text("not JSON", encoding='utf-8')
+        (self.inbox / "broken.json").write_text("{", encoding='utf-8')
         rows, errors = app.read_inbox(self.inbox)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["url"], "https://www.youtube.com/watch?v=abcdefghijk")
@@ -59,10 +59,10 @@ class StateTests(unittest.TestCase):
 
     def test_corrupt_state_stops_without_overwrite(self):
         path = self.root / "state.json"
-        path.write_text("broken")
+        path.write_text("broken", encoding='utf-8')
         with self.assertRaises(ValueError):
             app.Inventory(path)
-        self.assertEqual(path.read_text(), "broken")
+        self.assertEqual(path.read_text(encoding='utf-8'), "broken")
 
     def test_preferences_names_schema_no_transcript_and_seed_untouched(self):
         store = self.inventory()
@@ -71,21 +71,21 @@ class StateTests(unittest.TestCase):
         folder = self.root / "preferences"
         folder.mkdir()
         seed = folder / "preferences_seed.json"
-        seed.write_text('{"interests": []}')
+        seed.write_text('{"interests": []}', encoding='utf-8')
         first = app.write_preferences(folder, document)
         second = app.write_preferences(folder, document)
         self.assertEqual(first.name, "preferences_20261027.json")
         self.assertEqual(second.name, "preferences_20261027_2.json")
-        self.assertEqual(json.loads(first.read_text()), document)
-        self.assertNotIn("MUST NOT PERSIST", first.read_text())
-        self.assertNotIn("MUST NOT PERSIST", store.path.read_text())
-        self.assertEqual(seed.read_text(), '{"interests": []}')
+        self.assertEqual(json.loads(first.read_text(encoding='utf-8')), document)
+        self.assertNotIn("MUST NOT PERSIST", first.read_text(encoding='utf-8'))
+        self.assertNotIn("MUST NOT PERSIST", store.path.read_text(encoding='utf-8'))
+        self.assertEqual(seed.read_text(encoding='utf-8'), '{"interests": []}')
 
     def test_preference_queue_kept_on_destination_failure(self):
         outbox = self.root / "outbox"
         path = app.write_preferences(outbox, self.inventory().preferences())
         destination = self.root / "not_directory"
-        destination.write_text("blocked")
+        destination.write_text("blocked", encoding='utf-8')
         self.assertEqual(app.flush_preferences(outbox, destination), [])
         self.assertTrue(path.exists())
         targets = app.flush_preferences(outbox, self.root / "drive")
@@ -114,9 +114,9 @@ class StateTests(unittest.TestCase):
                 queued = app.write_preferences(outbox, document)
                 targets = app.flush_preferences(outbox, drive)
                 self.assertEqual(len(targets), 1)
-                self.assertEqual(json.loads(targets[0].read_text()), document)
+                self.assertEqual(json.loads(targets[0].read_text(encoding='utf-8')), document)
                 self.assertFalse(queued.exists())
-                self.assertEqual(damaged.read_text(), content)
+                self.assertEqual(damaged.read_text(encoding='utf-8'), content)
                 self.assertEqual(app.flush_preferences(outbox, drive), [])
 
     def test_unexpected_preference_json_preserves_queue(self):
@@ -129,7 +129,7 @@ class StateTests(unittest.TestCase):
                 unexpected.write_text(content, encoding="utf-8")
                 self.assertEqual(app.flush_preferences(outbox, drive), [])
                 self.assertTrue(queued.exists())
-                self.assertEqual(unexpected.read_text(), content)
+                self.assertEqual(unexpected.read_text(encoding='utf-8'), content)
         unexpected.unlink()
         self.assertEqual(len(app.flush_preferences(outbox, drive)), 1)
 

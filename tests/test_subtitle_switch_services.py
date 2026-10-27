@@ -29,6 +29,42 @@ def note_for(row):
     return text + '\ntags:\n  - "AI技術研究室"\n---\n## 独自要約\n独自の短い解説。\n## 内容の流れ\n' + row['url'] + '&t=0s\n## 限界・未確認\n映像・公式資料未確認。\n'
 
 
+class FrontmatterListTests(unittest.TestCase):
+    def test_all_app_text_io_has_explicit_utf8(self):
+        import ast
+        app = ROOT / 'automation/subtitle-switch'
+        for path in [*app.glob('*.py'), *app.glob('*.pyw')]:
+            for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
+                if not isinstance(node, ast.Call):
+                    continue
+                name = getattr(node.func, 'attr', getattr(node.func, 'id', ''))
+                if name not in ('read_text', 'write_text', 'open'):
+                    continue
+                if name == 'open':
+                    index = 0 if isinstance(node.func, ast.Attribute) else 1
+                    mode = next((k.value for k in node.keywords if k.arg == 'mode'),
+                                node.args[index] if len(node.args) > index else None)
+                    if isinstance(mode, ast.Constant) and 'b' in str(mode.value):
+                        continue
+                encoding = next((k.value for k in node.keywords if k.arg == 'encoding'), None)
+                self.assertIsInstance(encoding, ast.Constant, f'{path.name}:{node.lineno}')
+                self.assertIn(encoding.value.lower(), ('utf-8', 'utf-8-sig'), f'{path.name}:{node.lineno}')
+
+    def test_inline_tags_match_existing_block_tags(self):
+        block, body = query_research.parse_yaml_frontmatter(
+            '---\ntags:\n  - "日本語"\n  - "a,b"\nrelated_records:\n'
+            '  - logical_id: "youtube:example:research"\n'
+            '    evidence: "確認済み"\n---\n本文')
+        inline, inline_body = query_research.parse_yaml_frontmatter(
+            '---\ntags: ["日本語", "a,b"]\n---\n本文')
+        self.assertEqual(inline['tags'], block['tags'])
+        self.assertEqual(inline_body, body)
+        self.assertEqual(block['related_records'][0]['evidence'], '確認済み')
+        self.assertEqual(query_research.parse_yaml_scalar('[]'), [])
+        self.assertEqual(query_research.parse_yaml_scalar('[invalid'), '[invalid')
+
+
+
 class NotebookFake:
     def __init__(self):
         self.sources, self.bodies, self.adds = [], {}, []
@@ -61,7 +97,7 @@ class AdapterTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.repo = self.root / 'repo'
         self.repo.mkdir()
-        (self.repo / 'registry.json').write_text('{"records": []}')
+        (self.repo / 'registry.json').write_text('{"records": []}', encoding='utf-8')
         self.vault = self.root / 'vault'
         self.notebook = NotebookFake()
         self.commands = []
@@ -82,7 +118,7 @@ class AdapterTests(unittest.TestCase):
                     'ja': [{'ext': 'json3', 'url': 'FAKE'}]} if self.caption_available else {}})
             else:
                 (Path(cwd) / 'captions.ja.json3').write_text(json.dumps({'events': [
-                    {'tStartMs': 0, 'dDurationMs': 1000, 'segs': [{'utf8': '架空の字幕です。'}]}]}))
+                    {'tStartMs': 0, 'dDurationMs': 1000, 'segs': [{'utf8': '架空の字幕です。'}]}]}), encoding='utf-8')
         elif args[0] == 'claude':
             vid = Path(cwd).name
             row = dict(self.row, video_id=vid, url=f'https://www.youtube.com/watch?v={vid}')
@@ -97,7 +133,7 @@ class AdapterTests(unittest.TestCase):
             elif args[1] == 'rev-parse':
                 result.stdout = 'a' * 40 + '\n'
             elif args[1] == 'push':
-                self.remote = {str(p.relative_to(self.repo)): p.read_text(encoding='utf-8')
+                self.remote = {p.relative_to(self.repo).as_posix(): p.read_text(encoding='utf-8')
                                for p in self.repo.rglob('*') if p.is_file()}
             elif args[1] == 'show':
                 path = args[2].split(':', 1)[1]
@@ -126,7 +162,7 @@ class AdapterTests(unittest.TestCase):
                                  {next(p for p in args if p.startswith('research/'))})
                 self.assertFalse(any('transcript' in p or 'cues' in p for p in args))
             if args[:2] == ['git', 'push']:
-                self.assertEqual(args[-1], 'HEAD:refs/heads/subtitle-switch/saves')
+                self.assertEqual(args[-1], 'a' * 40 + ':refs/heads/subtitle-switch/saves')
                 self.assertNotIn('--force', args)
         self.assertFalse(any('架空の字幕です。' in body for body in self.remote.values()))
         self.assertEqual(len(self.notebook.adds), 4)
@@ -150,7 +186,7 @@ class AdapterTests(unittest.TestCase):
         self.prepare()
         folder = self.services.folder(self.row)
         caption = '架空の長い字幕本文。' * 20
-        (folder / 'cues.json').write_text(json.dumps([['0', caption]]))
+        (folder / 'cues.json').write_text(json.dumps([['0', caption]]), encoding='utf-8')
         self.row['receipts']['transcript'] = self.services.transcript(self.row)
         with (folder / 'research.md').open('a', encoding='utf-8') as stream:
             stream.write(caption)
@@ -207,7 +243,7 @@ class AdapterTests(unittest.TestCase):
 
     def test_changed_transcript_is_rejected_before_model_or_publish(self):
         self.prepare()
-        (self.services.folder(self.row) / 'transcript.md').write_text('changed')
+        (self.services.folder(self.row) / 'transcript.md').write_text('changed', encoding='utf-8')
         self.commands.clear()
         with self.assertRaisesRegex(StageFailure, 'TRANSCRIPT_INTEGRITY_MISMATCH'):
             self.services.research(self.row)
@@ -223,6 +259,81 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(StageFailure, 'RESEARCH_EVIDENCE_TIME_UNVERIFIED'):
             self.services.review(self.row)
 
+    def test_japanese_notes_roundtrip_with_cp932_default_text_io(self):
+        import io
+        original = io.open
+        def cp932_default(file, mode='r', buffering=-1, encoding=None, *args, **kwargs):
+            if 'b' not in mode and encoding is None:
+                encoding = 'cp932'
+            return original(file, mode, buffering, encoding, *args, **kwargs)
+        with patch('io.open', side_effect=cp932_default):
+            self.prepare()
+            with patch('receipt_to_research.collect_remote_branch_videos', return_value=({}, 'fresh')):
+                self.services.catalog(self.row)
+            result = self.services.github(self.row)
+        self.assertEqual(result['files_verified'], 3)
+        self.assertIn('独自の短い解説', self.remote[self.row['research_path']])
+
+    def test_error_with_usage_metadata_is_not_quota(self):
+        self.prepare()
+        self.services.run = lambda *a, **kw: SimpleNamespace(returncode=1, stderr='', stdout=json.dumps({
+            'is_error': True, 'subtype': 'error_during_execution', 'result': 'Cannot write research.md',
+            'usage': {'input_tokens': 100, 'output_tokens': 5}}))
+        with self.assertRaisesRegex(StageFailure, '^RESEARCH_FAILED$') as error:
+            self.services.research(self.row)
+        self.assertFalse(error.exception.waiting)
+
+    def test_definite_push_failure_retries_only_saved_commit_after_correction(self):
+        inventory = Inventory(self.root / 'retry.json')
+        inventory.refresh([dict(self.row, **{key: self.row.get(key, '') for key in
+            ('title', 'channel', 'published_at', 'lang', 'theme', 'kind', 'reason')})])
+        original = self.services.run
+        pushes = []
+        def runner(args, **kw):
+            if args[:2] == ['git', 'push']:
+                pushes.append(args[-1])
+                if len(pushes) == 1:
+                    return SimpleNamespace(returncode=1, stdout='', stderr='')
+            if args[:2] == ['git', 'rev-parse'] and args[-1].startswith('origin/') and not self.remote:
+                return SimpleNamespace(returncode=0, stdout='b'*40, stderr='')
+            if args[:3] == ['git', 'merge-base', '--is-ancestor'] and args[3] == 'a'*40 and not self.remote:
+                return SimpleNamespace(returncode=1, stdout='', stderr='')
+            if args[:2] == ['git', 'show'] and not self.remote:
+                path = args[-1].split(':', 1)[1]
+                return SimpleNamespace(returncode=0, stdout=(self.repo / path).read_text(encoding='utf-8'), stderr='')
+            return original(args, **kw)
+        self.services.run = runner
+        with patch('receipt_to_research.collect_remote_branch_videos', return_value=({}, 'fresh')):
+            Pipeline(inventory, self.services).run()
+            row = inventory.data['videos'][self.row['video_id']]
+            self.assertEqual(row['status_reason'], 'GITHUB_PUSH_FAILED')
+            self.assertTrue(row['github_push_failed'])
+            Pipeline(inventory, self.services).run()
+            self.assertEqual(len(pushes), 1)
+            Pipeline(inventory, self.services).run('設定を修正')
+        self.assertEqual(row['status'], 'complete')
+        self.assertEqual(pushes, ['a'*40 + ':refs/heads/subtitle-switch/saves'] * 2)
+        self.assertEqual(sum(args[:2] == ['git', 'commit'] for args in self.commands), 1)
+
+    def test_retry_rejects_non_fast_forward(self):
+        self.prepare()
+        with patch('receipt_to_research.collect_remote_branch_videos', return_value=({}, 'fresh')):
+            self.services.catalog(self.row)
+        self.services.github(self.row)
+        self.commands.clear()
+        self.row['github_push_failed'] = True
+        original = self.services.run
+        def runner(args, **kw):
+            if args[:2] == ['git', 'ls-remote']:
+                return SimpleNamespace(returncode=0, stdout='b'*40 + '\trefs/heads/subtitle-switch/saves', stderr='')
+            if args[:3] == ['git', 'merge-base', '--is-ancestor']:
+                return SimpleNamespace(returncode=1, stdout='', stderr='')
+            return original(args, **kw)
+        self.services.run = runner
+        with self.assertRaisesRegex(StageFailure, 'GITHUB_NON_FAST_FORWARD'):
+            self.services.retry_github_push(self.row)
+        self.assertFalse(any(args[:2] == ['git', 'push'] for args in self.commands))
+
     def test_zero_exit_quota_error_still_waits_without_fallback(self):
         self.prepare()
         self.services.run = lambda *a, **kw: SimpleNamespace(
@@ -236,7 +347,7 @@ class AdapterTests(unittest.TestCase):
         folder = self.services.folder(self.row)
         self.notebook.add_text(nb.transcript_title(self.row['video_id'], self.row['title']),
                                (folder / 'transcript.md').read_text(encoding='utf-8'))
-        (folder / 'notebook_transcript_inflight.json').write_text('{"sent":true}')
+        (folder / 'notebook_transcript_inflight.json').write_text('{"sent":true}', encoding='utf-8')
         result = self.services.readback('notebook', self.row)
         self.assertEqual(len(self.notebook.adds), 2)
         self.assertIn('【研究ノート】', self.notebook.adds[-1])
@@ -245,7 +356,7 @@ class AdapterTests(unittest.TestCase):
     def test_unknown_notebook_send_does_not_resend_or_add_remainder(self):
         self.prepare()
         folder = self.services.folder(self.row)
-        (folder / 'notebook_transcript_inflight.json').write_text('{"sent":true}')
+        (folder / 'notebook_transcript_inflight.json').write_text('{"sent":true}', encoding='utf-8')
         self.assertIsNone(self.services.readback('notebook', self.row))
         self.assertEqual(self.notebook.adds, [])
 
@@ -256,7 +367,7 @@ class AdapterTests(unittest.TestCase):
 
     def test_actual_repository_note_must_equal_reviewed_note(self):
         self.prepare_catalog()
-        (self.repo / self.row['research_path']).write_text('unreviewed replacement')
+        (self.repo / self.row['research_path']).write_text('unreviewed replacement', encoding='utf-8')
         with self.assertRaisesRegex(StageFailure, 'PUBLISH_NOTE_DIFFERS_FROM_REVIEW'):
             self.services.github(self.row)
         self.assertFalse(any(args[:2] == ['git', 'add'] for args in self.commands))
@@ -265,7 +376,7 @@ class AdapterTests(unittest.TestCase):
         self.prepare_catalog()
         registry = json.loads((self.repo / 'registry.json').read_text(encoding='utf-8'))
         registry['full_transcript'] = '架空の禁止フィールド'
-        (self.repo / 'registry.json').write_text(json.dumps(registry))
+        (self.repo / 'registry.json').write_text(json.dumps(registry), encoding='utf-8')
         with self.assertRaisesRegex(StageFailure, 'FORBIDDEN_PUBLISH_CONTENT'):
             self.services.github(self.row)
         self.assertFalse(any(args[:2] == ['git', 'add'] for args in self.commands))
@@ -304,3 +415,23 @@ class AdapterTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class CommandResolutionTests(unittest.TestCase):
+    def test_cmd_executables_are_resolved_without_shell(self):
+        from services import NotebookClient
+        with patch.dict(os.environ, {}, clear=True), patch('services.shutil.which', return_value='C:/Tools/claude.cmd'), patch('services.subprocess.run') as run:
+            command(['claude', '-p'])
+            self.assertEqual(run.call_args.args[0][0], 'C:/Tools/claude.cmd')
+            self.assertNotIn('shell', run.call_args.kwargs)
+        for name in ('claude', 'yt-dlp', 'notebooklm'):
+            with self.subTest(name=name), patch.dict(os.environ, {}, clear=True), patch('services.shutil.which', return_value=None), patch('services.subprocess.run') as run:
+                with self.assertRaisesRegex(StageFailure, name.upper().replace('-', '_') + '_COMMAND_NOT_FOUND'):
+                    command([name])
+                run.assert_not_called()
+        with patch('services.shutil.which', return_value=None):
+            with self.assertRaisesRegex(StageFailure, 'NOTEBOOKLM_COMMAND_NOT_FOUND'):
+                NotebookClient('fixture').auth_check_passive()
+        with patch('services.shutil.which', return_value='C:/Tools/notebooklm.cmd'), patch('services.subprocess.run') as run:
+            NotebookClient('fixture')._run('list_sources')
+            self.assertEqual(run.call_args.args[0][0], 'C:/Tools/notebooklm.cmd')

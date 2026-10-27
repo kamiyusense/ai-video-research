@@ -1,6 +1,6 @@
 # 字幕保存スイッチ（Windows）
 
-受け箱の動画から不要なものを弾き、「保存開始」1回で残りを順に保存する画面です。手動URLも使えます。
+受け箱の動画を選んで「選択保存」、またはURLを貼って「手動保存」する画面です。押したボタンの対象だけを処理します。
 設計は [日本語設計文書](../../docs/SUBTITLE_SWITCH_DESIGN.md) を参照してください。
 
 **実装はオフラインの偽サービスで検証しています。本作業では本番実行をしていません。Windows画面・Claude・YouTube・GitHub保存・Notebook／Drive同期の実機結果はUNKNOWNです。**
@@ -20,17 +20,19 @@
 このフォルダをエクスプローラーで開き、ターミナルから次を実行します。
 
 ```powershell
-pythonw subtitle_switch.pyw config.local.json
+py -3 subtitle_switch.pyw config.local.json
 ```
 
-起動時のエラーを確認するときは `pythonw` を `python` に替えます。設定ファイル・保管庫・状態ファイルはGitHubへ追加しないでください。
+`python` はMicrosoft Storeのダミーに解決される場合があるため、`py -3` を使います。Pythonランチャーがない場合は、実際のPythonをフルパスで指定します（例：`& "C:\Users\OWNER\AppData\Local\Programs\Python\Python313\python.exe" subtitle_switch.pyw config.local.json`）。`PYTHONUTF8` の設定は不要です。
+
+`claude`・`yt-dlp`・`notebooklm` は `shutil.which()` で `.cmd` / `.exe` を含めて検索します。見つからない場合は `CLAUDE_COMMAND_NOT_FOUND` / `YT_DLP_COMMAND_NOT_FOUND` / `NOTEBOOKLM_COMMAND_NOT_FOUND` で停止します。`pip --user` の実行ファイルが見つからない場合は、`py -3 -m site --user-base` で場所を確認し、その下の `Python3xx\Scripts`（例：`%APPDATA%\Python\Python313\Scripts`）をユーザーPATHへ追加して、ターミナルを開き直してください。追加パッケージをアプリが自動インストールすることはありません。設定ファイル・保管庫・状態ファイルはGitHubへ追加しないでください。
 
 ## 毎回の操作
 
 1. 「一覧を更新」で受け箱を読みます。`.gdoc`は無視し、壊れたJSONはそのファイルだけ「要確認」にします。
 2. 不要な動画を選んで「弾く」。理由は候補から選ぶか自由に入力できます。空欄でも弾けます。印は再起動しても残ります。「弾いた動画も表示」→ 選択 →「戻す」で解除できます。
 3. 必要なら手動URLを1行に1本貼ります。短縮URL・時刻付きURLも受け付けます。
-4. 「保存開始」を押します。**押すことが、残った対象動画へのGitHub・Notebook保存の許可です。** 追加の確認画面はありません。
+4. URL欄だけを処理する場合は「手動保存」、一覧でクリック・複数選択した行だけを処理する場合は「選択保存」を押します。未選択・弾いた行には保存しません。選択なしは何もしません。**押すことが、その対象へのGitHub・Notebook保存の許可です。** 追加の確認画面はありません。
 5. 工程・待ち理由・Notebook使用数を確認します。1本の失敗でも別の動画の処理は進みます。処理中は画面を閉じず、終了を待ってください。
 
 ## 待ちになったら
@@ -42,7 +44,7 @@ pythonw subtitle_switch.pyw config.local.json
 - `WRITE_RESULT_UNKNOWN`：結果不明の書き込みです。再起動後も再送せず読み戻します。確認できなければ待ちを維持します。状態ファイルを削除してやり直さないでください。
 - `SAVE_BRANCH_REQUIRED`：GitHub作業フォルダが設定した専用ブランチか確認してください。
 
-原因を直した場合だけ、画面の「直した原因」を選んで「保存開始」を押します。原因を変えた再試行は2回まで。同じ原因を直さずに押しても再実行しません。結果不明の書込みはこの操作でも再送しません。
+原因を直した場合だけ、画面の「直した原因」を選んで対象を選んで対応する保存ボタンを押します。原因を変えた再試行は2回まで。同じ原因を直さずに押しても再実行しません。結果不明の書込みはこの操作でも再送しません。pushの非0終了が記録されている場合だけ、まず読み戻し、未保存なら記録済みの同じコミットを非force・fast-forwardで再pushします。新しいcommitは作らず、競合時は止まります。
 
 Notebookログイン切れとYouTubeロボット確認の待ちは、アプリを再起動しても残ります。新しく受け箱に届いた動画も該当工程で待ちます。原因を直してから「直した原因」を選ぶと再開できます。Notebook待ちの間も、新しい動画の字幕・研究ノート・GitHub保存までは進みます。
 
@@ -59,7 +61,7 @@ Notebookログイン切れとYouTubeロボット確認の待ちは、アプリ�
 リポジトリのルートで実行します。モデル・ネット接続・Windows画面は使用しません。
 
 ```powershell
-python -m unittest discover -s tests -p "test_subtitle_switch*.py"
+py -3 -m unittest discover -s tests -p "test_subtitle_switch*.py"
 ```
 
 「完了・登録済みも表示」で処理結果を見返せます。通常の一覧には未処理・待ち・要確認だけを出します。
@@ -67,3 +69,11 @@ python -m unittest discover -s tests -p "test_subtitle_switch*.py"
 `CLAUDE_API_CONFIGURATION_BLOCKED` は、ClaudeをAPIキーや他providerへ接続する環境変数が設定されている場合です。アプリは値を読み取らずモデル起動前に停止します。通常のClaude CLIログインを使う環境をオーナーが確認してください。
 
 保存済み字幕の指紋不一致や、字幕に存在しない開始秒へのリンクは検品で停止します。保管庫の字幕を手で書き換えないでください。GitHubへ送るノートの実ファイルも、検品済みノートとの一致を再確認します。
+
+## Claude CLI引数の確認（2026-10-27）
+
+[公式CLI reference](https://code.claude.com/docs/en/cli-reference) に `--effort` の `medium` と、`--tools` のカンマ区切りツール名指定が記載されています。このアプリは `--effort medium` / `--tools Read,Write` を渡します。オーナーPCのCLIバージョンでの受付はUNKNOWNです。モデル起動なしの `claude --help` で確認できます。
+
+`--setting-sources` 自体は公式資料にありますが、空文字 `''` が全設定を除外するか、Windowsの `.cmd` 経由で空引数が保たれるかはUNKNOWNです。安全設定を黙って外す代替起動はしません。引数エラーは `RESEARCH_FAILED` として止めます。常に付く `usage` メタデータだけでは枠切れと判定しません。
+
+画面は白地と赤のアクセント、要確認行は淡いピンクです。アイコンはコードで描き、外部画像や追加パッケージを使いません。日本語はWindows標準のYu Gothic UIを指定しています。配置・色・絵柄のオフライン試験は行いますが、Windowsのタイトルバー・タスクバー・実際の表示と操作感はUNKNOWN（オーナー確認）です。

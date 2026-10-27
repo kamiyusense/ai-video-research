@@ -504,6 +504,20 @@ class TestLabFolder(unittest.TestCase):
         notebook_auto_ingest.DEFAULT_DRIVE_ROOT = Path(tmp)
         self.addCleanup(setattr, notebook_auto_ingest, "DEFAULT_DRIVE_ROOT", original)
 
+    def test_call_time_lab_default_and_explicit_overrides(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.object(notebook_auto_ingest, "DEFAULT_DRIVE_ROOT", root), \
+                 patch.object(notebook_auto_ingest, "LAB_DRIVE_FOLDER", "changed"):
+                self.assertEqual(notebook_auto_ingest.lab_folder("inbox"), root / "changed/inbox")
+                self.assertEqual(notebook_auto_ingest.lab_folder("inbox", root, "custom"),
+                                 root / "custom/inbox")
+                self.assertEqual(notebook_auto_ingest.lab_folder("inbox", override=root), root)
+                (root / "inbox").mkdir()
+                (root / "changed/inbox").mkdir(parents=True)
+                self.assertEqual(notebook_auto_ingest.lab_folder("inbox"), root / "changed/inbox")
+
     def test_grouped_location_is_the_default(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._with_root(tmp)

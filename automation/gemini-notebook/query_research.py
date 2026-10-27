@@ -406,6 +406,16 @@ def parse_yaml_scalar(val_str):
     s = val_str.strip()
     if not s:
         return ""
+    if s.startswith("[") and s.endswith("]"):
+        # JSON-style YAML flow lists are emitted by research-note generators.
+        # Decode data only: never evaluate expressions or YAML constructors.
+        try:
+            value = json.loads(s)
+        except (ValueError, TypeError):
+            pass
+        else:
+            if isinstance(value, list):
+                return value
     if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
         try:
             return json.loads(s)

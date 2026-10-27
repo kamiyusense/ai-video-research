@@ -9,6 +9,7 @@ import json
 import os
 import re
 import subprocess
+import shutil
 import sys
 from datetime import date
 from decimal import Decimal
@@ -37,8 +38,29 @@ def command(args, cwd=None, stdin=None, timeout=180):
     )):
         # Inspect names only, never read key/token values or switch providers.
         raise StageFailure('CLAUDE_API_CONFIGURATION_BLOCKED')
+    args = list(args)
+    if args[0] in ('claude', 'yt-dlp', 'notebooklm'):
+        executable = shutil.which(args[0])
+        if executable is None:
+            raise StageFailure(args[0].upper().replace('-', '_') + '_COMMAND_NOT_FOUND', no_write=True)
+        args[0] = executable
     return subprocess.run(args, cwd=cwd, input=stdin, text=True, encoding='utf-8',
                           capture_output=True, timeout=timeout)
+
+
+class NotebookClient(nb.NotebookLmCliClient):
+    """Route Notebook CLI through the same Windows executable resolver."""
+    def auth_check_passive(self):
+        try:
+            return self._run('auth_check_passive').returncode == 0
+        except StageFailure:
+            raise
+        except Exception:
+            return False
+
+    def _run(self, key, stdin=None, timeout=None, **fmt):
+        args = [arg.format(notebook_id=self.notebook_id, **fmt) for arg in self.COMMANDS[key]]
+        return command(args, stdin=stdin, timeout=timeout or self.timeout)
 
 
 class Services:
@@ -54,7 +76,7 @@ class Services:
         self.branch = config.get('save_branch', 'subtitle-switch/saves')
         if not re.fullmatch(r'subtitle-switch/[A-Za-z0-9_-]+', self.branch):
             raise ValueError('保存先はsubtitle-switch/で始まる専用ブランチにしてください')
-        self.nb_client = notebook or nb.NotebookLmCliClient(config['notebook_id'])
+        self.nb_client = notebook or NotebookClient(config['notebook_id'])
         self.dom = dom or self.dom_readback
 
     def folder(self, row):
@@ -155,12 +177,16 @@ class Services:
         try:
             response = json.loads(cp.stdout)
         except ValueError:
-            response = {}
+            response = None
         model_error = isinstance(response, dict) and (response.get('is_error') or
                       str(response.get('subtype', '')).startswith('error'))
         if cp.returncode or model_error:
-            quota = any(word in (cp.stdout + cp.stderr).lower()
-                        for word in ('limit', 'quota', 'usage', 'rate'))
+            # Ignore usage/accounting metadata present in every JSON result.
+            details = [cp.stdout, cp.stderr] if not isinstance(response, dict) else [
+                str(response.get(key, '')) for key in ('subtype', 'error', 'errors', 'result', 'message')]
+            details.append(cp.stderr)
+            quota = bool(re.search(r'quota|rate[_ -]?limit|usage[_ -]?limit|limit[_ -]?reached|'
+                                   r'out of (?:credits|usage)|utilization limit', ' '.join(details), re.I))
             raise StageFailure('CLAUDE_QUOTA' if quota else 'RESEARCH_FAILED', waiting=quota)
         if not (folder / 'research.md').is_file():
             raise StageFailure('RESEARCH_FILE_MISSING')
@@ -287,7 +313,11 @@ class Services:
         head = self.git('rev-parse', 'HEAD').stdout.strip()
         atomic_json(self.folder(row) / 'github_head.json', head)
         # Ordinary push only, no force or default-branch target.
-        self.git('push', 'origin', f'HEAD:refs/heads/{self.branch}')
+        pushed = self.git('push', 'origin', f'{head}:refs/heads/{self.branch}', check=False)
+        if pushed.returncode:
+            row['github_push_failed'] = True
+            raise StageFailure('GITHUB_PUSH_FAILED')
+        row.pop('github_push_failed', None)
         result = self.readback('github', row)
         if result is None:
             raise StageFailure('WRITE_RESULT_UNKNOWN', waiting=True)
@@ -305,13 +335,16 @@ class Services:
             return None
         self.boundary()
         self.git('fetch', 'origin')
-        head = json.loads((folder / 'github_head.json').read_text())
-        actual = self.git('rev-parse', f'origin/{self.branch}').stdout.strip()
+        head = json.loads((folder / 'github_head.json').read_text(encoding='utf-8'))
+        remote = self.git('rev-parse', f'origin/{self.branch}', check=False)
+        if remote.returncode:
+            return None
+        actual = remote.stdout.strip()
         if head != actual:
             ancestor = self.git('merge-base', '--is-ancestor', head, f'origin/{self.branch}', check=False)
             if ancestor.returncode != 0:
                 return None
-        manifest = json.loads((folder / 'github_manifest.json').read_text())
+        manifest = json.loads((folder / 'github_manifest.json').read_text(encoding='utf-8'))
         for path, digest in manifest.items():
             body = self.git('show', f'{head}:{path}').stdout
             if hashlib.sha256(body.replace('\r\n', '\n').encode('utf-8')).hexdigest() != digest:
@@ -323,6 +356,34 @@ class Services:
             if digest != manifest[note_path]:
                 return None
         return {'remote_head': actual, 'verified_commit': head, 'files_verified': len(manifest)}
+
+    def retry_github_push(self, row):
+        """Retry only the saved commit after a definite nonzero push and readback."""
+        if not row.get('github_push_failed'):
+            raise StageFailure('WRITE_RESULT_UNKNOWN', waiting=True)
+        self.boundary()
+        folder = self.folder(row)
+        head = json.loads((folder / 'github_head.json').read_text(encoding='utf-8'))
+        if not isinstance(head, str) or not re.fullmatch(r'[0-9a-f]{40}', head):
+            raise StageFailure('GITHUB_SAVED_HEAD_INVALID')
+        manifest = json.loads((folder / 'github_manifest.json').read_text(encoding='utf-8'))
+        for path, digest in manifest.items():
+            body = self.git('show', f'{head}:{path}').stdout
+            if hashlib.sha256(body.replace('\r\n', '\n').encode('utf-8')).hexdigest() != digest:
+                raise StageFailure('GITHUB_SAVED_COMMIT_MISMATCH')
+        remote = self.git('ls-remote', '--heads', 'origin', f'refs/heads/{self.branch}').stdout.strip()
+        if remote:
+            remote_head = remote.split()[0]
+            if self.git('merge-base', '--is-ancestor', remote_head, head, check=False).returncode:
+                raise StageFailure('GITHUB_NON_FAST_FORWARD')
+        pushed = self.git('push', 'origin', f'{head}:refs/heads/{self.branch}', check=False)
+        if pushed.returncode:
+            raise StageFailure('GITHUB_PUSH_FAILED')
+        row.pop('github_push_failed', None)
+        result = self.readback('github', row)
+        if result is None:
+            raise StageFailure('WRITE_RESULT_UNKNOWN', waiting=True)
+        return result
 
     def notebook(self, row):
         try:

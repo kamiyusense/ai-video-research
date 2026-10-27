@@ -57,7 +57,7 @@ class Pipeline:
         self.inventory.save()
         self.notify()
 
-    def run(self, correction=''):
+    def run(self, correction='', target_ids=None):
         # A restart or a newly discovered video must not bypass an unresolved
         # service-wide login/robot barrier. Only an explicitly changed cause
         # permits trying that stage again.
@@ -68,6 +68,8 @@ class Pipeline:
         blocked = {stage: barrier['reason'] for stage, barrier in barriers.items()}
         self.record()
         for row in self.inventory.data['videos'].values():
+            if target_ids is not None and row['video_id'] not in target_ids:
+                continue
             if row['rejected'] or row['status'] in TERMINAL:
                 continue
             if row.get('failed') and not row.get('inflight'):
@@ -95,6 +97,13 @@ class Pipeline:
                     if reconciling:
                         # The process may have died after sending the request.
                         result = self.services.readback(stage, row)
+                        if (result is None and stage == 'github' and row.get('github_push_failed')
+                                and correction and correction != row.get('last_correction')
+                                and row.get('corrected_retries', 0) < 2):
+                            row['corrected_retries'] = row.get('corrected_retries', 0) + 1
+                            row['last_correction'] = correction
+                            self.record()
+                            result = self.services.retry_github_push(row)
                         if result is None:
                             raise StageFailure('WRITE_RESULT_UNKNOWN', waiting=True)
                     else:
