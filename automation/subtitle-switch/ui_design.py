@@ -46,10 +46,12 @@ def icon_pixels(kind, size=32, badge=False):
     def rect(x, y, w, h, color=ink):
         polygon([(x,y), (x+w,y), (x+w,y+h), (x,y+h)], color)
 
-    if badge or kind == 'play':
+    if badge:
         polygon([(5,1),(27,1),(31,5),(31,27),(27,31),(5,31),(1,27),(1,5)], RED)
+    elif kind == 'play':
+        polygon([(7,4),(25,4),(29,8),(29,24),(25,28),(7,28),(3,24),(3,8)], RED)
     if kind in ('book', 'app'):
-        # Open pages on the left, a separate diagonal writing pencil on the right.
+        # Open pages with a pen tip resting on the right page.
         polygon([(5,8),(10,7),(15,9),(15,25),(10,23),(5,24)], ink)
         polygon([(16,9),(20,7),(22,8),(22,23),(16,25)], ink)
         # Two page accents and a central gutter retain the open-book outline.
@@ -57,23 +59,27 @@ def icon_pixels(kind, size=32, badge=False):
         polygon([(8,11),(11,10),(13,11),(13,12),(11,11),(8,12)], page_line)
         polygon([(8,15),(11,14),(13,15),(13,16),(11,15),(8,16)], page_line)
         polygon([(18,11),(20,10),(21,10),(21,11),(18,12)], page_line)
-        polygon([(25,19),(27,20),(31,10),(29,9)], ink)
-        polygon([(25,20),(27,21),(24,23)], ink)
+        polygon([(20,23),(22,17),(27,6),(31,8),(26,19),(23,23)], RED if badge else WHITE)
+        polygon([(22,18),(27,7),(30,8),(25,19)], ink)
+        polygon([(22,19),(24,20),(21,22)], ink)
     elif kind == 'play':
-        polygon([(12,8),(25,16),(12,24)], WHITE)
+        polygon([(12,9),(23,16),(12,23)], WHITE)
     elif kind == 'spark':
-        polygon([(16,2),(19,12),(29,16),(19,19),(16,30),(13,19),(3,16),(13,12)], '#e87824')
+        polygon([(14,3),(17,11),(25,14),(17,17),(14,25),(11,17),(3,14),(11,11)], '#e87824')
+        polygon([(26,20),(27,23),(30,24),(27,25),(26,28),(25,25),(22,24),(25,23)], '#e87824')
     elif kind == 'robot':
-        polygon([(5,8),(27,8),(29,11),(29,25),(26,28),(6,28),(3,25),(3,11)], '#222222')
-        rect(9,14,4,4,WHITE); rect(19,14,4,4,WHITE)
-        rect(10,22,12,2,WHITE); rect(15,3,2,5,'#222222')
+        polygon([(6,8),(26,8),(29,11),(29,24),(26,27),(6,27),(3,24),(3,11)], '#222222')
+        rect(8,13,5,5,WHITE); rect(19,13,5,5,WHITE)
+        rect(10,21,12,2,WHITE); rect(15,3,2,5,'#222222'); rect(13,2,6,3,'#222222')
     elif kind == 'wave':
-        polygon([(2,16),(8,16),(12,4),(17,26),(21,14),(30,14),(30,17),(23,17),(17,31),(12,13),(10,19),(2,19)], ink)
+        polygon([(2,15),(8,15),(12,6),(17,23),(21,13),(30,13),(30,17),(23,17),(17,29),(12,16),(10,19),(2,19)], ink)
     elif kind == 'tag':
         polygon([(4,5),(17,5),(29,17),(17,29),(4,16)], ink)
-        rect(8,9,4,4,WHITE)
+        polygon([(7,8),(16,8),(25,17),(17,25),(7,15)], WHITE)
+        rect(9,10,3,3,ink)
     elif kind == 'bulb':
         polygon([(10,4),(22,4),(27,10),(24,18),(21,22),(11,22),(8,18),(5,10)], ink)
+        polygon([(11,7),(21,7),(24,11),(21,17),(19,19),(13,19),(11,17),(8,11)], WHITE)
         rect(12,24,8,3); rect(14,28,4,2)
     elif kind == 'gear':
         # Circular hub and eight identical radial teeth.
@@ -84,38 +90,66 @@ def icon_pixels(kind, size=32, badge=False):
                 radius = math.hypot(x, y)
                 angle = math.atan2(y, x)
                 tooth = abs(((angle + math.pi / 8) % (math.pi / 4)) - math.pi / 8) < .15
-                if 5 <= radius <= (14 if tooth else 11):
+                if 6.5 <= radius <= (14 if tooth else 10.5):
                     pixels[py][px] = ink
     elif kind == 'globe':
-        polygon([(11,2),(21,2),(29,10),(29,22),(21,30),(11,30),(3,22),(3,10)], ink)
-        rect(7,8,18,16,WHITE); rect(14,3,3,27); rect(4,14,24,3)
+        for py in range(size):
+            for px in range(size):
+                x = (px + .5) * 32 / size - 16
+                y = (py + .5) * 32 / size - 16
+                radius = math.hypot(x, y)
+                ellipse = (x / 6) ** 2 + (y / 13) ** 2
+                if 11 <= radius <= 13 or (radius < 12 and (abs(y) < 1.2 or .75 <= ellipse <= 1.2)):
+                    pixels[py][px] = ink
     elif kind == 'skip':
-        polygon([(3,7),(16,16),(3,25)], ink); polygon([(16,7),(29,16),(16,25)], ink)
-    elif kind in ('back', 'refresh'):
+        polygon([(4,8),(15,16),(4,24)], ink); polygon([(18,8),(29,16),(18,24)], ink)
+    elif kind == 'back':
+        polygon([(2,13),(12,5),(12,11),(20,11),(25,13),(28,17),
+                 (29,22),(29,25),(25,25),(25,22),(24,19),(22,17),
+                 (19,16),(12,16),(12,22)], ink)
+    elif kind == 'refresh':
         for py in range(size):
             for px in range(size):
                 x = (px + .5) * 32 / size - 16
                 y = (py + .5) * 32 / size - 16
                 r = math.hypot(x, y)
-                if 9 <= r <= 12 and not (x < -4 and y > 0):
+                if 9 <= r <= 12 and abs(y) >= 3:
                     pixels[py][px] = ink
-        polygon([(2,13),(9,7),(9,17)], ink)
-        if kind == 'refresh':
-            polygon([(30,19),(23,25),(23,15)], ink)
+        polygon([(27,3),(30,13),(20,11)], ink)
+        polygon([(5,29),(2,19),(12,21)], ink)
     elif kind == 'info':
-        polygon([(10,2),(22,2),(30,10),(30,22),(22,30),(10,30),(2,22),(2,10)], RED)
-        rect(14,7,4,4,WHITE); rect(14,14,4,12,WHITE)
+        for py in range(size):
+            for px in range(size):
+                x = (px + .5) * 32 / size - 16
+                y = (py + .5) * 32 / size - 16
+                if x*x + y*y <= 14*14:
+                    pixels[py][px] = RED
+        rect(14,7,4,4,WHITE); rect(14,14,4,10,WHITE); rect(12,23,8,2,WHITE)
     else:
         rect(6,5,21,25); rect(9,10,15,16,WHITE)
         if kind == 'calendar':
             rect(9,2,3,7); rect(21,2,3,7); rect(9,12,15,3)
+            rect(11,18,3,3); rect(18,18,3,3); rect(11,23,3,3); rect(18,23,3,3)
         else:
             rect(11,14,10,2); rect(11,19,8,2)
+            if kind == 'notebook':
+                rect(4,9,4,2); rect(4,15,4,2); rect(4,21,4,2)
     return pixels
 
 
 def minimum_control_height(font_linespace, image_height=0, padding=12):
     return max(font_linespace, image_height) + 2 * padding
+
+
+def checkbox_photo(tk, master, checked=False):
+    image = tk.PhotoImage(master=master, width=20, height=20)
+    image.put('#647080', to=(1, 1, 19, 19))
+    image.put(RED if checked else WHITE, to=(3, 3, 17, 17))
+    if checked:
+        for x, y in ((5, 10), (6, 11), (7, 12), (8, 13), (9, 12),
+                     (10, 11), (11, 10), (12, 9), (13, 8), (14, 7)):
+            image.put(WHITE, to=(x, y, x + 2, y + 2))
+    return image
 
 
 def photo(tk, master, kind, size=32, badge=False):

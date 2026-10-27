@@ -93,7 +93,8 @@ class NotebookLmCliClient:
     ) -> subprocess.CompletedProcess:
         args = [a.format(notebook_id=self.notebook_id, **fmt) for a in self.COMMANDS[key]]
         return subprocess.run(
-            args, input=stdin, capture_output=True, text=True, encoding="utf-8", timeout=timeout or self.timeout
+            args, input=stdin, capture_output=True, text=True, encoding="utf-8", timeout=timeout or self.timeout,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
 
     def auth_check_passive(self) -> bool:

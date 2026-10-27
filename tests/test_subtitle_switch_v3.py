@@ -9,6 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'automation/subtitl
 import ask_research
 import metadata
 import switch_app
+import services
+import export_icon_png
 
 
 def test_check_selection_and_rejection():
@@ -114,3 +116,60 @@ def test_failed_metadata_is_not_retried_in_same_session(tmp_path):
         metadata.refresh_metadata([row], tmp_path / 'cache.json', fake, failures=failures, notify=lambda *args: values.append(args))
     assert len(calls) == 1
     assert '原因を直して' in values[-1][1]['channel']
+
+
+def test_inbox_metadata_avoids_lookup_and_partial_values_show_progress(tmp_path):
+    complete = {'video_id': 'aaaaaaaaaaa', 'url': 'unused', 'channel': '受け箱',
+                'published_at': '2026-01-01', 'lang': 'ja', 'theme': '研究', 'reason': '理由'}
+    calls, updates = [], []
+    def fake(args):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout=json.dumps({
+            'id': 'bbbbbbbbbbb', 'channel': '取得値', 'upload_date': '20261027', 'language': 'en'}))
+    partial = {'video_id': 'bbbbbbbbbbb', 'url': 'unused', 'channel': '既存'}
+    metadata.refresh_metadata([complete, partial], tmp_path / 'cache.json', fake,
+                              notify=lambda *args: updates.append(args))
+    assert len(calls) == 1
+    assert updates[0][1] == {key: complete[key] for key in ('channel', 'published_at', 'lang')}
+    assert updates[1][1]['published_at'] == '取得中…'
+    assert updates[-1][1] == {'channel': '既存', 'published_at': '2026-10-27', 'lang': 'en'}
+
+
+def test_common_command_uses_windows_no_window_flag():
+    with patch.object(services.subprocess, 'CREATE_NO_WINDOW', 0x08000000, create=True), \
+         patch.object(services.subprocess, 'run') as run:
+        services.command(['fake'])
+    assert run.call_args.kwargs['creationflags'] == 0x08000000
+
+
+def test_imported_git_and_notebook_adapters_hide_console():
+    with patch.object(services.subprocess, 'CREATE_NO_WINDOW', 0x08000000, create=True), \
+         patch.object(services.subprocess, 'run', return_value=SimpleNamespace(stdout='ok')) as run:
+        services.receipt.git('status')
+        assert run.call_args.kwargs['creationflags'] == 0x08000000
+        services.nb.NotebookLmCliClient('fake')._run('list_sources')
+        assert run.call_args.kwargs['creationflags'] == 0x08000000
+
+
+def test_compact_window_geometry_and_restoration():
+    assert switch_app.MIN_WINDOW == (1100, 680)
+    assert switch_app.window_geometry(1920, 1080) == '1344x760'
+    saved = {'width': 1200, 'height': 700, 'x': 100, 'y': 50}
+    assert switch_app.window_geometry(1920, 1080, saved) == '1200x700+100+50'
+    assert switch_app.window_geometry(1920, 1080, {**saved, 'x': 1800}) == '1344x760'
+
+
+def test_notebook_column_includes_heading_and_long_value():
+    measure = lambda value: len(value) * 12
+    assert switch_app.notebook_column_width(measure, []) >= measure('Notebook使用数') + 48
+    value = '読み取り失敗：接続を確認してください'
+    assert switch_app.notebook_column_width(measure, [value]) >= measure(value) + 24
+
+
+def test_icon_png_export(tmp_path):
+    import ui_design
+    output = tmp_path / 'icon.png'
+    export_icon_png.write_png(output, ui_design.icon_pixels('book', 32, True))
+    data = output.read_bytes()
+    assert data[:8] == b'\x89PNG\r\n\x1a\n'
+    assert data[12:16] == b'IHDR' and data[-8:-4] == b'IEND'

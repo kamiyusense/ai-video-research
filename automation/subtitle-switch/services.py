@@ -45,7 +45,8 @@ def command(args, cwd=None, stdin=None, timeout=180):
             raise StageFailure(args[0].upper().replace('-', '_') + '_COMMAND_NOT_FOUND', no_write=True)
         args[0] = executable
     return subprocess.run(args, cwd=cwd, input=stdin, text=True, encoding='utf-8',
-                          capture_output=True, timeout=timeout)
+                          capture_output=True, timeout=timeout,
+                          creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
 
 
 class NotebookClient(nb.NotebookLmCliClient):

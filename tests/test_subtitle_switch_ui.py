@@ -19,6 +19,7 @@ class Widget:
     def __init__(self, parent=None, **kw):
         self.parent, self.options = parent, kw
         self.placement, self.tags, self.headings, self.rows = {}, {}, {}, {}
+        self.columns = {}
         self.selected = ()
         self.kind = type(self).__name__
         self.tk = types.SimpleNamespace(call=lambda *args: 1.0)
@@ -38,7 +39,7 @@ class Widget:
     def yview(self, *args): pass
     def set(self, *args): pass
     def heading(self, key, **kw): self.headings.setdefault(key, {}).update(kw)
-    def column(self, key, **kw): pass
+    def column(self, key, **kw): self.columns.setdefault(key, {}).update(kw)
     def tag_configure(self, key, **kw): self.tags[key] = kw
     def selection(self): return self.selected
     def selection_set(self, values): self.selected = tuple(values)
@@ -56,6 +57,8 @@ class Widget:
     def update_idletasks(self): pass
     def winfo_reqwidth(self): return 1200
     def winfo_reqheight(self): return 720
+    def winfo_screenwidth(self): return 1920
+    def winfo_screenheight(self): return 1080
 
 
 class Variable:
@@ -78,10 +81,14 @@ class UIContractTests(unittest.TestCase):
         app = design.icon_pixels('app', badge=True)
         self.assertEqual(app[0][0], '')
         self.assertEqual(app[10][7], design.WHITE)  # left page
-        self.assertEqual(app[14][27], design.WHITE)  # pencil at right
+        self.assertEqual(app[14][25], design.WHITE)  # pencil at right
         play = design.icon_pixels('play')
         self.assertEqual(play[16][15], design.WHITE)
         self.assertEqual(play[16][5], design.RED)
+        info = design.icon_pixels('info')
+        self.assertEqual(info[8][15], design.WHITE)
+        self.assertEqual(info[12][15], design.RED)
+        self.assertEqual(info[18][15], design.WHITE)
         self.assertEqual(len(design.REJECT_REASONS), 8)
         self.assertNotIn('長すぎる', design.REJECT_REASONS)
         self.assertEqual(design.row_tag({'status': 'attention'}), 'attention')
@@ -97,7 +104,7 @@ class UIContractTests(unittest.TestCase):
             setattr(ttk, name, type(name, (Widget,), {}))
         ttk.Style = Style
         tk.StringVar = tk.BooleanVar = Variable
-        tk.PhotoImage = lambda **kw: types.SimpleNamespace(put=lambda *a: None)
+        tk.PhotoImage = lambda **kw: types.SimpleNamespace(put=lambda *a, **kw: None)
         tk.ttk = ttk
         tk.messagebox = types.SimpleNamespace(showerror=lambda *a: None, showinfo=lambda *a: None)
         with tempfile.TemporaryDirectory() as tmp:
@@ -120,8 +127,11 @@ class UIContractTests(unittest.TestCase):
         table = next(w for w in Widget.widgets if w.kind == 'Treeview')
         self.assertEqual(table.options['selectmode'], 'extended')
         self.assertEqual(table.tags['attention']['background'], design.PINK)
-        self.assertTrue(all('image' in heading for key, heading in table.headings.items() if key != 'checked'))
-        self.assertEqual(tuple(table.headings), ('checked',) + tuple(col[0] for col in design.COLUMNS))
+        self.assertTrue(all('image' in heading for key, heading in table.headings.items() if key != '#0'))
+        self.assertEqual(tuple(table.headings), ('#0',) + tuple(col[0] for col in design.COLUMNS))
+        self.assertEqual(sum(w.options.get('text') == '全部選ぶ／全部外す' for w in buttons), 1)
+        self.assertEqual(table.columns['#0']['width'], 38)
+        self.assertEqual(table.headings['#0']['text'], '')
         self.assertTrue(any(w.options.get('background') == design.PINK for w in Widget.widgets))
         self.assertEqual(next(w for w in Widget.widgets if w.kind == 'Combobox').options['values'], design.REJECT_REASONS)
         # Empty target callbacks must not instantiate adapters or launch threads.

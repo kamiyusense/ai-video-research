@@ -17,11 +17,17 @@ def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: 
     first = True
     for row in rows:
         vid = row['video_id']
-        values = cache.get(vid)
-        if not values and vid in failures:
-            notify(vid, {key: row.get(key) or '取得失敗：原因を直してから再起動' for key in ('channel', 'published_at', 'lang')})
+        values = cache.get(vid) or {}
+        keys = ('channel', 'published_at', 'lang')
+        missing = [key for key in keys if not (row.get(key) or values.get(key))]
+        if not missing:
+            notify(vid, {key: row.get(key) or values.get(key) for key in keys})
             continue
-        if not values:
+        if vid in failures:
+            notify(vid, {key: row.get(key) or values.get(key) or '取得失敗：原因を直してから再起動' for key in keys})
+            continue
+        if missing:
+            notify(vid, {key: row.get(key) or values.get(key) or '取得中…' for key in keys})
             if not first:
                 sleep(2)
             first = False
@@ -38,11 +44,13 @@ def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: 
                     published = f'{published[:4]}-{published[4:6]}-{published[6:]}'
                 else:
                     published = ''
-                values = {'channel': data.get('channel') or data.get('uploader') or '',
-                          'published_at': published, 'lang': data.get('language') or ''}
+                fetched = {'channel': data.get('channel') or data.get('uploader') or '',
+                           'published_at': published, 'lang': data.get('language') or ''}
+                values = {key: values.get(key) or fetched[key] for key in keys}
                 cache[vid] = values
                 atomic_json(path, cache)
+                if any(not (row.get(key) or values.get(key)) for key in keys):
+                    failures.add(vid)
             except Exception:
                 failures.add(vid)
-                values = {}
         notify(vid, {key: row.get(key) or values.get(key) or '取得失敗：情報なし・接続を確認' for key in ('channel', 'published_at', 'lang')})

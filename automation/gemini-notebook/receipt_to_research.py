@@ -175,6 +175,7 @@ def git(*args, root=ROOT, check=True):
         encoding="utf-8",
         errors="replace",
         check=check,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     return result.stdout.strip()
 
@@ -1474,6 +1475,7 @@ def refresh_remote_refs(root=ROOT, allow_stale=False):
         text=True,
         encoding="utf-8",
         errors="replace",
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     if res.returncode == 0:
         return "FRESH_FETCHED"
@@ -2285,6 +2287,7 @@ def read_clipboard_text():
         encoding="utf-8",
         errors="replace",
         check=True,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     return res.stdout
 

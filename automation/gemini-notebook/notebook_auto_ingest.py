@@ -309,7 +309,7 @@ def launch_dedicated_chrome(
     ]
 
     try:
-        proc = subprocess.Popen(args)
+        proc = subprocess.Popen(args, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         return {
             "status": "CHROME_LAUNCHED",
             "pid": proc.pid,

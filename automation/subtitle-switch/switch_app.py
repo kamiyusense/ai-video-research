@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 
 from pipeline import InstanceLock, Pipeline
-from switch_state import Inventory, read_inbox, write_preferences, flush_preferences
+from switch_state import Inventory, read_inbox, write_preferences, flush_preferences, atomic_json
 from services import Services, browser, intake_url, command
 from metadata import refresh_metadata
 from ask_research import ask, GROK_REASON
@@ -16,6 +16,24 @@ import ui_design as design
 
 
 APP_NAME = 'AI動画字幕図書館司書さん'
+MIN_WINDOW = (1100, 680)
+
+
+def window_geometry(screen_width, screen_height, saved=None):
+    """Restore only visible, valid window bounds; otherwise use a compact default."""
+    if isinstance(saved, dict):
+        w, h, x, y = (saved.get(k) for k in ('width', 'height', 'x', 'y'))
+        if (all(type(v) is int for v in (w, h, x, y)) and
+                MIN_WINDOW[0] <= w <= screen_width and MIN_WINDOW[1] <= h <= screen_height and
+                0 <= x <= screen_width - w and 0 <= y <= screen_height - h):
+            return f'{w}x{h}+{x}+{y}'
+    width = max(MIN_WINDOW[0], min(int(screen_width * .70), screen_width))
+    height = max(MIN_WINDOW[1], min(760, screen_height))
+    return f'{width}x{height}'
+
+
+def notebook_column_width(measure, values):
+    return max([155, measure('Notebook使用数') + 48] + [measure(value) + 24 for value in values])
 
 STAGE_LABELS = {
     'intake': '重複確認', 'captions': '字幕取得', 'transcript': '字幕OKF',
@@ -51,7 +69,7 @@ def display_row(row):
     used = notebook_usage(row)
     if row.get('notebook_capacity_warning'):
         used += '（上限前警告）'
-    return tuple((row.get(key) or ('未設定' if key == 'theme' else '取得中' if key in ('channel', 'published_at', 'lang') else '')) for key in ('title', 'channel', 'published_at', 'lang', 'theme', 'reason')) + (
+    return tuple((row.get(key) or ('未設定' if key == 'theme' else '取得中…' if key in ('channel', 'published_at', 'lang') else '')) for key in ('title', 'channel', 'published_at', 'lang', 'theme', 'reason')) + (
         STAGE_LABELS.get(row['stage'], row['stage']), status, used)
 
 
@@ -145,8 +163,13 @@ def main(config_path):
         locations = folders(config)
         root = tk.Tk()
         root.title(APP_NAME)
-        root.geometry('1420x800')
-        root.minsize(1200, 720)
+        geometry_path = state_dir / 'window_geometry.json'
+        try:
+            saved_geometry = json.loads(geometry_path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            saved_geometry = None
+        root.geometry(window_geometry(root.winfo_screenwidth(), root.winfo_screenheight(), saved_geometry))
+        root.minsize(*MIN_WINDOW)
         root.configure(background=design.BACKGROUND)
         root.option_add('*Font', ('Yu Gothic UI', 10))
         style = ttk.Style(root)
@@ -163,17 +186,21 @@ def main(config_path):
                     ('Treeheading.text', {'side': 'left', 'sticky': 'we'})]})]})]})])
         style.configure('Card.TFrame', background=design.WHITE, relief='solid', borderwidth=1)
         font_scale = float(root.tk.call('tk', 'scaling'))
-        button_padding = max(12, round(12 * font_scale))
+        button_padding = max(6, round(5 * font_scale))
         line_height = max(1, int(root.tk.call('font', 'metrics', 'TkDefaultFont', '-linespace')))
         control_height = design.minimum_control_height(line_height, 32, button_padding)
         button_padding = max(button_padding, (control_height - 32 + 1) // 2)
-        style.configure('Accent.TButton', background=design.RED, foreground=design.WHITE, padding=(28, button_padding), font=('Yu Gothic UI', 14, 'bold'))
+        style.configure('Accent.TButton', background=design.RED, foreground=design.WHITE, padding=(18, button_padding), font=('Yu Gothic UI', 12, 'bold'))
         style.map('Accent.TButton', background=[('disabled', '#e59aa4'), ('active', '#d4182c')])
         images = {kind: design.photo(tk, root, kind, 22) for kind in
                   ('document','play','calendar','globe','tag','bulb','gear','wave','notebook','skip','back','refresh','info','spark','robot')}
         images['document'] = design.photo(tk, root, 'book', 22)
+        images['spark'] = design.photo(tk, root, 'spark', 32)
+        images['robot'] = design.photo(tk, root, 'robot', 32)
         images['app'] = design.photo(tk, root, 'app', 32, True)
         images['save'] = design.photo(tk, root, 'book', 32, True)
+        images['checked'] = design.checkbox_photo(tk, root, True)
+        images['unchecked'] = design.checkbox_photo(tk, root)
         images['accent_background'] = design.rounded_photo(tk, root, design.RED)
         images['question_background'] = design.rounded_photo(tk, root, '#eeeeef')
         root.iconphoto(True, images['app'])
@@ -201,17 +228,16 @@ def main(config_path):
         show_processed = tk.BooleanVar(value=False)
         explanation = tk.StringVar(value='手動保存は入力URLだけ、選択保存は選択行だけを保存します。')
         tk.Label(root, text=APP_NAME, background=design.BACKGROUND, foreground=design.RED, font=('Yu Gothic UI', 18, 'bold')).pack(anchor='w', padx=24, pady=(12, 0))
-        banner = tk.Frame(root, background=design.PINK, padx=16, pady=14)
+        banner = tk.Frame(root, background=design.PINK, padx=12, pady=8)
         banner.pack(fill='x', padx=18, pady=(14, 10))
         tk.Label(banner, image=images['info'], background=design.PINK).pack(side='left', padx=(0, 12))
         tk.Label(banner, textvariable=explanation, background=design.PINK, anchor='w', wraplength=1250).pack(side='left', fill='x', expand=True)
         card = ttk.Frame(root, style='Card.TFrame', padding=8)
         card.pack(fill='both', expand=True, padx=18, pady=6)
-        columns = ('checked',) + tuple(col[0] for col in design.COLUMNS)
-        table = ttk.Treeview(card, columns=columns, show='headings', selectmode='extended')
-        table.heading('checked', text='全部選ぶ／全部外す')
-        checked_width = max(175, int(root.tk.call('font', 'measure', 'TkDefaultFont', '全部選ぶ／全部外す')) + 24)
-        table.column('checked', width=checked_width, minwidth=checked_width, stretch=False, anchor='center')
+        columns = tuple(col[0] for col in design.COLUMNS)
+        table = ttk.Treeview(card, columns=columns, show='tree headings', selectmode='extended')
+        table.heading('#0', text='')
+        table.column('#0', width=38, minwidth=38, stretch=False, anchor='center')
         for key, name, icon, width in design.COLUMNS:
             table.heading(key, text=' ' + name, image=images[icon])
             heading_width = int(root.tk.call('font', 'measure', 'TkDefaultFont', name)) + 48
@@ -238,18 +264,24 @@ def main(config_path):
             selected = table.selection()
             table.delete(*table.get_children())
             active = None
+            notebook_values = []
             for row in inventory.visible(show_rejected.get(), show_processed.get()):
                 visible_row = {**row, **metadata_view.get(row['video_id'], {})}
-                table.insert('', 'end', iid=row['video_id'], values=(('☑' if row['video_id'] in checked else '☐') if not row['rejected'] else '—',) + display_row(visible_row), tags=(design.row_tag(row),))
+                checkbox = '' if row['rejected'] else images['checked' if row['video_id'] in checked else 'unchecked']
+                values = display_row(visible_row)
+                notebook_values.append(values[-1])
+                table.insert('', 'end', iid=row['video_id'], image=checkbox, values=values, tags=(design.row_tag(row),))
                 if row['status'] == 'running':
                     active = row['video_id']
+            measure = lambda text: int(root.tk.call('font', 'measure', 'TkDefaultFont', text))
+            table.column('notebook', width=notebook_column_width(measure, notebook_values))
             table.selection_set([vid for vid in selected if table.exists(vid)])
             if active:
                 table.see(active)
 
         def toggle_row(event):
             nonlocal checked
-            if table.identify_region(event.x, event.y) == 'cell' and table.identify_column(event.x) == '#1':
+            if table.identify_region(event.x, event.y) == 'tree' and table.identify_column(event.x) == '#0':
                 vid = table.identify_row(event.y)
                 if vid and not busy:
                     checked = toggle_checked(checked, vid, inventory.data['videos'][vid]['rejected'])
@@ -262,7 +294,6 @@ def main(config_path):
             checked = checked - eligible if eligible and eligible <= checked else checked | eligible
             render()
 
-        table.heading('checked', command=toggle_all)
         table.bind('<Button-1>', toggle_row)
 
         def refresh():
@@ -271,6 +302,7 @@ def main(config_path):
                 return
             rows, errors = read_inbox(locations['inbox'])
             inventory.refresh(rows)
+            metadata_view.clear()
             text = ' ／ '.join(error['file'] + '：要確認' for error in errors)
             if not locations['inbox'].is_dir():
                 text = '受け箱にアクセスできません（UNKNOWN）。設定とDrive同期を確認してください。'
@@ -298,10 +330,12 @@ def main(config_path):
 
         ttk.Button(toolbar, text='弾く', image=images['skip'], compound='left', command=lambda: reject(True)).pack(side='left', padx=4)
         ttk.Button(toolbar, text='戻す', image=images['back'], compound='left', command=lambda: reject(False)).pack(side='left')
-        ttk.Checkbutton(toolbar, text='弾いた動画も表示', variable=show_rejected, command=render).pack(side='left', padx=8)
-        ttk.Checkbutton(toolbar, text='完了・登録済みも表示', variable=show_processed, command=render).pack(side='left', padx=8)
         ttk.Button(toolbar, text='全部選ぶ／全部外す', command=toggle_all).pack(side='left', padx=8)
         ttk.Button(toolbar, text='一覧を更新', image=images['refresh'], compound='left', command=refresh).pack(side='left')
+        filters = ttk.Frame(controls)
+        filters.pack(fill='x', pady=(0, 4))
+        ttk.Checkbutton(filters, text='弾いた動画も表示', variable=show_rejected, command=render).pack(side='left', padx=8)
+        ttk.Checkbutton(filters, text='完了・登録済みも表示', variable=show_processed, command=render).pack(side='left', padx=8)
         correction = tk.StringVar(value='')
         ttk.Label(controls, text='失敗から再開する場合だけ、直した原因を選択（同じ原因の再試行はしません）').pack(anchor='w', padx=10)
         ttk.Combobox(controls, textvariable=correction, state='readonly', values=(
@@ -407,11 +441,15 @@ def main(config_path):
             if busy:
                 messagebox.showinfo('処理中', '工程の終了まで画面を開いておいてください。')
                 return
+            if root.state() == 'normal':
+                try:
+                    atomic_json(geometry_path, {'width': root.winfo_width(), 'height': root.winfo_height(),
+                                                'x': root.winfo_x(), 'y': root.winfo_y()})
+                except OSError:
+                    pass
             root.destroy()
 
         root.update_idletasks()
-        title_width = int(root.tk.call('font', 'measure', 'TkDefaultFont', APP_NAME)) + 140
-        root.minsize(max(1200, title_width, root.winfo_reqwidth()), max(720, root.winfo_reqheight()))
         root.protocol('WM_DELETE_WINDOW', close)
         refresh()
         poll()
