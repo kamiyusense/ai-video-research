@@ -90,9 +90,12 @@ class Controller:
         def work():
             failed = False
             try:
+                before = {vid: row.get('status') for vid, row in self.inventory.data['videos'].items()}
                 job()
-                # A question never changes video rows, so old waiting rows must not mark it failed.
-                failed = action != '質問' and any(row['status'] in ('attention', 'waiting') for row in self.inventory.data['videos'].values())
+                # Only rows this operation moved into attention/waiting count; old leftovers
+                # (e.g. an earlier run's attention row) stay visible in the list, not on the cat.
+                failed = any(row['status'] in ('attention', 'waiting') and before.get(vid) != row['status']
+                             for vid, row in self.inventory.data['videos'].items())
             except subprocess.TimeoutExpired:
                 failed = True
                 self.notice = '要確認：Claudeの返事が時間内に来ませんでした（UNKNOWN）。'
@@ -384,14 +387,30 @@ class Handler(BaseHTTPRequestHandler):
             self._reply(405)
 
 
-def launch_browser(url, *, popen=subprocess.Popen, fallback=None, environ=None):
+def window_size(metrics=None):
+    """About 65% x 72% of the main screen (owner's preferred size), in the units Chrome's --window-size uses."""
+    try:
+        if metrics is None:
+            import ctypes
+            metrics = ctypes.windll.user32.GetSystemMetrics  # this process is not DPI-aware: scaled (logical) pixels
+        cx, cy = int(metrics(0)), int(metrics(1))
+    except Exception:
+        return 1280, 840
+    if cx < 800 or cy < 600:
+        return 1280, 840
+    return max(900, round(cx * .65)), max(620, round(cy * .72))
+
+
+def launch_browser(url, *, popen=subprocess.Popen, fallback=None, environ=None, size=(1280, 840)):
     env = os.environ if environ is None else environ
-    candidates = [Path(env[k]) / suffix for k in ('PROGRAMFILES(X86)', 'PROGRAMFILES', 'LOCALAPPDATA') if env.get(k)
-                  for suffix in ('Microsoft/Edge/Application/msedge.exe', 'Google/Chrome/Application/chrome.exe')]
+    # Chrome first (owner's default); links opened from the app window go to the same browser.
+    candidates = [Path(env[k]) / suffix
+                  for suffix in ('Google/Chrome/Application/chrome.exe', 'Microsoft/Edge/Application/msedge.exe')
+                  for k in ('PROGRAMFILES', 'PROGRAMFILES(X86)', 'LOCALAPPDATA') if env.get(k)]
     flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
     for exe in candidates:
         if exe.is_file():
-            popen([str(exe), '--app=' + url, '--window-size=1280,840', '--no-first-run'],
+            popen([str(exe), '--app=' + url, f'--window-size={size[0]},{size[1]}', '--no-first-run'],
                   creationflags=flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return
     if fallback:
@@ -414,7 +433,7 @@ def run(config_path):
             thread.start()
             try:
                 controller.operate({'action': 'refresh'})
-                launch_browser(server.url)
+                launch_browser(server.url, size=window_size() if os.name == 'nt' else (1280, 840))
                 while not server.expired():
                     time.sleep(.5)
             finally:

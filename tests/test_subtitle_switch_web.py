@@ -447,3 +447,29 @@ def test_question_cli_uses_owner_model_effort_and_logs_failures(tmp_path):
     assert timeout == 300
     log = (tmp_path / 'log' / 'questions.jsonl').read_text(encoding='utf-8')
     assert 'TimeoutExpired' in log and '質問' not in log
+
+
+def test_window_size_follows_screen_and_chrome_is_preferred(tmp_path):
+    assert web.window_size(lambda i: (1920, 1080)[i]) == (1248, 778)
+    assert web.window_size(lambda i: (1280, 720)[i]) == (900, 620)
+    assert web.window_size(lambda i: 0) == (1280, 840)
+    for exe in ('Microsoft/Edge/Application/msedge.exe', 'Google/Chrome/Application/chrome.exe'):
+        (tmp_path / exe).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / exe).write_bytes(b'fixture')
+    popen = Mock()
+    web.launch_browser('u', popen=popen, fallback=Mock(), environ={'PROGRAMFILES': str(tmp_path)}, size=(1248, 778))
+    args = popen.call_args.args[0]
+    assert args[0].endswith('chrome.exe') and '--window-size=1248,778' in args
+
+
+def test_old_attention_row_does_not_make_refresh_an_error(controller):
+    c = controller
+    c.inventory.refresh([{'video_id': 'fffffffffff', 'url': 'https://www.youtube.com/watch?v=fffffffffff', 'title': 'T',
+                          'channel': '', 'published_at': '', 'lang': 'ja', 'theme': '', 'kind': '', 'reason': ''}])
+    c.inventory.data['videos']['fffffffffff']['status'] = 'attention'
+    c.locations['inbox'].mkdir()
+    c.metadata = Mock()
+    c.operate({'action': 'refresh'})
+    c.worker.join(5)
+    assert c.snapshot()['cat'] == 'done'
+    assert c.inventory.data['videos']['fffffffffff']['status'] == 'attention'
