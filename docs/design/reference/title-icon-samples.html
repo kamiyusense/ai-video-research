@@ -1,4 +1,4 @@
-<title>司書さんタイトル見本</title>
+<title>司書猫さん見本</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Zen+Maru+Gothic:wght@500;700;900&family=Kiwi+Maru:wght@500&family=Mochiy+Pop+One&family=Zen+Kaku+Gothic+New:wght@500;900&family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700&family=Hachi+Maru+Pop&family=DotGothic16&family=RocknRoll+One&family=Potta+One&display=swap">
@@ -65,25 +65,40 @@ button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
 .c{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);font-size:.88rem;font-weight:500}
 .c svg{width:20px;height:20px;color:var(--c)}
 .c.act{background:color-mix(in srgb,var(--c) 10%,#fff);border-color:color-mix(in srgb,var(--c) 30%,#fff);font-weight:700}
+.name{padding-block:.22em;padding-inline:.04em}
+.neko{position:relative;display:inline-block;color:#fff;-webkit-text-stroke:.11em #15161a;paint-order:stroke fill;margin:0 .16em;font-size:1.1em;z-index:0;font-weight:inherit}
+.neko::before{content:"";position:absolute;z-index:-1;left:50%;top:54%;width:1.32em;height:1.24em;transform:translate(-50%,-50%);border-radius:50% 50% 48% 48%/54% 54% 46% 46%;
+  background:radial-gradient(circle at 34% 30%,#ffd08a 0 9%,transparent 22%),radial-gradient(circle at 50% 55%,#ffa323 0 52%,#f58200 78%,#e06a00 100%);box-shadow:inset 0 -.06em 0 rgba(160,60,0,.25)}
+.neko::after{content:"";position:absolute;z-index:-1;left:58%;top:-.16em;width:.42em;height:.22em;border-radius:0 100% 0 100%;background:linear-gradient(135deg,#52b043,#2f8a2c);transform:rotate(-14deg)}
+.big .neko::before{box-shadow:inset 0 -.05em 0 rgba(160,60,0,.25),0 .04em .1em rgba(0,0,0,.12)}
+.big{font-size:clamp(1.6rem,6vw,2.8rem)!important}
+.catstage{position:relative;overflow:hidden}
+.walker{position:absolute;top:6px;width:140px;height:105px;background-repeat:no-repeat;background-size:auto 100%;image-rendering:auto;transition:none;pointer-events:none}
+.face{width:96px;height:96px;background-repeat:no-repeat;background-size:auto 100%;flex:none;margin-left:auto;border-radius:16px;background-color:#fff7f2;border:1px solid var(--line)}
+.demo .top{padding-right:170px;min-height:118px}
+.stbtns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.stbtns button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.85rem}
+.stbtns button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px}
+.catcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.catcard .spr{width:192px;height:144px;background-repeat:no-repeat;background-size:auto 100%}
+.catcard .spf{width:96px;height:96px;background-repeat:no-repeat;background-size:auto 100%}
+.catcard p{margin:0;font-size:.8rem;color:var(--muted);text-align:center}.catcard p b{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){.b1,.b2,.b3{transition:none}}
 </style>
 
 <div class="wrap">
-  <h1>AI動画字幕図書館司書さん：タイトル文字とClaude風アイコンの見本</h1>
-  <p class="lead">2つの見本を1枚にまとめた最新版。選ぶのは「タイトル文字 A〜J」「Claude風アイコン 1〜4」「ボタンの形 ア〜ウ」「色分け OK/NG」の4つだけ。文字はどれもGoogle Fontsの無料フォントで、アプリに同梱できる。アイコンはオリジナルの絵で、公式ロゴではありません。</p>
+  <h1>AI動画字幕図書館司書猫さん：見本（v4）</h1>
+  <p class="lead">決まったもの：タイトル文字は A・C・F・G・H・J から毎回ランダム（見出しをクリックすると次の文字に変わる）、Claude風アイコンは4、ボタンはア。「猫」の1文字だけ、蜜柑の上に白字＋黒い太フチで乗せる（蜜柑は画像ではなくCSS/SVGで描く）。猫の絵はアプリの assets/cat_sprites/ にある。このページは外部フォントを読むが、アプリは同梱フォントだけを使う。</p>
 
-  <h2>タイトル文字 <small>アプリの上の帯に置いた状態</small></h2>
+  <h2>タイトル文字 <small>採用の6書体。どれも「猫」だけ蜜柑つき</small></h2>
   <div class="grid">
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f1">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">A. 丸ゴシック（太）</span><span>やわらかい・読みやすい</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f2">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">B. 丸ゴシック（はっきり）</span><span>アプリっぽい・元気</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f3">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">C. 手書き風の丸文字</span><span>いちばんかわいい</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f4">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">D. ぽってりポップ</span><span>ゲームっぽい・猫に合う</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f5">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">E. 角ゴシック（極太）</span><span>YouTubeっぽい・きりっと</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f6">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">F. 太い見出し文字</span><span>ロゴっぽい・目立つ</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f7">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">G. 手書きポップ</span><span>女の子っぽい・ゆるかわ</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f8">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">H. ドット文字</span><span>ドット絵の猫と相性◎</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f9">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">I. 丸みのある太字</span><span>やさしいけど目立つ</span></div></div>
-    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f10">AI動画字幕<b>図書館司書さん</b></div></div><div class="meta"><span class="tag">J. 筆っぽいポップ</span><span>元気・お店の看板っぽい</span></div></div>
+    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f1">AI動画字幕<b>図書館司書<span class="neko">猫</span>さん</b></div></div><div class="meta"><span class="tag">A. 丸ゴシック（太）</span><span>やわらかい・読みやすい</span></div></div>
+    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f3">AI動画字幕<b>図書館司書<span class="neko">猫</span>さん</b></div></div><div class="meta"><span class="tag">C. 手書き風の丸文字</span><span>いちばんかわいい</span></div></div>
+    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f6">AI動画字幕<b>図書館司書<span class="neko">猫</span>さん</b></div></div><div class="meta"><span class="tag">F. 太い見出し文字</span><span>ロゴっぽい・目立つ</span></div></div>
+    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f7">AI動画字幕<b>図書館司書<span class="neko">猫</span>さん</b></div></div><div class="meta"><span class="tag">G. 手書きポップ</span><span>女の子っぽい・ゆるかわ</span></div></div>
+    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f8">AI動画字幕<b>図書館司書<span class="neko">猫</span>さん</b></div></div><div class="meta"><span class="tag">H. ドット文字</span><span>ドット絵の猫と相性◎</span></div></div>
+    <div class="opt"><div class="bar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f10">AI動画字幕<b>図書館司書<span class="neko">猫</span>さん</b></div></div><div class="meta"><span class="tag">J. 筆っぽいポップ</span><span>元気・お店の看板っぽい</span></div></div>
   </div>
 
   <h2>Claude風アイコン <small>大・中・小（ボタンに入る大きさ）</small></h2>
@@ -94,16 +109,15 @@ button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
     <div class="ic"><div class="sizes"><svg width="64" height="64" viewBox="0 0 48 48"><use href="#c4"/></svg><svg width="32" height="32" viewBox="0 0 48 48"><use href="#c4"/></svg><svg width="20" height="20" viewBox="0 0 48 48"><use href="#c4"/></svg></div><p><b>4. 吹き出し＋光</b><br>「質問できる」が伝わる</p></div>
   </div>
 
-  <h2>組み合わせた例 <small>Bの文字＋1のアイコン</small></h2>
-  <div class="demo">
-    <div class="top"><svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f2">AI動画字幕<b>図書館司書さん</b></div></div>
+  <h2>組み合わせた例 <small>A〜Jランダムの文字（クリックで切替）＋アイコン4＋ボタンア＋猫の場所</small></h2>
+    <div class="demo catstage" id="stage">
+    <div class="walker" aria-hidden="true" style="right:12px;border:2px dashed #e7e8ec;border-radius:12px;display:grid;place-items:center;color:#6b6f78;font-size:12px">全身の猫（cat_sprites）</div>
+    <div class="top"><svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><use href="#appicon"/></svg><div class="name f1" id="rtitle" title="クリックで次の書体" style="cursor:pointer">AI動画字幕<b>図書館司書<span class="neko">猫</span>さん</b></div></div>
     <div class="note"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="var(--red)"/><circle cx="10" cy="5.6" r="1.4" fill="#fff"/><rect x="8.8" y="8.4" width="2.4" height="7" rx="1.2" fill="#fff"/></svg>手動保存は入力URLだけ、選択保存はチェックした動画だけを保存します。</div>
-    <div class="foot">
-      <span class="save">手動保存</span><span class="save ghost">選択保存</span>
-      <span class="btn"><svg width="24" height="24" viewBox="0 0 48 48"><use href="#c1"/></svg>保存した動画内容をAIに質問</span>
-    </div>
+    <div class="foot" style="align-items:center"><button class="b1" type="button"><svg width="20" height="20" viewBox="0 0 40 40"><use href="#bookw"/></svg>手動保存</button><button class="b1" type="button"><svg width="20" height="20" viewBox="0 0 40 40"><use href="#bookw"/></svg>選択保存</button><span class="btn" style="margin-left:14px;background:#fff"><svg width="24" height="24" viewBox="0 0 48 48"><use href="#c4"/></svg>保存した動画内容をAIに質問</span><div class="face" aria-hidden="true" style="display:grid;place-items:center;color:#6b6f78;font-size:12px;text-align:center">遊べる猫<br>（アップ）</div></div>
   </div>
-  <p class="fine">赤は「図書館司書さん」の文字と保存ボタンだけにして、ほかは黒と白にすると、赤が差し色として映えるよ。</p>
+  <p class="fine">赤は「図書館司書猫さん」の文字と保存ボタンだけにして、ほかは黒と白にすると、赤が差し色として映えるよ。</p>
+
 
   <h2>ボタンの形 <small>押せるのがひと目で分かる3案（マウスを乗せると動きます）</small></h2>
   <div class="btnrow">
@@ -166,3 +180,9 @@ button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
     </symbol>
   </defs>
 </svg>
+<script>
+const FONTS=["f1","f3","f6","f7","f8","f10"];
+const rt=document.getElementById("rtitle");let fi=Math.floor(Math.random()*FONTS.length);
+function setFont(){FONTS.forEach(f=>rt.classList.remove(f));rt.classList.add(FONTS[fi]);}
+setFont();rt.addEventListener("click",()=>{fi=(fi+1)%FONTS.length;setFont();});
+</script>
