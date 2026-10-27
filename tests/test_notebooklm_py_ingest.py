@@ -872,7 +872,7 @@ class TestLinkifyTimestamps(unittest.TestCase):
         gas = (AUTO_DIR / "cloud_relay_gas.js").as_posix()
         script = ("const g=require(%s);const s=%s;process.stdout.write(JSON.stringify(s.map(t=>g.linkifyTimestamps(t,%s))));"
                   % (json.dumps(gas), json.dumps(samples), json.dumps(VID)))
-        js = json.loads(sp.run(["node", "-e", script], capture_output=True, text=True, check=True).stdout)
+        js = json.loads(sp.run(["node", "-e", script], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
         self.assertEqual(js, [self.lk(t, VID) for t in samples])
 
 

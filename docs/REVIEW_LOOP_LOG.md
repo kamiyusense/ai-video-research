@@ -605,3 +605,13 @@ AI-Agent: codex
 - 迂回: strict filesystem/environment encodingの環境修正待ち。承認追加ではなく実行環境の変更が必要。任意項目12の旧互換コードは既存試験保護のため未変更。
 
 AI-Agent: codex
+
+## GH-25 修正ラウンド1・更新された厳格試験の完了確認（2026-10-27）
+
+- 開始時実測: branch `symphony/gh-22-design`、HEAD `49adf4a0aaacade63abcf18a8bafdd30ae243f5b`、作業ツリーclean、MERGE_CONFLICT.txtなし。GitHub読取でDraft PR #24、default main、visibility publicを確認（過去文書の非公開という記述とは異なる）。
+- 初回指定試験: 通常427 passed / 18 subtests passed。新C.UTF-8厳格試験は5 failed / 422 passed。旧ASCII環境Blockerは再現せず、今回はrepo内のsubprocess文字コード指定漏れ。
+- 修正: auto_research_pipeline.pyのブランチ読取とtest_notebooklm_py_ingest.pyのNode出力読取にencoding="utf-8"を明示。既存の安全停止とPython/JS日本語変換比較を維持。
+- 修正後の指定スクリプト: 通常・厳格とも427 passed / 18 subtests passed、ENCODING-STRICT: PASS、RESULT: PASS。git diff --check合格。項目7の旧Blockerを解消、必須項目1〜11・13のオフライン実装・試験は完了。
+- UNKNOWN: Windows/cp932実機と実際のUI表示、CLI実受付、実サービス処理。モデル・外部サービス実行なし。今回の変更のcommit/pushとremote readbackはSymphony host hook担当で、この時点では未確認。任意項目12は未実施。
+
+AI-Agent: codex

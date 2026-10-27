@@ -84,7 +84,7 @@ def verify_target_branch_early(root: Path = ROOT, target_branch: str = DEFAULT_T
     """Ensure we are in the permitted repository and non-default branch BEFORE any file changes."""
     try:
         branch = subprocess.check_output(
-            ["git", "branch", "--show-current"], cwd=root, text=True
+            ["git", "branch", "--show-current"], cwd=root, text=True, encoding="utf-8"
         ).strip()
     except Exception as ex:
         raise RuntimeError(f"Gitブランチの確認に失敗しました: {ex}")
