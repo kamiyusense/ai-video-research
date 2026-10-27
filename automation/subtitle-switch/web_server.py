@@ -17,13 +17,19 @@ from urllib.parse import parse_qs, unquote, urlsplit
 import switch_app as app
 from ask_research import GROK_REASON, MAX_QUESTION, ask
 from metadata import refresh_metadata
-from pipeline import InstanceLock
+from pipeline import InstanceLock, StageFailure
 from services import Services, command
 from switch_state import Inventory, read_inbox
+from translate_title import TitleTranslator, needs_translation
 
 ROOT = Path(__file__).resolve().parent
 FONTS = ('ZenMaruGothic-Black', 'KiwiMaru-Medium', 'DelaGothicOne-Regular',
          'HachiMaruPop-Regular', 'DotGothic16-Regular', 'PottaOne-Regular')
+FAILURE_LABELS = {
+    'CLAUDE_API_CONFIGURATION_BLOCKED': 'PCにAPIキー等の設定があるためClaudeを呼びませんでした（キーなしの購読ログインだけを使います）',
+    'CLAUDE_COMMAND_NOT_FOUND': 'PCでClaude Codeが見つかりません',
+    'INBOX_UNAVAILABLE': '受け箱フォルダが見つかりません（UNKNOWN）。Googleドライブの同期を確認してください',
+}
 CORRECTIONS = ('', '手動ログインを復旧', '設定を修正', '利用枠の回復を確認', '字幕取得条件を修正')
 
 
@@ -39,7 +45,9 @@ def table_row(row, metadata=None):
     cells[7]['text'] = ('弾いた' if row['rejected'] else app.STATUS_LABELS.get(row['status'], row['status']).split('（')[0])[:8]
     if row.get('notebook_sources_used') is None or str(row.get('notebook_sources_used')) == 'UNKNOWN':
         cells[8]['text'] = '未接続' if row.get('status_reason') == 'NOTEBOOK_LOGIN_EXPIRED' else '未実行' if row.get('stage') != 'notebook' else '要確認'
-    return {'id': row['video_id'], 'cells': cells, 'rejected': row['rejected'], 'status': row['status']}
+    lang = (metadata or {}).get('lang') or row.get('lang') or ''
+    return {'id': row['video_id'], 'cells': cells, 'rejected': row['rejected'], 'status': row['status'],
+            'url': 'https://www.youtube.com/watch?v=' + row['video_id'], 'translate': needs_translation(lang)}
 
 
 class Controller:
@@ -60,6 +68,7 @@ class Controller:
         self.metadata_values, self.metadata_failures = {}, set()
         self.rows = []
         self.worker = None
+        self.translator = TitleTranslator(self.state_dir / 'title_ja_cache.json')
         self.publish()
 
     def publish(self):
@@ -82,7 +91,20 @@ class Controller:
             failed = False
             try:
                 job()
-                failed = any(row['status'] in ('attention', 'waiting') for row in self.inventory.data['videos'].values())
+                # A question never changes video rows, so old waiting rows must not mark it failed.
+                failed = action != '質問' and any(row['status'] in ('attention', 'waiting') for row in self.inventory.data['videos'].values())
+            except subprocess.TimeoutExpired:
+                failed = True
+                self.notice = '要確認：Claudeの返事が時間内に来ませんでした（UNKNOWN）。'
+                if action == '質問':
+                    self.answer = 'Claudeの返事が時間内に来ませんでした（UNKNOWN）。もう一度送る前に、少し待ってください。'
+            except (ValueError, StageFailure) as error:
+                # Our own Japanese messages (no secrets); show them where the owner looks.
+                failed = True
+                message = FAILURE_LABELS.get(str(error), str(error))
+                self.notice = '要確認：' + message
+                if action == '質問':
+                    self.answer = message
             except Exception:
                 failed = True
                 self.notice = '要確認：処理を停止しました。設定と状態を確認してください（UNKNOWN）。'
@@ -164,12 +186,24 @@ class Controller:
                 if not isinstance(text, str) or not 1 <= len(text.strip()) <= MAX_QUESTION:
                     raise ValueError('質問は1〜2000文字で入力してください')
                 self.answer = ''
+                # Checked visible rows narrow the question to those videos' notes.
+                chosen = sorted(self.checked & {r['id'] for r in self.rows})
                 def question():
-                    self.answer = self.question(text, self.config['repository'], self.state_dir / 'question_logs')
+                    self.answer = self.question(text, self.config['repository'], self.state_dir / 'question_logs',
+                                                video_ids=chosen or None)
                 self._start('質問', question)
             else:
                 raise ValueError('未対応の操作です')
             return self.snapshot()
+
+    def translate(self, data):
+        vid = data.get('id') if isinstance(data, dict) else None
+        with self.guard:
+            row = self.inventory.data['videos'].get(vid) if isinstance(vid, str) else None
+            if row is None:
+                raise ValueError('一覧の行を確認してください')
+            title, title_ja = row.get('title', ''), row.get('title_ja', '')
+        return {'id': vid, 'ja': self.translator.translate(vid, title, title_ja)}
 
 
 def load_manifest(folder, play=False):
@@ -329,9 +363,18 @@ class Handler(BaseHTTPRequestHandler):
                 self._reply(200, {})
             elif path == '/api/action':
                 self._reply(200, self.server.controller.operate(data))
+            elif path == '/api/translate':
+                self._reply(200, self.server.controller.translate(data))
             else:
                 self._reply(404)
-        except (ValueError, UnicodeError):
+        except json.JSONDecodeError:
+            self._reply(400, {'error': '入力または処理状態を確認してください'})
+        except (ValueError, StageFailure) as error:
+            # Controller messages are authored Japanese text without secrets.
+            self._reply(400, {'error': FAILURE_LABELS.get(str(error), str(error))[:300]})
+        except subprocess.TimeoutExpired:
+            self._reply(504, {'error': '時間内に返事が来ませんでした（UNKNOWN）'})
+        except UnicodeError:
             self._reply(400, {'error': '入力または処理状態を確認してください'})
         except Exception:
             self._reply(500, {'error': 'UNKNOWN：操作を停止しました。状態を確認してください'})

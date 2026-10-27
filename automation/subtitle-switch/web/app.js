@@ -10,7 +10,7 @@
   let catState = 'idle';
   let catStart = performance.now();
   let lastFrame = -Infinity;
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Owner wants the cat to move even when Windows animation effects are off, so reduced-motion is not applied to it.
   const play = new CatMotion.Play(BOOT.play);
   const asset = path => BOOT.asset_base + path + BOOT.auth;
   const key = new URLSearchParams(BOOT.auth).get('key');
@@ -42,13 +42,15 @@
   }
   for (const id of ['body-cat', 'face-cat']) $(id).addEventListener('error', () => { $(id).hidden = true; });
   function animate(now) {
-    if (BOOT.sprites && now - lastFrame > (reduced ? 200 : 45)) {
+    if (BOOT.sprites && now - lastFrame > 45) {
       lastFrame = now;
       const elapsed = now - catStart;
-      const spec = BOOT.sprites.states[catState];
-      const index = CatMotion.frameAt(spec, reduced ? 0 : elapsed);
-      updateImage($('body-cat'), `cat_sprites/${catState}/${catState}_${String(index).padStart(2, '0')}.png`);
-      $('body-cat').style.right = catState === 'walk' ? `${CatMotion.bodyOffset(elapsed, $('body-cat').parentElement.clientWidth, reduced)}px` : '20px';
+      // After done/error has been shown for a while the body cat goes back to its idle loop; the badge keeps the status.
+      const bodyState = ['done', 'error'].includes(catState) && elapsed > 8000 ? 'idle' : catState;
+      const spec = BOOT.sprites.states[bodyState] || BOOT.sprites.states.idle;
+      const index = CatMotion.frameAt(spec, bodyState === catState ? elapsed : elapsed - 8000);
+      updateImage($('body-cat'), `cat_sprites/${bodyState}/${bodyState}_${String(index).padStart(2, '0')}.png`);
+      $('body-cat').style.right = catState === 'walk' ? `${CatMotion.bodyOffset(elapsed, $('body-cat').parentElement.clientWidth)}px` : '20px';
       const face = BOOT.sprites.face;
       const playing = play.sample(now);
       let width, height;
@@ -61,13 +63,11 @@
         updateImage($('face-cat'), 'cat_play/look/look_02.png');
         width = BOOT.play.frame_width; height = BOOT.play.frame_height;
       } else {
-        const i = CatMotion.frameAt(face.states[catState], reduced ? 0 : elapsed);
+        const i = CatMotion.frameAt(face.states[catState] || face.states.idle, elapsed);
         updateImage($('face-cat'), `cat_sprites/face/${catState}/face_${catState}_${String(i).padStart(2, '0')}.png`);
         width = face.frame_width; height = face.frame_height;
       }
-      $('face-cat').style.aspectRatio = `${width} / ${height}`;
-      $('face-cat').style.width = 'auto';
-      $('face-cat').style.maxWidth = '100%';
+      $('face-cat').dataset.frame = `${width}x${height}`;
     }
     requestAnimationFrame(animate);
   }
@@ -99,7 +99,12 @@
         cell.append(checkbox); tr.append(cell);
         row.cells.forEach((value, i) => {
           const td = document.createElement('td'); td.title = value.full;
-          const span = document.createElement('span'); span.textContent = value.text;
+          const span = document.createElement(i === 0 && row.url ? 'a' : 'span'); span.textContent = value.text;
+          if (i === 0 && row.url) {
+            // Title opens the video in the normal browser; the app window stays as is.
+            span.href = row.url; span.target = '_blank'; span.rel = 'noopener noreferrer'; span.className = 'title-link';
+            if (row.translate) { td.removeAttribute('title'); attachTranslation(span, row); }
+          }
           td.append(span); tr.append(td);
         });
         fragment.append(tr);
@@ -114,6 +119,36 @@
     $('grok-reason').textContent = BOOT.grok_reason;
     $('grok').title = BOOT.grok_reason;
     lockControls();
+  }
+  const translations = new Map();
+  const tip = document.createElement('div'); tip.id = 'title-tip'; tip.hidden = true; tip.setAttribute('role', 'tooltip');
+  document.body.append(tip);
+  function placeTip(target) {
+    const box = target.getBoundingClientRect();
+    tip.style.left = `${Math.max(8, Math.min(box.left, innerWidth - 520))}px`;
+    tip.style.top = `${box.bottom + 6}px`;
+  }
+  function attachTranslation(link, row) {
+    let timer = null;
+    const show = () => {
+      placeTip(link); tip.hidden = false;
+      const known = translations.get(row.id);
+      tip.innerHTML = '';
+      const original = document.createElement('div'); original.className = 'tip-original'; original.textContent = row.cells[0].full;
+      const ja = document.createElement('div'); ja.className = 'tip-ja';
+      tip.append(original, ja);
+      if (known) { ja.textContent = known; return; }
+      if (demo) { ja.textContent = '（日本語訳はアプリで表示されます）'; return; }
+      ja.textContent = '日本語に訳しています…';
+      request('/api/translate', {id: row.id}).then(body => {
+        translations.set(row.id, body.ja);
+        if (!tip.hidden) ja.textContent = body.ja;
+      }).catch(error => { if (!tip.hidden) ja.textContent = error.message; });
+    };
+    link.addEventListener('pointerenter', () => { clearTimeout(timer); timer = setTimeout(show, 350); });
+    link.addEventListener('pointerleave', () => { clearTimeout(timer); tip.hidden = true; });
+    link.addEventListener('focus', show);
+    link.addEventListener('blur', () => { tip.hidden = true; });
   }
   function lockControls() {
     document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #send-question, #rows input').forEach(el => { el.disabled = state.busy || sending; });

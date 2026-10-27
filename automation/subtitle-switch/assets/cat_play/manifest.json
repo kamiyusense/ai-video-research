@@ -24,6 +24,6 @@
     ],
     "hotspot_note": "hotspot for teaser_32; scale x2 for teaser_64"
   },
-  "punch_radius_px": 70,
+  "punch_radius_px": 110,
   "punch_cooldown_sec": 0.6
 }

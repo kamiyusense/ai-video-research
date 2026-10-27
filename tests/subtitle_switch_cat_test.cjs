@@ -13,7 +13,7 @@ assert.equal(bodyOffset(500,220,true),0);
 const manifest = {look:{directions:8}, punch_left:{frames:4,fps:10}, punch_right:{frames:4,fps:10},punch_radius_px:70,punch_cooldown_sec:.6};
 const p = new Play(manifest);
 assert.equal(p.sample(0),null);
-p.pointer(221,0,0);
+p.pointer(381,0,0); // beyond the 380px look range
 assert.equal(p.sample(0),null);
 p.pointer(200,0,1);
 assert.deepEqual(p.sample(1),{group:'look',index:0});

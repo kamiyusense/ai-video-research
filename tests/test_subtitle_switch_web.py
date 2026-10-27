@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 """Loopback HTTP, target separation and browser lifecycle with fake adapters."""
 import base64
 import contextlib
@@ -203,7 +204,7 @@ def test_empty_save_and_duplicate_operation_never_start_services(controller):
     c.operate({'action': 'manual', 'urls': ''})
     assert not c.service_factory.called
     entered, release = threading.Event(), threading.Event()
-    def fake(*args):
+    def fake(*args, **kwargs):
         entered.set()
         assert release.wait(3)
         return '回答'
@@ -378,3 +379,71 @@ def test_lifecycle_holds_lock_refreshes_and_closes_after_worker(tmp_path, launch
     calls.server.shutdown.assert_called_once()
     events = [c[0] for c in calls.mock_calls]
     assert events.index('controller.worker.join') < events.index('server.shutdown') < events.index('thread.join') < events.index('unlock')
+
+
+def test_question_uses_checked_rows_and_shows_own_errors(controller):
+    c = controller
+    c.inventory.refresh([{'video_id': 'eeeeeeeeeee', 'url': 'https://www.youtube.com/watch?v=eeeeeeeeeee', 'title': 'T',
+                          'channel': '', 'published_at': '', 'lang': 'en', 'theme': '', 'kind': '', 'reason': ''}])
+    c.publish()
+    c.operate({'action': 'check', 'id': 'eeeeeeeeeee'})
+    c.question = Mock(side_effect=ValueError('選んだ動画はまだ保存されていない'))
+    c.operate({'action': 'ask', 'question': '要約して'})
+    c.worker.join(5)
+    assert c.question.call_args.kwargs['video_ids'] == ['eeeeeeeeeee']
+    snap = c.snapshot()
+    assert snap['cat'] == 'error' and '保存されていない' in snap['answer'] and '保存されていない' in snap['notice']
+    row = next(r for r in snap['rows'] if r['id'] == 'eeeeeeeeeee')
+    assert row['url'] == 'https://www.youtube.com/watch?v=eeeeeeeeeee' and row['translate'] is True
+
+
+def test_question_success_is_not_marked_failed_by_old_waiting_rows(controller):
+    c = controller
+    c.inventory.refresh([{'video_id': 'fffffffffff', 'url': 'https://www.youtube.com/watch?v=fffffffffff', 'title': 'T',
+                          'channel': '', 'published_at': '', 'lang': 'ja', 'theme': '', 'kind': '', 'reason': ''}])
+    c.inventory.data['videos']['fffffffffff']['status'] = 'waiting'
+    c.question = Mock(return_value='回答')
+    c.operate({'action': 'ask', 'question': '質問'})
+    c.worker.join(5)
+    assert c.snapshot()['cat'] == 'done'
+    assert c.question.call_args.kwargs['video_ids'] is None
+
+
+def test_title_translation_is_cached_and_uses_inbox_value(tmp_path):
+    from translate_title import TitleTranslator, needs_translation
+    assert needs_translation('en-US') and needs_translation('en')
+    assert not needs_translation('ja') and not needs_translation('') and not needs_translation('未設定')
+    calls = []
+    def runner(args, stdin=None, timeout=None):
+        calls.append((args, stdin))
+        return SimpleNamespace(returncode=0, stdout='最高のエージェントIDE\n', stderr='')
+    t = TitleTranslator(tmp_path / 'cache.json', runner=runner)
+    assert t.translate('a', 'The Best Agent IDE') == '最高のエージェントIDE'
+    assert t.translate('a', 'The Best Agent IDE') == '最高のエージェントIDE'
+    assert len(calls) == 1 and '--tools' in calls[0][0] and 'claude-haiku-5-5' in calls[0][0]
+    assert '<title>The Best Agent IDE</title>' in calls[0][1]
+    assert TitleTranslator(tmp_path / 'cache.json', runner=runner).translate('a', 'x') == '最高のエージェントIDE'
+    assert t.translate('b', 'x', title_ja='受け箱の訳') == '受け箱の訳' and len(calls) == 1
+
+
+def test_question_cli_uses_owner_model_effort_and_logs_failures(tmp_path):
+    import subprocess
+    from unittest.mock import patch
+    import ask_research
+    repo = tmp_path / 'repo'; (repo / 'research').mkdir(parents=True)
+    (repo / 'research' / 'n.md').write_text('# note\n', encoding='utf-8')
+    records = [{'record_path': 'research/n.md', 'video_id': 'ggggggggggg'}]
+    seen = []
+    def runner(args, cwd=None, stdin=None, timeout=None):
+        seen.append((args, timeout))
+        raise subprocess.TimeoutExpired(args, timeout)
+    with patch.object(ask_research.knowledge, 'build_video_knowledge_catalog', return_value=({}, records)):
+        with pytest.raises(subprocess.TimeoutExpired):
+            ask_research.ask('質問', repo, tmp_path / 'log', runner=runner, video_ids=['ggggggggggg'])
+        with pytest.raises(ValueError, match='保存されていない'):
+            ask_research.build_prompt('質問', repo, ['hhhhhhhhhhh'])
+    args, timeout = seen[0]
+    assert args[args.index('--model') + 1] == 'claude-opus-5-5' and args[args.index('--effort') + 1] == 'medium'
+    assert timeout == 300
+    log = (tmp_path / 'log' / 'questions.jsonl').read_text(encoding='utf-8')
+    assert 'TimeoutExpired' in log and '質問' not in log

@@ -21,7 +21,7 @@ const CatMotion = (() => {
     pointer(dx, dy, now) {
       if (!this.manifest) return;
       const distance = Math.hypot(dx, dy);
-      if (distance > 220) return;
+      if (distance > 380) return;
       this.lastNear = now;
       this.look = direction(dx, dy);
       const cooldown = (this.manifest.punch_cooldown_sec ?? .6) * 1000;
