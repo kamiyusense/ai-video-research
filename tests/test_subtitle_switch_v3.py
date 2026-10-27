@@ -1,0 +1,116 @@
+"""Offline tests for selection, metadata caching and bounded question payloads."""
+import json
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'automation/subtitle-switch'))
+import ask_research
+import metadata
+import switch_app
+
+
+def test_check_selection_and_rejection():
+    checked = switch_app.toggle_checked(set(), 'a')
+    assert switch_app.save_targets(SimpleNamespace(data={'videos': {'a': {'rejected': False}}}), 'selected', selected=checked) == {'a'}
+    assert not switch_app.toggle_checked(checked, 'a', rejected=True)
+    assert not switch_app.toggle_checked(checked, 'a')
+
+
+def test_notebook_states():
+    assert '未実行' in switch_app.notebook_usage({})
+    assert switch_app.notebook_usage({'status_reason': 'NOTEBOOK_LOGIN_EXPIRED'}) == 'Notebook 未接続'
+    assert '読み取り失敗' in switch_app.notebook_usage({'stage': 'notebook', 'status_reason': 'bad'})
+    assert switch_app.notebook_usage({'notebook_sources_used': 42}) == '42'
+
+
+def test_metadata_cache_and_failures(tmp_path):
+    rows = [{'video_id': 'aaaaaaaaaaa', 'url': 'https://example.invalid', 'theme': ''}]
+    calls, updates = [], []
+    def fake(args):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout=json.dumps({'id': 'aaaaaaaaaaa', 'channel': 'A', 'language': 'ja', 'upload_date': '20261027'}))
+    for _ in range(2):
+        metadata.refresh_metadata(rows, tmp_path / 'cache.json', fake, sleep=lambda _: None, notify=lambda *args: updates.append(args))
+    assert len(calls) == 1
+    assert updates[-1][1] == {'channel': 'A', 'lang': 'ja', 'published_at': '2026-10-27'}
+    metadata.refresh_metadata([{'video_id': 'bbbbbbbbbbb', 'url': 'bad'}], tmp_path / 'cache.json', lambda _: SimpleNamespace(returncode=1), notify=lambda *args: updates.append(args))
+    assert '取得失敗' in updates[-1][1]['channel']
+
+
+def test_question_bounds_and_local_research_only(tmp_path):
+    repo = tmp_path / 'repo'
+    research = repo / 'research'
+    research.mkdir(parents=True)
+    (research / 'note.md').write_text('根拠 https://www.youtube.com/watch?v=aaaaaaaaaaa&t=4s', encoding='utf-8')
+    records = [{'record_path': 'research/note.md'}, {'record_path': 'notes/no.md'}]
+    with patch.object(ask_research.knowledge, 'build_video_knowledge_catalog', return_value=({}, records)), patch.object(ask_research.knowledge, 'analyze_query_intent', return_value={}), patch.object(ask_research.knowledge, 'search_github_knowledge', return_value=([records[0]], [])):
+        sent = []
+        def fake(args, **kwargs):
+            sent.append(kwargs['stdin'])
+            return SimpleNamespace(returncode=0, stdout='回答 https://www.youtube.com/watch?v=aaaaaaaaaaa&t=999s')
+        answer = ask_research.ask('質問', repo, tmp_path / 'log', runner=fake)
+        assert 'research/note.md' in answer and '&t=4s' in answer
+        assert '&t=999s' not in answer
+        assert sent[0] in (tmp_path / 'log/questions.jsonl').read_text(encoding='utf-8') or json.loads((tmp_path / 'log/questions.jsonl').read_text(encoding='utf-8'))['sent'] == sent[0]
+        try:
+            ask_research.ask('質問', repo, repo / 'log', runner=fake)
+            assert False
+        except ValueError:
+            pass
+        assert len(sent) == 1
+        try:
+            ask_research.build_prompt('x' * 2001, repo)
+            assert False
+        except ValueError:
+            pass
+    assert 'UNKNOWN' in ask_research.GROK_REASON
+
+
+def test_title_and_control_dimensions():
+    import ui_design
+    readme = (Path(__file__).resolve().parents[1] / 'automation/subtitle-switch/README.md').read_text(encoding='utf-8')
+    assert switch_app.APP_NAME in readme
+    for factor in (1, 1.25, 1.5):
+        line = round(20 * factor)
+        assert ui_design.minimum_control_height(line, round(32 * factor), round(12 * factor)) >= line + 2 * round(12 * factor)
+
+
+def test_metadata_requests_are_spaced_and_cached(tmp_path):
+    rows = [{'video_id': str(n) * 11, 'url': 'https://example.invalid'} for n in range(3)]
+    events = []
+    def fake(args):
+        index = sum(item == 'request' for item in events)
+        events.append('request')
+        return SimpleNamespace(returncode=0, stdout=json.dumps({'id': rows[index]['video_id']}))
+    metadata.refresh_metadata(rows, tmp_path / 'cache.json', fake, sleep=lambda n: events.append(n))
+    assert events == ['request', 2, 'request', 2, 'request']
+
+
+def test_research_note_count_and_text_limits(tmp_path):
+    repo = tmp_path / 'repo'
+    research = repo / 'research'
+    research.mkdir(parents=True)
+    records = []
+    for index in range(4):
+        path = research / f'{index}.md'
+        path.write_text(str(index) * 10000, encoding='utf-8')
+        records.append({'record_path': f'research/{index}.md'})
+    with patch.object(ask_research.knowledge, 'build_video_knowledge_catalog', return_value=({}, records)), patch.object(ask_research.knowledge, 'analyze_query_intent', return_value={}), patch.object(ask_research.knowledge, 'search_github_knowledge', return_value=(records, [])):
+        prompt, names, _ = ask_research.build_prompt('質問', repo)
+    assert len(names) == 3
+    assert 'research/3.md' not in prompt
+    assert sum(prompt.count(str(index) * 1000) * 1000 for index in range(3)) == 24000
+
+
+def test_failed_metadata_is_not_retried_in_same_session(tmp_path):
+    row = {'video_id': 'bbbbbbbbbbb', 'url': 'https://example.invalid'}
+    calls, failures, values = [], set(), []
+    def fake(args):
+        calls.append(args)
+        return SimpleNamespace(returncode=1)
+    for _ in range(2):
+        metadata.refresh_metadata([row], tmp_path / 'cache.json', fake, failures=failures, notify=lambda *args: values.append(args))
+    assert len(calls) == 1
+    assert '原因を直して' in values[-1][1]['channel']

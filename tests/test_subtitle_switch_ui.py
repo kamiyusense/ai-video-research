@@ -21,6 +21,7 @@ class Widget:
         self.placement, self.tags, self.headings, self.rows = {}, {}, {}, {}
         self.selected = ()
         self.kind = type(self).__name__
+        self.tk = types.SimpleNamespace(call=lambda *args: 1.0)
         self.widgets.append(self)
 
     def pack(self, **kw): self.placement = kw
@@ -36,7 +37,7 @@ class Widget:
     def xview(self, *args): pass
     def yview(self, *args): pass
     def set(self, *args): pass
-    def heading(self, key, **kw): self.headings[key] = kw
+    def heading(self, key, **kw): self.headings.setdefault(key, {}).update(kw)
     def column(self, key, **kw): pass
     def tag_configure(self, key, **kw): self.tags[key] = kw
     def selection(self): return self.selected
@@ -50,7 +51,11 @@ class Widget:
     def get(self, *args): return ''
     def after(self, *args): pass
     def protocol(self, *args): pass
+    def bind(self, *args): pass
     def mainloop(self): pass
+    def update_idletasks(self): pass
+    def winfo_reqwidth(self): return 1200
+    def winfo_reqheight(self): return 720
 
 
 class Variable:
@@ -65,6 +70,7 @@ class Style:
     def configure(self, *args, **kw): pass
     def map(self, *args, **kw): pass
     def layout(self, *args, **kw): pass
+    def element_create(self, *args, **kw): pass
 
 
 class UIContractTests(unittest.TestCase):
@@ -72,7 +78,7 @@ class UIContractTests(unittest.TestCase):
         app = design.icon_pixels('app', badge=True)
         self.assertEqual(app[0][0], '')
         self.assertEqual(app[10][7], design.WHITE)  # left page
-        self.assertEqual(app[14][26], design.WHITE)  # pencil at right
+        self.assertEqual(app[14][27], design.WHITE)  # pencil at right
         play = design.icon_pixels('play')
         self.assertEqual(play[16][15], design.WHITE)
         self.assertEqual(play[16][5], design.RED)
@@ -102,17 +108,20 @@ class UIContractTests(unittest.TestCase):
             with patch.dict(sys.modules, {'tkinter': tk, 'tkinter.ttk': ttk}):
                 switch_app.main(config)
         buttons = [w for w in Widget.widgets if w.kind == 'Button']
-        saves = [w for w in buttons if w.options['text'] in ('手動保存', '選択保存')]
+        saves = [w for w in buttons if w.options.get('text') in ('手動保存', '選択保存')]
         self.assertEqual([w.options['text'] for w in saves], ['手動保存', '選択保存'])
         self.assertIs(saves[0].parent, saves[1].parent)
+        question = [w for w in buttons if w.options.get('text') == '保存した動画内容をAIに質問']
+        self.assertEqual(len(question), 1)
+        self.assertEqual(question[0].options['style'], 'Question.TButton')
         self.assertTrue(all(w.placement['side'] == 'left' for w in saves))
         self.assertTrue(all(w.options['compound'] == 'left' for w in saves))
-        self.assertFalse(any(w.options['text'] == '保存開始' for w in buttons))
+        self.assertFalse(any(w.options.get('text') == '保存開始' for w in buttons))
         table = next(w for w in Widget.widgets if w.kind == 'Treeview')
         self.assertEqual(table.options['selectmode'], 'extended')
         self.assertEqual(table.tags['attention']['background'], design.PINK)
-        self.assertTrue(all('image' in heading for heading in table.headings.values()))
-        self.assertEqual(tuple(table.headings), tuple(col[0] for col in design.COLUMNS))
+        self.assertTrue(all('image' in heading for key, heading in table.headings.items() if key != 'checked'))
+        self.assertEqual(tuple(table.headings), ('checked',) + tuple(col[0] for col in design.COLUMNS))
         self.assertTrue(any(w.options.get('background') == design.PINK for w in Widget.widgets))
         self.assertEqual(next(w for w in Widget.widgets if w.kind == 'Combobox').options['values'], design.REJECT_REASONS)
         # Empty target callbacks must not instantiate adapters or launch threads.

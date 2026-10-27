@@ -272,7 +272,7 @@ class PipelineTests(unittest.TestCase):
         row.update(stage='notebook', status='waiting', status_reason='NOTEBOOK_CAPACITY',
                    notebook_sources_used=299, notebook_capacity_warning=True)
         values = display_row(row)
-        self.assertEqual(values[:6], ('', '', '', '', '', ''))
+        self.assertEqual(values[:6], ('', '取得中', '取得中', '取得中', '未設定', ''))
         self.assertEqual(values[6], 'Notebook保存・確認')
         self.assertIn('ソース上限', values[7])
         self.assertEqual(values[8], '299（上限前警告）')

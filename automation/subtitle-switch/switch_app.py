@@ -9,9 +9,13 @@ from pathlib import Path
 
 from pipeline import InstanceLock, Pipeline
 from switch_state import Inventory, read_inbox, write_preferences, flush_preferences
-from services import Services, browser, intake_url
+from services import Services, browser, intake_url, command
+from metadata import refresh_metadata
+from ask_research import ask, GROK_REASON
 import ui_design as design
 
+
+APP_NAME = 'AI動画字幕図書館司書さん'
 
 STAGE_LABELS = {
     'intake': '重複確認', 'captions': '字幕取得', 'transcript': '字幕OKF',
@@ -44,11 +48,34 @@ def display_row(row):
     if row.get('status_reason') and row['status'] in ('attention', 'waiting'):
         reason = row['status_reason']
         status += '：' + REASON_LABELS.get(reason, reason)
-    used = str(row.get('notebook_sources_used', 'UNKNOWN'))
+    used = notebook_usage(row)
     if row.get('notebook_capacity_warning'):
         used += '（上限前警告）'
-    return tuple(row.get(key, '') for key in ('title', 'channel', 'published_at', 'lang', 'theme', 'reason')) + (
+    return tuple((row.get(key) or ('未設定' if key == 'theme' else '取得中' if key in ('channel', 'published_at', 'lang') else '')) for key in ('title', 'channel', 'published_at', 'lang', 'theme', 'reason')) + (
         STAGE_LABELS.get(row['stage'], row['stage']), status, used)
+
+
+def notebook_usage(row):
+    value = row.get('notebook_sources_used')
+    if value is not None and str(value) != 'UNKNOWN':
+        return str(value)
+    reason = row.get('status_reason', '')
+    if reason == 'NOTEBOOK_LOGIN_EXPIRED':
+        return 'Notebook 未接続'
+    if row.get('stage') == 'notebook' and reason:
+        return '読み取り失敗：' + REASON_LABELS.get(reason, reason)
+    return '未実行（Notebook 工程の前）'
+
+
+def toggle_checked(checked, video_id, rejected=False):
+    checked = set(checked)
+    if rejected:
+        checked.discard(video_id)
+    elif video_id in checked:
+        checked.remove(video_id)
+    else:
+        checked.add(video_id)
+    return checked
 
 
 def folders(config):
@@ -103,6 +130,12 @@ def save_targets(inventory, mode, manual_text='', selected=()):
 def main(config_path):
     import tkinter as tk
     from tkinter import ttk, messagebox
+    if __import__('sys').platform == 'win32':
+        try:
+            import ctypes
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        except (AttributeError, OSError):
+            pass
 
     config = json.loads(Path(config_path).read_text(encoding='utf-8-sig'))
     state_dir = Path(config['vault']) / 'subtitle-switch-state'
@@ -111,9 +144,9 @@ def main(config_path):
         inventory = Inventory(state_dir / 'inventory.json')
         locations = folders(config)
         root = tk.Tk()
-        root.title('字幕保存スイッチ')
+        root.title(APP_NAME)
         root.geometry('1420x800')
-        root.minsize(1050, 640)
+        root.minsize(1200, 720)
         root.configure(background=design.BACKGROUND)
         root.option_add('*Font', ('Yu Gothic UI', 10))
         style = ttk.Style(root)
@@ -121,7 +154,7 @@ def main(config_path):
         style.configure('TFrame', background=design.WHITE)
         style.configure('TLabel', background=design.WHITE)
         style.configure('TCheckbutton', background=design.WHITE)
-        style.configure('Treeview', background=design.WHITE, fieldbackground=design.WHITE, rowheight=36, font=('Yu Gothic UI', 10))
+        style.configure('Treeview', background=design.WHITE, fieldbackground=design.WHITE, rowheight=max(36, int(root.tk.call('tk', 'scaling') * 24)), font=('Yu Gothic UI', 10))
         style.configure('Treeview.Heading', background='#f8f8fa', foreground='#202632', padding=8, font=('Yu Gothic UI', 10))
         style.layout('Treeview.Heading', [('Treeheading.cell', {'sticky': 'nswe', 'children': [
             ('Treeheading.border', {'sticky': 'nswe', 'children': [
@@ -129,29 +162,60 @@ def main(config_path):
                     ('Treeheading.image', {'side': 'left', 'sticky': ''}),
                     ('Treeheading.text', {'side': 'left', 'sticky': 'we'})]})]})]})])
         style.configure('Card.TFrame', background=design.WHITE, relief='solid', borderwidth=1)
-        style.configure('Accent.TButton', background=design.RED, foreground=design.WHITE, padding=(28, 12), font=('Yu Gothic UI', 14, 'bold'))
+        font_scale = float(root.tk.call('tk', 'scaling'))
+        button_padding = max(12, round(12 * font_scale))
+        line_height = max(1, int(root.tk.call('font', 'metrics', 'TkDefaultFont', '-linespace')))
+        control_height = design.minimum_control_height(line_height, 32, button_padding)
+        button_padding = max(button_padding, (control_height - 32 + 1) // 2)
+        style.configure('Accent.TButton', background=design.RED, foreground=design.WHITE, padding=(28, button_padding), font=('Yu Gothic UI', 14, 'bold'))
         style.map('Accent.TButton', background=[('disabled', '#e59aa4'), ('active', '#d4182c')])
         images = {kind: design.photo(tk, root, kind, 22) for kind in
-                  ('document','play','calendar','globe','tag','bulb','gear','wave','notebook','skip','back','refresh','info')}
+                  ('document','play','calendar','globe','tag','bulb','gear','wave','notebook','skip','back','refresh','info','spark','robot')}
+        images['document'] = design.photo(tk, root, 'book', 22)
         images['app'] = design.photo(tk, root, 'app', 32, True)
         images['save'] = design.photo(tk, root, 'book', 32, True)
+        images['accent_background'] = design.rounded_photo(tk, root, design.RED)
+        images['question_background'] = design.rounded_photo(tk, root, '#eeeeef')
         root.iconphoto(True, images['app'])
+        style.element_create('Accent.background', 'image', images['accent_background'], border=10, sticky='nswe')
+        style.layout('Accent.TButton', [('Accent.background', {'sticky': 'nswe', 'children': [
+            ('Button.padding', {'sticky': 'nswe', 'children': [
+                ('Button.label', {'sticky': 'nswe'})]})]})])
+        style.element_create('Question.background', 'image', images['question_background'], border=10, sticky='nswe')
+        style.element_create('Question.spark', 'image', images['spark'])
+        style.element_create('Question.robot', 'image', images['robot'])
+        style.layout('Question.TButton', [('Question.background', {'sticky': 'nswe', 'children': [
+            ('Button.focus', {'sticky': 'nswe', 'children': [
+                ('Button.padding', {'sticky': 'nswe', 'children': [
+                    ('Question.spark', {'side': 'left', 'sticky': ''}),
+                    ('Question.robot', {'side': 'right', 'sticky': ''}),
+                    ('Button.label', {'side': 'left', 'sticky': 'nswe'})]})]})]})])
+        style.configure('Question.TButton', padding=(12, button_padding), font=('Yu Gothic UI', 11, 'bold'))
+        checked = set()
+        metadata_view = {}
+        metadata_failures = set()
         events = queue.Queue()
         busy = False
+        metadata_busy = False
         show_rejected = tk.BooleanVar(value=False)
         show_processed = tk.BooleanVar(value=False)
         explanation = tk.StringVar(value='手動保存は入力URLだけ、選択保存は選択行だけを保存します。')
+        tk.Label(root, text=APP_NAME, background=design.BACKGROUND, foreground=design.RED, font=('Yu Gothic UI', 18, 'bold')).pack(anchor='w', padx=24, pady=(12, 0))
         banner = tk.Frame(root, background=design.PINK, padx=16, pady=14)
         banner.pack(fill='x', padx=18, pady=(14, 10))
         tk.Label(banner, image=images['info'], background=design.PINK).pack(side='left', padx=(0, 12))
         tk.Label(banner, textvariable=explanation, background=design.PINK, anchor='w', wraplength=1250).pack(side='left', fill='x', expand=True)
         card = ttk.Frame(root, style='Card.TFrame', padding=8)
         card.pack(fill='both', expand=True, padx=18, pady=6)
-        columns = tuple(col[0] for col in design.COLUMNS)
+        columns = ('checked',) + tuple(col[0] for col in design.COLUMNS)
         table = ttk.Treeview(card, columns=columns, show='headings', selectmode='extended')
+        table.heading('checked', text='全部選ぶ／全部外す')
+        checked_width = max(175, int(root.tk.call('font', 'measure', 'TkDefaultFont', '全部選ぶ／全部外す')) + 24)
+        table.column('checked', width=checked_width, minwidth=checked_width, stretch=False, anchor='center')
         for key, name, icon, width in design.COLUMNS:
             table.heading(key, text=' ' + name, image=images[icon])
-            table.column(key, width=width, minwidth=65, stretch=key in ('title', 'status'))
+            heading_width = int(root.tk.call('font', 'measure', 'TkDefaultFont', name)) + 48
+            table.column(key, width=max(width, heading_width), minwidth=heading_width, stretch=key in ('title', 'status'))
         table.tag_configure('attention', background=design.PINK)
         table.tag_configure('running', background='#fff3f5')
         scroll_x = ttk.Scrollbar(card, orient='horizontal', command=table.xview)
@@ -175,15 +239,35 @@ def main(config_path):
             table.delete(*table.get_children())
             active = None
             for row in inventory.visible(show_rejected.get(), show_processed.get()):
-                table.insert('', 'end', iid=row['video_id'], values=display_row(row), tags=(design.row_tag(row),))
+                visible_row = {**row, **metadata_view.get(row['video_id'], {})}
+                table.insert('', 'end', iid=row['video_id'], values=(('☑' if row['video_id'] in checked else '☐') if not row['rejected'] else '—',) + display_row(visible_row), tags=(design.row_tag(row),))
                 if row['status'] == 'running':
                     active = row['video_id']
             table.selection_set([vid for vid in selected if table.exists(vid)])
             if active:
                 table.see(active)
 
+        def toggle_row(event):
+            nonlocal checked
+            if table.identify_region(event.x, event.y) == 'cell' and table.identify_column(event.x) == '#1':
+                vid = table.identify_row(event.y)
+                if vid and not busy:
+                    checked = toggle_checked(checked, vid, inventory.data['videos'][vid]['rejected'])
+                    render()
+                    return 'break'
+
+        def toggle_all():
+            nonlocal checked
+            eligible = {row['video_id'] for row in inventory.visible(show_rejected.get(), show_processed.get()) if not row['rejected']}
+            checked = checked - eligible if eligible and eligible <= checked else checked | eligible
+            render()
+
+        table.heading('checked', command=toggle_all)
+        table.bind('<Button-1>', toggle_row)
+
         def refresh():
-            if busy:
+            nonlocal metadata_busy
+            if busy or metadata_busy:
                 return
             rows, errors = read_inbox(locations['inbox'])
             inventory.refresh(rows)
@@ -192,18 +276,31 @@ def main(config_path):
                 text = '受け箱にアクセスできません（UNKNOWN）。設定とDrive同期を確認してください。'
             explanation.set(text or '手動保存は入力URLだけ、選択保存は選択行だけを保存します。')
             render()
+            snapshot = [dict(row) for row in rows]
+            if snapshot:
+                metadata_busy = True
+                def metadata_worker():
+                    try:
+                        refresh_metadata(snapshot, state_dir / 'metadata_cache.json', command, notify=lambda vid, values: events.put(('metadata', vid, values)), failures=metadata_failures)
+                    finally:
+                        events.put(('metadata_done',))
+                threading.Thread(target=metadata_worker, daemon=True).start()
 
         def reject(value):
+            nonlocal checked
             if busy:
                 return
             for vid in table.selection():
                 inventory.reject(vid, value, reject_reason.get())
+                if value:
+                    checked.discard(vid)
             render()
 
         ttk.Button(toolbar, text='弾く', image=images['skip'], compound='left', command=lambda: reject(True)).pack(side='left', padx=4)
         ttk.Button(toolbar, text='戻す', image=images['back'], compound='left', command=lambda: reject(False)).pack(side='left')
         ttk.Checkbutton(toolbar, text='弾いた動画も表示', variable=show_rejected, command=render).pack(side='left', padx=8)
         ttk.Checkbutton(toolbar, text='完了・登録済みも表示', variable=show_processed, command=render).pack(side='left', padx=8)
+        ttk.Button(toolbar, text='全部選ぶ／全部外す', command=toggle_all).pack(side='left', padx=8)
         ttk.Button(toolbar, text='一覧を更新', image=images['refresh'], compound='left', command=refresh).pack(side='left')
         correction = tk.StringVar(value='')
         ttk.Label(controls, text='失敗から再開する場合だけ、直した原因を選択（同じ原因の再試行はしません）').pack(anchor='w', padx=10)
@@ -218,7 +315,7 @@ def main(config_path):
             if busy:
                 return
             try:
-                targets = save_targets(inventory, mode, urls.get('1.0', 'end'), table.selection())
+                targets = save_targets(inventory, mode, urls.get('1.0', 'end'), checked)
             except ValueError:
                 messagebox.showerror('URL要確認', 'YouTube URLを確認してください。')
                 return
@@ -243,7 +340,7 @@ def main(config_path):
             threading.Thread(target=worker, daemon=False).start()
 
         button_bar = ttk.Frame(controls)
-        button_bar.pack(pady=(12, 0))
+        button_bar.pack(fill='x', pady=(12, 0))
         save_buttons = []
         for mode, label in design.SAVE_BUTTONS:
             button = ttk.Button(button_bar, text=label, image=images['save'], compound='left',
@@ -251,11 +348,54 @@ def main(config_path):
             button.pack(side='left', padx=10)
             save_buttons.append(button)
 
+        def open_question():
+            dialog = tk.Toplevel(root)
+            dialog.title('保存した動画内容をAIに質問')
+            dialog.geometry('800x650')
+            ttk.Label(dialog, text='質問と研究ノートをClaudeへ送信し、送信内容と回答を手元に記録します。').pack(anchor='w', padx=12, pady=8)
+            ttk.Label(dialog, text='質問（2000文字まで）').pack(anchor='w', padx=12)
+            question = tk.Text(dialog, height=5, wrap='word')
+            question.pack(fill='x', padx=12)
+            ttk.Label(dialog, text='回答').pack(anchor='w', padx=12, pady=(12, 0))
+            answer = tk.Text(dialog, height=15, wrap='word')
+            answer.pack(fill='both', expand=True, padx=12)
+            bar = ttk.Frame(dialog)
+            bar.pack(fill='x', padx=12, pady=10)
+            ttk.Button(bar, text='Grok（利用不可）', state='disabled').pack(side='left')
+            ttk.Label(bar, text=GROK_REASON).pack(side='left', padx=8)
+
+            def submit():
+                text = question.get('1.0', 'end').strip()
+                send.configure(state='disabled')
+                def worker():
+                    try:
+                        result = ask(text, config['repository'], state_dir / 'question_logs')
+                    except Exception as exc:
+                        result = '質問を送信できません：' + str(exc)
+                    events.put(('answer', answer, send, result))
+                threading.Thread(target=worker, daemon=False).start()
+            send = ttk.Button(bar, text='Claudeへ質問を送信', command=submit)
+            send.pack(side='right')
+
+        ttk.Button(button_bar, text='保存した動画内容をAIに質問', style='Question.TButton', command=open_question).pack(side='left', padx=28)
+
         def poll():
-            nonlocal busy
+            nonlocal busy, metadata_busy
             while not events.empty():
                 event = events.get_nowait()
-                if isinstance(event, tuple):
+                if isinstance(event, tuple) and event[0] == 'metadata_done':
+                    metadata_busy = False
+                elif isinstance(event, tuple) and event[0] == 'answer':
+                    try:
+                        event[1].delete('1.0', 'end')
+                        event[1].insert('1.0', event[3])
+                        event[2].configure(state='normal')
+                    except tk.TclError:
+                        pass
+                elif isinstance(event, tuple) and event[0] == 'metadata':
+                    if event[1] in inventory.data['videos']:
+                        metadata_view[event[1]] = event[2]
+                elif isinstance(event, tuple):
                     busy = False
                     for button in save_buttons:
                         button.configure(state='normal')
@@ -269,6 +409,9 @@ def main(config_path):
                 return
             root.destroy()
 
+        root.update_idletasks()
+        title_width = int(root.tk.call('font', 'measure', 'TkDefaultFont', APP_NAME)) + 140
+        root.minsize(max(1200, title_width, root.winfo_reqwidth()), max(720, root.winfo_reqheight()))
         root.protocol('WM_DELETE_WINDOW', close)
         refresh()
         poll()
