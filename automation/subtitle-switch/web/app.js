@@ -201,6 +201,18 @@
   });
   render(state);
   if (!demo) {
+    // Chrome may reopen the app window at its remembered size, ignoring --window-size; set the owner's
+    // default (about 65% x 72% of the screen) once per launch, so later manual resizes are kept.
+    try {
+      if (sessionStorage.getItem('sized') !== key) {
+        sessionStorage.setItem('sized', key);
+        const w = Math.max(900, Math.round(screen.width * .65)), h = Math.max(620, Math.round(screen.height * .72));
+        if (Math.abs(window.outerWidth - w) > 40 || Math.abs(window.outerHeight - h) > 40) {
+          window.resizeTo(w, h);
+          window.moveTo(Math.max(0, Math.round((screen.availWidth - w) / 2)), Math.max(0, Math.round((screen.availHeight - h) / 2)));
+        }
+      }
+    } catch (_) { /* size is a convenience only */ }
     const heartbeat = () => request('/api/heartbeat', {}).catch(() => { $('notice').textContent = '接続を確認できません（UNKNOWN）。操作を再送せず、状態を確認してください。'; });
     heartbeat(); setInterval(heartbeat, 2500);
     async function poll() {
