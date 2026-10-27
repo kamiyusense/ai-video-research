@@ -9,3 +9,4 @@ dialog{border:1px solid #e4e8ee;border-radius:20px;padding:24px;width:min(740px,
 @media(max-height:700px){.library{gap:8px;padding-top:5px;padding-bottom:10px}.cat-stage{height:72px}#body-cat{top:-21px}.eyebrow{margin-bottom:0}#title{font-size:27px}.notice{padding-block:8px}.controls{padding-top:10px}.input-grid{margin-top:10px}.url-label textarea{height:38px}.action-bar{min-height:71px;margin-top:8px;padding-block:10px}.face-stage{height:62px}#face-cat{height:78px;width:104px}.catalog-heading{padding-block:9px}.aux-controls{max-height:25vh}}
 @media(max-height:440px){.masthead{display:none}.aux-controls{max-height:18vh}.notice{padding-block:5px}.action-bar{min-height:61px}.catalog-heading{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.cat-stage{flex:1 1 auto;width:auto;min-width:160px}@media(max-width:750px){.cat-stage{min-width:80px}}

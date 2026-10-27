@@ -5,13 +5,13 @@
 <main class="library">
   <header class="masthead">
     <div class="identity"><svg class="app-icon" aria-hidden="true"><use href="#icon-app"/></svg>
-      <div><p class="eyebrow">YOUR VIDEO RESEARCH LIBRARY</p>
+      <div>
         <h1><button id="title" title="クリックすると見出しの書体が変わります" aria-label="AI動画字幕図書館司書猫さん。書体を変更"><span class="title-dark">AI動画字幕</span><span class="title-red">図書館司書<span class="neko">猫</span>さん</span></button></h1>
       </div>
     </div>
-    <div class="cat-stage" aria-label="司書猫の状態"><img id="body-cat" alt="" hidden><span class="cat-caption">司書猫さん、お仕事中。</span></div>
+    <div class="cat-stage" aria-label="司書猫の状態"><img id="body-cat" alt="" hidden></div>
   </header>
-  <aside class="notice"><svg class="icon blue" aria-hidden="true"><use href="#icon-info"/></svg><span id="notice" role="status" aria-live="polite">手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。</span><span class="local-badge">LOCAL LIBRARY</span></aside>
+  <aside class="notice"><svg class="icon blue" aria-hidden="true"><use href="#icon-info"/></svg><span id="notice" role="status" aria-live="polite">手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。</span></aside>
   <section class="catalog card" aria-label="動画一覧">
     <div class="catalog-heading"><div><span class="section-label">動画の受け箱</span><span id="row-count" class="count">0本</span></div><span id="selection-count">チェック 0本</span></div>
     <div class="table-scroll"><table><colgroup><col class="check-col"><col class="title-col"><col class="channel-col"><col class="date-col"><col class="lang-col"><col class="theme-col"><col class="reason-col"><col class="stage-col"><col class="status-col"><col class="notebook-col"></colgroup>
@@ -46,7 +46,7 @@
     </div>
   </section>
 </main>
-<dialog id="question-panel"><div class="dialog-head"><div><span class="eyebrow">ASK YOUR LIBRARY</span><h2>保存した動画内容をAIに質問</h2></div><button id="close-question" class="close" aria-label="質問パネルを閉じる">×</button></div>
+<dialog id="question-panel"><div class="dialog-head"><div><span class="eyebrow">研究ノートに聞く</span><h2>保存した動画内容をAIに質問</h2></div><button id="close-question" class="close" aria-label="質問パネルを閉じる">×</button></div>
   <p class="question-info">研究ノートだけをClaudeに送信します。最大3本・合計24,000文字。送信内容と回答を手元に記録します。</p>
   <label for="question">質問 <span class="hint">2,000文字まで</span></label><textarea id="question" rows="4" maxlength="2000" placeholder="保存した研究の中から知りたいことを入力…"></textarea>
   <div class="question-buttons"><button id="send-question" class="secondary orange"><svg class="ai-icon"><use href="#icon-spark"/></svg>Claudeへ質問を送信</button><button disabled class="secondary" id="grok" aria-describedby="grok-reason"><svg class="icon bot"><use href="#icon-robot"/></svg>Grok 利用不可</button></div><p id="grok-reason" class="hint"></p>

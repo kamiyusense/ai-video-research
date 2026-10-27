@@ -56,6 +56,10 @@
         const {group, index: i} = playing;
         updateImage($('face-cat'), `cat_play/${group}/${group}_${String(i).padStart(2, '0')}.png`);
         width = BOOT.play.frame_width; height = BOOT.play.frame_height;
+      } else if (BOOT.play) {
+        // The playable close-up looks straight ahead when idle; the state badge shows the status.
+        updateImage($('face-cat'), 'cat_play/look/look_02.png');
+        width = BOOT.play.frame_width; height = BOOT.play.frame_height;
       } else {
         const i = CatMotion.frameAt(face.states[catState], reduced ? 0 : elapsed);
         updateImage($('face-cat'), `cat_sprites/face/${catState}/face_${catState}_${String(i).padStart(2, '0')}.png`);
