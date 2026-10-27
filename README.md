@@ -5,6 +5,8 @@
 
 AI関連全般を学び、知識と検証結果を蓄積し、最終的に安全なAI自動化へつなげる研究室。
 
+Windows用の **[AI動画字幕図書館司書猫さん](automation/subtitle-switch/README.md)** は、動画の受け箱・保存・研究ノートへの質問を扱うローカルWeb画面です。[画面プレビュー](docs/design/preview-v4.html)はファイルとして開けます。保存処理の実機結果とオフライン試験は区別しています。
+
 YouTube、公式資料、論文、公開実装、更新情報を対象にする。Claude×Julesは応用例の一つ。Loop、Skill、プラグイン、各社の新しいAI、ハーネス、評価と復旧、統合自動化まで扱う。
 
 研究の順序と未調査事項は RESEARCH_ROADMAP.md に記録する。

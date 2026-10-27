@@ -1,5 +1,24 @@
 # 検品ループ記録とユーザー待ちリスト
 
+## GH-31 v4画面・実装の区切り（2026-10-28）
+
+- 対象: Draft PR [#24](https://github.com/kamiyusense/ai-video-research/pull/24)、`symphony/gh-22-design`。PRがDraftであることをAPIで再確認。公開中のHEADは `680a64bf94ac39c28f6a231051e06e6d91dc3496`、今回の変更のcommit/pushはSymphony host hookが担当するためremote readbackはUNKNOWN。
+- 変更: tkinterの現行画面をローカルWebへ置換。安全なHTTP入口、選択・手動対象の分離、6書体と蜜柑の猫文字、統一SVG、下部操作を残す配置、AI質問、状態連動の全身猫・顔と遊び、同じ部品の静止プレビュー、READMEを実装。services/pipeline/switch_state/metadata/ask_researchの差分は0。
+- 実測: `bash .symphony/run_all_tests.sh` は通常・文字コード厳格とも464 passed / 18 subtests passed、`ENCODING-STRICT: PASS`、`RESULT: PASS`。`git diff --check` 合格。全体試験で一度検出したwebbrowser.openのI/O検査誤検出はopen_new使用に変更して解消。新しい終了試験の偽コンテキストによる例外抑制も修正後に再確認。
+- 判定: 作業役によるSTATIC / MOCK試験合格。HTTPはソケット禁止環境のため実ハンドラーをメモリ接続で検証し、AI・YouTube・ブラウザ・終了処理は偽物を使用。実機成功とはしない。
+- UNKNOWN: Windows上の実ブラウザ窓・視覚品質・実HTTP接続・実サービス。ブラウザ実行ツールがないためPNGは未作成、確認用は `docs/design/preview-v4.html`。追加承認待ちはなし、PC側で視覚確認可能。
+
+AI-Agent: codex
+
+## GH-31 v4画面・設計の区切り（2026-10-27）
+
+- 実測: `symphony/gh-22-design`、HEAD `680a64bf94ac39c28f6a231051e06e6d91dc3496`、開始時clean。GitHubのDraft PR #24からdefault `main`・visibility `public`を確認。MERGE_CONFLICT.txtなし。
+- 項目1: 見本画像・HTML・全身idle/walk・顔done・到着済みcat_playを確認し、`docs/design/subtitle-switch-v4.md` に見た目・配置図・部品・安全設計・試験方針を先に記載。cat_playはmanifest上256×192のため固定192角にしない。
+- 開始時指定試験: 通常・厳格とも441 passed / 18 subtests passed、ENCODING-STRICT: PASS、RESULT: PASS。これは既存実装のベースラインで、v4実装の合格ではない。
+- 判定: 設計文書STATIC確認、画面実装は未着手。UNKNOWN: Windows表示・実機サービス・今後のhost hook commit/push/readback。次はWebサーバーと画面の実装。追加承認待ちはなし。
+
+AI-Agent: codex
+
 運用ルールはルート [AGENTS.md](../AGENTS.md) の「2026-10-20 検品ループ運用」。各周の判定はここに追記する（HEAD・テスト数は毎回実測）。
 
 ## 実測ベースライン（2026-10-20）

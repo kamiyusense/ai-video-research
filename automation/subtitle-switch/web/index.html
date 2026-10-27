@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>AI動画字幕図書館司書猫さん</title><!--STYLE--></head>
+<body><!--ICONS-->
+<main class="library">
+  <header class="masthead">
+    <div class="identity"><svg class="app-icon" aria-hidden="true"><use href="#icon-app"/></svg>
+      <div><p class="eyebrow">YOUR VIDEO RESEARCH LIBRARY</p>
+        <h1><button id="title" title="クリックすると見出しの書体が変わります" aria-label="AI動画字幕図書館司書猫さん。書体を変更"><span class="title-dark">AI動画字幕</span><span class="title-red">図書館司書<span class="neko">猫</span>さん</span></button></h1>
+      </div>
+    </div>
+    <div class="cat-stage" aria-label="司書猫の状態"><img id="body-cat" alt="" hidden><span class="cat-caption">司書猫さん、お仕事中。</span></div>
+  </header>
+  <aside class="notice"><svg class="icon blue" aria-hidden="true"><use href="#icon-info"/></svg><span id="notice" role="status" aria-live="polite">手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。</span><span class="local-badge">LOCAL LIBRARY</span></aside>
+  <section class="catalog card" aria-label="動画一覧">
+    <div class="catalog-heading"><div><span class="section-label">動画の受け箱</span><span id="row-count" class="count">0本</span></div><span id="selection-count">チェック 0本</span></div>
+    <div class="table-scroll"><table><colgroup><col class="check-col"><col class="title-col"><col class="channel-col"><col class="date-col"><col class="lang-col"><col class="theme-col"><col class="reason-col"><col class="stage-col"><col class="status-col"><col class="notebook-col"></colgroup>
+      <thead><tr><th><input id="check-all" type="checkbox" title="全部選ぶ／全部外す" aria-label="全部選ぶ／全部外す"></th>
+        <th><svg class="icon blue"><use href="#icon-document"/></svg>タイトル</th>
+        <th><svg class="icon red"><use href="#icon-play"/></svg>チャンネル</th>
+        <th><svg class="icon green"><use href="#icon-calendar"/></svg>公開日</th>
+        <th><svg class="icon blue"><use href="#icon-globe"/></svg>言語</th>
+        <th><svg class="icon purple"><use href="#icon-tag"/></svg>テーマ</th>
+        <th><svg class="icon yellow"><use href="#icon-bulb"/></svg>理由</th>
+        <th><svg class="icon gray"><use href="#icon-gear"/></svg>工程</th>
+        <th><svg class="icon green"><use href="#icon-wave"/></svg>状態</th>
+        <th title="Notebook使用数"><svg class="icon orange"><use href="#icon-notebook"/></svg>Notebook</th>
+      </tr></thead><tbody id="rows"></tbody>
+    </table><p id="empty" hidden>受け箱は空です。URLを貼るか、一覧を更新してください。</p></div>
+  </section>
+  <section class="controls card" aria-label="保存と一覧の操作">
+    <div class="aux-controls">
+      <div class="toolbar"><label class="reason-input"><span class="sr-only">弾く理由</span><input id="reject-reason" list="reasons" value="興味なし" maxlength="200" aria-label="弾く理由"><datalist id="reasons"><option>興味なし</option><option>もう知ってる</option><option>重複</option><option>古い</option><option>浅い</option><option>宣伝っぽい</option><option>英語・言語の壁</option><option>あとで</option></datalist></label>
+        <button class="secondary orange" data-action="reject"><svg class="icon"><use href="#icon-skip"/></svg>弾く</button>
+        <button class="secondary blue" data-action="restore"><svg class="icon"><use href="#icon-back"/></svg>戻す</button>
+        <button class="secondary green" data-action="refresh"><svg class="icon"><use href="#icon-refresh"/></svg>一覧を更新</button>
+        <div class="filters"><label><input type="checkbox" id="show-rejected">弾いた動画も表示</label><label><input type="checkbox" id="show-processed">完了・登録済みも表示</label></div>
+      </div>
+      <div class="input-grid"><label class="correction-label">失敗からの再開<span class="hint">直した原因を選択</span><select id="correction"><option value="">初回／再開しない</option><option>手動ログインを復旧</option><option>設定を修正</option><option>利用枠の回復を確認</option><option>字幕取得条件を修正</option></select></label>
+        <label class="url-label">手動URL<span class="hint">1行に1本・短縮URLや時刻つきも使えます</span><textarea id="urls" rows="2" maxlength="32000" placeholder="https://www.youtube.com/watch?v=…"></textarea></label>
+      </div>
+    </div>
+    <div class="action-bar"><div class="save-actions"><button class="save" data-action="manual"><svg class="icon"><use href="#icon-save"/></svg>手動保存</button><button class="save" data-action="selected"><svg class="icon"><use href="#icon-save"/></svg>選択保存</button></div>
+      <button id="open-question" class="question-entry"><svg class="ai-icon"><use href="#icon-spark"/></svg><span>保存した動画内容をAIに質問</span><svg class="icon bot"><use href="#icon-robot"/></svg></button>
+      <div class="face-stage" id="face-stage"><img id="face-cat" alt="司書猫の顔" hidden><span id="cat-state" class="state-mark" role="status">待機中</span></div>
+    </div>
+  </section>
+</main>
+<dialog id="question-panel"><div class="dialog-head"><div><span class="eyebrow">ASK YOUR LIBRARY</span><h2>保存した動画内容をAIに質問</h2></div><button id="close-question" class="close" aria-label="質問パネルを閉じる">×</button></div>
+  <p class="question-info">研究ノートだけをClaudeに送信します。最大3本・合計24,000文字。送信内容と回答を手元に記録します。</p>
+  <label for="question">質問 <span class="hint">2,000文字まで</span></label><textarea id="question" rows="4" maxlength="2000" placeholder="保存した研究の中から知りたいことを入力…"></textarea>
+  <div class="question-buttons"><button id="send-question" class="secondary orange"><svg class="ai-icon"><use href="#icon-spark"/></svg>Claudeへ質問を送信</button><button disabled class="secondary" id="grok" aria-describedby="grok-reason"><svg class="icon bot"><use href="#icon-robot"/></svg>Grok 利用不可</button></div><p id="grok-reason" class="hint"></p>
+  <label for="answer">回答</label><pre id="answer" aria-live="polite" tabindex="0">ここに回答が表示されます。</pre>
+</dialog>
+<!--SCRIPT--></body></html>

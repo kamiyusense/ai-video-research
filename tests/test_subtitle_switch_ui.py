@@ -1,141 +1,68 @@
-"""Exercise the actual widget construction with a headless Tk substitute."""
-import json
+"""Web page contract and entry point; no GUI, model or browser is launched."""
 import sys
-import tempfile
-import types
-import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 from unittest.mock import patch
+import xml.etree.ElementTree as ET
 
 APP = Path(__file__).resolve().parents[1] / 'automation/subtitle-switch'
 sys.path.insert(0, str(APP))
-import ui_design as design
 import switch_app
+import web_server
+import preview_v4
 
 
-class Widget:
-    widgets = []
-
-    def __init__(self, parent=None, **kw):
-        self.parent, self.options = parent, kw
-        self.placement, self.tags, self.headings, self.rows = {}, {}, {}, {}
-        self.columns = {}
-        self.selected = ()
-        self.kind = type(self).__name__
-        self.tk = types.SimpleNamespace(call=lambda *args: 1.0)
-        self.widgets.append(self)
-
-    def pack(self, **kw): self.placement = kw
-    def grid(self, **kw): self.placement = kw
-    def configure(self, **kw): self.options.update(kw)
-    def geometry(self, *args): pass
-    def minsize(self, *args): pass
-    def title(self, *args): pass
-    def option_add(self, *args): self.font = args
-    def iconphoto(self, *args): self.icon = args[-1]
-    def rowconfigure(self, *args, **kw): pass
-    def columnconfigure(self, *args, **kw): pass
-    def xview(self, *args): pass
-    def yview(self, *args): pass
-    def set(self, *args): pass
-    def heading(self, key, **kw): self.headings.setdefault(key, {}).update(kw)
-    def column(self, key, **kw): self.columns.setdefault(key, {}).update(kw)
-    def tag_configure(self, key, **kw): self.tags[key] = kw
-    def selection(self): return self.selected
-    def selection_set(self, values): self.selected = tuple(values)
-    def get_children(self): return tuple(self.rows)
-    def delete(self, *args):
-        for value in args: self.rows.pop(value, None)
-    def insert(self, parent, position, iid, **kw): self.rows[iid] = kw
-    def exists(self, key): return key in self.rows
-    def see(self, key): self.seen = key
-    def get(self, *args): return ''
-    def after(self, *args): pass
-    def protocol(self, *args): pass
-    def bind(self, *args): pass
-    def mainloop(self): pass
-    def update_idletasks(self): pass
-    def winfo_reqwidth(self): return 1200
-    def winfo_reqheight(self): return 720
-    def winfo_screenwidth(self): return 1920
-    def winfo_screenheight(self): return 1080
+class Elements(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.ids = []
+        self.tags = []
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if 'id' in attrs:
+            self.ids.append(attrs['id'])
+        self.tags.append((tag, attrs))
 
 
-class Variable:
-    def __init__(self, value=None): self.value = value
-    def get(self): return self.value
-    def set(self, value): self.value = value
+def test_web_entry_delegates_without_tk_or_services():
+    with patch.object(web_server, 'run') as run:
+        switch_app.main('fake-config.json')
+    run.assert_called_once_with('fake-config.json')
 
 
-class Style:
-    def __init__(self, *args): pass
-    def theme_use(self, *args): pass
-    def configure(self, *args, **kw): pass
-    def map(self, *args, **kw): pass
-    def layout(self, *args, **kw): pass
-    def element_create(self, *args, **kw): pass
+def test_page_contains_all_controls_and_accessible_checkboxes():
+    page = web_server.render_page(web_server.boot_data(), auth='?key=fixture')
+    parser = Elements()
+    parser.feed(page)
+    assert len(parser.ids) == len(set(parser.ids))
+    for identity in ('title', 'rows', 'check-all', 'urls', 'correction', 'reject-reason',
+                     'question-panel', 'question', 'answer', 'grok', 'body-cat', 'face-cat'):
+        assert identity in parser.ids
+    assert sum(attrs.get('id') == 'check-all' for _, attrs in parser.tags) == 1
+    saves = [a['data-action'] for t, a in parser.tags if t == 'button' and a.get('class') == 'save']
+    assert saves == ['manual', 'selected']
+    assert all(a.get('src', '').startswith('/') for t, a in parser.tags if t in ('script', 'img') and 'src' in a)
+    assert 'AI動画字幕図書館司書猫さん' in page
+    assert 'AI動画字幕図書館司書さん' not in page
+    assert 'fonts/ZenMaruGothic-Black-title.ttf?key=fixture' in page
+    assert any(t == 'button' and a.get('id') == 'grok' and 'disabled' in a for t, a in parser.tags)
 
 
-class UIContractTests(unittest.TestCase):
-    def test_local_artwork_has_white_book_pencil_and_red_channel(self):
-        app = design.icon_pixels('app', badge=True)
-        self.assertEqual(app[0][0], '')
-        self.assertEqual(app[10][7], design.WHITE)  # left page
-        self.assertEqual(app[14][25], design.WHITE)  # pencil at right
-        play = design.icon_pixels('play')
-        self.assertEqual(play[16][15], design.WHITE)
-        self.assertEqual(play[16][5], design.RED)
-        info = design.icon_pixels('info')
-        self.assertEqual(info[8][15], design.WHITE)
-        self.assertEqual(info[12][15], design.RED)
-        self.assertEqual(info[18][15], design.WHITE)
-        self.assertEqual(len(design.REJECT_REASONS), 8)
-        self.assertNotIn('長すぎる', design.REJECT_REASONS)
-        self.assertEqual(design.row_tag({'status': 'attention'}), 'attention')
-        self.assertEqual(design.row_tag({'status': 'running'}), 'running')
+def test_preview_is_exact_application_artwork_without_network_calls():
+    path = APP.parents[1] / 'docs/design/preview-v4.html'
+    page = path.read_text(encoding='utf-8')
+    assert page == preview_v4.preview()
+    assert (APP / 'web/style.css').read_text(encoding='utf-8') in page
+    assert (APP / 'web/icons.svg').read_text(encoding='utf-8') in page
+    assert '"demo": true' in page
+    assert 'https://fonts.' not in page
+    assert 'cdn.' not in page
 
-    def test_actual_layout_two_buttons_status_colors_and_icons(self):
-        Widget.widgets = []
-        tk = types.ModuleType('tkinter')
-        ttk = types.ModuleType('tkinter.ttk')
-        for name in ('Tk', 'Frame', 'Label', 'Text'):
-            setattr(tk, name, type(name, (Widget,), {}))
-        for name in ('Frame', 'Label', 'Treeview', 'Scrollbar', 'Combobox', 'Button', 'Checkbutton'):
-            setattr(ttk, name, type(name, (Widget,), {}))
-        ttk.Style = Style
-        tk.StringVar = tk.BooleanVar = Variable
-        tk.PhotoImage = lambda **kw: types.SimpleNamespace(put=lambda *a, **kw: None)
-        tk.ttk = ttk
-        tk.messagebox = types.SimpleNamespace(showerror=lambda *a: None, showinfo=lambda *a: None)
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            config = root / 'config.json'
-            config.write_text(json.dumps({'vault': str(root / 'vault'), 'drive_root': str(root / 'drive'),
-                **{key: str(root / key) for key in ('inbox', 'preferences', 'channels')}}), encoding='utf-8')
-            with patch.dict(sys.modules, {'tkinter': tk, 'tkinter.ttk': ttk}):
-                switch_app.main(config)
-        buttons = [w for w in Widget.widgets if w.kind == 'Button']
-        saves = [w for w in buttons if w.options.get('text') in ('手動保存', '選択保存')]
-        self.assertEqual([w.options['text'] for w in saves], ['手動保存', '選択保存'])
-        self.assertIs(saves[0].parent, saves[1].parent)
-        question = [w for w in buttons if w.options.get('text') == '保存した動画内容をAIに質問']
-        self.assertEqual(len(question), 1)
-        self.assertEqual(question[0].options['style'], 'Question.TButton')
-        self.assertTrue(all(w.placement['side'] == 'left' for w in saves))
-        self.assertTrue(all(w.options['compound'] == 'left' for w in saves))
-        self.assertFalse(any(w.options.get('text') == '保存開始' for w in buttons))
-        table = next(w for w in Widget.widgets if w.kind == 'Treeview')
-        self.assertEqual(table.options['selectmode'], 'extended')
-        self.assertEqual(table.tags['attention']['background'], design.PINK)
-        self.assertTrue(all('image' in heading for key, heading in table.headings.items() if key != '#0'))
-        self.assertEqual(tuple(table.headings), ('#0',) + tuple(col[0] for col in design.COLUMNS))
-        self.assertEqual(sum(w.options.get('text') == '全部選ぶ／全部外す' for w in buttons), 1)
-        self.assertEqual(table.columns['#0']['width'], 38)
-        self.assertEqual(table.headings['#0']['text'], '')
-        self.assertTrue(any(w.options.get('background') == design.PINK for w in Widget.widgets))
-        self.assertEqual(next(w for w in Widget.widgets if w.kind == 'Combobox').options['values'], design.REJECT_REASONS)
-        # Empty target callbacks must not instantiate adapters or launch threads.
-        with patch('switch_app.Services') as service, patch('switch_app.threading.Thread') as thread:
-            for button in saves: button.options['command']()
-            service.assert_not_called()
-            thread.assert_not_called()
+
+def test_svg_icons_are_local_and_have_all_used_symbols():
+    source = (APP / 'web/icons.svg').read_text(encoding='utf-8')
+    ET.fromstring(source)
+    page = (APP / 'web/index.html').read_text(encoding='utf-8')
+    import re
+    assert set(re.findall('href="#([^"]+)"', page)) <= set(re.findall('id="([^"]+)"', source))
+    assert 'image' not in source
