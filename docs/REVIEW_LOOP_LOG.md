@@ -537,3 +537,13 @@ AI-Agent: codex
 - Official Symphonyへ：Git書込み・Node実行環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達につきIssue完了コメント・対象ラベル削除は未実施。
 
 AI-Agent: codex
+
+## GH-22 最終オフライン受入（2026-10-27）
+
+- 開始HEAD `0dd405d83e8b93beeffbaf4b8875ee33468c5442`、枝 `symphony/gh-22-design`、開始差分なし。許可されたGitHub PR検索でmain宛てDraft PR #24、同HEAD、publicを読み戻した。
+- 指定コマンド `bash .symphony/run_all_tests.sh`：408 passed, 15 subtests passed in 10.96s、RESULT: PASS。Node v22.23.4で以前の全体試験環境阻害は解消。
+- 設計・AI字幕OKF見本・判断事項3件、アプリ本体、モデル不要試験、オーナー向け起動手順を照合。オフライン判定PASS。既存実装を継続し、今回は設計文書の現在地と検証結果を更新。
+- 実モデル・外部保存は実行せず。Windows画面・実サービス・正式SUCCESS_2_SOURCE_OKFはUNKNOWN。新たなユーザー待ちはなし。実機を行う場合は別の許可範囲で扱う。
+- .gitへの書込みは今回の契約で実施せず、文書差分はSymphonyホストフックがcommit/pushする。Merge・main書込みなし。
+
+AI-Agent: codex
