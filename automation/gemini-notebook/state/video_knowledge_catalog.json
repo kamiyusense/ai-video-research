@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 42,
-  "total_video_records": 39,
+  "total_records": 43,
+  "total_video_records": 40,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -8963,6 +8963,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-_P3YqBzHvSs-subtitle-switch.md",
+      "video_id": "_P3YqBzHvSs",
+      "title": "研究ノート：今週のGitHub急上昇リポジトリTOP10（2026年10月）",
+      "canonical_url": "https://www.youtube.com/watch?v=_P3YqBzHvSs",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:_P3YqBzHvSs:research",
+      "transcript_logical_id": "youtube:_P3YqBzHvSs:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "GitHubトレンド",
+        "エージェントハーネス"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "作成日からの平均スター数/日で10個のOSSリポジトリを順位付けし、安全に試せたものは実機で動作確認した動画。今週の傾向はエージェントハーネス、エージェントスキル、有料デスクトップアプリのRust製クリーンルーム複製の3系統。確認結果は成功・失敗・未実行が混在し、配信者自身も「デモは決定的な簡易タスクで、ベンチマークではない」と断っている。数値は2026年10月23日時点で、本ノートでは未照合。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕テキストのみを根拠とし、画面上の表示（数値、コマンド出力、スライド）は見ていない。\n- 公式資料（各リポジトリ、GitHub、npm）は未照合。スター数、日割り、ファイル数、行数、ライセンス、日数はすべて動画の発言のまま。\n- 字幕は取得上「手動」区分だが、transcript_statusはUNVERIFIED。固有名（DeepInfer、Harness squared、制作者名、チーム名）や数値の聞き取り・変換誤りの可能性がある。\n- 各ツールの外部仕様（対応環境、機能の詳細、MCP仕様、対応モデル、GPU要件の正確な型番、ライセンス条項）: UNKNOWN。\n- 動画は説明中に概要欄/コメント誘導など宣伝要素を含む。選定の網羅性や「怪しいもの」の除外基準は不明。\n- 動作確認は1回・1環境の報告に限られ、再現性は未確認。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-29-bfPTHS9r7gs-subtitle-switch.md",
       "video_id": "bfPTHS9r7gs",
       "title": "【研究ノート】Hermes Agentに入れる10個のスキル紹介 [bfPTHS9r7gs]",
@@ -9210,16 +9241,17 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 42,
+    "total_nodes": 43,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 8,
+    "isolated_nodes_count": 9,
     "isolated_video_ids": [
       "8QgBcI40VC8",
+      "_P3YqBzHvSs",
       "bfPTHS9r7gs",
       "G5eNLqFLUIM",
       "GZKbo-wKCUQ",
