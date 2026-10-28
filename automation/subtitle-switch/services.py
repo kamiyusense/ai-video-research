@@ -89,6 +89,17 @@ class Services:
         self.nb_client = notebook or NotebookClient(config['notebook_id'])
         self.dom = dom or self.dom_readback
 
+    def notebook_login_ok(self):
+        """Read-only check, run before a save starts (owner, 2026-10-29)."""
+        return self.nb_client.auth_check_passive()
+
+    def open_notebook_login(self, popen=subprocess.Popen):
+        """Open notebooklm-py's own login window; the owner signs in. Never types or stores credentials."""
+        executable = shutil.which('notebooklm')
+        if executable is None:
+            raise StageFailure('NOTEBOOKLM_COMMAND_NOT_FOUND', no_write=True)
+        popen([executable, 'login'], creationflags=getattr(subprocess, 'CREATE_NEW_CONSOLE', 0))
+
     def folder(self, row):
         folder = self.vault / 'jobs' / row['video_id']
         folder.mkdir(parents=True, exist_ok=True)

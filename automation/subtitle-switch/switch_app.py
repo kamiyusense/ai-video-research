@@ -78,7 +78,7 @@ REASON_HELP = {
     'RESEARCH_TOO_LONG': ('研究ノートが長すぎました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
     'FORBIDDEN_PUBLISH_CONTENT': ('研究ノートに公開できない項目が入っていました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
     'TRANSCRIPT_INTEGRITY_MISMATCH': ('保存済みの字幕ファイルが途中で変わっていました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
-    'NOTEBOOK_LOGIN_EXPIRED': ('NotebookLMのログインが切れています。', 'ブラウザでNotebookLMにログインし直して手動で復旧し、「手動ログインを復旧」で再開'),
+    'NOTEBOOK_LOGIN_EXPIRED': ('NotebookLMのログインが切れています。', '「保存」を押すとログイン画面が開くので、Googleにログインしてからもう一度「保存」'),
     'NOTEBOOK_CAPACITY': ('Notebookのソース数が上限に近いため止めました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
     'SAVE_BRANCH_REQUIRED': ('GitHubの保存用の枝が設定と違いました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
     'WRITE_RESULT_UNKNOWN': ('書き込みの結果が確認できません（二重に書かないよう止めています）。', '再送はしません。Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),

@@ -77,7 +77,7 @@ Grokは無効です。公式CLIは案内されていますが、WindowsでAPIキ
 
 ## 待ちになったら
 
-- `NOTEBOOK_LOGIN_EXPIRED`：オーナーが手動でNotebookへログインし直します。字幕・研究ノートの作り直しは不要です。
+- `NOTEBOOK_LOGIN_EXPIRED`：「保存」を押すと、作業を始める前にログインを確認し、切れていればnotebooklm-pyのログイン画面だけを開きます。オーナーがGoogleにログインしてから、もう一度「保存」を押します。アプリはパスワードを入力・保存しません。字幕・研究ノートの作り直しは不要です。
 - `YOUTUBE_ROBOT_CHECK`：YouTube側の確認をオーナーが解決します。自動再ログインやロボット確認の回避は行いません。
 - `CLAUDE_QUOTA`：Claudeの枠が戻るまで研究ノート待ちです。別モデルへ切り替えません。
 - `NOTEBOOK_CAPACITY`：Notebook工程だけ待ちです。GitHub保存までは済んでいます。保存先Notebookや上限設定を確認してください。

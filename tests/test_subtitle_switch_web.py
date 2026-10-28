@@ -270,7 +270,7 @@ def test_short_status_retains_full_reason_and_notebook(controller):
     row.update(status='waiting', status_reason='NOTEBOOK_LOGIN_EXPIRED', reason='長い説明' * 20)
     result = web.table_row(row)
     assert result['cells'][7]['text'] == '待ち'
-    assert '手動で復旧' in result['cells'][7]['full']
+    assert 'ログイン画面が開く' in result['cells'][7]['full']
     assert len(result['cells'][5]['text']) <= 9
     assert result['cells'][5]['full'] == row['reason']
     assert result['cells'][8]['text'] == '未接続'
@@ -582,3 +582,62 @@ def test_stopped_row_hover_says_cause_next_step_and_error():
     unknown = dict(row, status='attention', status_reason='SOMETHING_NEW', status_detail='')
     assert '失敗の記録をコピー' in web.table_row(unknown)['help']
     assert web.table_row(dict(row, status='pending', status_reason=''))['help'] == ''
+
+
+class LoginService:
+    def __init__(self, ok):
+        self.ok, self.opened = ok, 0
+    def notebook_login_ok(self):
+        return self.ok
+    def open_notebook_login(self):
+        self.opened += 1
+
+
+def login_expired(c, vid):
+    c.inventory.data['videos'][vid].update(failed=True, status='waiting', status_reason='NOTEBOOK_LOGIN_EXPIRED')
+    c.inventory.data['blocked_stages'] = {'notebook': {'reason': 'NOTEBOOK_LOGIN_EXPIRED'}}
+
+
+def test_save_checks_login_first_and_opens_one_login_window(controller):
+    c = controller
+    service = LoginService(False)
+    c.service_factory = lambda _: service
+    login_expired(c, 'aaaaaaaaaaa')
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    c.operate({'action': 'selected'})  # no 再開 choice needed for a login wait
+    c.worker.join(5)
+    assert service.opened == 1 and not c.calls
+    assert 'ログイン' in c.notice and c.cat == 'error'
+    assert c.inventory.data['blocked_stages']['notebook']['reason'] == 'NOTEBOOK_LOGIN_EXPIRED'
+    c.operate({'action': 'selected'})  # pressed again while signing in
+    c.worker.join(5)
+    assert service.opened == 1 and not c.calls
+
+
+def test_save_after_login_lifts_login_wait_and_runs(controller):
+    c = controller
+    c.service_factory = lambda _: LoginService(True)
+    login_expired(c, 'aaaaaaaaaaa')
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    c.operate({'action': 'selected'})
+    c.worker.join(5)
+    assert c.calls == [({'aaaaaaaaaaa'}, '')]
+    assert 'notebook' not in c.inventory.data['blocked_stages']
+    assert not c.inventory.data['videos']['aaaaaaaaaaa']['failed']
+
+
+def test_services_login_check_is_read_only_and_window_uses_cli(tmp_path, monkeypatch):
+    import services
+    class Client:
+        def auth_check_passive(self):
+            return False
+    config = {'repository': str(tmp_path / 'r'), 'vault': str(tmp_path / 'v'), 'notebook_id': 'x'}
+    s = services.Services(config, notebook=Client())
+    assert s.notebook_login_ok() is False
+    monkeypatch.setattr(services.shutil, 'which', lambda name: '/bin/' + name)
+    seen = []
+    s.open_notebook_login(popen=lambda args, **kw: seen.append(args))
+    assert seen == [['/bin/notebooklm', 'login']]
+    monkeypatch.setattr(services.shutil, 'which', lambda name: None)
+    with pytest.raises(services.StageFailure):
+        s.open_notebook_login(popen=lambda *a, **kw: None)

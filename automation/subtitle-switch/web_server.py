@@ -29,9 +29,12 @@ FONTS = ('ZenMaruGothic-Black', 'KiwiMaru-Medium', 'DelaGothicOne-Regular',
 FAILURE_LABELS = {
     'CLAUDE_API_CONFIGURATION_BLOCKED': 'PCにAPIキー等の設定があるためClaudeを呼びませんでした（キーなしの購読ログインだけを使います）',
     'CLAUDE_COMMAND_NOT_FOUND': 'PCでClaude Codeが見つかりません',
+    'NOTEBOOKLM_COMMAND_NOT_FOUND': 'PCでnotebooklm（NotebookLMの道具）が見つかりません',
     'INBOX_UNAVAILABLE': '受け箱フォルダが見つかりません（UNKNOWN）。Googleドライブの同期を確認してください',
 }
 CORRECTIONS = ('', '手動ログインを復旧', '設定を修正', '利用枠の回復を確認', '字幕取得条件を修正', 'アプリの修正を反映', '時間をおいた')
+# The owner signs in within this time; a repeated 保存 meanwhile does not open a second window.
+LOGIN_WINDOW_SECONDS = 180
 
 
 def short_cell(text, limit=12):
@@ -68,6 +71,7 @@ class Controller:
         self.service_factory, self.session = service_factory, session
         self.question, self.metadata = question, metadata
         self.guard = threading.RLock()
+        self.login_opened_at = float('-inf')
         self.checked = set()
         self.show_rejected = self.show_processed = False
         self.busy = False
@@ -196,14 +200,29 @@ class Controller:
                 selected = self.checked & {r['id'] for r in self.rows}
                 targets = app.save_targets(self.inventory, action, text, selected)
                 # Stopped rows only run again with a stated fix; say so instead of finishing silently.
-                stopped = {vid for vid in targets or () if self.inventory.data['videos'].get(vid, {}).get('failed')}
+                # A login wait is not a stopped row: the login check below lifts it without a 再開 choice.
+                stopped = {vid for vid in targets or ()
+                           if self.inventory.data['videos'].get(vid, {}).get('failed')
+                           and self.inventory.data['videos'][vid].get('status_reason') != 'NOTEBOOK_LOGIN_EXPIRED'}
                 if stopped and not correction:
                     if stopped == set(targets):
                         raise ValueError(f'止まった動画（{len(stopped)}本）は、「失敗からの再開」で直した原因を選んでから保存してください')
                     self.notice = f'止まった動画{len(stopped)}本は「失敗からの再開」を選ぶまで飛ばします。'
                 if targets:
                     def save():
-                        self.session(self.inventory, self.service_factory(self.config),
+                        service = self.service_factory(self.config)
+                        # Owner (2026-10-29): check the NotebookLM login before any work, so captions,
+                        # Claude and GitHub do not run only to stop at the last stage.
+                        if getattr(service, 'notebook_login_ok', None) and not service.notebook_login_ok():
+                            # One login window at a time: a second press while signing in opens nothing new.
+                            if time.monotonic() - self.login_opened_at > LOGIN_WINDOW_SECONDS:
+                                service.open_notebook_login()
+                                self.login_opened_at = time.monotonic()
+                            raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインし、'
+                                             '黒い画面の案内どおりEnterを押してから、もう一度保存を押してください。')
+                        if getattr(service, 'notebook_login_ok', None):
+                            self.login_verified(targets)
+                        self.session(self.inventory, service,
                                      self.locations['preferences'], self.publish, correction, targets)
                         self.preferences_dirty = False  # the save session already sent every rejection
                         pending = len(list((self.state_dir / 'preference_outbox').glob('preferences_*.json')))
@@ -228,6 +247,18 @@ class Controller:
             else:
                 raise ValueError('未対応の操作です')
             return self.snapshot()
+
+    def login_verified(self, targets):
+        """A passing login check lifts the login wait: no 再開 choice is needed for that cause."""
+        with self.guard:
+            barriers = self.inventory.data.get('blocked_stages', {})
+            if barriers.get('notebook', {}).get('reason') == 'NOTEBOOK_LOGIN_EXPIRED':
+                del barriers['notebook']
+            for vid in targets:
+                row = self.inventory.data['videos'].get(vid)
+                if row and row.get('status_reason') == 'NOTEBOOK_LOGIN_EXPIRED':
+                    row.update(failed=False, status='pending', status_reason='', status_detail='')
+            self.inventory.save()
 
     def send_rejections(self):
         """Owner (2026-10-28): rejection reasons reach the scout even on days without a save.
