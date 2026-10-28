@@ -577,6 +577,15 @@
         "checked_at": "2026-10-20",
         "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
       }
+    },
+    {
+      "record_id": "youtube:8QgBcI40VC8",
+      "video_id": "8QgBcI40VC8",
+      "canonical_url": "https://www.youtube.com/watch?v=8QgBcI40VC8",
+      "research_path": "research/2026-10-29-8QgBcI40VC8-subtitle-switch.md",
+      "research_date": "2026-10-29",
+      "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
+      "transcript_sha256": "407da37e7f905af6855b802617d1d4055d659e70efc1f4c041ada13b22dff2bc"
     }
   ]
 }
