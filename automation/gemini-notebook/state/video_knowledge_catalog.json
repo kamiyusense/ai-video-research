@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 43,
-  "total_video_records": 40,
+  "total_records": 44,
+  "total_video_records": 41,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9180,6 +9180,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-Sl1EQw5wwKc-subtitle-switch.md",
+      "video_id": "Sl1EQw5wwKc",
+      "title": "研究ノート：非エンジニア向けGitHub入門とAI任せの運用（Sl1EQw5wwKc）",
+      "canonical_url": "https://www.youtube.com/watch?v=Sl1EQw5wwKc",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:Sl1EQw5wwKc:research",
+      "transcript_logical_id": "youtube:Sl1EQw5wwKc:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "GitHub入門とAIエージェント運用",
+        "マスターコンテキスト管理"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "AIがファイルを大量に書き換える時代には、人間が変更を追えなくなり、元に戻せる保存履歴が必要になる。動画はGitHubを「セーブ履歴を残す場所」と位置づけ、用語を最小限に絞って説明する。要点は、作業の区切りでコミット（手元に保存）とプッシュ（サーバーへ送信）を行うこと、設定や連携はAIエージェントに任せること、機密情報は載せないこと。更新され続ける重要文書（マスターコンテキスト）の履歴管理が主な用途として示される。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、画面操作や表示内容は字幕の発話からの推測に限る。\n- 公式資料（GitHub、Git、各AIツールの仕様）は未照合。外部仕様の詳細はUNKNOWN。\n- 字幕は自動生成で誤変換の可能性が高い（例：「ギットハブ」の表記ゆれ、製品名、数値）。ツール名の一部は確定できない。\n- 発話内の「Copilotが非公開コードを学習している噂」「GitHub経由の漏洩が多い」などは、話者の見解や伝聞であり、真偽はUNKNOWN。\n- Windowsでの追加ソフト、Claude Codeでの連携可否、料金が無料である点は話者の発言のみで、最新状況はUNKNOWN。\n- 終盤の質疑（別製品や雑談）は本題と関係が薄く、本ノートでは詳細を扱わない。\n- 秒数リンクは字幕開始秒を切り捨てた整数で、実際の映像位置との差は未確認。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-29-wETSpF4ef6E-subtitle-switch.md",
       "video_id": "wETSpF4ef6E",
       "title": "【研究ノート】How to Use Hermes AI Agent [wETSpF4ef6E]",
@@ -9241,14 +9272,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 43,
+    "total_nodes": 44,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 9,
+    "isolated_nodes_count": 10,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9258,6 +9289,7 @@
       "nQ_4QKgoPOg",
       "RknGPBeA6AQ",
       "S2eESu4hSKk",
+      "Sl1EQw5wwKc",
       "wETSpF4ef6E"
     ],
     "bidirectional_links_count": 54,
