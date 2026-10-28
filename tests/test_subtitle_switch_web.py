@@ -544,6 +544,7 @@ def test_rejections_are_sent_once_when_the_app_closes(controller):
     c.send_rejections()
     assert not (c.state_dir / 'preference_outbox').exists()  # nothing rejected: no document
     c.locations['preferences'].mkdir()
+    c.metadata_values['aaaaaaaaaaa'] = {'channel': '調べたチャンネル'}
     c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
     c.operate({'action': 'reject', 'reason': '宣伝っぽい'})
     c.send_rejections()
@@ -554,3 +555,4 @@ def test_rejections_are_sent_once_when_the_app_closes(controller):
     assert document['saved'] == []
     assert document['rejected'][0]['video_id'] == 'aaaaaaaaaaa'
     assert document['rejected'][0]['reason'] == '宣伝っぽい' and document['rejected'][0]['title'] == '最初の動画'
+    assert document['rejected'][0]['channel'] == '調べたチャンネル'

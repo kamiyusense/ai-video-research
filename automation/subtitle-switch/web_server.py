@@ -223,6 +223,9 @@ class Controller:
             if not self.preferences_dirty:
                 return
             document = self.inventory.preferences(date.today(), saved_ids=set())
+            for entry in document['rejected']:
+                # Channels looked up this session live only in memory; the scout needs them.
+                entry['channel'] = entry['channel'] or self.metadata_values.get(entry['video_id'], {}).get('channel', '')
             self.preferences_dirty = False
         outbox = self.state_dir / 'preference_outbox'
         try:
