@@ -271,7 +271,7 @@ class AdapterTests(unittest.TestCase):
         path = self.services.folder(self.row) / 'research.md'
         path.write_text(path.read_text(encoding='utf-8').replace('&t=0s', '&t=35s'), encoding='utf-8')
         self.services.review(self.row)
-        path.write_text(path.read_text(encoding='utf-8').replace('&t=35s', '&t=37s'), encoding='utf-8')
+        path.write_text(path.read_text(encoding='utf-8').replace('&t=35s', '&t=38s'), encoding='utf-8')
         with self.assertRaisesRegex(StageFailure, 'RESEARCH_EVIDENCE_TIME_UNVERIFIED'):
             self.services.review(self.row)
 

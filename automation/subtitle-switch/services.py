@@ -233,9 +233,9 @@ class Services:
         if not times:
             raise StageFailure('RESEARCH_EVIDENCE_MISSING')
         # Links carry whole seconds while caption starts are fractional (e.g. 35 for 35.668),
-        # so a time counts when a caption starts within one second of it.
+        # so a time counts when a caption starts within two seconds of it (notes round either way).
         starts = [Decimal(start) for start, _ in verified_cues]
-        unmatched = [time for time in times if not any(abs(Decimal(time) - start) < 1 for start in starts)]
+        unmatched = [time for time in times if not any(abs(Decimal(time) - start) < 2 for start in starts)]
         if unmatched:
             raise StageFailure('RESEARCH_EVIDENCE_TIME_UNVERIFIED',
                                detail='字幕と合わない時刻：' + '、'.join(f'{t}秒' for t in unmatched[:8]))
