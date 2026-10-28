@@ -134,7 +134,7 @@ class Services:
         cp = self.run([*common, '--dump-single-json', row['url']], cwd=folder)
         if cp.returncode:
             youtube_refusal(cp.stderr)
-            raise StageFailure('CAPTION_FETCH_FAILED')
+            raise StageFailure('CAPTION_FETCH_FAILED', detail=cp.stderr)
         meta = json.loads(cp.stdout)
         if meta.get('id', row['video_id']) != row['video_id']:
             raise StageFailure('CAPTION_VIDEO_MISMATCH')
@@ -150,7 +150,7 @@ class Services:
                        '-o', 'captions.%(ext)s', row['url']], cwd=folder)
         if cp.returncode:
             youtube_refusal(cp.stderr)
-            raise StageFailure('CAPTION_FETCH_FAILED')
+            raise StageFailure('CAPTION_FETCH_FAILED', detail=cp.stderr)
         path = folder / f'captions.{language}.json3'
         if not path.is_file():
             raise StageFailure('CAPTION_FILE_UNKNOWN')
@@ -195,7 +195,7 @@ class Services:
             details.append(cp.stderr)
             quota = bool(re.search(r'quota|rate[_ -]?limit|usage[_ -]?limit|limit[_ -]?reached|'
                                    r'out of (?:credits|usage)|utilization limit', ' '.join(details), re.I))
-            raise StageFailure('CLAUDE_QUOTA' if quota else 'RESEARCH_FAILED', waiting=quota)
+            raise StageFailure('CLAUDE_QUOTA' if quota else 'RESEARCH_FAILED', waiting=quota, detail=cp.stderr)
         if not (folder / 'research.md').is_file():
             raise StageFailure('RESEARCH_FILE_MISSING')
         return {'created': True}
@@ -235,8 +235,10 @@ class Services:
         # Links carry whole seconds while caption starts are fractional (e.g. 35 for 35.668),
         # so a time counts when a caption starts within one second of it.
         starts = [Decimal(start) for start, _ in verified_cues]
-        if any(not any(abs(Decimal(time) - start) < 1 for start in starts) for time in times):
-            raise StageFailure('RESEARCH_EVIDENCE_TIME_UNVERIFIED')
+        unmatched = [time for time in times if not any(abs(Decimal(time) - start) < 1 for start in starts)]
+        if unmatched:
+            raise StageFailure('RESEARCH_EVIDENCE_TIME_UNVERIFIED',
+                               detail='字幕と合わない時刻：' + '、'.join(f'{t}秒' for t in unmatched[:8]))
         transcript = (folder / 'transcript.md').read_text(encoding='utf-8')
         body = transcript.split('---\n', 2)[-1]
         # Reject wholesale caption copying and multiple timestamped caption lines.

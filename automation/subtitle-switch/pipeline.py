@@ -6,6 +6,7 @@ This module has no network, model, subprocess or service imports.
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 STAGES = ('intake', 'captions', 'transcript', 'research', 'review', 'catalog', 'github', 'notebook')
@@ -13,11 +14,20 @@ WRITES = {'github', 'notebook'}
 TERMINAL = {'complete', 'ALREADY_REGISTERED', 'TRANSCRIPT_UNAVAILABLE'}
 
 
+def error_tail(text, limit=240):
+    """Last error line of a tool, without URL query strings, for the owner's hover text."""
+    lines = [line.strip() for line in str(text or '').splitlines() if line.strip()]
+    errors = [line for line in lines if 'error' in line.lower()] or lines
+    tail = re.sub(r'(https?://[^\s?]+)\?\S*', r'\1?…', errors[-1]) if errors else ''
+    return tail[-limit:]
+
+
 class StageFailure(Exception):
-    def __init__(self, reason, waiting=False, global_stage=False, no_write=False):
+    def __init__(self, reason, waiting=False, global_stage=False, no_write=False, detail=''):
         super().__init__(reason)
         self.reason, self.waiting, self.global_stage = reason, waiting, global_stage
         self.no_write = no_write
+        self.detail = detail
 
 
 class InstanceLock:
@@ -122,12 +132,13 @@ class Pipeline:
                     row.setdefault('receipts', {})[stage] = result
                     row['completed_stages'].append(stage)
                     row.pop('inflight', None)
-                    row.update(status='pending', status_reason='', failed=False)
+                    row.update(status='pending', status_reason='', failed=False, status_detail='')
                     self.record()
                 except StageFailure as exc:
                     if exc.no_write and not reconciling:
                         row.pop('inflight', None)
-                    row.update(status='waiting' if exc.waiting else 'attention', status_reason=exc.reason, failed=True)
+                    row.update(status='waiting' if exc.waiting else 'attention', status_reason=exc.reason, failed=True,
+                               status_detail=error_tail(exc.detail))
                     if exc.global_stage:
                         blocked[stage] = exc.reason
                         barriers[stage] = {'reason': exc.reason, 'correction': correction}

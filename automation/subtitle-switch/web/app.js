@@ -106,7 +106,7 @@
             if (row.translate) { td.removeAttribute('title'); attachTranslation(span, row); }
           }
           // Gemini's recommendation can be a few hundred characters: a wrapped card reads better than a native tooltip.
-          if (i === 5 && value.full.length > value.text.length) { td.removeAttribute('title'); attachNote(td, value.full); }
+          if ((i === 5 && value.full.length > value.text.length) || (i === 7 && row.help)) { td.removeAttribute('title'); attachNote(td, value.full); }
           td.append(span); tr.append(td);
         });
         fragment.append(tr);
@@ -205,6 +205,14 @@
   for (const id of ['show-rejected', 'show-processed']) $(id).addEventListener('change', () => operate({action: 'filters', rejected: $('show-rejected').checked, processed: $('show-processed').checked}));
   $('open-question').addEventListener('click', () => { $('question-panel').showModal(); $('question').focus(); });
   $('close-question').addEventListener('click', () => $('question-panel').close());
+  // A plain summary of stopped rows (ids, titles, stages, causes; no captions or keys) to paste to Claude.
+  $('copy-failures').addEventListener('click', async () => {
+    const stopped = state.rows.filter(row => row.help);
+    if (!stopped.length) { $('notice').textContent = '止まっている動画はありません。'; return; }
+    const text = stopped.map(row => `■ ${row.cells[0].full}\n${row.url}\n${row.help}`).join('\n\n');
+    try { await navigator.clipboard.writeText(text); $('notice').textContent = `止まっている${stopped.length}本の記録をコピーしました。Claudeに貼ってください。`; }
+    catch (_) { $('notice').textContent = 'コピーできませんでした（UNKNOWN）。状態の欄にマウスを乗せて内容を確認してください。'; }
+  });
   $('send-question').addEventListener('click', () => {
     const question = $('question').value.trim();
     if (!question || question.length > 2000) { $('answer').textContent = '質問は1〜2000文字で入力してください。'; return; }

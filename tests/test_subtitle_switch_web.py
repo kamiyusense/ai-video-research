@@ -568,3 +568,17 @@ def test_stopped_rows_need_a_stated_fix_before_saving(controller):
     c.operate({'action': 'selected', 'correction': 'アプリの修正を反映'})
     c.worker.join(5)
     assert c.calls == [({'aaaaaaaaaaa'}, 'アプリの修正を反映')]
+
+
+def test_stopped_row_hover_says_cause_next_step_and_error():
+    import pipeline
+    row = {'video_id': 'ddddddddddd', 'title': 'T', 'rejected': False, 'status': 'waiting', 'stage': 'captions',
+           'status_reason': 'YOUTUBE_RATE_LIMIT', 'rejection_reason': '', 'completed_stages': ['intake'],
+           'status_detail': pipeline.error_tail('WARNING: x\nERROR: Unable to download https://www.youtube.com/api/timedtext?v=a&key=SECRET: HTTP Error 429: Too Many Requests')}
+    result = web.table_row(row)
+    full = result['cells'][7]['full']
+    assert '断られました' in full and '時間をおいた' in full and 'HTTP Error 429' in full and 'YOUTUBE_RATE_LIMIT' in full
+    assert 'SECRET' not in full and result['help'] == full
+    unknown = dict(row, status='attention', status_reason='SOMETHING_NEW', status_detail='')
+    assert '失敗の記録をコピー' in web.table_row(unknown)['help']
+    assert web.table_row(dict(row, status='pending', status_reason=''))['help'] == ''

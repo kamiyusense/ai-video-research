@@ -58,6 +58,46 @@ REASON_LABELS = {
     'CAPTION_FETCH_FAILED': '字幕を取得できませんでした',
 }
 
+# Owner (2026-10-29): the reason and the next step must be readable in the app, not only in the state file.
+REASON_HELP = {
+    'CAPTION_FETCH_FAILED': ('YouTubeから字幕を取れませんでした。', '少し時間をおいて「時間をおいた」で再開。続くならClaudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'CAPTION_FILE_UNKNOWN': ('字幕ファイルが見つかりませんでした。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'CAPTION_LANGUAGE_INVALID': ('字幕の言語名が想定外でした。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'CAPTION_VIDEO_MISMATCH': ('取得した情報が別の動画のものでした。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'YOUTUBE_ROBOT_CHECK': ('YouTubeにロボット確認を求められました（全動画の字幕取得を一時停止中）。', 'ブラウザでYouTubeを開いて確認を済ませ、「手動ログインを復旧」で再開'),
+    'YOUTUBE_RATE_LIMIT': ('YouTubeに短時間で聞きすぎて断られました（全動画の字幕取得を一時停止中）。', '30分〜数時間おいて「時間をおいた」で再開'),
+    'CLAUDE_QUOTA': ('Claudeの利用枠が上限に達しました。', '枠が戻ってから「利用枠の回復を確認」で再開'),
+    'CLAUDE_API_CONFIGURATION_BLOCKED': ('APIキーの設定が見つかったため安全のため止めました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'RESEARCH_FAILED': ('Claudeが研究ノートを作れませんでした。', '少し時間をおいて「時間をおいた」で再開。続くならClaudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'RESEARCH_FILE_MISSING': ('Claudeが研究ノートのファイルを作りませんでした。', '「時間をおいた」で再開。続くならClaudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'RESEARCH_OKF_INVALID': ('研究ノートの荷札（動画IDやURLなど）が検品に合いませんでした。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'RESEARCH_EVIDENCE_MISSING': ('研究ノートに動画の場面リンクがありませんでした。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'RESEARCH_EVIDENCE_TIME_UNVERIFIED': ('研究ノートの場面リンクの時刻が、字幕のどの場面とも合いませんでした。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'TRANSCRIPT_IN_RESEARCH': ('研究ノートに字幕がそのまま写されていました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'LONG_CAPTION_COPY_IN_RESEARCH': ('研究ノートに字幕の長い引用がありました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'RESEARCH_TOO_LONG': ('研究ノートが長すぎました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'FORBIDDEN_PUBLISH_CONTENT': ('研究ノートに公開できない項目が入っていました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'TRANSCRIPT_INTEGRITY_MISMATCH': ('保存済みの字幕ファイルが途中で変わっていました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'NOTEBOOK_LOGIN_EXPIRED': ('NotebookLMのログインが切れています。', 'ブラウザでNotebookLMにログインし直して手動で復旧し、「手動ログインを復旧」で再開'),
+    'NOTEBOOK_CAPACITY': ('Notebookのソース数が上限に近いため止めました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'SAVE_BRANCH_REQUIRED': ('GitHubの保存用の枝が設定と違いました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'WRITE_RESULT_UNKNOWN': ('書き込みの結果が確認できません（二重に書かないよう止めています）。', '再送はしません。Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'DOM_READBACK_UNKNOWN': ('Notebookに2資料が別々に入ったか確認できませんでした。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+    'RETRY_LIMIT': ('原因を変えての再開が上限（2回）に達しました。', 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'),
+}
+
+
+def reason_help(row):
+    """Plain-Japanese cause, next step and the raw error tail for a stopped row ('' when not stopped)."""
+    reason = row.get('status_reason') or ''
+    if not reason or row.get('status') not in ('attention', 'waiting'):
+        return ''
+    what, step = REASON_HELP.get(reason, ('原因コード：' + reason, 'Claudeに「失敗の記録をコピー」を貼って相談→直ったら「アプリの修正を反映」で再開'))
+    text = f'止まった工程：{STAGE_LABELS.get(row.get("stage"), row.get("stage"))}\n原因：{what}\n次にやること：{step}'
+    if row.get('status_detail'):
+        text += '\nエラーの記録：' + row['status_detail']
+    return text + f'\n（原因コード：{reason}）'
+
 
 def display_row(row):
     """One table row, usable in headless acceptance tests without starting Tk."""
