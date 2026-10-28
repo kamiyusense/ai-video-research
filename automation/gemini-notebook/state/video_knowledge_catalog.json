@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 41,
-  "total_video_records": 38,
+  "total_records": 42,
+  "total_video_records": 39,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9055,6 +9055,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-nQ_4QKgoPOg-subtitle-switch.md",
+      "video_id": "nQ_4QKgoPOg",
+      "title": "研究ノート：Hermes Agent×Cua Spacesで作る使い捨ての安全環境と注意点",
+      "canonical_url": "https://www.youtube.com/watch?v=nQ_4QKgoPOg",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:nQ_4QKgoPOg:research",
+      "transcript_logical_id": "youtube:nQ_4QKgoPOg:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes Agent",
+        "Cua Spaces",
+        "サンドボックス"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "AIエージェントに自分のPCを直接触らせる不安を減らすため、Hermes Agentの実行先を使い捨ての隔離環境（Space）へ切り替えるプラグインが紹介されている。環境分離、画面での監視、複数同時実行、自動削除が利点。一方、新規Spaceでは危険コマンドの確認が省かれ、認証情報やネットワーク経由のリスクも残る。まず重要データのない環境で試す姿勢が勧められている。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみを根拠にしており、画面上の操作や表示は把握していない。\n- 公式資料は未照合。バージョン0.4.0、検証済み区分、対応OS、確認省略の挙動はすべて動画内の発言の範囲にとどまる。\n- 字幕は自動生成で、誤変換の可能性がある（例：Cuaの読みやSpacesの表記、ホストの語が揺れている）。固有名詞や数値は要確認。\n- 外部仕様（設定名、コマンド、ファイル形式、料金、対応OSの詳細、データ送信の仕様）はUNKNOWN。\n- 投稿者の予想と体験談は一般化できない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-29-RknGPBeA6AQ-subtitle-switch.md",
       "video_id": "RknGPBeA6AQ",
       "title": "研究ノート：Paperclipで小規模AIエージェントチームを運用する",
@@ -9178,19 +9210,20 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 41,
+    "total_nodes": 42,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 7,
+    "isolated_nodes_count": 8,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "bfPTHS9r7gs",
       "G5eNLqFLUIM",
       "GZKbo-wKCUQ",
+      "nQ_4QKgoPOg",
       "RknGPBeA6AQ",
       "S2eESu4hSKk",
       "wETSpF4ef6E"
