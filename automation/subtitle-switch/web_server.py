@@ -9,6 +9,7 @@ import secrets
 import subprocess
 import threading
 import time
+from datetime import date
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -19,7 +20,7 @@ from ask_research import MAX_QUESTION, ask
 from metadata import refresh_metadata
 from pipeline import InstanceLock, StageFailure
 from services import Services, command
-from switch_state import Inventory, read_inbox
+from switch_state import Inventory, flush_preferences, read_inbox, write_preferences
 from translate_title import TitleTranslator, needs_translation
 
 ROOT = Path(__file__).resolve().parent
@@ -66,6 +67,8 @@ class Controller:
         self.notice = '手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。'
         self.answer = ''
         self.metadata_values, self.metadata_failures = {}, set()
+        self.metadata_lock, self.metadata_thread = threading.Lock(), None
+        self.preferences_dirty = False
         self.rows = []
         self.worker = None
         self.translator = TitleTranslator(self.state_dir / 'title_ja_cache.json')
@@ -149,6 +152,7 @@ class Controller:
                 targets = self.checked & {r['id'] for r in self.rows}
                 for vid in targets:
                     self.inventory.reject(vid, action == 'reject', reason)
+                self.preferences_dirty = self.preferences_dirty or bool(targets)
                 self.checked -= targets
                 self.publish()
             elif action == 'refresh':
@@ -164,8 +168,17 @@ class Controller:
                         with self.guard:
                             self.metadata_values[vid] = values
                             self.publish()
-                    self.metadata(rows, self.state_dir / 'metadata_cache.json', command,
-                                  notify=received, failures=self.metadata_failures)
+                    # Channel/date lookups can take minutes; run them beside the worker so
+                    # 弾く, filters and saves stay usable meanwhile (one lookup run at a time).
+                    def lookup():
+                        with self.metadata_lock:
+                            try:
+                                self.metadata(rows, self.state_dir / 'metadata_cache.json', command,
+                                              notify=received, failures=self.metadata_failures)
+                            except Exception:
+                                pass  # metadata is display-only; rows keep their inbox values
+                    self.metadata_thread = threading.Thread(target=lookup, daemon=True)
+                    self.metadata_thread.start()
                 self._start('一覧更新', refresh)
             elif action in ('manual', 'selected'):
                 text, correction = data.get('urls', ''), data.get('correction', '')
@@ -178,6 +191,7 @@ class Controller:
                     def save():
                         self.session(self.inventory, self.service_factory(self.config),
                                      self.locations['preferences'], self.publish, correction, targets)
+                        self.preferences_dirty = False  # the save session already sent every rejection
                         pending = len(list((self.state_dir / 'preference_outbox').glob('preferences_*.json')))
                         self.notice = f'処理終了。好みメモ送信待ち：{pending}件。待ち／要確認は一覧を確認してください。'
                     self.publish()
@@ -199,6 +213,23 @@ class Controller:
             else:
                 raise ValueError('未対応の操作です')
             return self.snapshot()
+
+    def send_rejections(self):
+        """Owner (2026-10-28): rejection reasons reach the scout even on days without a save.
+
+        One preference document per app session, written when the app closes; same outbox
+        and exclusive file names as a save session, and delivery problems never stop shutdown."""
+        with self.guard:
+            if not self.preferences_dirty:
+                return
+            document = self.inventory.preferences(date.today(), saved_ids=set())
+            self.preferences_dirty = False
+        outbox = self.state_dir / 'preference_outbox'
+        try:
+            write_preferences(outbox, document)
+            flush_preferences(outbox, self.locations['preferences'])
+        except Exception:
+            pass  # stays queued in the outbox; the next save or close delivers it
 
     def translate(self, data):
         vid = data.get('id') if isinstance(data, dict) else None
@@ -449,5 +480,6 @@ def run(config_path):
             finally:
                 if controller.worker:
                     controller.worker.join()
+                controller.send_rejections()
                 server.shutdown()
                 thread.join()

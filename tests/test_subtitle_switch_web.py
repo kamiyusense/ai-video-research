@@ -252,6 +252,7 @@ def test_refresh_metadata_and_persistent_inventory(controller):
     c.metadata = fake
     c.operate({'action': 'refresh'})
     c.worker.join(5)
+    c.metadata_thread.join(5)
     assert any(row['cells'][1]['full'] == '偽チャンネル' for row in c.snapshot()['rows'])
     assert 'ccccccccccc' in Inventory(c.inventory.path).data['videos']
 
@@ -509,3 +510,47 @@ def test_web_check_passes_only_search_tools_and_rule(tmp_path, controller):
     assert on_timeout == 480 and '質問と関係のない検索はしない' in on_prompt
     assert off[off.index('--tools') + 1] == '' and '--allowedTools' not in off and off_timeout == 300
     assert 'だけを根拠' in off_prompt and 'WebSearch' not in off_prompt
+
+
+def test_reject_survives_refresh_filters_and_restart(controller):
+    c = controller
+    inbox = c.locations['inbox']
+    inbox.mkdir()
+    (inbox / 'day.json').write_text(json.dumps({'videos': [{'url': 'https://youtu.be/aaaaaaaaaaa', 'title': '最初の動画'},
+                                                           {'url': 'https://youtu.be/bbbbbbbbbbb', 'title': '次の動画'}]}), encoding='utf-8')
+    slow = threading.Event()
+    c.metadata = lambda *a, **kw: slow.wait(5)  # a slow channel lookup must not block 弾く
+    c.operate({'action': 'refresh'})
+    c.worker.join(5)
+    assert not c.snapshot()['busy']
+    ids = lambda: [r['id'] for r in c.snapshot()['rows']]
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    c.operate({'action': 'reject', 'reason': '興味なし'})
+    assert ids() == ['bbbbbbbbbbb']
+    slow.set()
+    c.operate({'action': 'refresh'})
+    c.worker.join(5)
+    assert ids() == ['bbbbbbbbbbb']
+    for rejected, processed in ((True, False), (True, True), (False, True), (False, False)):
+        c.operate({'action': 'filters', 'rejected': rejected, 'processed': processed})
+        assert ('aaaaaaaaaaa' in ids()) is rejected
+    assert ids() == ['bbbbbbbbbbb']
+    restarted = web.Controller(c.config, Inventory(c.inventory.path), c.state_dir, metadata=lambda *a, **kw: None)
+    assert [r['id'] for r in restarted.snapshot()['rows']] == ['bbbbbbbbbbb']
+
+
+def test_rejections_are_sent_once_when_the_app_closes(controller):
+    c = controller
+    c.send_rejections()
+    assert not (c.state_dir / 'preference_outbox').exists()  # nothing rejected: no document
+    c.locations['preferences'].mkdir()
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    c.operate({'action': 'reject', 'reason': '宣伝っぽい'})
+    c.send_rejections()
+    c.send_rejections()  # a second close in the same session sends nothing new
+    sent = list(c.locations['preferences'].glob('preferences_*.json'))
+    assert len(sent) == 1
+    document = json.loads(sent[0].read_text(encoding='utf-8'))
+    assert document['saved'] == []
+    assert document['rejected'][0]['video_id'] == 'aaaaaaaaaaa'
+    assert document['rejected'][0]['reason'] == '宣伝っぽい' and document['rejected'][0]['title'] == '最初の動画'

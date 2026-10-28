@@ -104,6 +104,8 @@ class Inventory:
             if row["rejected"]:
                 document["rejected"].append({
                     **{key: row[key] for key in ("video_id", "channel", "theme")},
+                    # The title lets the scout avoid similar videos, not only the same channel.
+                    "title": row.get("title", ""),
                     "reason": row["rejection_reason"],
                 })
             elif row["status"] == "complete" and (saved_ids is None or row["video_id"] in saved_ids):
