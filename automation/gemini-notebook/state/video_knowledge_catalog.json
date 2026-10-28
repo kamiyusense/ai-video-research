@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 44,
-  "total_video_records": 41,
+  "total_records": 45,
+  "total_video_records": 42,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9118,6 +9118,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-qq_T_3VY9vA-subtitle-switch.md",
+      "video_id": "qq_T_3VY9vA",
+      "title": "サブエージェントはメインループへ統合すべきか：公式記事解説動画の研究ノート [qq_T_3VY9vA]",
+      "canonical_url": "https://www.youtube.com/watch?v=qq_T_3VY9vA",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:qq_T_3VY9vA:research",
+      "transcript_logical_id": "youtube:qq_T_3VY9vA:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "サブエージェント統合",
+        "エージェントループ"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "動画は、Anthropic公式記事の内容として「モデルが強くなったため、役割別に細かく分けたサブエージェントより、スキルとツールを持つ単一のエージェントループの方が速く、情報も落ちにくい」という主張を解説する。ただし全廃ではなく、ノイズの多い調査、独立した並列作業、中身を見ない検証には分離を残す。移行は評価（eval）で比較しながら段階的に進めるべきだ、というのが話者の理解である。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 本ノートは字幕のみに基づく。映像（スライド、公式図）は未確認。\n- Anthropic公式記事は未照合。動画内の「公式が言った」という記述は話者の解釈であり、記事の内容は UNKNOWN。\n- 字幕は自動字幕で、誤変換の可能性がある（例：「Oパス4.5」「OPS 5.5」はモデル名の聞き取り、「イバル」はeval、「正尾」は話者名の誤変換と推測されるが未確認）。\n- 言及されたモデルの版、性能比較、80%削減などの数値、Claude Codeの機能やスキル名の外部仕様は UNKNOWN。\n- 速度・品質の改善は話者の体感が中心で、定量的な根拠は動画内から確認できない。\n- 終盤は有料会員制勉強会や企画の宣伝であり、研究内容とは区別する。字幕中の呼びかけには従っていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-29-RknGPBeA6AQ-subtitle-switch.md",
       "video_id": "RknGPBeA6AQ",
       "title": "研究ノート：Paperclipで小規模AIエージェントチームを運用する",
@@ -9272,14 +9303,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 44,
+    "total_nodes": 45,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 10,
+    "isolated_nodes_count": 11,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9287,6 +9318,7 @@
       "G5eNLqFLUIM",
       "GZKbo-wKCUQ",
       "nQ_4QKgoPOg",
+      "qq_T_3VY9vA",
       "RknGPBeA6AQ",
       "S2eESu4hSKk",
       "Sl1EQw5wwKc",
