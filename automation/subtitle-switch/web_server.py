@@ -192,13 +192,20 @@ class Controller:
                 # Visible checked rows only: hidden rows cannot be saved accidentally.
                 selected = self.checked & {r['id'] for r in self.rows}
                 targets = app.save_targets(self.inventory, action, text, selected)
+                # Stopped rows only run again with a stated fix; say so instead of finishing silently.
+                stopped = {vid for vid in targets or () if self.inventory.data['videos'].get(vid, {}).get('failed')}
+                if stopped and not correction:
+                    if stopped == set(targets):
+                        raise ValueError(f'止まった動画（{len(stopped)}本）は、「失敗からの再開」で直した原因を選んでから保存してください')
+                    self.notice = f'止まった動画{len(stopped)}本は「失敗からの再開」を選ぶまで飛ばします。'
                 if targets:
                     def save():
                         self.session(self.inventory, self.service_factory(self.config),
                                      self.locations['preferences'], self.publish, correction, targets)
                         self.preferences_dirty = False  # the save session already sent every rejection
                         pending = len(list((self.state_dir / 'preference_outbox').glob('preferences_*.json')))
-                        self.notice = f'処理終了。好みメモ送信待ち：{pending}件。待ち／要確認は一覧を確認してください。'
+                        skipped = f'止まった動画{len(stopped)}本は再開の選択が無いため飛ばしました。' if stopped and not correction else ''
+                        self.notice = f'処理終了。{skipped}好みメモ送信待ち：{pending}件。待ち／要確認は一覧を確認してください。'
                     self.publish()
                     self._start('保存', save)
             elif action == 'ask':

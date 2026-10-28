@@ -556,3 +556,15 @@ def test_rejections_are_sent_once_when_the_app_closes(controller):
     assert document['rejected'][0]['video_id'] == 'aaaaaaaaaaa'
     assert document['rejected'][0]['reason'] == '宣伝っぽい' and document['rejected'][0]['title'] == '最初の動画'
     assert document['rejected'][0]['channel'] == '調べたチャンネル'
+
+
+def test_stopped_rows_need_a_stated_fix_before_saving(controller):
+    c = controller
+    c.inventory.data['videos']['aaaaaaaaaaa'].update(failed=True, status='attention', stage='review')
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    with pytest.raises(ValueError, match='失敗からの再開'):
+        c.operate({'action': 'selected'})
+    assert not c.calls and not c.snapshot()['busy']
+    c.operate({'action': 'selected', 'correction': 'アプリの修正を反映'})
+    c.worker.join(5)
+    assert c.calls == [({'aaaaaaaaaaa'}, 'アプリの修正を反映')]
