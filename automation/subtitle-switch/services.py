@@ -49,6 +49,15 @@ def command(args, cwd=None, stdin=None, timeout=180):
                           creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
 
 
+
+def youtube_refusal(stderr):
+    """Service-wide YouTube refusals pause the caption stage for every video until the owner retries."""
+    text = (stderr or '').lower()
+    if any(word in text for word in ('bot', 'sign in to confirm')):
+        raise StageFailure('YOUTUBE_ROBOT_CHECK', waiting=True, global_stage=True)
+    if '429' in text or 'too many requests' in text:
+        raise StageFailure('YOUTUBE_RATE_LIMIT', waiting=True, global_stage=True)
+
 class NotebookClient(nb.NotebookLmCliClient):
     """Route Notebook CLI through the same Windows executable resolver."""
     def auth_check_passive(self):
@@ -124,8 +133,7 @@ class Services:
                   '--no-warnings', '--socket-timeout', '30']
         cp = self.run([*common, '--dump-single-json', row['url']], cwd=folder)
         if cp.returncode:
-            if any(word in cp.stderr.lower() for word in ('bot', 'sign in to confirm')):
-                raise StageFailure('YOUTUBE_ROBOT_CHECK', waiting=True, global_stage=True)
+            youtube_refusal(cp.stderr)
             raise StageFailure('CAPTION_FETCH_FAILED')
         meta = json.loads(cp.stdout)
         if meta.get('id', row['video_id']) != row['video_id']:
@@ -141,8 +149,7 @@ class Services:
                        '--sub-langs', language, '--sub-format', 'json3',
                        '-o', 'captions.%(ext)s', row['url']], cwd=folder)
         if cp.returncode:
-            if any(word in cp.stderr.lower() for word in ('bot', 'sign in to confirm')):
-                raise StageFailure('YOUTUBE_ROBOT_CHECK', waiting=True, global_stage=True)
+            youtube_refusal(cp.stderr)
             raise StageFailure('CAPTION_FETCH_FAILED')
         path = folder / f'captions.{language}.json3'
         if not path.is_file():
@@ -225,8 +232,10 @@ class Services:
         times = re.findall(re.escape(row['url']) + r'&t=(\d+(?:\.\d+)?)s', text)
         if not times:
             raise StageFailure('RESEARCH_EVIDENCE_MISSING')
-        starts = {Decimal(start) for start, _ in verified_cues}
-        if any(Decimal(time) not in starts for time in times):
+        # Links carry whole seconds while caption starts are fractional (e.g. 35 for 35.668),
+        # so a time counts when a caption starts within one second of it.
+        starts = [Decimal(start) for start, _ in verified_cues]
+        if any(not any(abs(Decimal(time) - start) < 1 for start in starts) for time in times):
             raise StageFailure('RESEARCH_EVIDENCE_TIME_UNVERIFIED')
         transcript = (folder / 'transcript.md').read_text(encoding='utf-8')
         body = transcript.split('---\n', 2)[-1]

@@ -31,7 +31,7 @@ FAILURE_LABELS = {
     'CLAUDE_COMMAND_NOT_FOUND': 'PCでClaude Codeが見つかりません',
     'INBOX_UNAVAILABLE': '受け箱フォルダが見つかりません（UNKNOWN）。Googleドライブの同期を確認してください',
 }
-CORRECTIONS = ('', '手動ログインを復旧', '設定を修正', '利用枠の回復を確認', '字幕取得条件を修正')
+CORRECTIONS = ('', '手動ログインを復旧', '設定を修正', '利用枠の回復を確認', '字幕取得条件を修正', 'アプリの修正を反映', '時間をおいた')
 
 
 def short_cell(text, limit=12):

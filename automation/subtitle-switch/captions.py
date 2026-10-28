@@ -8,9 +8,34 @@ from decimal import Decimal
 
 
 def select_track(metadata):
+    """Pick the spoken-language captions: the transcript OKF is the original text, not a translation.
+
+    Measured 2026-10-28: an English video lists automatic keys like 'en-orig', 'en' and
+    machine translations (incl. 'ja'); translated tracks were the ones YouTube refused (HTTP 429),
+    and the video language can carry a region ('en-US') that is not a caption key."""
+    spoken = (metadata.get('language') or '').lower()
+    base = spoken.split('-')[0]
+
+    def rank(kind, lang):
+        lower = lang.lower()
+        if kind == 'automatic':
+            # '<lang>-orig' is YouTube's own speech recognition; other automatic keys are translations.
+            order = [f'{base}-orig', base, spoken] if base else []
+            if lower in order:
+                return (0, order.index(lower), lang)
+            if not base and lower.endswith('-orig'):
+                return (1, 0, lang)
+            if not base:
+                return (2, (not lower.startswith('ja'), not lower.startswith('en')), lang)
+            return None  # a translation of a known spoken language
+        if base and (lower == spoken or lower == base or lower.startswith(base + '-')):
+            return (0, (lower != spoken, lower != base), lang)
+        return (1, (not lower.startswith('ja'), not lower.startswith('en')), lang)
+
     for kind, tracks in [('manual', metadata.get('subtitles', {})),
                          ('automatic', metadata.get('automatic_captions', {}))]:
-        languages = sorted(tracks, key=lambda lang: (not lang.startswith('ja'), not lang.startswith('en'), lang))
+        ranked = [(rank(kind, lang), lang) for lang in tracks]
+        languages = [lang for key, lang in sorted((k, l) for k, l in ranked if k is not None)]
         for language in languages:
             for track in tracks[language]:
                 if track.get('ext') == 'json3' and track.get('url'):

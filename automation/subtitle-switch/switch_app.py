@@ -54,6 +54,8 @@ REASON_LABELS = {
     'RETRY_LIMIT': '原因変更後の再試行上限です。状態を確認してください',
     'TRANSCRIPT_INTEGRITY_MISMATCH': '保存済み字幕の指紋が一致しません',
     'RESEARCH_EVIDENCE_TIME_UNVERIFIED': '研究ノートに字幕で確認できない時刻があります',
+    'YOUTUBE_RATE_LIMIT': 'YouTubeに短時間で聞きすぎたため待っています。時間をおいて「失敗からの再開」で続けてください',
+    'CAPTION_FETCH_FAILED': '字幕を取得できませんでした',
 }
 
 

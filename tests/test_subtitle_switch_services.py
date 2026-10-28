@@ -103,6 +103,8 @@ class AdapterTests(unittest.TestCase):
         self.commands = []
         self.remote = {}
         self.caption_available = True
+        self.caption_start_ms = 0
+        self.ytdlp_error = ''
         self.config = {'repository': str(self.repo), 'vault': str(self.vault),
                        'save_branch': 'subtitle-switch/saves', 'notebook_id': 'test-notebook', 'source_limit': 300}
         self.services = Services(self.config, runner=self.runner, notebook=self.notebook, dom=lambda row: (1, 2))
@@ -113,12 +115,15 @@ class AdapterTests(unittest.TestCase):
         self.commands.append(args)
         result = SimpleNamespace(returncode=0, stdout='', stderr='')
         if args[0] == 'yt-dlp':
+            if self.ytdlp_error:
+                result.returncode, result.stderr = 1, self.ytdlp_error
+                return result
             if '--dump-single-json' in args:
                 result.stdout = json.dumps({'upload_date': '20261027', 'subtitles': {
                     'ja': [{'ext': 'json3', 'url': 'FAKE'}]} if self.caption_available else {}})
             else:
                 (Path(cwd) / 'captions.ja.json3').write_text(json.dumps({'events': [
-                    {'tStartMs': 0, 'dDurationMs': 1000, 'segs': [{'utf8': '架空の字幕です。'}]}]}), encoding='utf-8')
+                    {'tStartMs': self.caption_start_ms, 'dDurationMs': 1000, 'segs': [{'utf8': '架空の字幕です。'}]}]}), encoding='utf-8')
         elif args[0] == 'claude':
             vid = Path(cwd).name
             row = dict(self.row, video_id=vid, url=f'https://www.youtube.com/watch?v={vid}')
@@ -258,6 +263,24 @@ class AdapterTests(unittest.TestCase):
         path.write_text(path.read_text(encoding='utf-8').replace('&t=0s', '&t=999s'), encoding='utf-8')
         with self.assertRaisesRegex(StageFailure, 'RESEARCH_EVIDENCE_TIME_UNVERIFIED'):
             self.services.review(self.row)
+
+    def test_whole_second_link_matches_fractional_caption_start(self):
+        # Real notes link &t=35s for a caption starting at 35.668 (measured 2026-10-28).
+        self.caption_start_ms = 35668
+        self.prepare()
+        path = self.services.folder(self.row) / 'research.md'
+        path.write_text(path.read_text(encoding='utf-8').replace('&t=0s', '&t=35s'), encoding='utf-8')
+        self.services.review(self.row)
+        path.write_text(path.read_text(encoding='utf-8').replace('&t=35s', '&t=37s'), encoding='utf-8')
+        with self.assertRaisesRegex(StageFailure, 'RESEARCH_EVIDENCE_TIME_UNVERIFIED'):
+            self.services.review(self.row)
+
+    def test_youtube_rate_limit_pauses_caption_stage(self):
+        self.ytdlp_error = 'ERROR: Unable to download video subtitles: HTTP Error 429: Too Many Requests'
+        with self.assertRaises(StageFailure) as caught:
+            self.services.captions(self.row)
+        self.assertEqual(caught.exception.reason, 'YOUTUBE_RATE_LIMIT')
+        self.assertTrue(caught.exception.waiting and caught.exception.global_stage)
 
     def test_japanese_notes_roundtrip_with_cp932_default_text_io(self):
         import io

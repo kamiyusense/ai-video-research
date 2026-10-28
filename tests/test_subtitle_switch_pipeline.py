@@ -288,6 +288,17 @@ class CaptionTests(unittest.TestCase):
         self.assertEqual(select_track(metadata), ('manual', 'en', 'manual'))
         self.assertIsNone(select_track({}))
 
+    def test_original_language_captions_not_translations(self):
+        # Keys as measured on real English videos (2026-10-28): '-orig' ASR plus machine translations.
+        auto = {k: [{'ext': 'json3', 'url': k}] for k in ('ja', 'en', 'en-orig', 'fr-orig', 'de')}
+        self.assertEqual(select_track({'language': 'en-US', 'automatic_captions': auto}), ('automatic', 'en-orig', 'en-orig'))
+        self.assertEqual(select_track({'language': 'en', 'automatic_captions': {k: auto[k] for k in ('ja', 'en')}}), ('automatic', 'en', 'en'))
+        self.assertIsNone(select_track({'language': 'en', 'automatic_captions': {'ja': auto['ja']}}))
+        self.assertEqual(select_track({'language': 'ja', 'automatic_captions': {k: auto[k] for k in ('ja', 'en')}}), ('automatic', 'ja', 'ja'))
+        manual = {'subtitles': {'ja': [{'ext': 'json3', 'url': 'm-ja'}], 'en-GB': [{'ext': 'json3', 'url': 'm-en'}]}}
+        self.assertEqual(select_track({'language': 'en-US', **manual}), ('manual', 'en-GB', 'm-en'))
+        self.assertEqual(select_track(manual), ('manual', 'ja', 'm-ja'))
+
     def test_automatic_rolling_overlap_only(self):
         document = {'events': [{'tStartMs': i * 83000, 'dDurationMs': 84000, 'segs': [{'utf8': text}]}
                                for i, text in enumerate(('hello world', 'world again', 'world again'))]}

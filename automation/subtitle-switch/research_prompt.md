@@ -13,7 +13,7 @@ tags:
 transcript.mdからvideo_id・resource・canonical_url・published_atを正確に写す。
 logical_id="youtube:<video_id>:research", transcript_logical_id="youtube:<video_id>:transcript"。
 本文：独自要約（300字以内）、チャプター、重要な知見、この研究室への応用、限界・未確認。
-チャプターと知見の根拠は実際の字幕開始秒に対応する <canonical_url>&t=<開始秒>s を付ける。
+チャプターと知見の根拠は実際の字幕開始秒に対応する <canonical_url>&t=<開始秒>s を付ける。開始秒は字幕の [開始秒] の小数を切り捨てた整数にする（例：[35.668] → &t=35s）。
 短い引用は1か所20字以内。字幕の1行1字幕形式を研究ノートへコピーしない。
 映像未確認・公式資料未照合・自動字幕の誤変換の可能性を明記し、外部仕様はUNKNOWNとする。
 終わったらファイル名だけを報告する。
