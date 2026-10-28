@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 37,
-  "total_video_records": 34,
+  "total_records": 38,
+  "total_video_records": 35,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9025,6 +9025,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-wETSpF4ef6E-subtitle-switch.md",
+      "video_id": "wETSpF4ef6E",
+      "title": "【研究ノート】How to Use Hermes AI Agent [wETSpF4ef6E]",
+      "canonical_url": "https://www.youtube.com/watch?v=wETSpF4ef6E",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:wETSpF4ef6E:research",
+      "transcript_logical_id": "youtube:wETSpF4ef6E:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes AI Agent",
+        "ローカルLLM",
+        "AIエージェント自動化"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "無料のオープンソースAIエージェントHermesを、Windowsのデスクトップ版で導入し、推奨のローカルモデルへ接続する手順が示される。ファイル作成、ブラウザ経由のYouTubeコメント返信下書きと投稿、記憶、スキル化、毎朝の定期実行、メッセージアプリ連携までを一通り実演する入門動画。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。画面操作や表示内容は字幕の言及から推測した範囲にとどまる。\n- 公式資料は未照合。機能、対応環境、価格、設定手順の正確性は確認していない。\n- 字幕は取得方法の記載上は手動字幕だが、transcriptの状態は未検証であり、誤変換の可能性がある。特にモデル名・サービス名・版数表記は要確認。\n- 推奨モデルの正式名称・版数・必要メモリ量の詳細：UNKNOWN。\n- Hermesの提供元、ライセンス、セキュリティ仕様、データ保存先、権限モデル：UNKNOWN。\n- 動作は発表者の環境での一例であり、他環境での再現性、性能、コメント返信の品質は未確認。\n- プロンプトは概要欄にあるとされるが、内容は字幕に含まれず未確認。\n- 研究ノート雛形（research_note_prompt_template.md）は作業ディレクトリに見当たらず参照できなかったため、指示文の形式に従って作成した。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -9054,18 +9086,19 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 37,
+    "total_nodes": 38,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 3,
+    "isolated_nodes_count": 4,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "RknGPBeA6AQ",
-      "S2eESu4hSKk"
+      "S2eESu4hSKk",
+      "wETSpF4ef6E"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
