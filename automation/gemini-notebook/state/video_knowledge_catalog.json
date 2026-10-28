@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 39,
-  "total_video_records": 36,
+  "total_records": 40,
+  "total_video_records": 37,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -8994,6 +8994,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-GZKbo-wKCUQ-subtitle-switch.md",
+      "video_id": "GZKbo-wKCUQ",
+      "title": "研究ノート：Cursor for Testers Finale（Skills + GitLab MCP + Playwright MCP の実例）",
+      "canonical_url": "https://www.youtube.com/watch?v=GZKbo-wKCUQ",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:GZKbo-wKCUQ:research",
+      "transcript_logical_id": "youtube:GZKbo-wKCUQ:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Cursor・MCP・Playwrightによるテスト自動化"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "GitLabのチケットを起点に、AIエディタのエージェントとテスターが協働して調査・テスト作成・レビュー・報告まで進める実演。専用Skillで作業手順を固定し、Playwright MCPでブラウザ操作、GitLab MCPでチケットとMRを参照する。テスト失敗は製品バグかテストの誤りかを差分で切り分け、期待値は変えない。再試行設定の追加は取り消し、投稿前には必ず本人が承認する。MCPの権限設定と承認は有効のまま使う点が強調された。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。画面操作、設定ファイルの実際の内容、テストコードは字幕からは確認できていない。\n- 公式資料は未照合。外部仕様（Cursorの機能、MCP設定、GitLabの認証・権限、Playwright MCPの仕様、最新のバージョン要件）はUNKNOWN。\n- 字幕は自動生成で、誤変換の可能性がある。例えば「Devia, nee」、「ditor」、「scale」、「fixed weights」（固定待機の意か）は誤認識の疑いがある。\n- コマンドの引数や設定値の一部は字幕で欠落または不明瞭な箇所がある。\n- 動画内の数値や手順は一つの練習例であり、一般化できるかは未検証。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-29-RknGPBeA6AQ-subtitle-switch.md",
       "video_id": "RknGPBeA6AQ",
       "title": "研究ノート：Paperclipで小規模AIエージェントチームを運用する",
@@ -9117,17 +9147,18 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 39,
+    "total_nodes": 40,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 5,
+    "isolated_nodes_count": 6,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "bfPTHS9r7gs",
+      "GZKbo-wKCUQ",
       "RknGPBeA6AQ",
       "S2eESu4hSKk",
       "wETSpF4ef6E"
