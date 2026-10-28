@@ -105,6 +105,8 @@
             span.href = row.url; span.target = '_blank'; span.rel = 'noopener noreferrer'; span.className = 'title-link';
             if (row.translate) { td.removeAttribute('title'); attachTranslation(span, row); }
           }
+          // Gemini's recommendation can be a few hundred characters: a wrapped card reads better than a native tooltip.
+          if (i === 5 && value.full.length > value.text.length) { td.removeAttribute('title'); attachNote(td, value.full); }
           td.append(span); tr.append(td);
         });
         fragment.append(tr);
@@ -125,6 +127,17 @@
     const box = target.getBoundingClientRect();
     tip.style.left = `${Math.max(8, Math.min(box.left, innerWidth - 520))}px`;
     tip.style.top = `${box.bottom + 6}px`;
+    requestAnimationFrame(() => { if (tip.offsetHeight && box.bottom + 6 + tip.offsetHeight > innerHeight - 8) tip.style.top = `${Math.max(8, box.top - 6 - tip.offsetHeight)}px`; });
+  }
+  function attachNote(cell, text) {
+    let timer = null;
+    const show = () => {
+      placeTip(cell); tip.innerHTML = '';
+      const body = document.createElement('div'); body.className = 'tip-note'; body.textContent = text.replace(/\s*(役立つ理由|ほかとの違い)[：:]/g, '\n$&').trim();
+      tip.append(body); tip.hidden = false;
+    };
+    cell.addEventListener('pointerenter', () => { clearTimeout(timer); timer = setTimeout(show, 300); });
+    cell.addEventListener('pointerleave', () => { clearTimeout(timer); tip.hidden = true; });
   }
   function attachTranslation(link, row) {
     let timer = null;

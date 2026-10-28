@@ -31,6 +31,7 @@ dialog{border:1px solid #e4e8ee;border-radius:20px;padding:24px;width:min(740px,
 .state-mark{display:none}
 col.channel-col{width:105px}col.theme-col{width:76px}col.reason-col{width:70px}col.stage-col{width:78px}col.notebook-col{width:96px}
 .question-buttons{align-items:center}dialog label.web-check{display:flex;align-items:center;gap:7px;margin:0 0 0 6px;font-size:12px;font-weight:600;color:#5d6572;cursor:pointer}.web-check input{width:17px;height:17px}
+#title-tip .tip-note{color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
 
 @font-face{font-family:title0;src:url("../../automation/subtitle-switch/assets/fonts/ZenMaruGothic-Black-title.ttf") format("truetype");font-display:swap}
 @font-face{font-family:title1;src:url("../../automation/subtitle-switch/assets/fonts/KiwiMaru-Medium-title.ttf") format("truetype");font-display:swap}
@@ -263,6 +264,8 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
             span.href = row.url; span.target = '_blank'; span.rel = 'noopener noreferrer'; span.className = 'title-link';
             if (row.translate) { td.removeAttribute('title'); attachTranslation(span, row); }
           }
+          // Gemini's recommendation can be a few hundred characters: a wrapped card reads better than a native tooltip.
+          if (i === 5 && value.full.length > value.text.length) { td.removeAttribute('title'); attachNote(td, value.full); }
           td.append(span); tr.append(td);
         });
         fragment.append(tr);
@@ -283,6 +286,17 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
     const box = target.getBoundingClientRect();
     tip.style.left = `${Math.max(8, Math.min(box.left, innerWidth - 520))}px`;
     tip.style.top = `${box.bottom + 6}px`;
+    requestAnimationFrame(() => { if (tip.offsetHeight && box.bottom + 6 + tip.offsetHeight > innerHeight - 8) tip.style.top = `${Math.max(8, box.top - 6 - tip.offsetHeight)}px`; });
+  }
+  function attachNote(cell, text) {
+    let timer = null;
+    const show = () => {
+      placeTip(cell); tip.innerHTML = '';
+      const body = document.createElement('div'); body.className = 'tip-note'; body.textContent = text.replace(/\s*(役立つ理由|ほかとの違い)[：:]/g, '\n$&').trim();
+      tip.append(body); tip.hidden = false;
+    };
+    cell.addEventListener('pointerenter', () => { clearTimeout(timer); timer = setTimeout(show, 300); });
+    cell.addEventListener('pointerleave', () => { clearTimeout(timer); tip.hidden = true; });
   }
   function attachTranslation(link, row) {
     let timer = null;

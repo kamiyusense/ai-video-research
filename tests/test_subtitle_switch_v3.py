@@ -36,7 +36,7 @@ def test_metadata_cache_and_failures(tmp_path):
     for _ in range(2):
         metadata.refresh_metadata(rows, tmp_path / 'cache.json', fake, sleep=lambda _: None, notify=lambda *args: updates.append(args))
     assert len(calls) == 1
-    assert updates[-1][1] == {'channel': 'A', 'lang': 'ja', 'published_at': '2026-10-27'}
+    assert updates[-1][1] == {'channel': 'A', 'lang': 'ja', 'published_at': '2026-10-27', 'ja_dub': '日本語'}
     metadata.refresh_metadata([{'video_id': 'bbbbbbbbbbb', 'url': 'bad'}], tmp_path / 'cache.json', lambda _: SimpleNamespace(returncode=1), notify=lambda *args: updates.append(args))
     assert '取得失敗' in updates[-1][1]['channel']
 
@@ -130,9 +130,28 @@ def test_inbox_metadata_avoids_lookup_and_partial_values_show_progress(tmp_path)
     metadata.refresh_metadata([complete, partial], tmp_path / 'cache.json', fake,
                               notify=lambda *args: updates.append(args))
     assert len(calls) == 1
-    assert updates[0][1] == {key: complete[key] for key in ('channel', 'published_at', 'lang')}
+    assert updates[0][1] == {**{key: complete[key] for key in ('channel', 'published_at', 'lang')}, 'ja_dub': '日本語'}
     assert updates[1][1]['published_at'] == '取得中…'
-    assert updates[-1][1] == {'channel': '既存', 'published_at': '2026-10-27', 'lang': 'en'}
+    assert updates[-1][1] == {'channel': '既存', 'published_at': '2026-10-27', 'lang': 'en', 'ja_dub': 'なし'}
+
+
+def test_japanese_dub_track_is_detected_from_audio_formats():
+    # Shapes measured with yt-dlp on 2026-10-28 (format_note '日本語 - dubbed-auto', language 'ja').
+    dubbed = {'language': 'en-US', 'formats': [
+        {'format_id': '234-0', 'vcodec': 'none', 'language': 'en-US', 'format_note': 'English (United States) original (default)'},
+        {'format_id': '234-9', 'vcodec': 'none', 'language': 'ja', 'format_note': '日本語 - dubbed-auto'},
+        {'format_id': '137', 'vcodec': 'avc1', 'language': None}]}
+    plain = {'language': 'en', 'formats': [{'format_id': '140', 'vcodec': 'none', 'language': 'en'}],
+             'automatic_captions': {'ja': []}}  # Japanese auto-captions are not dubbing
+    assert metadata.japanese_dub(dubbed) == 'あり'
+    assert metadata.japanese_dub(plain) == 'なし'
+    assert metadata.japanese_dub({'language': 'ja', 'formats': [{'vcodec': 'none', 'language': 'ja'}]}) == '日本語'
+    import web_server
+    row = {'video_id': 'ccccccccccc', 'title': 'T', 'rejected': False, 'status': 'pending', 'stage': 'intake',
+           'rejection_reason': '', 'completed_stages': []}
+    cells = web_server.table_row(row, {'lang': 'en-US', 'ja_dub': 'あり'})['cells']
+    assert cells[3]['text'] == 'en-US・吹替' and '自動吹き替え音声あり' in cells[3]['full']
+    assert '吹き替え音声なし' in web_server.table_row(row, {'lang': 'en', 'ja_dub': 'なし'})['cells'][3]['full']
 
 
 def test_common_command_uses_windows_no_window_flag():

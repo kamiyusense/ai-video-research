@@ -47,6 +47,11 @@ def table_row(row, metadata=None):
     if row.get('notebook_sources_used') is None or str(row.get('notebook_sources_used')) == 'UNKNOWN':
         cells[8]['text'] = '未接続' if row.get('status_reason') == 'NOTEBOOK_LOGIN_EXPIRED' else '未実行' if row.get('stage') != 'notebook' else '要確認'
     lang = (metadata or {}).get('lang') or row.get('lang') or ''
+    dub = (metadata or {}).get('ja_dub', '')
+    if dub == 'あり':
+        cells[3] = {'text': (cells[3]['full'][:5] + '・吹替'), 'full': cells[3]['full'] + '（日本語の自動吹き替え音声あり）'}
+    elif dub == 'なし':
+        cells[3]['full'] += '（日本語の吹き替え音声なし）'
     return {'id': row['video_id'], 'cells': cells, 'rejected': row['rejected'], 'status': row['status'],
             'url': 'https://www.youtube.com/watch?v=' + row['video_id'], 'translate': needs_translation(lang)}
 
