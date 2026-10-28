@@ -8,6 +8,7 @@ import json
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
@@ -279,8 +280,14 @@ def test_heartbeat_and_close_grace(server):
     assert server.expired(server.last_heartbeat + 46)
     assert request(server, '/api/heartbeat', 'POST', body={})[0] == 200
     assert server.connected
-    assert not server.expired(server.last_heartbeat + 11)
-    assert server.expired(server.last_heartbeat + 13)
+    # A hidden window's timers run about once a minute; that must not end the server.
+    assert not server.expired(server.last_heartbeat + 149)
+    assert server.expired(server.last_heartbeat + 151)
+    assert request(server, '/api/bye', 'POST', body={})[0] == 200
+    assert not server.expired(time.monotonic() + 4)
+    assert server.expired(time.monotonic() + 8)
+    assert request(server, '/api/heartbeat', 'POST', body={})[0] == 200
+    assert not server.expired(time.monotonic() + 60)
     server.controller.busy = True
     assert not server.expired(server.last_heartbeat + 10000)
     server.controller.busy = False

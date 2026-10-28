@@ -369,8 +369,15 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
         }
       }
     } catch (_) { /* size is a convenience only */ }
-    const heartbeat = () => request('/api/heartbeat', {}).catch(() => { $('notice').textContent = '接続を確認できません（UNKNOWN）。操作を再送せず、状態を確認してください。'; });
+    const heartbeat = () => request('/api/heartbeat', {}).catch(() => { $('notice').textContent = '接続を確認できません（UNKNOWN）。アプリが止まった可能性があります。この窓を閉じて、起動の1行で開き直してください。'; });
     heartbeat(); setInterval(heartbeat, 2500);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) heartbeat(); });
+    window.addEventListener('pagehide', () => {
+      try {
+        fetch('/api/bye' + BOOT.auth, {method: 'POST', keepalive: true, credentials: 'omit', cache: 'no-store',
+          headers: {'Content-Type': 'application/json', 'X-App-Key': key}, body: '{}'});
+      } catch (_) { /* the long heartbeat grace still ends the server */ }
+    });
     async function poll() {
       if (!sending) {
         const serial = ++version;

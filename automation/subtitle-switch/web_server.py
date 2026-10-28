@@ -288,8 +288,12 @@ class LocalServer(ThreadingHTTPServer):
     def url(self):
         return self.origin + '/?key=' + self.key
 
+    # Chrome throttles timers in a hidden/covered window to about once a minute, so a short grace
+    # killed the server while the owner looked at another window. Closing the page says bye instead.
+    GRACE_CONNECTED, GRACE_START, GRACE_BYE = 150, 45, 6
+
     def expired(self, now=None):
-        return not self.controller.busy and (time.monotonic() if now is None else now) - self.last_heartbeat > (12 if self.connected else 45)
+        return not self.controller.busy and (time.monotonic() if now is None else now) - self.last_heartbeat > (self.GRACE_CONNECTED if self.connected else self.GRACE_START)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -364,6 +368,11 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/heartbeat':
                 self.server.connected = True
                 self.server.last_heartbeat = time.monotonic()
+                self._reply(200, {})
+            elif path == '/api/bye':
+                # A reload sends a heartbeat within seconds; a closed window does not.
+                self.server.connected = True
+                self.server.last_heartbeat = time.monotonic() - self.server.GRACE_CONNECTED + self.server.GRACE_BYE
                 self._reply(200, {})
             elif path == '/api/action':
                 self._reply(200, self.server.controller.operate(data))
