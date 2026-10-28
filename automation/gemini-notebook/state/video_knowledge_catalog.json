@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 36,
-  "total_video_records": 33,
+  "total_records": 37,
+  "total_video_records": 34,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -8963,6 +8963,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-RknGPBeA6AQ-subtitle-switch.md",
+      "video_id": "RknGPBeA6AQ",
+      "title": "研究ノート：Paperclipで小規模AIエージェントチームを運用する",
+      "canonical_url": "https://www.youtube.com/watch?v=RknGPBeA6AQ",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:RknGPBeA6AQ:research",
+      "transcript_logical_id": "youtube:RknGPBeA6AQ:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Paperclip",
+        "マルチエージェント管理"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Paperclipは、Claude CodeやCodexなど複数のコーディングエージェントの上に載り、役割付与・タスク割当・進捗記録・予算管理・レビュー強制を一つの画面で扱うオープンソースのアプリである。実際のコーディングは各エージェントが行い、Paperclipは組織面を担う。話者は、最初はコーディネーター1名と数名の小さな構成で、ノートアプリ程度の検証しやすい題材から試すことを勧める。一方で、予算上限は請求額を保証しないこと、ツール制御は全シェル操作には及ばないことなど、過信への注意も述べている。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。画面操作や表示内容は字幕からの推測を含まず、確認していない。\n- Paperclipの公式資料・ドキュメントとは未照合。機能名、既定値、ライセンス、対応アダプターの正確な内容は話者の説明に依存する。\n- 字幕は自動生成（未検証）で、固有名詞などに誤変換の可能性がある（例：ツール名・コマンド表記の揺れ）。\n- 導入コマンドの正確な綴り、必要なNodeの版、各アダプターの認証方式の詳細：UNKNOWN（公式仕様の確認が必要）。\n- 実際のコスト、品質、成功率に関する計測結果は動画内で示されておらず、UNKNOWN。\n- 本動画の説明は話者の見解を含み、スポンサーや提携の有無はUNKNOWN。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-29-S2eESu4hSKk-subtitle-switch.md",
       "video_id": "S2eESu4hSKk",
       "title": "研究ノート：今週話題のGitHub無料リポジトリ5選（S2eESu4hSKk）",
@@ -9023,16 +9054,17 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 36,
+    "total_nodes": 37,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 2,
+    "isolated_nodes_count": 3,
     "isolated_video_ids": [
       "8QgBcI40VC8",
+      "RknGPBeA6AQ",
       "S2eESu4hSKk"
     ],
     "bidirectional_links_count": 54,
