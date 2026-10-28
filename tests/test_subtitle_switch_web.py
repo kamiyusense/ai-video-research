@@ -221,14 +221,14 @@ def test_empty_save_and_duplicate_operation_never_start_services(controller):
     assert c.snapshot()['cat'] == 'done'
 
 
-def test_question_limits_grok_and_failure_state(controller):
+def test_question_limits_web_flag_and_failure_state(controller):
     c = controller
     c.question = Mock(return_value='回答')
     for text in ('', ' ', '猫' * 2001):
         with pytest.raises(ValueError):
             c.operate({'action': 'ask', 'question': text})
-    with pytest.raises(ValueError, match='UNKNOWN'):
-        c.operate({'action': 'ask', 'question': '質問', 'provider': 'grok'})
+    with pytest.raises(ValueError, match='ネット確認'):
+        c.operate({'action': 'ask', 'question': '質問', 'web': 'yes'})
     assert not c.question.called
     c.operate({'action': 'ask', 'question': '猫' * 2000})
     c.worker.join(5)
@@ -473,3 +473,32 @@ def test_old_attention_row_does_not_make_refresh_an_error(controller):
     c.worker.join(5)
     assert c.snapshot()['cat'] == 'done'
     assert c.inventory.data['videos']['fffffffffff']['status'] == 'attention'
+
+
+def test_web_check_passes_only_search_tools_and_rule(tmp_path, controller):
+    import ask_research
+    c = controller
+    c.question = Mock(return_value='回答')
+    c.operate({'action': 'ask', 'question': '質問', 'web': True})
+    c.worker.join(5)
+    assert c.question.call_args.kwargs['web'] is True
+    c.operate({'action': 'ask', 'question': '質問'})
+    c.worker.join(5)
+    assert c.question.call_args.kwargs['web'] is False
+    repo = tmp_path / 'repo'
+    (repo / 'research').mkdir(parents=True)
+    (repo / 'research' / 'n.md').write_text('ノート本文', encoding='utf-8')
+    records = [{'record_path': 'research/n.md', 'video_id': 'iiiiiiiiiii'}]
+    seen = []
+    def runner(args, cwd, stdin, timeout):
+        seen.append((args, stdin, timeout))
+        return subprocess.CompletedProcess(args, 0, '答え', '')
+    with patch.object(ask_research.knowledge, 'build_video_knowledge_catalog', return_value=({}, records)):
+        ask_research.ask('質問', repo, tmp_path / 'log', runner=runner, video_ids=['iiiiiiiiiii'], web=True)
+        ask_research.ask('質問', repo, tmp_path / 'log', runner=runner, video_ids=['iiiiiiiiiii'])
+    (on, on_prompt, on_timeout), (off, off_prompt, off_timeout) = seen
+    assert on[on.index('--tools') + 1] == 'WebSearch,WebFetch' and on[on.index('--allowedTools') + 1] == 'WebSearch,WebFetch'
+    assert '--strict-mcp-config' in on and not any('bypass' in a or 'skip-permissions' in a for a in on)
+    assert on_timeout == 480 and '質問と関係のない検索はしない' in on_prompt
+    assert off[off.index('--tools') + 1] == '' and '--allowedTools' not in off and off_timeout == 300
+    assert 'だけを根拠' in off_prompt and 'WebSearch' not in off_prompt

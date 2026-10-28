@@ -36,7 +36,7 @@ def test_page_contains_all_controls_and_accessible_checkboxes():
     parser.feed(page)
     assert len(parser.ids) == len(set(parser.ids))
     for identity in ('title', 'rows', 'check-all', 'urls', 'correction', 'reject-reason',
-                     'question-panel', 'question', 'answer', 'grok', 'body-cat', 'face-cat'):
+                     'question-panel', 'question', 'answer', 'web-check', 'body-cat', 'face-cat'):
         assert identity in parser.ids
     assert sum(attrs.get('id') == 'check-all' for _, attrs in parser.tags) == 1
     saves = [a['data-action'] for t, a in parser.tags if t == 'button' and a.get('class') == 'save']
@@ -45,7 +45,7 @@ def test_page_contains_all_controls_and_accessible_checkboxes():
     assert 'AI動画字幕図書館司書猫さん' in page
     assert 'AI動画字幕図書館司書さん' not in page
     assert 'fonts/ZenMaruGothic-Black-title.ttf?key=fixture' in page
-    assert any(t == 'button' and a.get('id') == 'grok' and 'disabled' in a for t, a in parser.tags)
+    assert 'grok' not in page.lower() and 'icon-robot"/></svg>Grok' not in page
 
 
 def test_preview_is_exact_application_artwork_without_network_calls():

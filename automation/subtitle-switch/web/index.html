@@ -41,15 +41,15 @@
       </div>
     </div>
     <div class="action-bar"><div class="save-actions"><button class="save" data-action="manual"><svg class="icon"><use href="#icon-save"/></svg>手動保存</button><button class="save" data-action="selected"><svg class="icon"><use href="#icon-save"/></svg>選択保存</button></div>
-      <button id="open-question" class="question-entry"><svg class="ai-icon"><use href="#icon-spark"/></svg><span>保存した動画内容をAIに質問</span><svg class="icon bot"><use href="#icon-robot"/></svg></button>
+      <button id="open-question" class="question-entry"><svg class="ai-icon"><use href="#icon-spark"/></svg><span>保存した動画内容をClaudeに質問</span></button>
     </div>
       <div class="face-stage" id="face-stage"><img id="face-cat" alt="司書猫の顔" hidden><span id="cat-state" class="state-mark" role="status">待機中</span></div>
   </section>
 </main>
-<dialog id="question-panel"><div class="dialog-head"><div><span class="eyebrow">研究ノートに聞く</span><h2>保存した動画内容をAIに質問</h2></div><button id="close-question" class="close" aria-label="質問パネルを閉じる">×</button></div>
-  <p class="question-info">一覧でチェックした動画があれば、その動画の研究ノートだけで答えます。チェックが無ければ、保存済みの全ノートから近いもの最大3本を探して答えます（合計24,000文字まで）。答えるのは Claude Opus 5.5（考える深さ：中）。研究ノートだけを送り、GitHubやネットは見ません。送信内容と回答は手元に記録します。</p>
+<dialog id="question-panel"><div class="dialog-head"><div><span class="eyebrow">研究ノートに聞く</span><h2>保存した動画内容をClaudeに質問</h2></div><button id="close-question" class="close" aria-label="質問パネルを閉じる">×</button></div>
+  <p class="question-info">一覧でチェックした動画があれば、その動画の研究ノートだけで答えます。チェックが無ければ、保存済みの全ノートから近いもの最大3本を探して答えます（合計24,000文字まで）。答えるのは Claude Opus 5.5（考える深さ：中）。研究ノートだけを送り、GitHubは見ません。ネットは「ネットで事実確認する」にチェックした時だけ、質問で聞かれたことを調べます（Web検索・ページ閲覧のみ。時間は最大8分）。送信内容と回答は手元に記録します。</p>
   <label for="question">質問 <span class="hint">2,000文字まで</span></label><textarea id="question" rows="4" maxlength="2000" placeholder="保存した研究の中から知りたいことを入力…"></textarea>
-  <div class="question-buttons"><button id="send-question" class="secondary orange"><svg class="ai-icon"><use href="#icon-spark"/></svg>Claudeへ質問を送信</button><button disabled class="secondary" id="grok" aria-describedby="grok-reason"><svg class="icon bot"><use href="#icon-robot"/></svg>Grok 利用不可</button></div><p id="grok-reason" class="hint"></p>
+  <div class="question-buttons"><button id="send-question" class="secondary orange"><svg class="ai-icon"><use href="#icon-spark"/></svg>Claudeに質問</button><label class="web-check"><input type="checkbox" id="web-check">ネットで事実確認する</label></div>
   <label for="answer">回答</label><pre id="answer" aria-live="polite" tabindex="0">ここに回答が表示されます。</pre>
 </dialog>
 <!--SCRIPT--></body></html>

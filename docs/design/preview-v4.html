@@ -30,6 +30,7 @@ dialog{border:1px solid #e4e8ee;border-radius:20px;padding:24px;width:min(740px,
 /* Owner: the status badge under the close-up cat is not wanted; the cat itself shows the state. */
 .state-mark{display:none}
 col.channel-col{width:105px}col.theme-col{width:76px}col.reason-col{width:70px}col.stage-col{width:78px}col.notebook-col{width:96px}
+.question-buttons{align-items:center}dialog label.web-check{display:flex;align-items:center;gap:7px;margin:0 0 0 6px;font-size:12px;font-weight:600;color:#5d6572;cursor:pointer}.web-check input{width:17px;height:17px}
 
 @font-face{font-family:title0;src:url("../../automation/subtitle-switch/assets/fonts/ZenMaruGothic-Black-title.ttf") format("truetype");font-display:swap}
 @font-face{font-family:title1;src:url("../../automation/subtitle-switch/assets/fonts/KiwiMaru-Medium-title.ttf") format("truetype");font-display:swap}
@@ -96,18 +97,18 @@ col.channel-col{width:105px}col.theme-col{width:76px}col.reason-col{width:70px}c
       </div>
     </div>
     <div class="action-bar"><div class="save-actions"><button class="save" data-action="manual"><svg class="icon"><use href="#icon-save"/></svg>手動保存</button><button class="save" data-action="selected"><svg class="icon"><use href="#icon-save"/></svg>選択保存</button></div>
-      <button id="open-question" class="question-entry"><svg class="ai-icon"><use href="#icon-spark"/></svg><span>保存した動画内容をAIに質問</span><svg class="icon bot"><use href="#icon-robot"/></svg></button>
+      <button id="open-question" class="question-entry"><svg class="ai-icon"><use href="#icon-spark"/></svg><span>保存した動画内容をClaudeに質問</span></button>
     </div>
       <div class="face-stage" id="face-stage"><img id="face-cat" alt="司書猫の顔" hidden><span id="cat-state" class="state-mark" role="status">待機中</span></div>
   </section>
 </main>
-<dialog id="question-panel"><div class="dialog-head"><div><span class="eyebrow">研究ノートに聞く</span><h2>保存した動画内容をAIに質問</h2></div><button id="close-question" class="close" aria-label="質問パネルを閉じる">×</button></div>
-  <p class="question-info">一覧でチェックした動画があれば、その動画の研究ノートだけで答えます。チェックが無ければ、保存済みの全ノートから近いもの最大3本を探して答えます（合計24,000文字まで）。答えるのは Claude Opus 5.5（考える深さ：中）。研究ノートだけを送り、GitHubやネットは見ません。送信内容と回答は手元に記録します。</p>
+<dialog id="question-panel"><div class="dialog-head"><div><span class="eyebrow">研究ノートに聞く</span><h2>保存した動画内容をClaudeに質問</h2></div><button id="close-question" class="close" aria-label="質問パネルを閉じる">×</button></div>
+  <p class="question-info">一覧でチェックした動画があれば、その動画の研究ノートだけで答えます。チェックが無ければ、保存済みの全ノートから近いもの最大3本を探して答えます（合計24,000文字まで）。答えるのは Claude Opus 5.5（考える深さ：中）。研究ノートだけを送り、GitHubは見ません。ネットは「ネットで事実確認する」にチェックした時だけ、質問で聞かれたことを調べます（Web検索・ページ閲覧のみ。時間は最大8分）。送信内容と回答は手元に記録します。</p>
   <label for="question">質問 <span class="hint">2,000文字まで</span></label><textarea id="question" rows="4" maxlength="2000" placeholder="保存した研究の中から知りたいことを入力…"></textarea>
-  <div class="question-buttons"><button id="send-question" class="secondary orange"><svg class="ai-icon"><use href="#icon-spark"/></svg>Claudeへ質問を送信</button><button disabled class="secondary" id="grok" aria-describedby="grok-reason"><svg class="icon bot"><use href="#icon-robot"/></svg>Grok 利用不可</button></div><p id="grok-reason" class="hint"></p>
+  <div class="question-buttons"><button id="send-question" class="secondary orange"><svg class="ai-icon"><use href="#icon-spark"/></svg>Claudeに質問</button><label class="web-check"><input type="checkbox" id="web-check">ネットで事実確認する</label></div>
   <label for="answer">回答</label><pre id="answer" aria-live="polite" tabindex="0">ここに回答が表示されます。</pre>
 </dialog>
-<script nonce="preview">const BOOT={"font": 0, "fonts": ["ZenMaruGothic-Black", "KiwiMaru-Medium", "DelaGothicOne-Regular", "HachiMaruPop-Regular", "DotGothic16-Regular", "PottaOne-Regular"], "sprites": {"frame_width": 256, "frame_height": 192, "states": {"idle": {"frames": 6, "fps": 5, "loop": true, "hold_last": false}, "walk": {"frames": 8, "fps": 8, "loop": true, "hold_last": false}, "done": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}, "error": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}}, "face": {"frame_width": 192, "frame_height": 192, "states": {"idle": {"frames": 6, "fps": 5, "loop": true, "hold_last": false}, "walk": {"frames": 8, "fps": 8, "loop": true, "hold_last": false}, "done": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}, "error": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}}}}, "play": {"frame_width": 256, "frame_height": 192, "look": {"directions": 8, "order": "00=right, then clockwise every 45 degrees (01=down-right, 02=down, 03=down-left, 04=left, 05=up-left, 06=up, 07=up-right)"}, "punch_left": {"frames": 4, "fps": 10}, "punch_right": {"frames": 4, "fps": 10}, "cursor": {"files": {"32": "cursor/teaser_32.png", "64": "cursor/teaser_64.png"}, "hotspot": [2, 2], "hotspot_note": "hotspot for teaser_32; scale x2 for teaser_64"}, "punch_radius_px": 110, "punch_cooldown_sec": 0.6}, "grok_reason": "UNKNOWN：WindowsでAPIキーなしの購読利用を確認できません", "demo": true, "state": {"rows": [{"id": "aaaaaaaaaaa", "cells": [{"text": "Claude Codeの使い方と、これからのAI研究", "full": "Claude Codeの使い方と、これからのAI研究"}, {"text": "AIのある暮らし", "full": "AIのある暮らし"}, {"text": "2026-10-26", "full": "2026-10-26"}, {"text": "ja", "full": "ja"}, {"text": "AIエージェント", "full": "AIエージェント"}, {"text": "気になる研究テーマ", "full": "気になる研究テーマ"}, {"text": "重複確認", "full": "重複確認"}, {"text": "未処理", "full": "未処理"}, {"text": "未実行", "full": "未実行（Notebook 工程の前）"}], "rejected": false, "status": "pending", "url": "https://www.youtube.com/watch?v=aaaaaaaaaaa", "translate": false}, {"id": "bbbbbbbbbbb", "cells": [{"text": "小さな自動化を、確かな仕組みに育てる", "full": "小さな自動化を、確かな仕組みに育てる"}, {"text": "テクノロジー研究室", "full": "テクノロジー研究室"}, {"text": "2026-10-25", "full": "2026-10-25"}, {"text": "ja", "full": "ja"}, {"text": "自動化", "full": "自動化"}, {"text": "登録チャンネルから", "full": "登録チャンネルから"}, {"text": "検品", "full": "検品"}, {"text": "要確認", "full": "要確認"}, {"text": "54", "full": "54"}], "rejected": false, "status": "attention", "url": "https://www.youtube.com/watch?v=bbbbbbbbbbb", "translate": false}, {"id": "ccccccccccc", "cells": [{"text": "Notebookでつながる、学びのライブラリ", "full": "Notebookでつながる、学びのライブラリ"}, {"text": "今日のAIノート", "full": "今日のAIノート"}, {"text": "2026-10-24", "full": "2026-10-24"}, {"text": "en", "full": "en"}, {"text": "知識管理", "full": "知識管理"}, {"text": "関連する動画の候補", "full": "関連する動画の候補"}, {"text": "Notebook保…", "full": "Notebook保存・確認"}, {"text": "待ち", "full": "待ち：Notebookのログインを手動で復旧してください"}, {"text": "未接続", "full": "Notebook 未接続"}], "rejected": false, "status": "waiting", "url": "https://www.youtube.com/watch?v=ccccccccccc", "translate": true}], "checked": ["aaaaaaaaaaa"], "cat": "idle", "busy": false, "answer": "", "notice": "気になる動画を選んで、あなたの図書館へ。これは確認用の静止ページです。"}, "asset_base": "../../automation/subtitle-switch/assets/", "auth": ""};
+<script nonce="preview">const BOOT={"font": 0, "fonts": ["ZenMaruGothic-Black", "KiwiMaru-Medium", "DelaGothicOne-Regular", "HachiMaruPop-Regular", "DotGothic16-Regular", "PottaOne-Regular"], "sprites": {"frame_width": 256, "frame_height": 192, "states": {"idle": {"frames": 6, "fps": 5, "loop": true, "hold_last": false}, "walk": {"frames": 8, "fps": 8, "loop": true, "hold_last": false}, "done": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}, "error": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}}, "face": {"frame_width": 192, "frame_height": 192, "states": {"idle": {"frames": 6, "fps": 5, "loop": true, "hold_last": false}, "walk": {"frames": 8, "fps": 8, "loop": true, "hold_last": false}, "done": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}, "error": {"frames": 6, "fps": 6, "loop": false, "hold_last": true}}}}, "play": {"frame_width": 256, "frame_height": 192, "look": {"directions": 8, "order": "00=right, then clockwise every 45 degrees (01=down-right, 02=down, 03=down-left, 04=left, 05=up-left, 06=up, 07=up-right)"}, "punch_left": {"frames": 4, "fps": 10}, "punch_right": {"frames": 4, "fps": 10}, "cursor": {"files": {"32": "cursor/teaser_32.png", "64": "cursor/teaser_64.png"}, "hotspot": [2, 2], "hotspot_note": "hotspot for teaser_32; scale x2 for teaser_64"}, "punch_radius_px": 110, "punch_cooldown_sec": 0.6}, "demo": true, "state": {"rows": [{"id": "aaaaaaaaaaa", "cells": [{"text": "Claude Codeの使い方と、これからのAI研究", "full": "Claude Codeの使い方と、これからのAI研究"}, {"text": "AIのある暮らし", "full": "AIのある暮らし"}, {"text": "2026-10-26", "full": "2026-10-26"}, {"text": "ja", "full": "ja"}, {"text": "AIエージェント", "full": "AIエージェント"}, {"text": "気になる研究テーマ", "full": "気になる研究テーマ"}, {"text": "重複確認", "full": "重複確認"}, {"text": "未処理", "full": "未処理"}, {"text": "未実行", "full": "未実行（Notebook 工程の前）"}], "rejected": false, "status": "pending", "url": "https://www.youtube.com/watch?v=aaaaaaaaaaa", "translate": false}, {"id": "bbbbbbbbbbb", "cells": [{"text": "小さな自動化を、確かな仕組みに育てる", "full": "小さな自動化を、確かな仕組みに育てる"}, {"text": "テクノロジー研究室", "full": "テクノロジー研究室"}, {"text": "2026-10-25", "full": "2026-10-25"}, {"text": "ja", "full": "ja"}, {"text": "自動化", "full": "自動化"}, {"text": "登録チャンネルから", "full": "登録チャンネルから"}, {"text": "検品", "full": "検品"}, {"text": "要確認", "full": "要確認"}, {"text": "54", "full": "54"}], "rejected": false, "status": "attention", "url": "https://www.youtube.com/watch?v=bbbbbbbbbbb", "translate": false}, {"id": "ccccccccccc", "cells": [{"text": "Notebookでつながる、学びのライブラリ", "full": "Notebookでつながる、学びのライブラリ"}, {"text": "今日のAIノート", "full": "今日のAIノート"}, {"text": "2026-10-24", "full": "2026-10-24"}, {"text": "en", "full": "en"}, {"text": "知識管理", "full": "知識管理"}, {"text": "関連する動画の候補", "full": "関連する動画の候補"}, {"text": "Notebook保…", "full": "Notebook保存・確認"}, {"text": "待ち", "full": "待ち：Notebookのログインを手動で復旧してください"}, {"text": "未接続", "full": "Notebook 未接続"}], "rejected": false, "status": "waiting", "url": "https://www.youtube.com/watch?v=ccccccccccc", "translate": true}], "checked": ["aaaaaaaaaaa"], "cat": "idle", "busy": false, "answer": "", "notice": "気になる動画を選んで、あなたの図書館へ。これは確認用の静止ページです。"}, "asset_base": "../../automation/subtitle-switch/assets/", "auth": ""};
 /* Pure animation/interaction rules shared by the page and model-free Node tests. */
 const CatMotion = (() => {
   function direction(dx, dy) {
@@ -273,8 +274,6 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
     $('answer').textContent = state.answer || (state.busy ? '処理中です…' : 'ここに回答が表示されます。');
     if (state.cat !== catState) { catState = state.cat; catStart = performance.now(); }
     $('cat-state').textContent = labels[catState]; $('cat-state').dataset.state = catState;
-    $('grok-reason').textContent = BOOT.grok_reason;
-    $('grok').title = BOOT.grok_reason;
     lockControls();
   }
   const translations = new Map();
@@ -308,7 +307,7 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
     link.addEventListener('blur', () => { tip.hidden = true; });
   }
   function lockControls() {
-    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #send-question, #rows input').forEach(el => { el.disabled = state.busy || sending; });
+    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #send-question, #web-check, #rows input').forEach(el => { el.disabled = state.busy || sending; });
   }
   async function request(path, data) {
     const response = await fetch(path + BOOT.auth, {
@@ -354,7 +353,7 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
   $('send-question').addEventListener('click', () => {
     const question = $('question').value.trim();
     if (!question || question.length > 2000) { $('answer').textContent = '質問は1〜2000文字で入力してください。'; return; }
-    operate({action: 'ask', question});
+    operate({action: 'ask', question, web: $('web-check').checked});
   });
   render(state);
   if (!demo) {

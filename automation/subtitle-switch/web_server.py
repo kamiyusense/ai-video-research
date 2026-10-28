@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 import switch_app as app
-from ask_research import GROK_REASON, MAX_QUESTION, ask
+from ask_research import MAX_QUESTION, ask
 from metadata import refresh_metadata
 from pipeline import InstanceLock, StageFailure
 from services import Services, command
@@ -80,7 +80,7 @@ class Controller:
         with self.guard:
             return copy.deepcopy({'rows': self.rows, 'checked': sorted(self.checked),
                                   'busy': self.busy, 'cat': self.cat, 'notice': self.notice,
-                                  'answer': self.answer, 'grok_reason': GROK_REASON})
+                                  'answer': self.answer})
 
     def _start(self, action, job):
         # Caller owns guard; setting busy precedes spawning so duplicate POSTs cannot race.
@@ -184,8 +184,9 @@ class Controller:
                     self._start('保存', save)
             elif action == 'ask':
                 text = data.get('question')
-                if data.get('provider', 'claude') != 'claude':
-                    raise ValueError(GROK_REASON)
+                web = data.get('web', False)
+                if type(web) is not bool:
+                    raise ValueError('ネット確認の指定を確認してください')
                 if not isinstance(text, str) or not 1 <= len(text.strip()) <= MAX_QUESTION:
                     raise ValueError('質問は1〜2000文字で入力してください')
                 self.answer = ''
@@ -193,7 +194,7 @@ class Controller:
                 chosen = sorted(self.checked & {r['id'] for r in self.rows})
                 def question():
                     self.answer = self.question(text, self.config['repository'], self.state_dir / 'question_logs',
-                                                video_ids=chosen or None)
+                                                video_ids=chosen or None, web=web)
                 self._start('質問', question)
             else:
                 raise ValueError('未対応の操作です')
@@ -254,7 +255,7 @@ def load_manifest(folder, play=False):
 def boot_data():
     return {'font': secrets.randbelow(len(FONTS)), 'fonts': FONTS,
             'sprites': load_manifest(ROOT / 'assets/cat_sprites'),
-            'play': load_manifest(ROOT / 'assets/cat_play', True), 'grok_reason': GROK_REASON}
+            'play': load_manifest(ROOT / 'assets/cat_play', True)}
 
 
 def render_page(boot, asset_base='/assets/', auth='', nonce='preview'):

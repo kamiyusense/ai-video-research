@@ -67,7 +67,7 @@ def test_question_bounds_and_local_research_only(tmp_path):
             assert False
         except ValueError:
             pass
-    assert 'UNKNOWN' in ask_research.GROK_REASON
+    assert not hasattr(ask_research, 'GROK_REASON')
 
 
 def test_title_and_control_dimensions():

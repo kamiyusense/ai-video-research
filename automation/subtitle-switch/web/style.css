@@ -28,3 +28,4 @@ dialog{border:1px solid #e4e8ee;border-radius:20px;padding:24px;width:min(740px,
 /* Owner: the status badge under the close-up cat is not wanted; the cat itself shows the state. */
 .state-mark{display:none}
 col.channel-col{width:105px}col.theme-col{width:76px}col.reason-col{width:70px}col.stage-col{width:78px}col.notebook-col{width:96px}
+.question-buttons{align-items:center}dialog label.web-check{display:flex;align-items:center;gap:7px;margin:0 0 0 6px;font-size:12px;font-weight:600;color:#5d6572;cursor:pointer}.web-check input{width:17px;height:17px}

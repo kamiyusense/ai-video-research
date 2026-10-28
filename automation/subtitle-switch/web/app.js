@@ -116,8 +116,6 @@
     $('answer').textContent = state.answer || (state.busy ? '処理中です…' : 'ここに回答が表示されます。');
     if (state.cat !== catState) { catState = state.cat; catStart = performance.now(); }
     $('cat-state').textContent = labels[catState]; $('cat-state').dataset.state = catState;
-    $('grok-reason').textContent = BOOT.grok_reason;
-    $('grok').title = BOOT.grok_reason;
     lockControls();
   }
   const translations = new Map();
@@ -151,7 +149,7 @@
     link.addEventListener('blur', () => { tip.hidden = true; });
   }
   function lockControls() {
-    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #send-question, #rows input').forEach(el => { el.disabled = state.busy || sending; });
+    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #send-question, #web-check, #rows input').forEach(el => { el.disabled = state.busy || sending; });
   }
   async function request(path, data) {
     const response = await fetch(path + BOOT.auth, {
@@ -197,7 +195,7 @@
   $('send-question').addEventListener('click', () => {
     const question = $('question').value.trim();
     if (!question || question.length > 2000) { $('answer').textContent = '質問は1〜2000文字で入力してください。'; return; }
-    operate({action: 'ask', question});
+    operate({action: 'ask', question, web: $('web-check').checked});
   });
   render(state);
   if (!demo) {

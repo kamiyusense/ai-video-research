@@ -9,7 +9,7 @@ from pipeline import InstanceLock, Pipeline
 from switch_state import Inventory, read_inbox, write_preferences, flush_preferences, atomic_json
 from services import Services, browser, intake_url, command
 from metadata import refresh_metadata
-from ask_research import ask, GROK_REASON
+from ask_research import ask
 import ui_design as design
 
 
