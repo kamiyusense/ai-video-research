@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 35,
-  "total_video_records": 32,
+  "total_records": 36,
+  "total_video_records": 33,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -8963,6 +8963,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-S2eESu4hSKk-subtitle-switch.md",
+      "video_id": "S2eESu4hSKk",
+      "title": "研究ノート：今週話題のGitHub無料リポジトリ5選（S2eESu4hSKk）",
+      "canonical_url": "https://www.youtube.com/watch?v=S2eESu4hSKk",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:S2eESu4hSKk:research",
+      "transcript_logical_id": "youtube:S2eESu4hSKk:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "GitHubトレンド5選",
+        "AIエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "話者が、今週星を急増させた5つのOSSを5位から1位へ順に紹介する。動画生成、バイナリ解析、複数エージェント管理、就職活動支援、音声クローンと分野は幅広い。各項目で仕組み、話題化の経緯、注意点を示し、最後に用途別の推奨を述べる。共通項は、コーディングエージェントとの連携と、導入前の注意点の提示である。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 本ノートは自動字幕のみに基づく。映像は未確認で、画面上の表示内容は把握していない。\n- 公式資料（各リポジトリ、README、ライセンス）とは未照合。星の数、日付、数値は話者の発言のままで、検証していない。\n- 自動字幕には誤変換の可能性がある。固有名詞（人名、会社名、製品名の綴り）は特に不確かである。\n- 各ツールの現行仕様、対応環境、ライセンス条件、料金、動作要件：UNKNOWN。\n- 話者の評価や推奨は主観であり、動画内で独立した検証は示されていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -8992,16 +9023,17 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 35,
+    "total_nodes": 36,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 1,
+    "isolated_nodes_count": 2,
     "isolated_video_ids": [
-      "8QgBcI40VC8"
+      "8QgBcI40VC8",
+      "S2eESu4hSKk"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
