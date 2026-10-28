@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+import os
+from datetime import date, datetime
 from pathlib import Path
 
 from pipeline import InstanceLock, Pipeline
@@ -185,7 +186,26 @@ def save_targets(inventory, mode, manual_text='', selected=()):
     return {row['video_id'] for row in manual if not inventory.data['videos'][row['video_id']]['rejected']}
 
 
-def main(config_path):
-    """Launch the local browser UI; importing this module starts nothing."""
-    from web_server import run
-    run(config_path)
+def main(config_path, run=None, alert=None):
+    """Launch the local browser UI; importing this module starts nothing.
+
+    pythonw drops stderr, so a start-up failure used to vanish without a trace (owner,
+    2026-10-29). Write it next to the config and say so in a Windows message box."""
+    if run is None:
+        from web_server import run
+    try:
+        run(config_path)
+    except Exception:
+        import traceback
+        log = Path(config_path).resolve().parent / 'app_error.log'
+        with open(log, 'a', encoding='utf-8') as handle:
+            handle.write(f'--- {datetime.now():%Y-%m-%d %H:%M:%S}\n{traceback.format_exc()}')
+        (alert or show_alert)('字幕図書館の起動に失敗しました。\n記録：' + str(log)
+                              + '\nこの画面のスクショか、記録の中身をClaudeに見せてください。')
+        raise
+
+
+def show_alert(text):
+    if os.name == 'nt':
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(None, text, 'AI動画字幕図書館司書猫さん', 0x10)

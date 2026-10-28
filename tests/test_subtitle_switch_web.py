@@ -641,3 +641,15 @@ def test_services_login_check_is_read_only_and_window_uses_cli(tmp_path, monkeyp
     monkeypatch.setattr(services.shutil, 'which', lambda name: None)
     with pytest.raises(services.StageFailure):
         s.open_notebook_login(popen=lambda *a, **kw: None)
+
+
+def test_start_failure_is_logged_and_shown(tmp_path):
+    config = tmp_path / 'config.local.json'
+    shown = []
+    def broken(path):
+        raise ValueError('起動テスト失敗')
+    with pytest.raises(ValueError):
+        switch_app.main(config, run=broken, alert=shown.append)
+    log = (tmp_path / 'app_error.log').read_text(encoding='utf-8')
+    assert '起動テスト失敗' in log and 'Traceback' in log
+    assert shown and 'app_error.log' in shown[0]
