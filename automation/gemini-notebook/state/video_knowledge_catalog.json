@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 38,
-  "total_video_records": 35,
+  "total_records": 39,
+  "total_video_records": 36,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -8963,6 +8963,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-bfPTHS9r7gs-subtitle-switch.md",
+      "video_id": "bfPTHS9r7gs",
+      "title": "【研究ノート】Hermes Agentに入れる10個のスキル紹介 [bfPTHS9r7gs]",
+      "canonical_url": "https://www.youtube.com/watch?v=bfPTHS9r7gs",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:bfPTHS9r7gs:research",
+      "transcript_logical_id": "youtube:bfPTHS9r7gs:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes Agent",
+        "エージェントスキル"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "配信者は自分のHermes Agentに入れて使っているスキルを10位から1位の順に紹介する。図解の見栄え、調査の厳密さ、セキュリティ診断、UIデザイン、動画生成、ログイン必須サイトの閲覧、ローカル記憶、簡潔な回答、計画のファイル保持、過剰実装の抑制が対象である。最初に入れるべきとされるのは過剰実装を抑える1位のスキル。各効果は配信者自身の実演に基づく主張で、独立した検証はない。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、画面上の実演の内容や結果は字幕から推測できない。\n- 公式資料(各リポジトリ、Hermes Agentの仕様、導入手順)は未照合。スキルの正式名称、実在、機能、導入コマンドはUNKNOWN。\n- 字幕は自動生成で、固有名詞(GBrain、HyperFrame、Ponytail、Agent Reach等)に誤変換の可能性がある。\n- 効果の大小(品質向上、トークン削減など)は配信者の主張のみで、再現や比較検証は未実施。\n- 収益・宣伝目的の可能性があり、概要欄のリンク先は未確認。順位付けは配信者の主観である。\n- Hermes Agent自体の仕様と対応環境はUNKNOWN。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-29-RknGPBeA6AQ-subtitle-switch.md",
       "video_id": "RknGPBeA6AQ",
       "title": "研究ノート：Paperclipで小規模AIエージェントチームを運用する",
@@ -9086,16 +9117,17 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 38,
+    "total_nodes": 39,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 4,
+    "isolated_nodes_count": 5,
     "isolated_video_ids": [
       "8QgBcI40VC8",
+      "bfPTHS9r7gs",
       "RknGPBeA6AQ",
       "S2eESu4hSKk",
       "wETSpF4ef6E"
