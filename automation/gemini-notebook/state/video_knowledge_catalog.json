@@ -3,8 +3,8 @@
   "generated_at": "2026-10-30",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 48,
-  "total_video_records": 45,
+  "total_records": 49,
+  "total_video_records": 46,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9337,6 +9337,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-30-ScSDVV5xhww-subtitle-switch.md",
+      "video_id": "ScSDVV5xhww",
+      "title": "研究ノート：Uncensored AI + REA Can Reverse Engineer Anything",
+      "canonical_url": "https://www.youtube.com/watch?v=ScSDVV5xhww",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-30",
+      "logical_id": "youtube:ScSDVV5xhww:research",
+      "transcript_logical_id": "youtube:ScSDVV5xhww:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "リバースエンジニアリング支援AI",
+        "無検閲モデル"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "配信者は、GhidraとつなぐMCPサーバ型リポジトリ「REA」を、商用モデルの拒否を避けるため無検閲モデルで動かす方法を紹介する。構成は、エージェント実行環境、無検閲モデル（ローカルまたは従量課金の中継サービス）、REAの3点。QuickTime Player互換アプリを初版約4ドル、仕上げまで追加5〜6ドルで作ったと述べる。ただし完全再現ではなく、サーバ側資源は再現できない。リポジトリ自体に新規性はなく、道具の集約が価値だという評価である。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 字幕は自動生成（英語）で、誤変換の可能性がある。固有名詞（REA、ツール名、サービス名、モデル名）は表記が揺れており、正確な名称は未確認。\n- 映像は未確認で、画面上のデモや表示内容は字幕からの推測を含まない範囲でのみ扱った。\n- 公式資料（リポジトリ、各サービス、モデルの仕様・価格）は未照合。外部仕様はUNKNOWN。\n- 成果物の完成度、費用、所要時間、「約8割」は配信者の自己申告で、再現性は未検証。\n- 法的適合性（ライセンス、利用規約、地域の法令）はUNKNOWN。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-30-v_XdN5-ya9A-subtitle-switch.md",
       "video_id": "v_XdN5-ya9A",
       "title": "研究ノート：REA(Reverse Engineer Anything)とClaude Codeでアプリを解析し再実装する [v_XdN5-ya9A]",
@@ -9399,14 +9430,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 48,
+    "total_nodes": 49,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 14,
+    "isolated_nodes_count": 15,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9421,6 +9452,7 @@
       "wETSpF4ef6E",
       "zY45n9fPmMM",
       "7si7ZFFCZyg",
+      "ScSDVV5xhww",
       "v_XdN5-ya9A"
     ],
     "bidirectional_links_count": 54,

@@ -703,6 +703,15 @@
       "research_date": "2026-10-30",
       "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
       "transcript_sha256": "ea5b55f873e34f5e4a96f066567b8a65df48980bfdce32d0c45713bbeeecc077"
+    },
+    {
+      "record_id": "youtube:ScSDVV5xhww",
+      "video_id": "ScSDVV5xhww",
+      "canonical_url": "https://www.youtube.com/watch?v=ScSDVV5xhww",
+      "research_path": "research/2026-10-30-ScSDVV5xhww-subtitle-switch.md",
+      "research_date": "2026-10-30",
+      "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
+      "transcript_sha256": "a667ac8a36e253e6bdead0d73d0365c62dc0b58669ee3d7974fd9c683ad3e0b0"
     }
   ]
 }
