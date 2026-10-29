@@ -3,8 +3,8 @@
   "generated_at": "2026-10-30",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 49,
-  "total_video_records": 46,
+  "total_records": 50,
+  "total_video_records": 47,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9401,6 +9401,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-30-xm92KJ7ipqc-subtitle-switch.md",
+      "video_id": "xm92KJ7ipqc",
+      "title": "研究ノート：REA（Reverse Engineer Anything）チュートリアルとデモ [xm92KJ7ipqc]",
+      "canonical_url": "https://www.youtube.com/watch?v=xm92KJ7ipqc",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-30",
+      "logical_id": "youtube:xm92KJ7ipqc:research",
+      "transcript_logical_id": "youtube:xm92KJ7ipqc:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "リバースエンジニアリング支援MCP"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "REAは、バイナリ、Electronアプリ、Webサイトを調べ、その証拠をAIエージェントへ渡すMCPサーバーである。解釈はエージェント側のモデルが担う。ネイティブプログラムの解析には別途Ghidraが必要になる。動画ではOpenCodeに導入し、シンボルを除去したcalコマンド（実体はncal）について、1752年9月の11日間の欠落に関わるコードを自然言語の質問だけで探させた。エージェントはmain関数内の固定日付を見つけ、未追跡の部分も申告した。著者は、最終判断は人間が行うべきだと述べている。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕テキストのみに基づく。画面上の表示内容、バージョン番号、コマンド、プロンプト全文は未確認。\n- 公式資料（リポジトリ、ドキュメント）とは未照合。ツールの正式名称、対応範囲、必須バージョンはUNKNOWN。\n- 字幕は自動生成で、固有名詞（Ria/Area/Riya表記の揺れ、Cursive、CodeXなど）に誤変換の可能性がある。\n- 所要時間・費用・結果の再現性は著者の申告であり、独自検証していない。\n- 外部仕様（Ghidra、Node、Java、各エージェントの要件、1752年の暦史）はUNKNOWNとして扱う。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -9430,14 +9460,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 49,
+    "total_nodes": 50,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 15,
+    "isolated_nodes_count": 16,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9453,7 +9483,8 @@
       "zY45n9fPmMM",
       "7si7ZFFCZyg",
       "ScSDVV5xhww",
-      "v_XdN5-ya9A"
+      "v_XdN5-ya9A",
+      "xm92KJ7ipqc"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
