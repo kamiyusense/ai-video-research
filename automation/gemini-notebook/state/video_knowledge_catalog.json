@@ -3,8 +3,8 @@
   "generated_at": "2026-10-29",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 45,
-  "total_video_records": 42,
+  "total_records": 46,
+  "total_video_records": 43,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9274,6 +9274,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-29-zY45n9fPmMM-subtitle-switch.md",
+      "video_id": "zY45n9fPmMM",
+      "title": "会議終了を起点にGemini Notebook追加と議事録再生成を自動化する手順の研究ノート [zY45n9fPmMM]",
+      "canonical_url": "https://www.youtube.com/watch?v=zY45n9fPmMM",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-29",
+      "logical_id": "youtube:zY45n9fPmMM:research",
+      "transcript_logical_id": "youtube:zY45n9fPmMM:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Workspace Studio",
+        "Gemini Notebook",
+        "会議自動化"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "会議メモをNotebookへ手動で追加し続けるのは続かない、という課題から出発する。Workspace Studioで、Meetの自動メモ出力を開始条件にし、メモのリンクをNotebookのソースへ入れ、Geminiに社内書式の議事録を作らせ、元ドキュメントの新規タブへ追記する4ステップを示す。応用として、テンプレート添付による書式固定のドキュメント・スライド生成、課題管理表への行追加、条件分岐が紹介される。まず小さく始めて広げる方針である。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、画面操作や設定項目名は音声字幕からの推定を含む。\n- 公式資料とは未照合。Workspace Studioの仕様、提供条件、料金区分、上限の最新値は UNKNOWN。\n- 字幕は自動字幕の誤変換の可能性がある（例：人名・社名・数字・「Notebook」表記）。数値（25個、ステップ数、繰り返し回数、所要時間）は要再確認。\n- 字幕には聞き取り不明の箇所が1つあり、該当部分の内容は不明。\n- 実際に再現して動作確認はしていない。出力品質（書式の再現性、課題抽出の精度）は話者の自己評価に依存する。\n- 外部ユーザーへのNotebook共有の仕様は次回扱いで、本動画では UNKNOWN。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -9303,14 +9335,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 45,
+    "total_nodes": 46,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 11,
+    "isolated_nodes_count": 12,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9322,7 +9354,8 @@
       "RknGPBeA6AQ",
       "S2eESu4hSKk",
       "Sl1EQw5wwKc",
-      "wETSpF4ef6E"
+      "wETSpF4ef6E",
+      "zY45n9fPmMM"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
