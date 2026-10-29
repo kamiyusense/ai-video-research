@@ -3,8 +3,8 @@
   "generated_at": "2026-10-30",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 51,
-  "total_video_records": 48,
+  "total_records": 52,
+  "total_video_records": 49,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9337,6 +9337,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-30-HvfmnI6wl5c-subtitle-switch.md",
+      "video_id": "HvfmnI6wl5c",
+      "title": "研究ノート：Claude CodeとREAによるリバースエンジニアリング入門",
+      "canonical_url": "https://www.youtube.com/watch?v=HvfmnI6wl5c",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-30",
+      "logical_id": "youtube:HvfmnI6wl5c:research",
+      "transcript_logical_id": "youtube:HvfmnI6wl5c:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "リバースエンジニアリング",
+        "Claude Code"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "REAは、Ghidra・IDA Pro・Hopperといった既存の解析ツールをAIエージェントへ渡す道具箱として紹介されている。投稿者はMac標準の電卓の基本モードをWebページで再現させ、REAありのClaude Codeとなしのものを比べた。どちらも「200+10%=220」という隠れた挙動を再現できた。違いは経路である。REAありは逆コンパイル結果の該当コードを根拠に示した。なしは実機操作の総当たりで推定し、実装箇所は不明と答えた。見た目はなしの方が近かったという。投稿者は新技術ではなく、既存ツールを導入しやすく包んだものと位置づけている。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。画面上の操作や出力は、字幕と投稿者の発言からの推測を含む。\n- 公式資料は未照合。REAの仕様、導入手順、ツールの来歴や価格などの外部仕様は UNKNOWN。\n- 自動字幕のため、固有名詞や数値に誤変換の可能性がある。リポジトリ名やコマンドは、利用前に原典で確認が必要。\n- 比較は単発の事例で、所要時間も投稿者の申告である。統計的な優劣は言えない。\n- 動画の公開日や再生数などの数値は、字幕外の情報であり確認していない。\n- 利用規約やライセンスの面での適法性は、動画では扱われておらず UNKNOWN。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-30-RtFYGM1wpOY-subtitle-switch.md",
       "video_id": "RtFYGM1wpOY",
       "title": "研究ノート：REA - AIエージェント向けリバースエンジニアリング・ツールキット [RtFYGM1wpOY]",
@@ -9491,14 +9522,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 51,
+    "total_nodes": 52,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 17,
+    "isolated_nodes_count": 18,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9513,6 +9544,7 @@
       "wETSpF4ef6E",
       "zY45n9fPmMM",
       "7si7ZFFCZyg",
+      "HvfmnI6wl5c",
       "RtFYGM1wpOY",
       "ScSDVV5xhww",
       "v_XdN5-ya9A",
