@@ -248,8 +248,9 @@ class Controller:
                             if time.monotonic() - self.login_opened_at > LOGIN_WINDOW_SECONDS:
                                 service.open_notebook_login()
                                 self.login_opened_at = time.monotonic()
-                            raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインし、'
-                                             '黒い画面の案内どおりEnterを押してから、もう一度保存を押してください。')
+                            # notebooklm-py 0.8.5 saves the login and closes its window by itself (no Enter).
+                            raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインしてください'
+                                             '（覚えている場合は自動で済み、画面は勝手に閉じます）。閉じたら、もう一度保存を押してください。')
                         if getattr(service, 'notebook_login_ok', None):
                             self.login_verified(targets)
                         self.session(self.inventory, service,
