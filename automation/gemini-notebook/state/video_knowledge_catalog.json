@@ -3,8 +3,8 @@
   "generated_at": "2026-10-30",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 52,
-  "total_video_records": 49,
+  "total_records": 53,
+  "total_video_records": 50,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9337,6 +9337,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-30-G6wT2XZfK0E-subtitle-switch.md",
+      "video_id": "G6wT2XZfK0E",
+      "title": "研究ノート：AIリバースエンジニアリングツール「REA」の急上昇と実力・注意点 [G6wT2XZfK0E]",
+      "canonical_url": "https://www.youtube.com/watch?v=G6wT2XZfK0E",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-30",
+      "logical_id": "youtube:G6wT2XZfK0E:research",
+      "transcript_logical_id": "youtube:G6wT2XZfK0E:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "REA リバースエンジニアリング"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "REAは、Claude Codeなどのエージェントに既存の解析ツール群を使わせるMCPサーバー兼CLIで、MITライセンスのOSSと説明される。新しい解析技術ではなく接続役であり、結論ごとに根拠と不明点を返す設計だという。短期間のスター急増は実在するが、話題は他の逆解析事例と混ざっている。第三者検証では単純なアプリで利点が小さく、見落としもあった。偽リポジトリ、非サンドボックス、規約・法律面に注意が要る。動画は「言い過ぎ」と結論づけ、重要処理はサーバー側に置く設計を勧める。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 本ノートは自動字幕のみに基づく。映像は未確認で、画面上の表示は反映していない。\n- 自動字幕のため誤変換の可能性がある（固有名詞、数値、ツール名、リポジトリ名など。例：「ボスハブ」等は本来の名称が不明）。\n- 公式資料（リポジトリ、サイト、各検証記事）は未照合。スター数、投稿日、事例、検証結果、ライセンス、公式URLはいずれもUNKNOWN。\n- 外部仕様（REAの機能・対応範囲・バージョン、MCP仕様、各国の法令・規約）はUNKNOWN。\n- 法的な記述は動画内の一般論であり、本ノートは法的助言ではない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-30-HvfmnI6wl5c-subtitle-switch.md",
       "video_id": "HvfmnI6wl5c",
       "title": "研究ノート：Claude CodeとREAによるリバースエンジニアリング入門",
@@ -9522,14 +9552,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 52,
+    "total_nodes": 53,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 18,
+    "isolated_nodes_count": 19,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9544,6 +9574,7 @@
       "wETSpF4ef6E",
       "zY45n9fPmMM",
       "7si7ZFFCZyg",
+      "G6wT2XZfK0E",
       "HvfmnI6wl5c",
       "RtFYGM1wpOY",
       "ScSDVV5xhww",
