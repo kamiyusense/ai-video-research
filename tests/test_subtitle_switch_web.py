@@ -565,9 +565,9 @@ def test_stopped_rows_need_a_stated_fix_before_saving(controller):
     with pytest.raises(ValueError, match='失敗からの再開'):
         c.operate({'action': 'selected'})
     assert not c.calls and not c.snapshot()['busy']
-    c.operate({'action': 'selected', 'correction': 'アプリの修正を反映'})
+    c.operate({'action': 'selected', 'correction': '設定を修正'})
     c.worker.join(5)
-    assert c.calls == [({'aaaaaaaaaaa'}, 'アプリの修正を反映')]
+    assert c.calls == [({'aaaaaaaaaaa'}, '設定を修正')]
 
 
 def test_stopped_row_hover_says_cause_next_step_and_error():
@@ -653,3 +653,13 @@ def test_start_failure_is_logged_and_shown(tmp_path):
     log = (tmp_path / 'app_error.log').read_text(encoding='utf-8')
     assert '起動テスト失敗' in log and 'Traceback' in log
     assert shown and 'app_error.log' in shown[0]
+
+
+def test_app_fix_correction_names_the_app_version(controller):
+    c = controller
+    row = c.inventory.data['videos']['aaaaaaaaaaa']
+    row.update(failed=True, status='attention', status_reason='RESEARCH_EVIDENCE_TIME_UNVERIFIED')
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    c.operate({'action': 'selected', 'correction': 'アプリの修正を反映'})
+    c.worker.join(5)
+    assert c.calls == [({'aaaaaaaaaaa'}, 'アプリの修正を反映@' + web.app_revision())]

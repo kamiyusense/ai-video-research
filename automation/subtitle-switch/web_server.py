@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import mimetypes
 import os
@@ -196,6 +197,9 @@ class Controller:
                 text, correction = data.get('urls', ''), data.get('correction', '')
                 if not isinstance(text, str) or len(text) > 32000 or correction not in CORRECTIONS:
                     raise ValueError('URLまたは再開原因を確認してください')
+                if correction == 'アプリの修正を反映':
+                    # Each new app version is a new fix: the same label may resume a row again (still max 2).
+                    correction += '@' + app_revision()
                 # Visible checked rows only: hidden rows cannot be saved accidentally.
                 selected = self.checked & {r['id'] for r in self.rows}
                 targets = app.save_targets(self.inventory, action, text, selected)
@@ -341,6 +345,14 @@ def boot_data():
     return {'font': secrets.randbelow(len(FONTS)), 'fonts': FONTS,
             'sprites': load_manifest(ROOT / 'assets/cat_sprites'),
             'play': load_manifest(ROOT / 'assets/cat_play', True)}
+
+
+def app_revision():
+    """Short fingerprint of the app's own code, so 「アプリの修正を反映」 names which fix it means."""
+    digest = hashlib.sha256()
+    for path in sorted(ROOT.glob('*.py')) + sorted((ROOT / 'web').glob('*')):
+        digest.update(path.name.encode() + b'\0' + path.read_bytes())
+    return digest.hexdigest()[:8]
 
 
 def render_page(boot, asset_base='/assets/', auth='', nonce='preview'):
