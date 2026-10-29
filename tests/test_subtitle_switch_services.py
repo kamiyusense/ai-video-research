@@ -240,6 +240,14 @@ class AdapterTests(unittest.TestCase):
         self.assertIn('transcript', caught.exception.detail)
         self.assertIn('Notebook9字', caught.exception.detail)  # 'truncated', whitespace-free
 
+    def test_notebook_dash_rules_for_front_matter_still_match(self):
+        self.prepare()
+        self.services.notebook(self.row)
+        body = self.notebook.bodies['0']
+        self.notebook.bodies['0'] = body.replace('---\n', '-' * 40 + '\n')
+        self.services.notebook(self.row)  # readback passes; nothing is sent again
+        self.assertEqual(len(self.notebook.adds), 2)
+
     def test_readback_waits_for_processing_before_reading(self):
         self.prepare()
         order = []

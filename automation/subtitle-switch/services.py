@@ -58,9 +58,16 @@ def youtube_refusal(stderr):
     if '429' in text or 'too many requests' in text:
         raise StageFailure('YOUTUBE_RATE_LIMIT', waiting=True, global_stage=True)
 
+def without_rules(text):
+    """NotebookLM shows the OKF front-matter fences (---) as long dash rules; compare without rule lines.
+
+    Observed 2026-10-29 on all 11 transcripts: the Notebook copy was the expected text plus 74 dashes."""
+    return re.sub(r'(?m)^[ \t]*-{3,}[ \t]*$', '', text or '')
+
+
 def readback_difference(kind, expected, actual, ready):
     """One local line saying where the Notebook copy first differs (owner: diagnose without chat)."""
-    want, got = nb.normalize_for_readback(expected), nb.normalize_for_readback(actual)
+    want, got = (nb.normalize_for_readback(without_rules(t)) for t in (expected, actual))
     at = next((i for i, (a, b) in enumerate(zip(want, got)) if a != b), min(len(want), len(got)))
     return (f'{kind}: 処理完了={"yes" if ready else "UNKNOWN"} 期待{len(want)}字/Notebook{len(got)}字 '
             f'{at}字目から違う 期待「{want[at:at + 30]}」 Notebook「{got[at:at + 30]}」')
@@ -496,7 +503,7 @@ class Services:
     def check_readback(self, kind, sid, expected):
         ready = getattr(self.nb_client, 'wait_ready', lambda _: True)(sid)
         actual = self.nb_client.get_fulltext(sid)
-        if not nb.readback_matches(expected, actual)['match']:
+        if not nb.readback_matches(without_rules(expected), without_rules(actual))['match']:
             raise StageFailure('NOTEBOOK_READBACK_MISMATCH',
                                detail=readback_difference(kind, expected, actual, ready))
 

@@ -227,7 +227,12 @@ class Controller:
                         self.preferences_dirty = False  # the save session already sent every rejection
                         pending = len(list((self.state_dir / 'preference_outbox').glob('preferences_*.json')))
                         skipped = f'止まった動画{len(stopped)}本は再開の選択が無いため飛ばしました。' if stopped and not correction else ''
-                        self.notice = f'処理終了。{skipped}好みメモ送信待ち：{pending}件。待ち／要確認は一覧を確認してください。'
+                        rows = [self.inventory.data['videos'][vid] for vid in targets if vid in self.inventory.data['videos']]
+                        done = sum(row['status'] in ('complete', 'ALREADY_REGISTERED') for row in rows)
+                        stuck = sum(row['status'] in ('attention', 'waiting') for row in rows)
+                        # Owner (2026-10-29): 「処理終了」 alone read like success when every row had stopped.
+                        self.notice = (f'処理終了：成功{done}本（一覧から消えます）／要確認・待ち{stuck}本。{skipped}'
+                                       f'好みメモ送信待ち：{pending}件。')
                     self.publish()
                     self._start('保存', save)
             elif action == 'ask':
