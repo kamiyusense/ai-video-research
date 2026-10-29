@@ -59,10 +59,14 @@ def youtube_refusal(stderr):
         raise StageFailure('YOUTUBE_RATE_LIMIT', waiting=True, global_stage=True)
 
 def without_rules(text):
-    """NotebookLM shows the OKF front-matter fences (---) as long dash rules; compare without rule lines.
+    """Undo NotebookLM's display rewrites before comparing (observed 2026-10-29).
 
-    Observed 2026-10-29 on all 11 transcripts: the Notebook copy was the expected text plus 74 dashes."""
-    return re.sub(r'(?m)^[ \t]*-{3,}[ \t]*$', '', text or '')
+    - The OKF front-matter fences (---) come back as 40-dash rules (+74 characters per transcript).
+    - Bare links <https://...> lose their angle brackets, and a link whose text is its own URL
+      may come back as [url](url); both are reduced to the plain URL."""
+    text = re.sub(r'(?m)^[ \t]*-{3,}[ \t]*$', '', text or '')
+    text = re.sub(r'<(https?://[^>\s]+)>', r'\1', text)
+    return re.sub(r'\[(https?://[^\]\s]+)\]\(\1\)', r'\1', text)
 
 
 def readback_difference(kind, expected, actual, ready):
@@ -70,7 +74,7 @@ def readback_difference(kind, expected, actual, ready):
     want, got = (nb.normalize_for_readback(without_rules(t)) for t in (expected, actual))
     at = next((i for i, (a, b) in enumerate(zip(want, got)) if a != b), min(len(want), len(got)))
     return (f'{kind}: 処理完了={"yes" if ready else "UNKNOWN"} 期待{len(want)}字/Notebook{len(got)}字 '
-            f'{at}字目から違う 期待「{want[at:at + 30]}」 Notebook「{got[at:at + 30]}」')
+            f'{at}字目から違う 期待「{want[at:at + 60]}」 Notebook「{got[at:at + 60]}」')
 
 
 class NotebookClient(nb.NotebookLmCliClient):

@@ -144,9 +144,10 @@ class Pipeline:
                         barriers[stage] = {'reason': exc.reason, 'correction': correction}
                     self.record()
                     break
-                except Exception:
-                    # Exception strings may contain subprocess output or secrets.
-                    row.update(status='attention', status_reason='UNKNOWN_STAGE_FAILURE', failed=True)
+                except Exception as exc:
+                    # Exception strings may contain subprocess output or secrets: record the type only.
+                    row.update(status='attention', status_reason='UNKNOWN_STAGE_FAILURE', failed=True,
+                               status_detail=f'{stage}: {type(exc).__name__}')
                     self.record()
                     break
             else:

@@ -248,6 +248,14 @@ class AdapterTests(unittest.TestCase):
         self.services.notebook(self.row)  # readback passes; nothing is sent again
         self.assertEqual(len(self.notebook.adds), 2)
 
+    def test_notebook_link_rewrites_still_match(self):
+        import services
+        note = '根拠 <https://www.youtube.com/watch?v=abcdefghijk&t=75s> と [場面](https://x.test/a)'
+        shown = '根拠 [https://www.youtube.com/watch?v=abcdefghijk&t=75s](https://www.youtube.com/watch?v=abcdefghijk&t=75s) と [場面](https://x.test/a)'
+        bare = '根拠 https://www.youtube.com/watch?v=abcdefghijk&t=75s と 場面 https://x.test/a'
+        for actual in (shown, bare):
+            self.assertTrue(services.nb.readback_matches(services.without_rules(note), services.without_rules(actual))['match'])
+
     def test_readback_waits_for_processing_before_reading(self):
         self.prepare()
         order = []
