@@ -248,12 +248,21 @@ class AdapterTests(unittest.TestCase):
         self.services.notebook(self.row)  # readback passes; nothing is sent again
         self.assertEqual(len(self.notebook.adds), 2)
 
+    def test_source_id_proof_completes_without_browser(self):
+        self.prepare()
+        self.services.config['notebook_proof'] = 'source_ids'
+        self.services.dom = lambda row: (_ for _ in ()).throw(AssertionError('no browser'))
+        result = self.services.notebook(self.row)
+        self.assertNotEqual(result['Index_note'], result['Index_transcript'])
+        self.assertTrue(result['Index_note'].startswith('source:'))
+
     def test_notebook_link_rewrites_still_match(self):
         import services
         note = '根拠 <https://www.youtube.com/watch?v=abcdefghijk&t=75s> と [場面](https://x.test/a)'
         shown = '根拠 [https://www.youtube.com/watch?v=abcdefghijk&t=75s](https://www.youtube.com/watch?v=abcdefghijk&t=75s) と [場面](https://x.test/a)'
         bare = '根拠 https://www.youtube.com/watch?v=abcdefghijk&t=75s と 場面 https://x.test/a'
-        for actual in (shown, bare):
+        twice = '根拠\nhttps://www.youtube.com/watch?v=abcdefghijk&t=75s\nhttps://www.youtube.com/watch?v=abcdefghijk&t=75s\nと 場面 https://x.test/a'
+        for actual in (shown, bare, twice):
             self.assertTrue(services.nb.readback_matches(services.without_rules(note), services.without_rules(actual))['match'])
 
     def test_readback_waits_for_processing_before_reading(self):

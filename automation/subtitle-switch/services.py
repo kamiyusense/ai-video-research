@@ -63,10 +63,12 @@ def without_rules(text):
 
     - The OKF front-matter fences (---) come back as 40-dash rules (+74 characters per transcript).
     - Bare links <https://...> lose their angle brackets, and a link whose text is its own URL
-      may come back as [url](url); both are reduced to the plain URL."""
+      may come back as [url](url) or as the URL printed twice; all are reduced to one plain URL."""
     text = re.sub(r'(?m)^[ \t]*-{3,}[ \t]*$', '', text or '')
     text = re.sub(r'<(https?://[^>\s]+)>', r'\1', text)
-    return re.sub(r'\[(https?://[^\]\s]+)\]\(\1\)', r'\1', text)
+    text = re.sub(r'\[(https?://[^\]\s]+)\]\(\1\)', r'\1', text)
+    # The Notebook copy prints such a link's URL twice in a row; keep one.
+    return re.sub(r'(https?://\S+)(\s+\1)+(?!\S)', r'\1', text)
 
 
 def readback_difference(kind, expected, actual, ready):
@@ -497,7 +499,12 @@ class Services:
             receipts[kind] = sid
         if receipts['transcript'] == receipts['research']:
             raise StageFailure('NOTEBOOK_SOURCES_NOT_DISTINCT')
-        indices = self.dom(row)
+        if self.config.get('notebook_proof') == 'source_ids':
+            # Owner-chosen proof: two distinct NotebookLM source IDs, each read back with matching
+            # text, from the source list itself (no Chrome DevTools automation of the page).
+            indices = ('source:' + receipts['research'], 'source:' + receipts['transcript'])
+        else:
+            indices = self.dom(row)
         if not indices or indices[0] == indices[1] or None in indices:
             raise StageFailure('DOM_READBACK_UNKNOWN', waiting=True)
         row['notebook_sources_used'] = len(self.nb_client.list_sources())
