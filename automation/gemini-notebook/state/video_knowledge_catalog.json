@@ -3,8 +3,8 @@
   "generated_at": "2026-10-30",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 50,
-  "total_video_records": 47,
+  "total_records": 51,
+  "total_video_records": 48,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9337,6 +9337,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-30-RtFYGM1wpOY-subtitle-switch.md",
+      "video_id": "RtFYGM1wpOY",
+      "title": "研究ノート：REA - AIエージェント向けリバースエンジニアリング・ツールキット [RtFYGM1wpOY]",
+      "canonical_url": "https://www.youtube.com/watch?v=RtFYGM1wpOY",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-30",
+      "logical_id": "youtube:RtFYGM1wpOY:research",
+      "transcript_logical_id": "youtube:RtFYGM1wpOY:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "リバースエンジニアリング",
+        "AIエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "REAは、コーディングエージェントがバイナリやJS/Electronアプリを調べ、文字列・参照・逆コンパイル結果を「証拠束」として得るためのローカル実行ツールである。CLIとMCPサーバーが同じ契約で動き、解析エンジン（Ghidra等）は利用者が用意する。動画は未確認事項を不明として報告する設計と、できないことの明示を信頼の根拠として強調する。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 根拠は自動字幕のみ。映像（画面表示、コマンド出力、表）は未確認。\n- 公式資料（リポジトリ、README、ドキュメント、リリースノート）との照合は未実施。コマンド数・プロバイダ数・ファイル数・版数などの数値は動画の主張であり、正確性はUNKNOWN。\n- 自動字幕の誤変換の可能性がある。製品名は字幕中で「Rhea」「R E A」「RAE」と揺れており、正式名称・綴りはUNKNOWN。\n- 対応OS、必要バージョン、ライセンス、配布方法、セキュリティ特性などの外部仕様はUNKNOWN。\n- 動画は紹介色が強く、第三者による検証や性能比較は含まれない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-10-30-ScSDVV5xhww-subtitle-switch.md",
       "video_id": "ScSDVV5xhww",
       "title": "研究ノート：Uncensored AI + REA Can Reverse Engineer Anything",
@@ -9460,14 +9491,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 50,
+    "total_nodes": 51,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 16,
+    "isolated_nodes_count": 17,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9482,6 +9513,7 @@
       "wETSpF4ef6E",
       "zY45n9fPmMM",
       "7si7ZFFCZyg",
+      "RtFYGM1wpOY",
       "ScSDVV5xhww",
       "v_XdN5-ya9A",
       "xm92KJ7ipqc"
