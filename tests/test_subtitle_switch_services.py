@@ -234,9 +234,20 @@ class AdapterTests(unittest.TestCase):
         self.prepare()
         self.services.notebook(self.row)
         self.notebook.bodies['0'] = 'truncated'
-        with self.assertRaisesRegex(StageFailure, 'NOTEBOOK_READBACK_MISMATCH'):
+        with self.assertRaisesRegex(StageFailure, 'NOTEBOOK_READBACK_MISMATCH') as caught:
             self.services.notebook(self.row)
         self.assertEqual(len(self.notebook.adds), 2)
+        self.assertIn('transcript', caught.exception.detail)
+        self.assertIn('Notebook9字', caught.exception.detail)  # 'truncated', whitespace-free
+
+    def test_readback_waits_for_processing_before_reading(self):
+        self.prepare()
+        order = []
+        self.notebook.wait_ready = lambda sid: order.append(('wait', sid)) or True
+        reading = self.notebook.get_fulltext
+        self.notebook.get_fulltext = lambda sid: order.append(('read', sid)) or reading(sid)
+        self.services.notebook(self.row)
+        self.assertEqual(order[:2], [('wait', '0'), ('read', '0')])
 
     def test_vault_inside_repository_is_rejected(self):
         with self.assertRaises(ValueError):

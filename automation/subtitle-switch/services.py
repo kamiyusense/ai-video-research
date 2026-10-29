@@ -58,11 +58,32 @@ def youtube_refusal(stderr):
     if '429' in text or 'too many requests' in text:
         raise StageFailure('YOUTUBE_RATE_LIMIT', waiting=True, global_stage=True)
 
+def readback_difference(kind, expected, actual, ready):
+    """One local line saying where the Notebook copy first differs (owner: diagnose without chat)."""
+    want, got = nb.normalize_for_readback(expected), nb.normalize_for_readback(actual)
+    at = next((i for i, (a, b) in enumerate(zip(want, got)) if a != b), min(len(want), len(got)))
+    return (f'{kind}: 処理完了={"yes" if ready else "UNKNOWN"} 期待{len(want)}字/Notebook{len(got)}字 '
+            f'{at}字目から違う 期待「{want[at:at + 30]}」 Notebook「{got[at:at + 30]}」')
+
+
 class NotebookClient(nb.NotebookLmCliClient):
     """Route Notebook CLI through the same Windows executable resolver."""
     def auth_check_passive(self):
         try:
             return self._run('auth_check_passive').returncode == 0
+        except StageFailure:
+            raise
+        except Exception:
+            return False
+
+    COMMANDS = {**nb.NotebookLmCliClient.COMMANDS,
+                'wait_ready': ['notebooklm', 'source', 'wait', '{source_id}', '--timeout', '180',
+                               '--json', '--notebook', '{notebook_id}']}
+
+    def wait_ready(self, source_id):
+        """Read-only: NotebookLM indexes a new source after `add` returns; read it only once ready."""
+        try:
+            return self._run('wait_ready', timeout=200, source_id=source_id).returncode == 0
         except StageFailure:
             raise
         except Exception:
@@ -443,8 +464,7 @@ class Services:
                 return None
             if sid is not None:
                 expected = (folder / filename).read_text(encoding='utf-8')
-                if not nb.readback_matches(expected, self.nb_client.get_fulltext(sid))['match']:
-                    raise StageFailure('NOTEBOOK_READBACK_MISMATCH')
+                self.check_readback(kind, sid, expected)
         receipts = {}
         for kind, sid, title_fn, filename in plans:
             expected = (folder / filename).read_text(encoding='utf-8')
@@ -462,9 +482,7 @@ class Services:
                 sid = post['transcript_source_id' if kind == 'transcript' else 'research_note_source_id']
                 if post['ambiguous'] or not sid:
                     raise StageFailure('WRITE_RESULT_UNKNOWN', waiting=True)
-            actual = self.nb_client.get_fulltext(sid)
-            if not nb.readback_matches(expected, actual)['match']:
-                raise StageFailure('NOTEBOOK_READBACK_MISMATCH')
+            self.check_readback(kind, sid, expected)
             receipts[kind] = sid
         if receipts['transcript'] == receipts['research']:
             raise StageFailure('NOTEBOOK_SOURCES_NOT_DISTINCT')
@@ -474,6 +492,13 @@ class Services:
         row['notebook_sources_used'] = len(self.nb_client.list_sources())
         return {'source_ids': receipts, 'Index_note': indices[0], 'Index_transcript': indices[1],
                 'sources_used': row['notebook_sources_used'], 'is_mock': self.is_mock}
+
+    def check_readback(self, kind, sid, expected):
+        ready = getattr(self.nb_client, 'wait_ready', lambda _: True)(sid)
+        actual = self.nb_client.get_fulltext(sid)
+        if not nb.readback_matches(expected, actual)['match']:
+            raise StageFailure('NOTEBOOK_READBACK_MISMATCH',
+                               detail=readback_difference(kind, expected, actual, ready))
 
     def dom_readback(self, row):
         client = browser.CDPClient(port=int(self.config.get('cdp_port', 9222)))
