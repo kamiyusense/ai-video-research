@@ -268,8 +268,8 @@ class AdapterTests(unittest.TestCase):
 
     def test_numbered_heading_without_number_still_matches(self):
         import services
-        note = '## 1. REAとは何か — https://x.test/a\n本文\n**2. 使い方**\n'
-        shown = 'REAとは何か — https://x.test/a\n本文\n使い方'
+        note = '## 1. REAとは何か — https://x.test/a\n本文\n**2. 使い方**\n- 3. 例 — <https://x.test/b>\n'
+        shown = 'REAとは何か — https://x.test/a\n本文\n使い方\n例 — https://x.test/b'
         self.assertTrue(services.nb.readback_matches(services.without_rules(note), services.without_rules(shown))['match'])
 
     def test_readback_waits_for_processing_before_reading(self):
