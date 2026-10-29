@@ -63,8 +63,11 @@ def without_rules(text):
 
     - The OKF front-matter fences (---) come back as 40-dash rules (+74 characters per transcript).
     - Bare links <https://...> lose their angle brackets, and a link whose text is its own URL
-      may come back as [url](url) or as the URL printed twice; all are reduced to one plain URL."""
+      may come back as [url](url) or as the URL printed twice; all are reduced to one plain URL.
+    - A numbered heading loses its number (observed on 7si7ZFFCZyg)."""
     text = re.sub(r'(?m)^[ \t]*-{3,}[ \t]*$', '', text or '')
+    # A numbered heading or bold item ("### 1. Title", "**1. Title**") comes back without its number.
+    text = re.sub(r'(?m)^([ \t]*[#*_>]*[ \t]*)\d+[.)][ \t]+', r'\1', text)
     text = re.sub(r'<(https?://[^>\s]+)>', r'\1', text)
     text = re.sub(r'\[(https?://[^\]\s]+)\]\(\1\)', r'\1', text)
     # The Notebook copy prints such a link's URL twice in a row; keep one.
