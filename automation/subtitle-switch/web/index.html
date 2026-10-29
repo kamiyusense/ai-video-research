@@ -11,7 +11,7 @@
     </div>
     <div class="cat-stage" aria-label="司書猫の状態"><img id="body-cat" alt="" hidden></div>
   </header>
-  <aside class="notice"><svg class="icon blue" aria-hidden="true"><use href="#icon-info"/></svg><span id="notice" role="status" aria-live="polite">手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。</span></aside>
+  <aside class="notice"><svg id="notice-icon" class="icon blue" aria-hidden="true"><use href="#icon-info"/></svg><span id="notice" role="status" aria-live="polite">手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。</span></aside>
   <section class="catalog card" aria-label="動画一覧">
     <div class="catalog-heading"><div><span class="section-label">動画の受け箱</span><span id="row-count" class="count">0本</span></div><span id="selection-count">チェック 0本</span></div>
     <div class="table-scroll"><table><colgroup><col class="check-col"><col class="title-col"><col class="channel-col"><col class="date-col"><col class="lang-col"><col class="theme-col"><col class="reason-col"><col class="stage-col"><col class="status-col"><col class="notebook-col"></colgroup>
@@ -32,7 +32,7 @@
     <div class="aux-controls">
       <div class="toolbar"><label class="reason-input"><span class="sr-only">弾く理由</span><select id="reject-reason" aria-label="弾く理由"><option>興味なし</option><option>もう知ってる</option><option>重複</option><option>古い</option><option>浅い</option><option>宣伝っぽい</option><option>英語・言語の壁</option><option>あとで</option></select></label>
         <button class="secondary orange" data-action="reject"><svg class="icon"><use href="#icon-skip"/></svg>弾く</button>
-        <button class="secondary blue" data-action="restore"><svg class="icon"><use href="#icon-back"/></svg>戻す</button><button class="secondary gray" id="copy-failures" type="button" title="止まっている動画の原因をまとめてコピーします（字幕本文や鍵は含みません）">失敗の記録をコピー</button>
+        <button class="secondary blue" data-action="restore"><svg class="icon"><use href="#icon-back"/></svg>戻す</button><button class="secondary orange" data-action="check_attention" title="一覧の要確認の動画をまとめてチェックします。もう一度押すと外します">要確認を全て選択</button><button class="secondary gray" id="copy-failures" type="button" title="止まっている動画の原因をまとめてコピーします（字幕本文や鍵は含みません）">失敗の記録をコピー</button>
         <button class="secondary green" data-action="refresh"><svg class="icon"><use href="#icon-refresh"/></svg>一覧を更新</button>
         <div class="filters"><label><input type="checkbox" id="show-rejected">弾いた動画も表示</label><label><input type="checkbox" id="show-processed">完了・登録済みも表示</label></div>
       </div>
@@ -40,7 +40,7 @@
         <label class="url-label">手動URL<span class="hint">1行に1本・短縮URLや時刻つきも使えます</span><textarea id="urls" rows="2" maxlength="32000" placeholder="https://www.youtube.com/watch?v=…"></textarea></label>
       </div>
     </div>
-    <div class="action-bar"><div class="save-actions"><button class="save" data-action="manual"><svg class="icon"><use href="#icon-save"/></svg>手動保存</button><button class="save" data-action="selected"><svg class="icon"><use href="#icon-save"/></svg>選択保存</button></div>
+    <div class="action-bar"><div class="save-actions"><button class="save" data-action="manual"><svg class="icon"><use href="#icon-save"/></svg>手動保存</button><button class="save" data-action="selected"><svg class="icon"><use href="#icon-save"/></svg>選択保存<span id="save-count"></span></button></div>
       <button id="open-question" class="question-entry"><svg class="ai-icon"><use href="#icon-spark"/></svg><span>保存した動画内容をClaudeに質問</span></button>
     </div>
       <div class="face-stage" id="face-stage"><img id="face-cat" alt="司書猫の顔" hidden><span id="cat-state" class="state-mark" role="status">待機中</span></div>

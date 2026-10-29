@@ -663,3 +663,15 @@ def test_app_fix_correction_names_the_app_version(controller):
     c.operate({'action': 'selected', 'correction': 'アプリの修正を反映'})
     c.worker.join(5)
     assert c.calls == [({'aaaaaaaaaaa'}, 'アプリの修正を反映@' + web.app_revision())]
+
+
+def test_attention_rows_are_checked_in_one_press_and_counted(controller):
+    c = controller
+    c.inventory.data['videos']['aaaaaaaaaaa'].update(status='attention', failed=True)
+    c.publish()
+    c.operate({'action': 'check_attention'})
+    assert c.checked == {'aaaaaaaaaaa'} and '要確認1本を選択' in c.notice
+    c.operate({'action': 'check_attention'})
+    assert c.checked == set() and 'チェックを外しました' in c.notice
+    assert c.summary() == '2本（未処理1・要確認1）'
+    assert c.snapshot()['loading'] is False

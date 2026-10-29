@@ -30,3 +30,5 @@ dialog{border:1px solid #e4e8ee;border-radius:20px;padding:24px;width:min(740px,
 col.channel-col{width:105px}col.theme-col{width:76px}col.reason-col{width:70px}col.stage-col{width:78px}col.notebook-col{width:96px}
 .question-buttons{align-items:center}dialog label.web-check{display:flex;align-items:center;gap:7px;margin:0 0 0 6px;font-size:12px;font-weight:600;color:#5d6572;cursor:pointer}.web-check input{width:17px;height:17px}
 #title-tip .tip-note{color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
+
+#save-count{font-size:12px;font-weight:600;margin-left:2px}.icon.spinning{animation:spin 1s linear infinite;stroke-width:2.6}@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.icon.spinning{animation:blink 1.6s ease-in-out infinite}@keyframes blink{50%{opacity:.35}}}

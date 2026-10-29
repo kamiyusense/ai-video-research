@@ -80,6 +80,12 @@
     const checked = new Set(state.checked);
     const count = state.rows.filter(r => checked.has(r.id)).length;
     $('selection-count').textContent = `チェック ${count}本`;
+    $('save-count').textContent = count ? `（${count}本）` : '';
+    // Owner (2026-10-29): show that the app is working, like a video site's loading spinner.
+    const working = state.busy || state.loading;
+    $('notice-icon').classList.toggle('spinning', working);
+    $('notice-icon').querySelector('use').setAttribute('href', working ? '#icon-spinner' : '#icon-info');
+    if (state.loading && !state.busy) $('notice').textContent = state.notice + ' ／ 動画の情報を取得中…';
     $('check-all').checked = state.rows.length > 0 && count === state.rows.length;
     $('check-all').indeterminate = count > 0 && count < state.rows.length;
     const signature = JSON.stringify([state.rows, state.checked, state.busy]);

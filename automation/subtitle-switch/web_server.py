@@ -96,7 +96,22 @@ class Controller:
         with self.guard:
             return copy.deepcopy({'rows': self.rows, 'checked': sorted(self.checked),
                                   'busy': self.busy, 'cat': self.cat, 'notice': self.notice,
-                                  'answer': self.answer})
+                                  'answer': self.answer, 'loading': self.loading()})
+
+    def loading(self):
+        thread = getattr(self, 'metadata_thread', None)
+        return bool(thread and thread.is_alive())
+
+    def summary(self):
+        """Owner (2026-10-29): after a refresh, say how many rows are in each state."""
+        counts = {}
+        for row in self.rows:
+            label = row['cells'][7]['text']
+            counts[label] = counts.get(label, 0) + 1
+        order = ['未処理', '処理中', '要確認', '待ち', '完了', '弾いた']
+        parts = [f'{label}{counts.pop(label)}' for label in order if label in counts]
+        parts += [f'{label}{n}' for label, n in counts.items()]
+        return f'{len(self.rows)}本（' + '・'.join(parts) + '）' if parts else '0本'
 
     def _start(self, action, job):
         # Caller owns guard; setting busy precedes spawning so duplicate POSTs cannot race.
@@ -149,6 +164,15 @@ class Controller:
                     raise ValueError('表示指定を確認してください')
                 self.show_rejected, self.show_processed = data['rejected'], data['processed']
                 self.publish()
+            elif action == 'check_attention':
+                attention = {r['id'] for r in self.rows if r['status'] == 'attention' and not r['rejected']}
+                if attention and attention <= self.checked:
+                    self.checked -= attention
+                    self.notice = f'要確認{len(attention)}本のチェックを外しました。'
+                else:
+                    self.checked |= attention
+                    self.notice = (f'要確認{len(attention)}本を選択しました。「失敗からの再開」で直した原因を選んで「選択保存」へ。'
+                                   if attention else '要確認の動画はありません。')
             elif action in ('check', 'check_all'):
                 visible = {r['id'] for r in self.rows}
                 if action == 'check':
@@ -175,8 +199,9 @@ class Controller:
                     rows, errors = read_inbox(self.locations['inbox'])
                     self.inventory.refresh(rows)
                     self.metadata_values.clear()
-                    self.notice = ' ／ '.join(e['file'] + '：要確認' for e in errors) or '一覧を更新しました。'
-                    self.publish()
+                    self.publish()  # rows are rebuilt here, so the summary counts the new list
+                    self.notice = (' ／ '.join(e['file'] + '：要確認' for e in errors)
+                                   or '一覧を更新しました：' + self.summary())
                     def received(vid, values):
                         with self.guard:
                             self.metadata_values[vid] = values
@@ -190,6 +215,7 @@ class Controller:
                                               notify=received, failures=self.metadata_failures)
                             except Exception:
                                 pass  # metadata is display-only; rows keep their inbox values
+
                     self.metadata_thread = threading.Thread(target=lookup, daemon=True)
                     self.metadata_thread.start()
                 self._start('一覧更新', refresh)
