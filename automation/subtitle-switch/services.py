@@ -499,8 +499,8 @@ class Services:
             receipts[kind] = sid
         if receipts['transcript'] == receipts['research']:
             raise StageFailure('NOTEBOOK_SOURCES_NOT_DISTINCT')
-        if self.config.get('notebook_proof') == 'source_ids':
-            # Owner-chosen proof: two distinct NotebookLM source IDs, each read back with matching
+        if self.config.get('notebook_proof', 'source_ids') == 'source_ids':
+            # Owner decision 2026-10-29 (default): two distinct NotebookLM source IDs, each read back with matching
             # text, from the source list itself (no Chrome DevTools automation of the page).
             indices = ('source:' + receipts['research'], 'source:' + receipts['transcript'])
         else:

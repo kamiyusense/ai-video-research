@@ -226,6 +226,7 @@ class AdapterTests(unittest.TestCase):
 
     def test_same_dom_element_cannot_complete(self):
         self.prepare()
+        self.services.config['notebook_proof'] = 'dom'
         self.services.dom = lambda row: (1, 1)
         with self.assertRaisesRegex(StageFailure, 'DOM_READBACK_UNKNOWN'):
             self.services.notebook(self.row)
