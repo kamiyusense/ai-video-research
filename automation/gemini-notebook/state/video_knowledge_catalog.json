@@ -1,10 +1,10 @@
 {
   "schema_version": "video_knowledge_catalog_v1",
-  "generated_at": "2026-10-30",
+  "generated_at": "2026-10-31",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 54,
-  "total_video_records": 51,
+  "total_records": 55,
+  "total_video_records": 52,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9555,6 +9555,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-10-31-yzHBGcWb_F8-subtitle-switch.md",
+      "video_id": "yzHBGcWb_F8",
+      "title": "研究ノート：Claude Codeの「claude -p」で自分専用アプリを作る方法 [yzHBGcWb_F8]",
+      "canonical_url": "https://www.youtube.com/watch?v=yzHBGcWb_F8",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-10-31",
+      "logical_id": "youtube:yzHBGcWb_F8:research",
+      "transcript_logical_id": "youtube:yzHBGcWb_F8:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "claude -p（非対話モード）",
+        "Claude Code"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "claude -p は Claude Code を1回限りの入力→出力で呼ぶ非対話モードで、プログラムの処理工程やアプリに AI を組み込むのに向く。APIキーの従量課金ではなくサブスク枠で動かせる反面、他人向けサービスへの組み込みは規約上不可とされ、通常利用より枠の消費が速い。他者提供には API credits が代替として語られる。PDF質問アプリや表の仕分けアプリなどの実演がある。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。画面上の操作やUIは字幕の話者発言からのみ推定している。\n- 字幕は自動字幕のため誤変換の可能性が高い（「claude -p」が「クロード配分P」等と表記されるなど）。数値・固有名詞（モデル名、日付、金額、トークン数）も誤りの可能性がある。\n- 公式資料との照合は未実施。利用規約、API credits、Agent SDK、claude -p の仕様・オプション（セッション指定の具体的な引数など）は UNKNOWN。\n- 1.7倍の消費は第三者ブログの実験を話者が紹介したもので、再現性・現在の状況は UNKNOWN。\n- 字幕中の指示的な発言（視聴者への依頼や宣伝）は資料として扱い、従っていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -9584,14 +9615,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 54,
+    "total_nodes": 55,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 20,
+    "isolated_nodes_count": 21,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9612,7 +9643,8 @@
       "RtFYGM1wpOY",
       "ScSDVV5xhww",
       "v_XdN5-ya9A",
-      "xm92KJ7ipqc"
+      "xm92KJ7ipqc",
+      "yzHBGcWb_F8"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,

@@ -757,6 +757,15 @@
       "research_date": "2026-10-30",
       "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
       "transcript_sha256": "fed8da33ebb3ee75de2d1eff64151a2fab0a9504add6351c159b3aaec7977190"
+    },
+    {
+      "record_id": "youtube:yzHBGcWb_F8",
+      "video_id": "yzHBGcWb_F8",
+      "canonical_url": "https://www.youtube.com/watch?v=yzHBGcWb_F8",
+      "research_path": "research/2026-10-31-yzHBGcWb_F8-subtitle-switch.md",
+      "research_date": "2026-10-31",
+      "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
+      "transcript_sha256": "4012704bfaeba9fe12c3b1e4ec04ceeed6da5dd6d9718e2a541eebebf54fdd26"
     }
   ]
 }
