@@ -38,7 +38,7 @@ items:                                                # 束ねるときだけ
   - author: "@xxx"
     url: "<URL か UNKNOWN>"
     link_status: "CONFIRMED | CANDIDATE | UNKNOWN"
-    posted_at: "YYYY-MM-DD か UNKNOWN"
+    posted_at: "YYYY-MM-DD（日本時間）か UNKNOWN"
 related_records:                                      # 関係がある時だけ
   - target_id: "<相手の logical_id。動画なら youtube:<動画ID>:research>"
     relation: "SAME_TOPIC | VERIFIES | CONTRADICTS | COMPLEMENTS | CITES"
