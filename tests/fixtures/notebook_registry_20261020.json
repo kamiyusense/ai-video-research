@@ -1,0 +1,332 @@
+{
+  "description": "Historical registry paired with notebook_sources_20261020.json; never a current Notebook readback.",
+  "records": [
+    {
+      "video_id": "lC5jxpYmatE",
+      "notebook_sources": {}
+    },
+    {
+      "video_id": "Vr3JkAT9mo8",
+      "notebook_sources": {}
+    },
+    {
+      "video_id": "sodTFSuV4zY",
+      "notebook_sources": {
+        "research_note": "9d2e470f-736e-401e-8d2e-daed0df46fe1",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "cneFa24EFEk",
+      "notebook_sources": {
+        "research_note": "5f5488ba-8220-4ddd-9253-635400f313d5",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "t22FELAl-BM",
+      "notebook_sources": {
+        "research_note": "7c5c996e-1dfc-4001-9a63-84368b885a14",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "X9Zk68AII4A",
+      "notebook_sources": {
+        "research_note": "ac71a06b-1dc5-43ec-994a-e164ce7dd669",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "ZgMrRA1Czlc",
+      "notebook_sources": {
+        "research_note": "4a71f5e5-7f23-43bd-bcba-a6325b664c09",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "gD6UZ4wG8OM",
+      "notebook_sources": {
+        "research_note": "2f6d897c-2796-443d-9904-db11e50df1ea",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "W35UQZL2w7E",
+      "notebook_sources": {
+        "research_note": "1c20abd2-ca54-4fbc-87ab-69d51b2320fe",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "JXmk7hmbS3c",
+      "notebook_sources": {
+        "research_note": "4fbeac98-f8bd-49c5-bfe3-6d060d17378c",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "Eh75KT85Y40",
+      "notebook_sources": {
+        "research_note": "985408bb-a2dc-44e4-8481-ac9b8141b567",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "26MGuVIJh4A",
+      "notebook_sources": {
+        "research_note": "86780b90-9bbe-40b1-95de-344d60d6a7a7",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "XckM9eFa_vg",
+      "notebook_sources": {
+        "research_note": "49b6f3fd-6c90-4a41-82cb-a501638ed3e7",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "NCQZiT0e59g",
+      "notebook_sources": {
+        "research_note": "23b4f3fd-dcd7-464c-8623-8caf30d22594",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "y2xCGyURl7Q",
+      "notebook_sources": {
+        "research_note": "c7bd2383-c3b9-4fde-b06d-3fb571b42102",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "RZLAP2CLUM8",
+      "notebook_sources": {
+        "research_note": "fd2780ee-3df0-4b2f-80d4-5e438da3d00e",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "2-8cXaRHlqI",
+      "notebook_sources": {
+        "research_note": "54ce95d4-a723-4300-bc74-c93c179ba037",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "YrTVpJ1ebUk",
+      "notebook_sources": {
+        "research_note": "cedf6421-68bb-4d38-a878-d5330a62a287",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "j3Cyvbfn9_k",
+      "notebook_sources": {
+        "research_note": "cedf6421-68bb-4d38-a878-d5330a62a287",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "JMoByqOlftc",
+      "notebook_sources": {
+        "research_note": "cedf6421-68bb-4d38-a878-d5330a62a287",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "MnzEE0fLxBs",
+      "notebook_sources": {
+        "research_note": "068fc7ca-854d-4dae-927d-fb16782b1a00",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "D0B-l7A69nI",
+      "notebook_sources": {
+        "research_note": "45f38bd5-ebdf-46b8-9167-f11096c60da4",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "Mg0pYFVAuWQ",
+      "notebook_sources": {
+        "research_note": "97bb9ecd-99cd-4d80-b022-824ed2d4036a",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "GVB8VfuNeJQ",
+      "notebook_sources": {
+        "research_note": "f55cfee6-d9f3-4362-a076-334f063d9c3d",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "BvbkOQWgAw8",
+      "notebook_sources": {
+        "research_note": "b51f77cb-cc1f-4347-abb0-3fceb86bb521",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "ZY7YuYHLlIQ",
+      "notebook_sources": {
+        "research_note": "1c84dfcc-d2e4-4d54-a6d2-48151ab67594",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "ZjUJ-35acaU",
+      "notebook_sources": {
+        "research_note": "ac534517-aba6-4c9d-b1e8-508552da3efc",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "BStkW1HTfmk",
+      "notebook_sources": {
+        "research_note": "c141c0bd-449f-4c6f-b509-6772cc40d254",
+        "transcript_okf": "NOT_REGISTERED",
+        "youtube_url_source": "UNKNOWN_NOT_MATCHED_BY_ID",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "pRfC1DILDEM",
+      "notebook_sources": {
+        "research_note": "af697c8c-ad0e-44e3-8a7b-79711b1885e8",
+        "transcript_okf": "a32a70ec-67c5-4285-8e80-5ff20e5cee91",
+        "youtube_url_source": "25c0f62e-99aa-48bc-9486-357a350c76f5",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "u3ka_AAb8qE",
+      "notebook_sources": {
+        "research_note": "65b634f5-f9ad-4c6e-930d-744970701c0b",
+        "youtube_url_source": "d1fef625-ac11-40f7-b0d4-cfe2ae46c9a2",
+        "transcript_okf": "NOT_REGISTERED",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    },
+    {
+      "video_id": "CnkEROU7fZw",
+      "notebook_sources": {
+        "research_note": "bfeee73b-dd35-4e03-862b-78a9abf6f851",
+        "youtube_url_source": "24a5aa33-898b-433f-820c-7d3b49f20a00",
+        "transcript_okf": "NOT_REGISTERED",
+        "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
+        "checked_at": "2026-10-20",
+        "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"
+      }
+    }
+  ]
+}

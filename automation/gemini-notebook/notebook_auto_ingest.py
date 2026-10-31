@@ -52,16 +52,22 @@ DEFAULT_DRIVE_ROOT = Path(os.environ.get("AI_RESEARCH_DRIVE_ROOT") or "G:/マイ
 LAB_DRIVE_FOLDER = "AI技術研究室"
 
 
-def lab_folder(name: str) -> Path:
-    """Drive folder of the lab. Grouped under My Drive/AI技術研究室 on 2026-10-26; the old root location is still accepted."""
-    grouped = DEFAULT_DRIVE_ROOT / LAB_DRIVE_FOLDER / name
-    legacy = DEFAULT_DRIVE_ROOT / name
+def lab_folder(name: str, drive_root: Optional[Path] = None,
+               lab_name: Optional[str] = None, override: Optional[Path] = None) -> Path:
+    """Use current module defaults; accept an existing legacy root folder."""
+    if override is not None:
+        return Path(override)
+    root = DEFAULT_DRIVE_ROOT if drive_root is None else Path(drive_root)
+    lab = LAB_DRIVE_FOLDER if lab_name is None else lab_name
+    grouped = root / lab / name
+    legacy = root / name
     return legacy if legacy.exists() and not grouped.exists() else grouped
 
 
 DEFAULT_NOTEBOOK_SOURCES_DIR = lab_folder("AI技術研究室_Notebookソース")
 DEFAULT_CDP_PORT = 9222
 DEFAULT_CDP_HOST = "127.0.0.1"
+
 
 # Dedicated profile path for isolation and session persistence
 DEFAULT_DEDICATED_PROFILE_DIR = (
@@ -303,7 +309,7 @@ def launch_dedicated_chrome(
     ]
 
     try:
-        proc = subprocess.Popen(args)
+        proc = subprocess.Popen(args, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         return {
             "status": "CHROME_LAUNCHED",
             "pid": proc.pid,

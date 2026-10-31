@@ -1,0 +1,29 @@
+{
+  "frame_width": 256,
+  "frame_height": 192,
+  "look": {
+    "directions": 8,
+    "order": "00=right, then clockwise every 45 degrees (01=down-right, 02=down, 03=down-left, 04=left, 05=up-left, 06=up, 07=up-right)"
+  },
+  "punch_left": {
+    "frames": 4,
+    "fps": 10
+  },
+  "punch_right": {
+    "frames": 4,
+    "fps": 10
+  },
+  "cursor": {
+    "files": {
+      "32": "cursor/teaser_32.png",
+      "64": "cursor/teaser_64.png"
+    },
+    "hotspot": [
+      2,
+      2
+    ],
+    "hotspot_note": "hotspot for teaser_32; scale x2 for teaser_64"
+  },
+  "punch_radius_px": 110,
+  "punch_cooldown_sec": 0.6
+}

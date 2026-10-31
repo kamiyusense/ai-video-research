@@ -1,0 +1,60 @@
+{
+  "frame_width": 256,
+  "frame_height": 192,
+  "states": {
+    "idle": {
+      "frames": 6,
+      "fps": 5,
+      "loop": true,
+      "hold_last": false
+    },
+    "walk": {
+      "frames": 8,
+      "fps": 8,
+      "loop": true,
+      "hold_last": false
+    },
+    "done": {
+      "frames": 6,
+      "fps": 6,
+      "loop": false,
+      "hold_last": true
+    },
+    "error": {
+      "frames": 6,
+      "fps": 6,
+      "loop": false,
+      "hold_last": true
+    }
+  },
+  "face": {
+    "frame_width": 192,
+    "frame_height": 192,
+    "states": {
+      "idle": {
+        "frames": 6,
+        "fps": 5,
+        "loop": true,
+        "hold_last": false
+      },
+      "walk": {
+        "frames": 8,
+        "fps": 8,
+        "loop": true,
+        "hold_last": false
+      },
+      "done": {
+        "frames": 6,
+        "fps": 6,
+        "loop": false,
+        "hold_last": true
+      },
+      "error": {
+        "frames": 6,
+        "fps": 6,
+        "loop": false,
+        "hold_last": true
+      }
+    }
+  }
+}

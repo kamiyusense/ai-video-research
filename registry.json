@@ -534,9 +534,10 @@
       "status": "GEMINI_REPORTED; NOTEBOOK_SOURCE_LISTED; GITHUB_SAVED; NOTEBOOK_MASTER_INDEX_SYNC_SEPARATE",
       "evidence": "GEMINI_RESEARCH_RECEIPT",
       "notebook_sources": {
-        "research_note": "af697c8c-ad0e-44e3-8a7b-79711b1885e8",
-        "transcript_okf": "a32a70ec-67c5-4285-8e80-5ff20e5cee91",
-        "youtube_url_source": "25c0f62e-99aa-48bc-9486-357a350c76f5",
+        "research_note": "UNKNOWN_STALE_SOURCE_ID",
+        "transcript_okf": "UNKNOWN_STALE_SOURCE_ID",
+        "youtube_url_source": "UNKNOWN_STALE_SOURCE_ID",
+        "source_id_status": "STALE_20261020_SNAPSHOT; REPLACEMENT_IDS_REQUIRE_LIVE_READBACK",
         "notebook_id": "e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
         "checked_at": "2026-10-20",
         "check_method": "notebooklm-py 0.8.5 source list (title/id only; user PC, read-only)"

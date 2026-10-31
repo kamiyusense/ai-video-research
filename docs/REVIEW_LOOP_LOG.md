@@ -1,5 +1,24 @@
 # 検品ループ記録とユーザー待ちリスト
 
+## GH-31 v4画面・実装の区切り（2026-10-28）
+
+- 対象: Draft PR [#24](https://github.com/kamiyusense/ai-video-research/pull/24)、`symphony/gh-22-design`。PRがDraftであることをAPIで再確認。公開中のHEADは `680a64bf94ac39c28f6a231051e06e6d91dc3496`、今回の変更のcommit/pushはSymphony host hookが担当するためremote readbackはUNKNOWN。
+- 変更: tkinterの現行画面をローカルWebへ置換。安全なHTTP入口、選択・手動対象の分離、6書体と蜜柑の猫文字、統一SVG、下部操作を残す配置、AI質問、状態連動の全身猫・顔と遊び、同じ部品の静止プレビュー、READMEを実装。services/pipeline/switch_state/metadata/ask_researchの差分は0。
+- 実測: `bash .symphony/run_all_tests.sh` は通常・文字コード厳格とも464 passed / 18 subtests passed、`ENCODING-STRICT: PASS`、`RESULT: PASS`。`git diff --check` 合格。全体試験で一度検出したwebbrowser.openのI/O検査誤検出はopen_new使用に変更して解消。新しい終了試験の偽コンテキストによる例外抑制も修正後に再確認。
+- 判定: 作業役によるSTATIC / MOCK試験合格。HTTPはソケット禁止環境のため実ハンドラーをメモリ接続で検証し、AI・YouTube・ブラウザ・終了処理は偽物を使用。実機成功とはしない。
+- UNKNOWN: Windows上の実ブラウザ窓・視覚品質・実HTTP接続・実サービス。ブラウザ実行ツールがないためPNGは未作成、確認用は `docs/design/preview-v4.html`。追加承認待ちはなし、PC側で視覚確認可能。
+
+AI-Agent: codex
+
+## GH-31 v4画面・設計の区切り（2026-10-27）
+
+- 実測: `symphony/gh-22-design`、HEAD `680a64bf94ac39c28f6a231051e06e6d91dc3496`、開始時clean。GitHubのDraft PR #24からdefault `main`・visibility `public`を確認。MERGE_CONFLICT.txtなし。
+- 項目1: 見本画像・HTML・全身idle/walk・顔done・到着済みcat_playを確認し、`docs/design/subtitle-switch-v4.md` に見た目・配置図・部品・安全設計・試験方針を先に記載。cat_playはmanifest上256×192のため固定192角にしない。
+- 開始時指定試験: 通常・厳格とも441 passed / 18 subtests passed、ENCODING-STRICT: PASS、RESULT: PASS。これは既存実装のベースラインで、v4実装の合格ではない。
+- 判定: 設計文書STATIC確認、画面実装は未着手。UNKNOWN: Windows表示・実機サービス・今後のhost hook commit/push/readback。次はWebサーバーと画面の実装。追加承認待ちはなし。
+
+AI-Agent: codex
+
 運用ルールはルート [AGENTS.md](../AGENTS.md) の「2026-10-20 検品ループ運用」。各周の判定はここに追記する（HEAD・テスト数は毎回実測）。
 
 ## 実測ベースライン（2026-10-20）
@@ -86,3 +105,532 @@
 | 2 | 字幕原文をNotebookへ複製してよいかの権利・規約判断 | ロードマップが `BLOCKED_RIGHTS_OR_TERMS` 判定を要求 | 上記1の前提 |
 | 3 | Notebookの旧RAGノートを最新版で置き換えるか（現在は追記で補っただけ） | 置き換えはソース削除を伴いIDが変わる（守りルール5） | Notebook側の相互リンクが正式版になる |
 | 4 | 台帳 `registry.json` の「NOTEBOOK_READBACK_UNKNOWN」を、手元検品で読み戻せた29動画ぶん更新するか | 手元検品の生データ（ソースID対応表）がGitHubに無く、検品役が独立確認できない | 対応表を共有してもらえれば、作業役が台帳更新→検品役が照合 |
+
+## GH-22 字幕保存スイッチ（2026-10-27・作業継続）
+
+- 開始HEAD実測: `38c2beb19496a2a1c07efc8c7069aecfa6d3d89f`、ブランチ `symphony/gh-22-design`、開始時作業ツリー差分なし。
+- 受け箱・永続選別・状態・好みメモ部品追加。試作の画面はまだ新部品に未接続。
+- `python -m unittest discover -s tests -p 'test_subtitle_switch*.py'`: 17件、OK（0.007秒）。ローカル部品の試験のみ。独立GitHub検品・実機PASSではない。
+- GitHub current stateは許可されたDraft PR検索のみ実施し0件。visibility/default branchのremote照合は許可されたAPI範囲外のためUNKNOWN。
+- 次: 全工程のアダプター接続、1ボタン画面、lab_folder照合、既知3点修正、全体Mock試験、オーナー向け手順。
+- ユーザー待ち: Notebook/Drive/YouTubeの実機検証は本Issueで禁止。別途対象と範囲の許可後に実機確認可能。本作業はオフライン実装を続ける。
+
+## GH-22 継続ターン2（2026-10-27・環境阻害あり）
+
+- 判定：STATIC実装／MOCK試験は下記範囲で合格。独立GitHub検品・実機はUNKNOWN。Issueの完了条件は未達。
+- 追加：`pipeline.py`（工程保存・OSロック・再開・結果不明読戻し・原因変更後2回まで）、`captions.py`（json3・開始秒・重なった自動字幕だけ重複除去）、`services.py`（既存重複検査・OKF検品・索引・GitHubの対象限定保存とHEAD/本文読戻し・Notebook不足分登録と本文/DOM読戻し）、`switch_app.py`（1ボタン画面）、設定見本、研究用指示文。
+- `subtitle_switch.pyw` の直接起動を新画面へ接続。旧試作の関数／PowerShellは参照と既存テスト用に温存。READMEをオーナー向け起動・待ち理由・復旧手順に更新。
+- 既知修正：legacy pipelineに `--target-branch`（main/masterは明示しても拒否）、QA_WORKFLOWのURL単体登録方針を純粋2ソースへ訂正、RAG動画の既知の失効ソースIDをUNKNOWNへ。新しい完全IDの推測は禁止のため実機readback待ち。
+- このローカル版に `lab_folder()` は存在しなかったため既存notebook_auto_ingestに共通関数を追加し新アプリが再利用。新しい親フォルダ優先・旧直下・設定上書きを試験。
+- 実測：`python -m unittest discover -s tests -p 'test_subtitle_switch*.py'` 43件、0.041秒、OK。外部境界は偽物。実アダプターを通す2本のMock完走、字幕のGitHub排除、同一DOM不合格、本文不一致、上限前停止、既存2ソースNo-Op、応答不明時読戻しを含む。
+- 全体実測：389件、assertion failure 0、error 20。20件とも `PermissionError: [Errno 13] Permission denied: 'node'`。Nodeを導入・ダウンロードしていない。最終の状態更新後は関連43件とcompileを再実行して合格。全件合格とは認定しない。
+- 台帳変更で過去の画面fixtureとの比較が不整合になった健康診断テストは、2026-10-20の画面fixtureと対になる歴史台帳fixtureへ分離。現在台帳の失効IDがUNKNOWNかつ健康診断ATTENTIONになる試験も追加。偽の現行IDで合格させていない。
+- `git diff --check` とPython compile合格。WindowsのTk表示、外部CLIの実仕様適合、Notebook/Drive/YouTube/GitHub保存の実機動作はUNKNOWN。実サービス起動・モデル呼出しは0。
+- **環境阻害**：前ターンのgit add/commitは `.git/index.lock: Read-only file system`。今ターン `os.statvfs('.git').f_flag & os.ST_RDONLY` を実測しTrue。原因未変更のため同じ失敗操作を繰り返さず、コミット未作成。開始HEAD `38c2beb19496a2a1c07efc8c7069aecfa6d3d89f` のまま、全変更は作業ツリーに保持。
+- 次の作業：環境側で.git書込みとNode実行が可能になった後、全試験と差分を確認して署名付きローカルコミット。Symphonyの公開後にDraft PRを読み戻して独立検品し、合格した場合だけIssueコメント1件→対象ラベル削除。現時点ではコメント・ラベル削除をしていない。
+
+### GH-22 ユーザー／環境待ちリスト
+
+| 何を | なぜ | 解消後に進むこと |
+|---|---|---|
+| Symphony作業領域の.git書込み | ファイルシステムがread-onlyで必須commitを作れない | ローカルcommitとSymphonyによるDraft PR公開 |
+| Node実行可能な検証環境 | 既存20件がPermissionErrorで未検証 | 全体試験の全件合格確認 |
+| Notebook/Drive等の実機検証 | 本Issue内では実行禁止 | 別途対象・範囲の許可後にのみ実機確認（本Issueのオフライン完成判定とは分離） |
+
+## GH-22 継続ターン3（2026-10-27・安全境界再点検）
+
+- 開始時再実測：`.git`のST_RDONLY=True、`shutil.which('node')`=None。開始HEADは前ターンと同じ。コミット阻害の原因は未変更なので失敗コマンドを再送しない。環境迂回・別index等による制約回避もしていない。
+- 修正：結果不明writeの読戻しがno_writeの通信／認証エラーになっても元のinflightを消さない。Notebookの資料別送信印を照合し、不明な既送信があれば再送も未送信追加もしない。1資料目だけ確認でき、2資料目が未送信ならその不足分だけ継続。
+- 修正：後続動画でremote HEADが進んだ場合のGitHub読戻しは、元コミットがremoteの祖先であることと、その版の3ファイル・現行ノート本文一致で立証。再Pushしない。
+- 修正：字幕指紋／生成本文を研究前・検品前に再確認。根拠リンクの秒数を字幕開始秒と照合。Claudeの終了コード0のJSONエラーも枠切れ待ちとして扱う。API/provider環境変数は存在だけでモデル起動を拒否し、値を読まない。
+- 修正：検品した保管庫ノートだけでなく、実際にstageするrepositoryノートとの一致を必須化。既存receipt_to_research.scan_forbidden_keysをノート・registry・catalogに適用。台帳工程の日付またぎでも保存予定パスを固定。
+- 画面：工程・主な待ち理由を日本語化。完了・登録済みの再表示切替。偽境界のreceiptはis_mock=true。
+- 実測：`python -m unittest discover -s tests -p 'test_subtitle_switch*.py'` 55件、0.059秒、OK。前ターンより12件追加。検品対象との差し替え、台帳禁止キー、字幕改変、架空の秒数、0終了コード枠切れ、Notebook途中停止、読戻し失敗後の再送防止、祖先コミット読戻し、日付またぎ、API起動拒否、一覧表示を検証。
+- Python compile／`git diff --check` 合格。既存全体389件中Node起因20errorの記録は前ターン実測で、今回の55件を全体試験の全件合格へ読み替えない。
+- 判定：MOCK／STATIC合格範囲は上記。remote差分の独立検品・Windows画面・実サービスはUNKNOWN。署名付きcommit、Symphony公開、Draft PR確認、全試験合格が未達のためIssueコメント・ラベル削除は未実施。
+- ユーザー／環境待ち：前ターンの「.git書込み」「Node実行可能な環境」は継続。新しい実機承認は要求しない（本Issue内の実機禁止を維持）。
+
+## GH-22 継続ターン4（2026-10-27・再起動後の工程停止）
+
+- 開始HEAD実測 `6feddafa3558f595349b0bd81872eef6b691f2c6`、`symphony/gh-22-design`、作業ツリー差分なし。前ターンまでの変更はSymphonyチェックポイントに含まれる。
+- 許可されたDraft PR検索APIでmain宛てDraft PR #24を確認。検索レスポンスのrepo属性でvisibility=public、default_branch=mainを確認（古い資料の非公開表記は現状と異なる）。
+- 目的・受入条件：Notebook認証切れ／YouTubeロボット確認は再起動後の新着動画にも該当工程の待ちを適用し、明示的な原因変更後のみ再開。Notebook停止中の新着動画のGitHub工程は継続。実サービス禁止を維持。
+- 変更：`pipeline.py` に工程停止の永続化、`test_subtitle_switch_pipeline.py` に再起動・新着・同一原因選択の3試験。READMEと設計書へ復旧方法を追記。
+- 実測：関連58件、0.074秒、OK。全体404件、failure 0、error 20、skip 0。20件はすべて `PermissionError: [Errno 13] Permission denied: 'node'`。Node試験をskip／偽PASSに変更していない。全件合格は未達。
+- 環境再測定：`.git` のST_RDONLY=True、Node実行ファイル検出なし。commit不能の原因が変わっていないため既知の失敗コマンドを再送せず、署名付きcommitは未作成。変更は作業ツリーへ保持し、Symphonyのチェックポイント対象とする。
+- 判定：関連MOCK試験は合格、全体試験は環境阻害。Windows画面・モデル／外部CLI実行・実保存はUNKNOWN。Issueコメント・ラベル削除は未実施。
+- 次：.git書込みとNode実行が可能な作業環境で、全体試験と署名付きcommitを完了。Symphony公開後のDraft PRを照合して全条件を満たした場合だけ、Issueコメント1件→対象ラベル削除。
+
+### 同一runの継続2〜4：環境阻害の再確認
+
+- 3回の継続で `.git` のST_RDONLY=True、Node検出なしを再確認。HEADと未コミット5ファイルは変わっていない。nodejs／bun／denoも検出されない。
+- 状態：BLOCKED（環境）。新しいコード変更を理由なく増やさず、既知の失敗commit／Node試験の再実行や制約回避は行わない。試験結果は直近実測の関連58件OK／全体404件中20errorのままで、新しいPASSとして扱わない。
+- 再開条件：Official Symphony側で.git書込みとNode実行可能な環境を用意すること。復旧後、保持された差分を確認し、全体試験・署名付きcommit・公開後のPR照合を実施する。現環境からインストール・push・ライフサイクル変更はしない。Issueコメント／ラベル削除は引き続き未実施。
+
+### 同一runの継続20：最終引継ぎ
+
+- 継続20でも `.git` のST_RDONLY=True、Node検出なし。HEADは `6feddafa3558f595349b0bd81872eef6b691f2c6`、変更5ファイルを保持。環境条件は変わらずBLOCKED。
+- 最新の試験実測は関連58件OK／全体404件中Node起因20error。再実行なし。署名付きローカルcommitは未作成。変更の公開・チェックポイントはOfficial Symphonyに委ねる。
+- Draft PR #24の説明は更新済み。完了用Issueコメントと対象ラベル削除は未実施、Merge／main push／実サービス実行なし。環境復旧後は上記の再開条件から続ける。
+
+## GH-22 継続ターン5（2026-10-27・好みメモ配送失敗の隔離）
+
+- 開始HEAD実測 `035a2a649e63822ef746fddf20d00f6d81ef9c9c`、ブランチ `symphony/gh-22-design`、開始差分なし。許可された検索で main 宛て Draft PR #24 を再確認。
+- 修正：好みフォルダ内のJSONが配列・null・数値・文字列の場合は配送待ちへ戻す。送信済みPCファイルの削除失敗も配送待ちへ戻す。どちらも例外を動画保存へ伝播させない。次回はsession_idの読み戻しで配送済みを照合し、重複作成しない。既存ファイルは変更しない。
+- 受入検証：不正な形のJSON4種類、削除権限エラー、復旧後の配送・重複防止を追加。`python -m unittest discover -s tests -p 'test_subtitle_switch*.py'` は60件、0.078秒、OK。`git diff --check` 合格。すべてオフライン、モデル・外部通信なし。
+- 環境実測：`.git` のST_RDONLY=True、Node検出なし。前回と原因が同じため失敗commitと全体Node試験の再実行はしない。必須の署名付きローカルcommitは環境阻害で未作成。変更はSymphonyチェックポイント対象。
+- 判定：今回のMOCK回帰試験は合格。全体試験は前回実測404件中20errorから未解決で、全件合格としない。Windows実画面・実サービスはUNKNOWN。Issue完了コメント・ラベル削除は条件未達につき未実施。
+- 環境待ち：既存リストの.git書込み／Node実行環境の復旧後、全体試験・署名付きcommit・公開PR照合へ進む。実サービスの禁止は維持。
+
+## GH-22 継続ターン6（2026-10-27・環境復旧確認）
+
+- 開始HEAD `d710b8a7bcd631fc229dc2dbbe0da85d6d8e9895`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたDraft PR検索から #24、main宛て、remote HEAD一致、publicを再確認。
+- 関連オフライン試験を実測：60件、0.078秒、OK。外部通信・モデル実行なし。`git diff --check` 合格。Windows実画面・実サービスはUNKNOWN。
+- 環境実測：`.git` のST_RDONLY=True、node／nodejsとも検出なし。全体試験の既知20errorと署名付きcommitの阻害原因は解消していない。同じ失敗操作を再送せず、Node試験をskip扱いにも変更しない。
+- ユーザー待ち／環境待ち：Official Symphony側の.git書込み・Node実行環境の復旧が必要。復旧後に全体試験、AI-Agent署名付きcommit、公開PR照合へ進む。インストール・push・ワークスペース制約回避は行わない。
+- 完了条件未達のためIssueコメント・ラベル削除は未実施。この記録はSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続2：環境阻害継続
+
+- `.git` のST_RDONLY=True、node／nodejs検出なしを再測定。前ターンの作業記録のみ未コミットで保持。環境は復旧していないため、既知の失敗commit・全体試験は再送しない。
+- BLOCKED（環境）：Official Symphony側で.git書込みとNode実行環境が復旧したら、全体試験・署名付きcommit・PR照合を再開する。Issueコメント・ラベル削除は未実施。
+
+### 同一run継続3〜7：環境復旧なし
+
+- 各継続で.gitのST_RDONLY=TrueとNode不在を実測。継続7でも同じ。環境待ちのBLOCKEDを維持。既知の失敗操作の再送、試験のskip化、制約回避はしない。
+- 未コミットの作業記録を保持。Official Symphony側の環境復旧後に、全体試験とAI-Agent署名付きcommitから再開する。完了用Issueコメント・ラベル削除は未実施。
+
+### 同一run継続20：環境阻害の最終引継ぎ
+
+- 継続20で再測定：.gitのST_RDONLY=True、node／nodejs不在。継続14でも同条件を実測し、環境復旧なし。BLOCKED（環境）。
+- 最新の関連試験実測は60件OK。全体試験の既知Node起因20errorは未解消。署名付きローカルcommitは読取り専用マウントにより未作成。未コミットの作業記録を保持し、Official Symphonyのチェックポイントに委ねる。
+- 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開後Draft PR照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス実行・Merge・main pushは禁止を維持。
+
+AI-Agent: codex
+
+## GH-22 継続ターン7（2026-10-27・公開状態と環境の再確認）
+
+- 開始HEAD実測 `527c4cb346e72eb87d40513226efd4d14854101c`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24とremote HEAD一致を確認。repositoryはpublic。
+- 関連オフライン試験を再実測：60件、0.089秒、OK。`git diff --check` 合格。モデル・外部サービス実行なし。
+- `.git` のST_RDONLY=True、node／nodejs検出なし。既知のcommit失敗と全体試験20errorの原因は変わっていないため再送しない。署名付きローカルcommitは環境阻害で未作成。全体試験の最新実測は前回の404件中20errorであり、今回の60件合格とは区別する。
+- BLOCKED（環境）。Official Symphony側の.git書込みとNode実行環境の復旧後に、全体試験・署名付きcommit・公開PR照合を再開する。実機はUNKNOWN。完了用Issueコメント・対象ラベル削除は未実施。今回の記録はSymphonyチェックポイントに引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・3・6・10・14・20で.gitのST_RDONLY=True、node／nodejs不在を再測定。環境は復旧していない。BLOCKED（環境）。
+- 最新の関連試験実測は60件、0.089秒、OK。全体試験の既知20errorと署名付きcommitは未解決。既知の失敗操作を再送せず、検品ログの差分を保持。
+- Official Symphony側で.git書込みとNode実行環境を復旧後、全体試験・AI-Agent署名付きcommit・公開Draft PR #24の照合から再開。Issue完了コメントと対象ラベル削除は未実施。実サービス実行なし、実機結果UNKNOWN。
+
+AI-Agent: codex
+
+## GH-22 継続ターン8（2026-10-27・環境阻害の再測定）
+
+- 開始HEAD `da5278b242a5b8a90c1279c10f7133bafb6865c1`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でDraft PR #24、main宛て、remote HEAD一致、publicを確認。
+- 関連オフライン試験は今回実測60件、0.081秒、OK。モデル・外部通信なし。差分空白検査合格。設計文書と日本語起動手順を再読。
+- `.git` のST_RDONLY=True、node／nodejs検出なし。既知のcommit失敗と全体試験の環境阻害は未解消。同じ失敗操作は再送せず、署名付きcommitは未作成。全体試験の前回実測404件中20errorを今回の60件合格で置き換えない。
+- BLOCKED（環境）。Official Symphony側の.git書込みとNode実行環境の復旧後、全体試験・署名付きcommit・公開PR照合から再開する。実機はUNKNOWN、本Issue内では実行禁止を維持。完了用Issueコメント・対象ラベル削除は未実施。今回の記録はSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で.gitのST_RDONLY=True、node／nodejs不在を再測定。環境復旧なし、BLOCKED（環境）。既知の失敗commitと全体試験を再送せず、制約回避や試験のskip化は行っていない。
+- 今runの関連試験実測は60件、0.081秒、OK。全体試験の既知20errorと署名付きcommitは未完了。検品ログの未コミット差分を保持し、Official Symphonyのチェックポイントへ引き継ぐ。
+- 復旧後：全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス実行なし、実機結果UNKNOWN。
+
+AI-Agent: codex
+
+## GH-22 継続ターン9（2026-10-27・環境阻害確認）
+
+- 開始HEAD `6a74f150f0e536999872cc98582fa81ff05b9a31`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 関連オフライン試験を今回実測：60件、0.081秒、OK。モデル・外部通信なし。`git diff --check` 合格。
+- 環境実測：.gitのST_RDONLY=True、node／nodejs検出なし。既知のcommit失敗・全体試験20errorの阻害原因は未解消。同じ失敗操作は再送せず、試験のskip化・環境制約回避もしない。署名付きローカルcommitは未作成。
+- BLOCKED（環境）。Official Symphony側の.git書込みとNode実行環境の復旧後、全体試験・AI-Agent署名付きcommit・公開PR照合から再開する。実サービスは実行禁止、実機結果UNKNOWN。完了用Issueコメントと対象ラベル削除は未実施。この記録をSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で.gitのST_RDONLY=True、node／nodejs不在を再測定。環境復旧なし、BLOCKED（環境）。既知の失敗commit・全体試験は再送せず、制約回避・試験skip化も行っていない。
+- 今runの関連試験実測は60件、0.081秒、OK。全体試験の既知Node起因20errorと署名付きcommitは未完了。作業記録の差分を保持し、Official Symphonyのチェックポイントへ引き継ぐ。
+- 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス実行なし、実機結果UNKNOWN。
+
+AI-Agent: codex
+
+## GH-22 継続ターン10（2026-10-27・環境阻害確認）
+
+- 開始HEAD `87febd447cf0dc1a8d569e51755c58d7b65afce6`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回実測：字幕スイッチ関連60件、0.078秒、OK。モデル・外部通信なし。差分空白検査合格。アプリコード変更なし。
+- `.git` のST_RDONLY=True、node／nodejs検出なし。既知の署名付きcommitと全体試験20errorの阻害原因は未解消。同じ失敗操作は再送しない。全体試験の前回実測404件中20errorは未解決で、今回の関連60件の合格と区別する。
+- BLOCKED（環境）。Official Symphony側の.git書込みとNode実行環境復旧後、全体試験・AI-Agent署名付きcommit・公開PR照合を再開。実サービス未実行、実機結果UNKNOWN。完了用Issueコメント・対象ラベル削除は未実施。記録差分をSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で.gitのST_RDONLY=True、node／nodejs不在を再測定。環境復旧なし、BLOCKED（環境）。既知の失敗commit・全体試験の再送、試験skip化、制約回避は行っていない。
+- 今runの関連試験実測は60件、0.078秒、OK。全体試験の既知Node起因20errorと署名付きcommitは未完了。検品ログの差分を保持し、Official Symphonyのチェックポイントへ引き継ぐ。
+- 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス未実行、実機結果UNKNOWN。
+
+AI-Agent: codex
+
+## GH-22 継続ターン11（2026-10-27・環境阻害確認）
+
+- 開始HEAD `79896fb2ee29cb8c2412b5010137d9141cc4aad9`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回実測：字幕スイッチ関連60件、0.076秒、OK。モデル・外部サービス実行なし。差分空白検査合格。アプリコード変更なし。
+- `.git` のST_RDONLY=True、node／nodejs検出なし。既知の署名付きcommitと全体試験20errorの阻害原因は未解消。同じ失敗操作は再送しない。全体試験の前回実測404件中20errorは今回再実行しておらず、関連60件の合格と区別する。
+- BLOCKED（環境）。ユーザー待ち／環境待ち：Official Symphony側で.git書込みとNode実行環境を復旧後、全体試験・AI-Agent署名付きcommit・公開PR照合を再開する。実サービス未実行、実機結果UNKNOWN。完了用Issueコメント・対象ラベル削除は未実施。記録差分をSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で.gitのST_RDONLY=True、node／nodejs不在を再測定。環境復旧なし、BLOCKED（環境）。既知の失敗commit・全体試験は再送せず、試験skip化・制約回避は行っていない。
+- 今runの関連試験実測は60件、0.076秒、OK。全体試験の既知Node起因20errorと署名付きcommitは未完了。検品ログの差分を保持し、Official Symphonyチェックポイントへ引き継ぐ。
+- 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス未実行、実機結果UNKNOWN。
+
+AI-Agent: codex
+
+## GH-22 継続ターン12（2026-10-27・環境阻害確認）
+
+- 開始HEAD `e9ba22a198a6aee32bb80943f8fd56076d524ccb`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回実測：字幕スイッチ関連60件、0.078秒、OK。モデル・外部サービス実行なし。差分空白検査合格。アプリコード変更なし。
+- `.git` のST_RDONLY=True、node／nodejs検出なし。署名付きcommitと全体試験の既知20errorの阻害原因は未解消。同じ失敗操作は再送しない。全体試験は今回再実行していない。
+- BLOCKED（環境）。ユーザー待ち／環境待ち：Official Symphony側で.git書込みとNode実行環境を復旧後、全体試験・AI-Agent署名付きcommit・公開PR照合を再開。実機UNKNOWN。完了用Issueコメント・対象ラベル削除は未実施。記録差分をSymphonyチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で.gitのST_RDONLY=True、node／nodejs不在を実測。環境復旧なし、BLOCKED（環境）。失敗済みcommitや既知の全体試験の再送、試験skip化、制約回避は行っていない。
+- 今runの関連試験実測は60件、0.078秒、OK。全体試験の既知Node起因20errorと署名付きcommitは未完了。記録差分を保持し、Official Symphonyチェックポイントへ引き継ぐ。
+- 復旧後：保持差分確認 → 全体試験 → AI-Agent署名付きcommit → 公開Draft PR #24照合 → 全条件達成時のみIssueコメント1件と対象ラベル削除。実サービス未実行、実機結果UNKNOWN。
+
+AI-Agent: codex
+
+## GH-22 継続：選別理由の自由入力（2026-10-27）
+
+- 開始HEAD `b70caf1f7523eb65aac9adf1b80e8aaa8b23c298`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24とremote HEAD一致を確認。repositoryはpublic。
+- 弾く理由のComboboxがreadonlyだったため、候補選択に加えて自由入力・空欄を許可。日本語の使い方も更新。外部サービス実行なし。
+- 関連オフライン試験60件、0.076秒、OK。全体試験406件、10.928秒、failure 0 / error 20。Node不在の既知環境阻害は解消していない。`git diff --check` 合格。
+- `.git` ST_RDONLY=True、node/nodejsとも不在。以前と同じcommit失敗操作は再送しない。AI-Agent署名付きローカルcommitは環境阻害で未作成。変更をSymphonyチェックポイントへ引き継ぐ。
+- BLOCKED（環境）。全件合格と署名付きcommitが未達のため、完了用Issueコメントと対象ラベル削除は実施しない。Windows画面・実CLI適合・実機保存はUNKNOWN。
+
+AI-Agent: codex
+
+### GH-22 同一run継続20：環境復旧待ち
+
+- 継続20で再測定：.git ST_RDONLY=True、node/nodejs不在。環境阻害は未解消。
+- 自由入力可能な選別理由・日本語手順・本記録の3ファイルを作業ツリーに保持。署名付きcommitは作成不能。Official Symphonyのチェックポイントへ引き継ぐ。
+- 最新の試験実測は関連60件OK、全体406件中error 20。実機UNKNOWN。全件合格・署名付きcommit未達のためIssue完了コメントとラベル削除は未実施。
+- 再開条件：Official Symphony側で.git書込みとNode実行環境を復旧し、全体試験・AI-Agent署名付きcommit・Draft PR #24との照合を行う。
+
+AI-Agent: codex
+
+## GH-22 継続：送信待ち好みメモの破損を隔離（2026-10-27）
+
+- 開始HEAD `12e94bd72cef1d58f06d8e9f3840a0d8ce1e8e4e`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- PC送信待ちJSONの日付欠落・型違いがKeyError／TypeErrorで次回の動画保存を止める不具合を修正。配送前に日付とsession_idを確認し、不明なメモは送信・削除せず保留。6種類の破損と復旧後の配送を偽サービスで検証し、動画を再保存しないことも確認。
+- 関連オフライン試験61件、0.072秒、OK。モデル・外部サービス実行なし。Windows画面・実CLI適合・実機保存はUNKNOWN。
+- 環境待ち：.git ST_RDONLY=True、node/nodejs不在。署名付きローカルcommitは作成不能。既知の失敗操作を繰り返さず、変更をOfficial Symphonyチェックポイントへ引き継ぐ。全件合格まで完了用Issueコメントとラベル削除は保留。
+
+AI-Agent: codex
+
+- 今回の全体試験実測：407件、10.970秒、assertion failure 0／error 20。20件はすべてNode実行のPermissionError。差分空白検査合格。
+
+### 同一run継続2：環境復旧待ち
+
+- 前ターンの4ファイルの差分を保持。再測定でも.git ST_RDONLY=True、node/nodejs不在。署名付きcommitと全体試験の阻害条件は未解消。
+- コード変更後の最新実測は関連61件OK、全体407件中Node実行権限による20error。変更なしのため同じ試験・失敗操作は再送しない。
+- BLOCKED（環境）。Official Symphony側で.git書込みとNode実行環境が復旧するまで完了認定不能。実機UNKNOWN。Issue完了コメントとラベル削除は保留し、保持差分をチェックポイントへ引き継ぐ。
+
+AI-Agent: codex
+
+### 同一run継続20：最終引継ぎ
+
+- 再測定でも.git ST_RDONLY=True、node/nodejs不在。破損した好みメモの隔離修正・回帰テスト・設計追記・本記録の4ファイルを保持。差分空白検査合格。
+- 最新実測は関連61件OK、全体407件中Node実行権限による20error。実機UNKNOWN。環境未復旧のため署名付きcommitと全件合格は未達。Issue完了コメント・対象ラベル削除は未実施。
+- Official Symphonyへ：Git書き込みとNode実行環境復旧後、保持差分の署名付きcommit、全体試験、公開Draft PR #24との照合を再開する。失敗済み操作の無変更再送や試験のskip化はしていない。
+
+AI-Agent: codex
+
+## GH-22 継続：環境と関連試験の確認（2026-10-27）
+
+- 開始HEAD `f8bcd5f449fe208e4188c0f71f9ebf4bb0f610cb`、`symphony/gh-22-design`、開始差分なし。許可されたGitHub PR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回の関連オフライン試験は61件、0.084秒、OK。コード変更なし。モデル・実サービス実行なし、実機UNKNOWN。
+- 実測でも.git ST_RDONLY=True、node/nodejs不在。既知の失敗commitと全体試験は原因未変更のため再送しない。全体試験の前回407件中20errorは未解決で、今回の関連試験合格とは区別する。
+- 環境待ち：Official Symphony側で.git書込みとNode実行環境を復旧後、署名付きcommit・全体試験・公開PR照合を再開する。本記録はチェックポイントへ引き継ぐ。全件合格未達につき、完了用Issueコメントと対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2〜20で再測定しても.git ST_RDONLY=True、node/nodejs不在。環境は未復旧。失敗済みcommit・全体試験の無変更再送や試験skip化は行わない。
+- 本runの関連試験実測は61件、0.084秒、OK。全体試験の既知20errorと署名付きcommitは未完了。実機UNKNOWN。検品ログ差分をOfficial Symphonyのチェックポイントへ引き継ぐ。
+- 復旧後は署名付きcommit・全体試験・公開Draft PR #24との照合を行い、全条件達成時のみIssueコメント1件と対象ラベル削除を行う。現時点では両操作とも未実施。
+
+AI-Agent: codex
+
+
+## GH-22 継続：環境阻害の再確認（2026-10-27）
+
+- 開始HEAD `e6d3bb89e11bc2b6d3dfb92580a7873426308e66`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回実測：字幕スイッチのオフライン試験61件、0.097秒、OK。コード変更なし。モデル・実サービス未実行、実機UNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejs不在。既知の失敗操作は原因未変更のため再送しない。全体試験の前回407件中20errorは今回再測定しておらず、解消を確認できない。
+- 環境待ち：Official Symphony側でGit書込みとNode実行環境を復旧後、署名付きcommit・全体試験を再開する。本記録をチェックポイントへ引き継ぐ。全件合格未達のため完了用Issueコメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続2：環境復旧待ち
+
+- 再実測：.git ST_RDONLY=True、node/nodejs不在。前ターンの検品記録差分を保持。環境阻害は未解消で、署名付きcommitと全体試験を再開できない。
+- コード変更なし。原因未変更の失敗操作・試験は再送しない。Official Symphony側の環境復旧待ち。Issue完了コメント・対象ラベル削除は未実施。実機UNKNOWN。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続3〜20の再確認でも.git ST_RDONLY=True、node/nodejs不在。環境は未復旧。原因未変更の失敗commit・全体試験は再送せず、試験skip化・制約回避なし。
+- 今runの関連試験実測は61件、0.097秒、OK。全体試験の既知20errorと署名付きcommitは未完了。実機UNKNOWN。検品記録差分をOfficial Symphonyチェックポイントへ引き継ぐ。
+- 復旧後：署名付きcommit・全体試験・Draft PR #24照合。全条件達成時のみIssueコメント1件と対象ラベル削除を行う。現時点では両操作とも未実施。
+
+AI-Agent: codex
+
+## GH-22 継続：公開HEADと環境の確認（2026-10-27）
+
+- 開始HEAD `7b88bd58130dbc925515c5393415decdfe5c6035`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24とremote HEAD一致を確認。repositoryはpublic。
+- 今回の関連オフライン試験：61件、0.083秒、OK。モデル・外部サービスは実行していない。実機UNKNOWN。
+- 実測でも.git ST_RDONLY=True、node/nodejs不在。原因未変更の失敗commitと全体試験は再送しない。前回の全体407件中20errorは未解消、今回の全件合格とは認定しない。
+- BLOCKED（環境）。Official Symphony側のGit書込み・Node実行環境復旧後に署名付きcommitと全体試験を再開する。本記録をチェックポイントへ引き継ぐ。完了用Issueコメントと対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・3・6・10・14・19の実測で.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化は行っていない。
+- 本runの関連試験は61件、0.083秒、OK。全体試験の既知20errorとAI-Agent署名付きcommitは未完了。実機UNKNOWN。保持中の検品記録差分は空白検査合格。
+- Official Symphony側でGit書込みとNode実行環境を復旧後、署名付きcommit・全体試験・Draft PR #24照合を再開する。全条件達成時のみ完了コメント1件と対象ラベル削除を行う。現時点では両操作とも未実施。
+
+AI-Agent: codex
+
+## GH-22 継続：破損好みメモによる後続配送停止を修正（2026-10-27）
+
+- 開始HEAD `bc2b2fb57a30baf9e532d9ce2ad576e3876b0ca0`、作業ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24とremote HEAD一致、publicを確認。
+- PC送信待ちメモの解析・必須項目検証と配送先の読戻しを分離。破損したローカルメモだけを保持して次へ進み、正常な回の配送を継続。配送先の異常・結果不明では従来どおり停止する。
+- 回帰試験：5種類の破損メモが正常メモの配送を妨げず、破損本文を保持し、再配送も重複しないことを検証。複数回の動画保存試験でも6種類の破損を保留し正常メモを毎回配送、動画工程の再実行なし。関連62件、0.085秒、OK。git diff --check合格。モデル・実サービス未実行、実機UNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejsなし。既知の失敗commit・全体試験は原因未変更のため再送しない。署名付きcommit不可、全体試験の既知20errorは未解消。本差分をOfficial Symphonyのチェックポイントへ引き継ぐ。
+- 環境待ち：Git書込み・Node環境復旧後に署名付きcommitと全体試験が進む。全件合格未達のため完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害と保持差分の引継ぎ
+
+- 継続2・6・10・14・19で.git ST_RDONLY=True、node/nodejs不在を実測。環境未復旧。既知の失敗commit・全体試験の無変更再送、制約回避、試験skip化は行っていない。
+- 本runの修正は破損したPC好みメモによる後続正常メモの配送停止を解消。関連62件OK、差分空白検査合格。変更5ファイルを作業ツリーに保持。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：環境復旧後、保持差分の署名付きcommit、全体試験、Draft PR #24の更新・照合を再開する。全条件達成時のみIssueコメント1件と対象ラベル削除を行う。現時点では両操作とも未実施。
+
+AI-Agent: codex
+
+## GH-22 継続：チェックポイント後の確認（2026-10-27）
+
+- 開始HEAD `a07c81193c2736f65508bd71cea2251aade0dd28`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 関連オフライン試験は今回62件、0.085秒、OK。コード変更なし。モデル・実サービス未実行、Windowsと実機はUNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejs不在。既知の失敗commit・全体試験は原因未変更のため再送しない。署名付きcommitと全体試験の既知20errorは未解決。
+- 環境待ち：Official Symphony側でGit書込み・Node実行環境を復旧後、署名付きcommit・全体試験・Draft PR照合が進む。本記録をチェックポイントへ引き継ぐ。全件合格未達につきIssue完了コメントと対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・6・10・14・19で実測しても.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化なし。
+- 本runの関連オフライン試験は62件、0.085秒、OK。検品記録の差分を保持。アプリコード変更なし。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：Git書込みとNode実行環境復旧後、署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達のためIssue完了コメントと対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+## GH-22 継続：現HEADでの再検証（2026-10-27）
+
+- 開始HEAD `ca677b32644564ac643413bdc7346d83cd176d60`、ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回の関連オフライン試験62件、0.085秒、OK。アプリコード変更なし。モデル・実サービス未実行、実機UNKNOWN。
+- 実測で.git ST_RDONLY=True、node/nodejs不在。原因未変更の失敗commit・全体試験は再送しない。全体試験の既知20errorの解消は未確認。署名付きcommit不能につき本記録をSymphonyチェックポイントへ引き継ぐ。
+- 環境待ち：Git書込み・Node実行環境復旧後、署名付きcommitと全体試験を再開する。全件合格未達のためIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・5・10・14・19の実測でも.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化なし。
+- 本runの関連オフライン試験62件、0.085秒、OK。アプリコード変更なし。検品記録の差分を保持し、空白検査合格。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：Git書込み・Node実行環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達につきIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+
+## GH-22 継続：9415840 の検証（2026-10-27）
+
+- 開始HEAD `94158401f39da864159bd1883fade65ab78226ac`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回実測：関連オフライン試験62件、0.083秒、OK。アプリコード変更なし。モデル・実サービス未実行、Windows画面と実機はUNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejs不在。既知の失敗commit・全体試験は原因未変更につき再送しない。署名付きcommit不能、全体試験の既知20errorの解消は未確認。
+- ユーザー待ち／環境待ち：Official Symphony側のGit書込み・Node実行環境復旧が必要。復旧後に署名付きcommitと全体試験を再開する。本記録はSymphonyチェックポイントへ引継ぐ。全件合格未達のため完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・6・10・14・19の実測でも.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化なし。
+- 本runの関連オフライン試験62件、0.083秒、OK。アプリコード変更なし。検品記録の差分を保持。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：Git書込み・Node実行環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達につきIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+## GH-22 継続：5fd32bf の確認（2026-10-27）
+
+- 開始HEAD `5fd32bf1e9f62cdd6fdd665c30f72823b37e52bb`、作業ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24とremote HEAD一致、publicを確認。
+- 今回の関連オフライン試験62件、0.088秒、OK。アプリコード変更なし。モデル・実サービス未実行、Windows画面と実機はUNKNOWN。
+- 実測：.git ST_RDONLY=True、node/nodejs不在。既知の失敗commit・全体試験は原因未変更につき再送しない。全体試験の既知20errorは未解消。
+- 環境待ち：Official Symphony側のGit書込み・Node実行環境復旧後に署名付きcommitと全体試験を再開する。本記録はチェックポイントへ引継ぐ。全件合格未達につき完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・5・10・15・20の実測でも.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化なし。
+- 本runの関連オフライン試験62件、0.088秒、OK。アプリコード変更なし。検品記録の差分を保持。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：Git書込み・Node実行環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達につきIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+## GH-22 継続：dd8a559 の再検証（2026-10-27）
+
+- 開始HEAD `dd8a559954479629a4fba8a080b7cb21f3556845`、作業ブランチ `symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 関連オフライン試験62件、0.087秒、OK。アプリコード変更なし。実サービス・モデルは未実行。Windows画面と実機はUNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejs不在。原因未変更の失敗commit・全体試験は再送しない。全体試験の既知20errorは未解消。
+- 環境待ち：Official Symphony側でGit書込み・Node実行環境を復旧後、AI-Agent署名付きcommitと全体試験を再開する。今回の記録はチェックポイントへ引き継ぐ。完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続5・10・15・20の実測でも.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化なし。
+- 本runの関連オフライン試験62件、0.087秒、OK。アプリコード変更なし。検証記録の差分を保持。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：Git書込み・Node実行環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達につきIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+
+## GH-22 継続：73c545f の検証（2026-10-27）
+
+- 開始HEAD `73c545f31a9f16a090f4fe9c8e4ba97d108848be`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 関連オフライン試験62件、0.087秒、OK。アプリコード変更なし。モデル・実サービス未実行、Windows画面・実機UNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejs不在。原因未変更の失敗commit・全体試験は再送しない。全体試験の既知20errorは今回未測定、解消未確認。
+- 環境待ち：Official Symphony側でGit書込みとNode環境を復旧後、AI-Agent署名付きcommitと全体試験を再開する。本記録をチェックポイントへ引き継ぐ。全件合格未達につき完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・5・10・15・20で実測しても.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験は再送せず、制約回避・試験skip化なし。
+- 本runの関連オフライン試験62件、0.087秒、OK。アプリコード変更なし。検品記録の差分を保持。モデル・実サービス未実行、実機UNKNOWN。
+- Official Symphonyへ：Git書込みとNode環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未確認につきIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+## GH-22 継続：7e7a0ba の環境・関連試験確認（2026-10-27）
+
+- 開始HEAD `7e7a0ba9d8217ad87b21508b9b1dc166c4288e20`、`symphony/gh-22-design`、開始差分なし。許可されたPR検索でmain宛てDraft PR #24、remote HEAD一致、publicを確認。
+- 今回実測：字幕スイッチ関連オフライン62件、0.085秒、OK。アプリコード変更なし。モデル・実サービス未実行。Windows画面・実機はUNKNOWN。
+- 環境実測：.git ST_RDONLY=True、node/nodejs不在。原因未変更の既知失敗commit・全体試験は再送しない。全体試験の既知20errorの解消は未確認。
+- 環境待ち：Official Symphony側でGit書込み・Node環境復旧後、AI-Agent署名付きcommitと全体試験を再開する。記録差分をチェックポイントへ引継ぐ。全件合格未達のため完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+### 同一run継続20：環境阻害の引継ぎ
+
+- 継続2・5・10・15・20の実測で.git ST_RDONLY=True、node/nodejs不在。環境未復旧。原因未変更の失敗commit・全体試験の再送、制約回避、試験skip化は行っていない。
+- 本runの関連オフライン試験62件、0.085秒、OK。アプリコード変更なし。検証記録差分を保持。モデル・実サービス未実行、Windows画面・実機UNKNOWN。
+- Official Symphonyへ：Git書込み・Node実行環境復旧後、AI-Agent署名付きcommit・全体試験・Draft PR #24照合を再開する。全件合格未達につきIssue完了コメント・対象ラベル削除は未実施。
+
+AI-Agent: codex
+
+## GH-22 最終オフライン受入（2026-10-27）
+
+- 開始HEAD `0dd405d83e8b93beeffbaf4b8875ee33468c5442`、枝 `symphony/gh-22-design`、開始差分なし。許可されたGitHub PR検索でmain宛てDraft PR #24、同HEAD、publicを読み戻した。
+- 指定コマンド `bash .symphony/run_all_tests.sh`：408 passed, 15 subtests passed in 10.96s、RESULT: PASS。Node v22.23.4で以前の全体試験環境阻害は解消。
+- 設計・AI字幕OKF見本・判断事項3件、アプリ本体、モデル不要試験、オーナー向け起動手順を照合。オフライン判定PASS。既存実装を継続し、今回は設計文書の現在地と検証結果を更新。
+- 実モデル・外部保存は実行せず。Windows画面・実サービス・正式SUCCESS_2_SOURCE_OKFはUNKNOWN。新たなユーザー待ちはなし。実機を行う場合は別の許可範囲で扱う。
+- .gitへの書込みは今回の契約で実施せず、文書差分はSymphonyホストフックがcommit/pushする。Merge・main書込みなし。
+
+AI-Agent: codex
+
+## GH-25 修正ラウンド1・最初の修正単位（2026-10-27）
+
+- 対象: lab_folder二重定義統合、研究ノートtagsのJSON形式リスト読取とブロック形式の生成指示、偽pushのPOSIXキー。
+- ローカル差分読み戻し: 呼出時DEFAULT_DRIVE_ROOT/LAB_DRIVE_FOLDER参照、明示override、旧配置fallbackを確認。tagsの既存ブロック形式・related_records非破壊の回帰試験追加。
+- オフライン全試験: 通常環境PASS。厳格ASCII環境は28 failed / 385 passedでNEEDS_FIX（項目7のencoding明示が残る）。スクリプト末尾RESULT: PASSのみで完成扱いしない。
+- 実機・remote readback・Windows見た目: UNKNOWN。外部サービスは実行していない。次は項目7と残りの修正。
+- ユーザー待ち追加なし。GitHub操作はGH-25の単一Workpadのみ、commit/pushはホストフック担当。
+
+AI-Agent: codex
+
+## GH-25 項目7・文字コード修正と環境Blockers（2026-10-27）
+
+- services.pyのgithub_head/manifest読み戻しと字幕スイッチ試験のtext I/OにUTF-8を明示。アプリ全体のtext I/O指定漏れ検出試験を追加。関連試験33 passed / 9 subtests passed。
+- 全体試験（指定漏れ検出試験追加前）: 通常413 passed、厳格27 failed / 386 passed。ENCODING-STRICT: FAIL、RESULT: PASS。項目7は未完了。
+- Blockers: strict ASCII環境はファイル内容だけでなくfilesystem/environment encodingもASCIIになる。日本語ディレクトリ作成・環境変数設定がUnicodeEncodeErrorとなるため、日本語Windows cp932の代用として全試験を通すことは確認不能。環境変更や試験スキップで隠していない。該当試験（異なる原因の混在は次回精査）:
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_okf_research_u3ka_2_source_ingestion_and_readback`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_adds_only_missing_source`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_fails_when_captions_missing`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_notebook_ingest_from_already_registered`
+  - `tests/test_auto_research_pipeline.py::TestAutoResearchPipeline::test_resume_with_two_sources_does_not_readd`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_08_cloud_payload_env_and_inbox_discovery`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_09_python_js_cross_language_contract_and_output_parity`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_10_gas_mock_atomic_commit_concurrency_conflict_and_drive_self_healing`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_11_pagination_truncated_tree_partial_scan_continuation_and_value_patterns`
+  - `tests/test_gemini_notebook_loop.py::TestGeminiNotebookLoopV03::test_12_v06_chapters_detailed_findings_timestamp_provenance_and_qa_search`
+  - `tests/test_gemini_notebook_loop.py::TestGasConfigurationAndOperationsContract::test_cp5_cloud_relay_gas_comprehensive_mock_and_edge_cases`
+  - `tests/test_gemini_notebook_loop.py::TestGasConfigurationAndOperationsContract::test_gas_in_place_dedup_and_zero_duplicate_on_identical_receipt`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_anti_false_pass_guards_drive_tab_mock_and_double_counting`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_existing_youtube_source_is_preserved_and_never_deleted`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_idempotent_diff_ingest_skips_existing_and_adds_only_missing`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_legacy_youtube_plus_note_only_yields_partial_status`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_new_video_pure_2_source_okf_default_principle`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_phase_okf_knowledge_and_qa_pipeline`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_phase_okf_v02_spec_and_regression_verification`
+  - `tests/test_gemini_notebook_loop.py::TestUrlIntakeDuplicateCheck::test_post_registration_2_source_independent_verification`
+  - `tests/test_gemini_notebook_loop.py::TestTwelveAcceptanceCriteriaContract::test_item10_single_source_registered_does_not_yield_success`
+  - `tests/test_gemini_notebook_loop.py::TestTwelveAcceptanceCriteriaContract::test_item6_youtube_url_only_does_not_yield_success`
+  - `tests/test_gemini_notebook_loop.py::TestTwelveAcceptanceCriteriaContract::test_item9_no_duplicate_registration_in_existing_notebook`
+  - `tests/test_notebook_auto_ingest.py::TestLabFolder::test_old_root_location_is_still_used_when_only_it_exists`
+  - `tests/test_notebook_auto_ingest.py::TestLabFolder::test_sync_creates_grouped_folder_under_existing_drive_root`
+  - `tests/test_notebooklm_py_ingest.py::TestLinkifyTimestamps::test_python_and_gas_linkify_match`
+  - `tests/test_subtitle_switch_pipeline.py::PipelineTests::test_folder_resolution_prefers_new_then_legacy_and_override`
+- 項目2〜5・9〜11・13は未着手で継続可能。Windows実機とcp932実行はUNKNOWN。
+
+AI-Agent: codex
+
+## GH-25 修正ラウンド1・保存経路と画面（2026-10-27）
+
+- 項目2: 非0終了したpushだけを識別。再開時の読み戻し後、原因変更と2回上限の範囲でgithub_head.jsonの同一SHAを再push。manifest照合・remote祖先確認・非forceを維持。結果不明の送信には適用しない。
+- 項目3〜5: usage集計をquota判定から除外。3 CLIをshutil.whichで解決し、Notebookの認証チェックでも名前つき未検出理由を保持。公式CLI referenceを照合し、空setting-sourcesとWindows CLI実受付はREADMEでUNKNOWNと明記。
+- 項目9〜11: 手動URLと選択行を独立した対象集合でPipelineへ渡す。空選択No-Op、未選択・弾いた行除外。処理中行を一覧に表示・スクロール、選択を保持。READMEの起動はpy -3または実体のフルパス。
+- 項目13: 見本画像参照。白・赤・ピンク、広い状態列とスクロール、カード枠、8理由、独自の書類・再生・カレンダー等のピクセル画、本＋右側の鉛筆をウィンドウと保存ボタンへ。Yu Gothic UI。実画面はUNKNOWN、Tk構築は偽ウィジェットで検証。角丸等はTkの近似表示。
+- 検証: 指定スクリプトの通常試験427 passed / 18 subtests passed。厳格試験28 failed / 399 passed（うち新規UI試験は日本語既定パス依存を除くため明示のASCIIテスト用inbox等へ変更後、サービス＋UIを厳格環境で再実行し30 passed / 3 subtests passed）。既存27件の環境Blockerは前項参照。cp932を既定text I/Oとして模した日本語ノート往復試験も合格。
+- Last full script: ENCODING-STRICT: FAIL / RESULT: PASS。項目7は未完了。ラベル削除・本番サービス実行・git commit/pushはしていない。
+- 迂回: strict filesystem/environment encodingの環境修正待ち。承認追加ではなく実行環境の変更が必要。任意項目12の旧互換コードは既存試験保護のため未変更。
+
+AI-Agent: codex
+
+## GH-25 修正ラウンド1・更新された厳格試験の完了確認（2026-10-27）
+
+- 開始時実測: branch `symphony/gh-22-design`、HEAD `49adf4a0aaacade63abcf18a8bafdd30ae243f5b`、作業ツリーclean、MERGE_CONFLICT.txtなし。GitHub読取でDraft PR #24、default main、visibility publicを確認（過去文書の非公開という記述とは異なる）。
+- 初回指定試験: 通常427 passed / 18 subtests passed。新C.UTF-8厳格試験は5 failed / 422 passed。旧ASCII環境Blockerは再現せず、今回はrepo内のsubprocess文字コード指定漏れ。
+- 修正: auto_research_pipeline.pyのブランチ読取とtest_notebooklm_py_ingest.pyのNode出力読取にencoding="utf-8"を明示。既存の安全停止とPython/JS日本語変換比較を維持。
+- 修正後の指定スクリプト: 通常・厳格とも427 passed / 18 subtests passed、ENCODING-STRICT: PASS、RESULT: PASS。git diff --check合格。項目7の旧Blockerを解消、必須項目1〜11・13のオフライン実装・試験は完了。
+- UNKNOWN: Windows/cp932実機と実際のUI表示、CLI実受付、実サービス処理。モデル・外部サービス実行なし。今回の変更のcommit/pushとremote readbackはSymphony host hook担当で、この時点では未確認。任意項目12は未実施。
+
+AI-Agent: codex
