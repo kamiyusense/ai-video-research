@@ -10,6 +10,7 @@ import secrets
 import subprocess
 import threading
 import time
+from contextlib import ExitStack
 from datetime import date
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +18,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 import switch_app as app
+from app_activation import ActivationService, ActivationUnavailable, request_activation
+from app_window import AppWindow
 from ask_research import MAX_QUESTION, ask
 from metadata import refresh_metadata
 from pipeline import InstanceLock, StageFailure
@@ -388,6 +391,7 @@ def render_page(boot, asset_base='/assets/', auth='', nonce='preview'):
     js = '\n'.join((ROOT / 'web' / name).read_text(encoding='utf-8') for name in ('cat.js', 'app.js'))
     data = json.dumps({**boot, 'asset_base': asset_base, 'auth': auth}, ensure_ascii=False).replace('<', '\\u003c')
     html = (ROOT / 'web/index.html').read_text(encoding='utf-8')
+    html = html.replace('<!--APP_ICON-->', asset_base + 'app_icon/icon_v3_2_512.png' + auth)
     return html.replace('<!--STYLE-->', '<style>' + css + '</style>').replace('<!--ICONS-->', (ROOT / 'web/icons.svg').read_text(encoding='utf-8')).replace('<!--SCRIPT-->', f'<script nonce="{nonce}">const BOOT={data};\n{js}</script>')
 
 
@@ -404,6 +408,7 @@ class LocalServer(ThreadingHTTPServer):
         self.boot = boot_data()
         self.last_heartbeat = time.monotonic()
         self.connected = False
+        self.page_closed = False
         super().__init__(('127.0.0.1', 0), Handler)
         self.host = f'127.0.0.1:{self.server_port}'
         self.origin = 'http://' + self.host
@@ -491,11 +496,13 @@ class Handler(BaseHTTPRequestHandler):
             path = urlsplit(self.path).path
             if path == '/api/heartbeat':
                 self.server.connected = True
+                self.server.page_closed = False
                 self.server.last_heartbeat = time.monotonic()
                 self._reply(200, {})
             elif path == '/api/bye':
                 # A reload sends a heartbeat within seconds; a closed window does not.
                 self.server.connected = True
+                self.server.page_closed = True
                 self.server.last_heartbeat = time.monotonic() - self.server.GRACE_CONNECTED + self.server.GRACE_BYE
                 self._reply(200, {})
             elif path == '/api/action':
@@ -560,17 +567,69 @@ def run(config_path):
     config = json.loads(Path(config_path).read_text(encoding='utf-8-sig'))
     state_dir = Path(config['vault']) / 'subtitle-switch-state'
     state_dir.mkdir(parents=True, exist_ok=True)
-    with InstanceLock(state_dir / 'instance.lock'):
+    with ExitStack() as stack:
+        deadline = time.monotonic() + 12
+        while True:
+            try:
+                stack.enter_context(InstanceLock(state_dir / 'instance.lock'))
+                break
+            except RuntimeError as error:
+                if str(error) != 'ALREADY_RUNNING':
+                    raise
+                try:
+                    request_activation(state_dir)
+                    return
+                except ActivationUnavailable:
+                    # The old owner may be exiting after its window was closed.
+                    # Only retry an explicitly unapplied request, never an unknown result.
+                    if time.monotonic() >= deadline:
+                        raise
+                    time.sleep(.1)
+        ready, lifecycle = threading.Event(), threading.RLock()
+        closing = False
+        server = window = None
+        def activate():
+            if not ready.wait(30):
+                raise RuntimeError('APP_STARTING_TIMEOUT')
+            with lifecycle:
+                if closing:
+                    return False
+                server.last_heartbeat = time.monotonic()
+                if window.activate(page_closed=server.page_closed):
+                    server.connected = False
+                    server.page_closed = False
+                server.last_heartbeat = time.monotonic()
+                return True
+        stack.enter_context(ActivationService(state_dir, activate))
+        def stop_activation():
+            nonlocal closing
+            with lifecycle:
+                closing = True
+                ready.set()
+        # Also release an activation waiting while Controller/LocalServer construction fails.
+        stack.callback(stop_activation)
         controller = Controller(config, Inventory(state_dir / 'inventory.json'), state_dir)
         with LocalServer(controller) as server:
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
                 controller.operate({'action': 'refresh'})
-                launch_browser(server.url, size=window_size() if os.name == 'nt' else (1280, 840))
-                while not server.expired():
+                window = AppWindow(server.url, launch_browser, app.APP_NAME,
+                                   ROOT / 'assets/app_icon/app-icon-v3-2.ico',
+                                   window_size() if os.name == 'nt' else (1280, 840))
+                window.start()
+                ready.set()
+                while True:
+                    with lifecycle:
+                        window.poll()
+                        if server.expired():
+                            closing = True
+                            break
                     time.sleep(.5)
             finally:
+                with lifecycle:
+                    closing = True
+                    ready.set()
                 if controller.worker:
                     controller.worker.join()
                 controller.send_rejections()

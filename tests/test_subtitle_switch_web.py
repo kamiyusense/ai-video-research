@@ -137,6 +137,10 @@ def test_serves_only_allowlisted_assets_and_never_logs_secret(server):
     with contextlib.redirect_stderr(output), contextlib.redirect_stdout(output):
         status, headers, content = request(server, '/')
         assert status == 200 and switch_app.APP_NAME.encode('utf-8') in content
+        page = content.decode('utf-8')
+        assert f'<img class="app-icon" src="/assets/app_icon/icon_v3_2_512.png?key={server.key}"' in page
+        assert '<span class="neko">猫</span>' in page
+        assert page.count('<use href="#icon-save"/>') == 2
         assert 'frame-ancestors' in headers['Content-Security-Policy']
         assert headers['Referrer-Policy'] == 'no-referrer'
         assert request(server, '/assets/fonts/ZenMaruGothic-Black-title.ttf')[0] == 200
@@ -291,9 +295,11 @@ def test_heartbeat_and_close_grace(server):
     assert not server.expired(server.last_heartbeat + 149)
     assert server.expired(server.last_heartbeat + 151)
     assert request(server, '/api/bye', 'POST', body={})[0] == 200
+    assert server.page_closed
     assert not server.expired(time.monotonic() + 4)
     assert server.expired(time.monotonic() + 8)
     assert request(server, '/api/heartbeat', 'POST', body={})[0] == 200
+    assert not server.page_closed
     assert not server.expired(time.monotonic() + 60)
     server.controller.busy = True
     assert not server.expired(server.last_heartbeat + 10000)
@@ -376,6 +382,7 @@ def test_lifecycle_holds_lock_refreshes_and_closes_after_worker(tmp_path, launch
     if launch_fails:
         calls.launch.side_effect = RuntimeError('fake browser failure')
     with patch.object(web, 'InstanceLock', return_value=lock) as lock_type, \
+         patch.object(web, 'ActivationService'), \
          patch.object(web, 'Controller', return_value=control), \
          patch.object(web, 'LocalServer', return_value=context), \
          patch.object(web, 'launch_browser', calls.launch), \
