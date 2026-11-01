@@ -244,7 +244,12 @@ class Services:
             details.append(cp.stderr)
             quota = bool(re.search(r'quota|rate[_ -]?limit|usage[_ -]?limit|limit[_ -]?reached|'
                                    r'out of (?:credits|usage)|utilization limit', ' '.join(details), re.I))
-            raise StageFailure('CLAUDE_QUOTA' if quota else 'RESEARCH_FAILED', waiting=quota, detail=cp.stderr)
+            # stderr is often empty when the CLI reports the error in its JSON; keep the
+            # error kind (not the result body) so the hover text says why (owner 2026-11-01).
+            summary = ' '.join(f'{key}={response.get(key)}' for key in ('subtype', 'error', 'errors')
+                               if isinstance(response, dict) and response.get(key))
+            detail = cp.stderr if (cp.stderr or '').strip() else (summary or f'exit={cp.returncode}')
+            raise StageFailure('CLAUDE_QUOTA' if quota else 'RESEARCH_FAILED', waiting=quota, detail=detail)
         if not (folder / 'research.md').is_file():
             raise StageFailure('RESEARCH_FILE_MISSING')
         return {'created': True}

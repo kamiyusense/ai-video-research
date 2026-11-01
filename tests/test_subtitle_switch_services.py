@@ -348,6 +348,8 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(StageFailure, '^RESEARCH_FAILED$') as error:
             self.services.research(self.row)
         self.assertFalse(error.exception.waiting)
+        # Empty stderr: the hover detail carries the JSON error kind, not the result body.
+        self.assertEqual(error.exception.detail, 'subtype=error_during_execution')
 
     def test_definite_push_failure_retries_only_saved_commit_after_correction(self):
         inventory = Inventory(self.root / 'retry.json')
