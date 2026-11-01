@@ -634,3 +634,23 @@ AI-Agent: codex
 - UNKNOWN: Windows/cp932実機と実際のUI表示、CLI実受付、実サービス処理。モデル・外部サービス実行なし。今回の変更のcommit/pushとremote readbackはSymphony host hook担当で、この時点では未確認。任意項目12は未実施。
 
 AI-Agent: codex
+
+## GH-39 区切り1: 見出しアイコンとWindows検証設計（2026-11-01）
+
+- 開始時実測: branch `symphony/issue-39`、HEAD `f0fb68a`。Git操作の書込み・push・PR作成はホスト担当。
+- 見出しの赤い本を決定版PNGへ変更。既存favicon、見出し文字、蜜柑の「猫」、保存ボタンは維持。同一オリジンの認証つき画像配信と既存CSPを使用。
+- ChromiumとWindows公式資料からタスクバー統合の制約を整理し、代替案とWindows確認手順を `docs/design/subtitle-switch-windows-app-gh39.md` に保存。1ボタン化は未実装。
+- 静的回帰: ID重複および修正時のインデント不備を修正後、指定試験は通常・厳格とも490 passed / 18 subtests passed、ENCODING-STRICT: PASS、RESULT: PASS。git diff --check合格、削除・名前変更なし。
+- UNKNOWN: Windows実画面のタイトルバー・タスクバーへのfavicon反映と前面表示。次の作業は二重起動の受渡し・前面表示・閉じた窓の再表示とモデル不要の回帰試験。LIVE実行なし。
+
+AI-Agent: codex
+
+## GH-39 区切り2: 二重起動の表示依頼とWindows窓のアイコン（2026-11-01）
+
+- 作業開始HEAD実測 `f0fb68a`、branch `symphony/issue-39`。コミット・push・Draft PR発行は引き続きホスト担当。
+- ロック所有者へローカルIPCで表示依頼を渡す。起動途中は待ち、既存窓は復元、閉じた窓は同じURLで再表示。最初の検出前の終了と再読み込みも区別する。本当の起動失敗のダイアログは維持。
+- 標準ライブラリのWindows APIで、小・大の窓アイコンに決定版ICOを指定。タイトルと既存ウィンドウを照合し、既存の別窓を対象にしない。認証URLはメモリ内に保ちIPCやファイルへ渡さない。
+- 読み戻し: 指定試験は通常・厳格とも508 passed / 18 subtests passed、ENCODING-STRICT: PASS、RESULT: PASS。IPC・ライフサイクル・Windows呼出しはfakesで確認し、git diff --check合格。削除・名前変更・新規依存・外部サービス実行なし。
+- UNKNOWN: Windows実画面のアイコン・前面表示。タスクバー1ボタン化は未実装で、Issueが許容する理由・代替案とWindows確認手順をPR本文用の設計文書へ記載。実機成功とは判定しない。
+
+AI-Agent: codex
