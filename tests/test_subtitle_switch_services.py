@@ -272,6 +272,17 @@ class AdapterTests(unittest.TestCase):
         shown = 'REAとは何か — https://x.test/a\n本文\n使い方\n例 — https://x.test/b'
         self.assertTrue(services.nb.readback_matches(services.without_rules(note), services.without_rules(shown))['match'])
 
+    def test_table_without_delimiter_row_still_matches(self):
+        # Observed on 3TwbE7gv6qo (2026-11-02): NotebookLM drops the |---|---| row of a table.
+        import services
+        note = '## チャプター\n| 時刻 | 内容 |\n|---|---|\n| [0s](https://www.youtube.com/watch?v=abcdefghijk&t=0s) | 導入 |\n'
+        shown = '## チャプター\n| 時刻 | 内容 |\n| [0s](https://www.youtube.com/watch?v=abcdefghijk&t=0s) | 導入 |\n'
+        aligned = note.replace('|---|---|', '| :--- | ---: |')
+        for expected in (note, aligned):
+            self.assertTrue(services.nb.readback_matches(services.without_rules(expected), services.without_rules(shown))['match'])
+        # Real content differences are still caught.
+        self.assertFalse(services.nb.readback_matches(services.without_rules(note), services.without_rules(shown.replace('導入', '別物')))['match'])
+
     def test_readback_waits_for_processing_before_reading(self):
         self.prepare()
         order = []

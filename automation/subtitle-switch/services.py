@@ -64,8 +64,10 @@ def without_rules(text):
     - The OKF front-matter fences (---) come back as 40-dash rules (+74 characters per transcript).
     - Bare links <https://...> lose their angle brackets, and a link whose text is its own URL
       may come back as [url](url) or as the URL printed twice; all are reduced to one plain URL.
-    - A numbered heading loses its number (observed on 7si7ZFFCZyg)."""
+    - A numbered heading loses its number (observed on 7si7ZFFCZyg).
+    - A Markdown table loses its delimiter row |---|---| (observed on 3TwbE7gv6qo, 2026-11-02)."""
     text = re.sub(r'(?m)^[ \t]*-{3,}[ \t]*$', '', text or '')
+    text = re.sub(r'(?m)^[ \t]*\|?(?:[ \t]*:?-{3,}:?[ \t]*\|)+(?:[ \t]*:?-{3,}:?[ \t]*)?$', '', text)
     # A numbered heading, bold or bullet item ("### 1. Title", "**1. Title**", "- 1. Title")
     # comes back without its number.
     text = re.sub(r'(?m)^([ \t]*[-+#*_>]*[ \t]*)\d+[.)][ \t]+', r'\1', text)
