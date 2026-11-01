@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 58,
-  "total_video_records": 55,
+  "total_records": 59,
+  "total_video_records": 56,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9586,6 +9586,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-3TwbE7gv6qo-subtitle-switch.md",
+      "video_id": "3TwbE7gv6qo",
+      "title": "研究ノート：Learn 99% Of Claude Code in One Video",
+      "canonical_url": "https://www.youtube.com/watch?v=3TwbE7gv6qo",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:3TwbE7gv6qo:research",
+      "transcript_logical_id": "youtube:3TwbE7gv6qo:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Code",
+        "動画研究"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Claude Codeを既定設定のまま使わず、設定すべき順に整えるための解説動画。デスクトップ版のコードモードでプロジェクトを開き、モデルと努力レベルを使い分け、権限は自動モードを基本とする。次に計画モードで要件を詰め、CLAUDE.mdやメモリで規約を固定する。さらにスキル、サブエージェント、MCP、フック、プラグインで拡張し、コンテキスト管理、巻き戻し、worktree、コードレビュー、定期実行で運用を締める。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。画面操作やUI表示は字幕の発話からの推測を含む。\n- 公式資料は未照合。モデル名、プラン名、コマンド、設定ファイルの仕様、イベント数、料金・上限などの外部仕様は**UNKNOWN**。\n- 字幕は取得上 transcript_status が UNVERIFIED。語の誤変換の可能性があり、例として製品名や用語（subagent、worktree、Mods等）の表記ゆれが見られる。\n- 話者は動画内で収録日を2026年10月9日と述べており、投稿日と異なる。モデル構成や機能は変わりうる。\n- 話者自身が一部の挙動（圧縮後のトークン数など）に不明点があると述べている。\n- 冒頭でスポンサー表記があるが、内容の中立性は未評価。\n- 参照元として想定した research_note_prompt_template.md は作業フォルダに見当たらず、読めなかった。書式は依頼文の指定に従った。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-4y4I6xiY9zk-subtitle-switch.md",
       "video_id": "4y4I6xiY9zk",
       "title": "研究ノート：Orcaを起点にClaude CodeやCodexを並列運用する入門",
@@ -9711,14 +9742,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 58,
+    "total_nodes": 59,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 24,
+    "isolated_nodes_count": 25,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9741,6 +9772,7 @@
       "v_XdN5-ya9A",
       "xm92KJ7ipqc",
       "yzHBGcWb_F8",
+      "3TwbE7gv6qo",
       "4y4I6xiY9zk",
       "abQJU2pS59I",
       "uOtbNXMFs7w"
