@@ -802,6 +802,15 @@
       "research_date": "2026-11-02",
       "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
       "transcript_sha256": "d924cd4ae5311d94ec1ed314a618b259c3a4af22166ed142404664d8dc545fc2"
+    },
+    {
+      "record_id": "youtube:eoS-q5gr9-Q",
+      "video_id": "eoS-q5gr9-Q",
+      "canonical_url": "https://www.youtube.com/watch?v=eoS-q5gr9-Q",
+      "research_path": "research/2026-11-02-eoS-q5gr9-Q-subtitle-switch.md",
+      "research_date": "2026-11-02",
+      "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
+      "transcript_sha256": "babfbea2a8bd183978a83a861ce97fe7f631d0f551dce602771343c813f50be0"
     }
   ]
 }

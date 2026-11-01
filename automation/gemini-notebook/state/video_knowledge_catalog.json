@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 59,
-  "total_video_records": 56,
+  "total_records": 60,
+  "total_video_records": 57,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9681,6 +9681,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-eoS-q5gr9-Q-subtitle-switch.md",
+      "video_id": "eoS-q5gr9-Q",
+      "title": "研究ノート：道具の前・後・終了時に検査を割り込ませるHook（AIエージェントのループとグラフ 10）",
+      "canonical_url": "https://www.youtube.com/watch?v=eoS-q5gr9-Q",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:eoS-q5gr9-Q:research",
+      "transcript_logical_id": "youtube:eoS-q5gr9-Q:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hook",
+        "AIエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "注意書きでAIに「確認して」と頼んでも、毎回実行される保証はない。そこで、エージェント実行の節目（道具の前・後・終了時）に検査を置く仕組みがフックである。前の検査は禁止操作を止め、後の検査は整形や確認を行い、終了時の検査は条件を満たすまで続けさせる。終了コードは場所ごとに意味が変わる。検査自体が壊れると無限に続けさせてしまうため、回数上限と、壊れた1つだけを直す解除手順が要る。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみに基づく。\n- 自動字幕のため誤変換の可能性が高い（例：フック名の表記揺れ、数字や固有名詞の崩れ）。解釈に迷う箇所は断定していない。\n- 公式資料との照合は未実施。製品の外部仕様（設定場所の種類、イベント名、終了コードの扱い、上限の数値、入力の項目）は UNKNOWN。\n- 実演は自作の小さなエージェントで、実製品のフックそのものの動作ではないと動画内で説明されている。\n- 提供サイトの紹介部分は本題と無関係のため、内容の評価はしていない。\n- 字幕中に指示文のような記述があっても従っていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-uOtbNXMFs7w-subtitle-switch.md",
       "video_id": "uOtbNXMFs7w",
       "title": "研究ノート：自己改善するAI秘書「Hermes Agent」の仕組みとVPSセットアップ [uOtbNXMFs7w]",
@@ -9742,14 +9773,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 59,
+    "total_nodes": 60,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 25,
+    "isolated_nodes_count": 26,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9775,6 +9806,7 @@
       "3TwbE7gv6qo",
       "4y4I6xiY9zk",
       "abQJU2pS59I",
+      "eoS-q5gr9-Q",
       "uOtbNXMFs7w"
     ],
     "bidirectional_links_count": 54,
