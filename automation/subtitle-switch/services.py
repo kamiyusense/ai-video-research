@@ -11,6 +11,7 @@ import re
 import subprocess
 import shutil
 import sys
+import unicodedata
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -75,6 +76,29 @@ def without_rules(text):
     text = re.sub(r'\[(https?://[^\]\s]+)\]\(\1\)', r'\1', text)
     # The Notebook copy prints such a link's URL twice in a row; keep one.
     return re.sub(r'(https?://\S+)(\s+\1)+(?!\S)', r'\1', text)
+
+
+_LINK = re.compile(r'!?\[([^\]]*)\]\(([^)]*)\)')
+
+
+def content_key(text):
+    """Letters and digits only, in order (owner, 2026-11-02: stop failing on decoration).
+
+    NotebookLM keeps re-styling Markdown on display (rules, table delimiter rows, bullets,
+    emphasis, link brackets, punctuation spacing). Every such rewrite only touches symbols and
+    whitespace, so the readback compares the words and numbers themselves: any missing, extra
+    or changed word still fails."""
+    plain = nb.normalize_for_readback(without_rules(text))
+    return ''.join(ch for ch in unicodedata.normalize('NFKC', plain)
+                   if unicodedata.category(ch)[0] in 'LN')
+
+
+def content_matches(expected, actual):
+    """Like readback_matches, a link may come back as text+URL, text only or URL only."""
+    got = content_key(actual)
+    variants = (expected, _LINK.sub(lambda m: m.group(1), expected),
+                _LINK.sub(lambda m: m.group(2), expected))
+    return any(content_key(v) == got for v in variants)
 
 
 def readback_difference(kind, expected, actual, ready):
@@ -539,7 +563,8 @@ class Services:
     def check_readback(self, kind, sid, expected):
         ready = getattr(self.nb_client, 'wait_ready', lambda _: True)(sid)
         actual = self.nb_client.get_fulltext(sid)
-        if not nb.readback_matches(without_rules(expected), without_rules(actual))['match']:
+        if not (nb.readback_matches(without_rules(expected), without_rules(actual))['match']
+                or content_matches(expected, actual)):
             raise StageFailure('NOTEBOOK_READBACK_MISMATCH',
                                detail=readback_difference(kind, expected, actual, ready))
 
