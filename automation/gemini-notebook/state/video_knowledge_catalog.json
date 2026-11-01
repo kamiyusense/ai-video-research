@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 56,
-  "total_video_records": 53,
+  "total_records": 57,
+  "total_video_records": 54,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9586,6 +9586,39 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-4y4I6xiY9zk-subtitle-switch.md",
+      "video_id": "4y4I6xiY9zk",
+      "title": "研究ノート：Orcaを起点にClaude CodeやCodexを並列運用する入門",
+      "canonical_url": "https://www.youtube.com/watch?v=4y4I6xiY9zk",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:4y4I6xiY9zk:research",
+      "transcript_logical_id": "youtube:4y4I6xiY9zk:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Orca",
+        "Claude Code",
+        "Codex",
+        "エージェント並列運用"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Orcaは、複数のAIエージェントを仕事ごとの作業場所で同時に動かし、結果を並べて比べ、良い方だけを取り込むためのデスクトップ型の司令塔アプリだと紹介されている。履歴の横断検索、複数アカウントの切替、スマホや別PCからの操作、定期実行、指令役エージェントによる分担も扱う。注意点として、確認なし実行の危険、差分の確認負荷、使用量の増加が挙げられている。（字幕の主張を整理したもの）",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。画面操作の説明は字幕のみに依拠している。\n- 公式資料は未照合。機能名、設定項目、スター数（約8万7000、2026年10月8日時点とされる）、料金、ベータ機能の範囲はすべて動画内の主張であり、外部仕様はUNKNOWN。\n- 字幕は自動字幕（transcript_status: UNVERIFIED）で、誤変換の可能性がある。例：固有名詞や「司令塔」「worktree」「Tailscale」などの表記は推定で読み替えている。\n- 話者の評価（ローカル型が本命等）は主観であり、比較の客観的根拠は示されていない。\n- 動画は更新が速いと自ら述べており、内容は将来変わる可能性がある。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-uOtbNXMFs7w-subtitle-switch.md",
       "video_id": "uOtbNXMFs7w",
       "title": "研究ノート：自己改善するAI秘書「Hermes Agent」の仕組みとVPSセットアップ [uOtbNXMFs7w]",
@@ -9647,14 +9680,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 56,
+    "total_nodes": 57,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 22,
+    "isolated_nodes_count": 23,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9677,6 +9710,7 @@
       "v_XdN5-ya9A",
       "xm92KJ7ipqc",
       "yzHBGcWb_F8",
+      "4y4I6xiY9zk",
       "uOtbNXMFs7w"
     ],
     "bidirectional_links_count": 54,
