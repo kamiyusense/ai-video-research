@@ -131,6 +131,20 @@ class Services:
         """Read-only check, run before a save starts (owner, 2026-10-29)."""
         return self.nb_client.auth_check_passive()
 
+    def claude_login_ok(self):
+        """Zero-model check that the PC's Claude Code CLI is signed in (owner, 2026-11-01).
+
+        A logged-out CLI made every research step fail with an empty reason. Only a clear
+        'loggedIn: false' blocks the save; an unreadable answer lets the research step report."""
+        try:
+            cp = self.run(['claude', 'auth', 'status'], timeout=30)
+            status = json.loads(cp.stdout)
+        except StageFailure:
+            raise
+        except Exception:
+            return True
+        return not (isinstance(status, dict) and status.get('loggedIn') is False)
+
     def open_notebook_login(self, popen=subprocess.Popen):
         """Open notebooklm-py's own login window; the owner signs in. Never types or stores credentials."""
         executable = shutil.which('notebooklm')

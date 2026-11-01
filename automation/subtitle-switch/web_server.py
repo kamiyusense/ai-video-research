@@ -263,6 +263,10 @@ class Controller:
                             # notebooklm-py 0.8.5 saves the login and closes its window by itself (no Enter).
                             raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインしてください'
                                              '（覚えている場合は自動で済み、画面は勝手に閉じます）。閉じたら、もう一度保存を押してください。')
+                        if getattr(service, 'claude_login_ok', None) and not service.claude_login_ok():
+                            # The owner signs in; the app never logs in by itself (owner, 2026-11-01).
+                            raise ValueError('PCのClaude Codeのログインが切れています。ターミナルで「claude auth login」を実行し、'
+                                             'ブラウザで許可してから、もう一度保存を押してください。')
                         if getattr(service, 'notebook_login_ok', None):
                             self.login_verified(targets)
                         self.session(self.inventory, service,

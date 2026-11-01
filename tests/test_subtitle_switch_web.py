@@ -709,3 +709,39 @@ def test_refresh_also_looks_up_manual_url_rows_missing_from_inbox(controller):
     c.metadata_thread.join(5)
     assert 'ccccccccccc' in seen and 'fffffffffff' in seen
     assert any(row['cells'][0]['full'] == '手動の動画' for row in c.snapshot()['rows'])
+
+
+class ClaudeLoggedOut(LoginService):
+    def claude_login_ok(self):
+        return False
+
+
+def test_save_stops_before_work_when_claude_cli_is_logged_out(controller):
+    # Owner report 2026-11-01: a logged-out CLI failed every research step with no reason.
+    c = controller
+    service = ClaudeLoggedOut(True)
+    c.service_factory = lambda _: service
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    c.operate({'action': 'selected'})
+    c.worker.join(5)
+    assert not c.calls
+    assert 'claude auth login' in c.notice and c.cat == 'error'
+    assert service.opened == 0  # the app never starts a Claude login by itself
+
+
+def test_services_claude_login_check_reads_status_only(tmp_path):
+    import services
+    from types import SimpleNamespace
+    config = {'repository': str(tmp_path / 'r'), 'vault': str(tmp_path / 'v'), 'notebook_id': 'x'}
+    seen = []
+    def runner(args, **kw):
+        seen.append(args)
+        return SimpleNamespace(returncode=0, stdout=answer, stderr='')
+    s = services.Services(config, runner=runner, notebook=object())
+    answer = json.dumps({'loggedIn': False, 'authMethod': 'none'})
+    assert s.claude_login_ok() is False
+    answer = json.dumps({'loggedIn': True, 'authMethod': 'claude.ai'})
+    assert s.claude_login_ok() is True
+    answer = 'not json'
+    assert s.claude_login_ok() is True  # unreadable: the research step reports instead
+    assert all(args == ['claude', 'auth', 'status'] for args in seen)
