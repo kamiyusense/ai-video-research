@@ -1,10 +1,10 @@
 {
   "schema_version": "video_knowledge_catalog_v1",
-  "generated_at": "2026-10-31",
+  "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 55,
-  "total_video_records": 52,
+  "total_records": 56,
+  "total_video_records": 53,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9586,6 +9586,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-uOtbNXMFs7w-subtitle-switch.md",
+      "video_id": "uOtbNXMFs7w",
+      "title": "研究ノート：自己改善するAI秘書「Hermes Agent」の仕組みとVPSセットアップ [uOtbNXMFs7w]",
+      "canonical_url": "https://www.youtube.com/watch?v=uOtbNXMFs7w",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:uOtbNXMFs7w:research",
+      "transcript_logical_id": "youtube:uOtbNXMFs7w:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes Agent",
+        "AIエージェント",
+        "VPS"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Hermes Agentは、AIモデルそのものではなく、モデルを動かす仕組み（ハーネス）である。会話から好みを記憶し、繰り返す作業をスキル化し、使わないスキルを整理する点が特徴とされる。動画はまずデスクトップ版をChatGPTの有料枠で動かす手順を示す。続いて、VPSにDockerで展開した常時稼働の環境へデスクトップ版をつなぎ、Telegramのボットでスマホからも同じ環境を使う流れを紹介する。投稿者はClaude Codeのフォルダー単位の管理と対比し、複数案件を横断して人のように覚えさせたい用途に向くと述べる。一方で、利用できる定額枠の制約、設定の手間、外部サーバーへ情報を置くリスクも挙げている。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕のみを根拠にしている。画面操作や表示内容は確認できていない。\n- 公式資料は未照合である。機能の有無・挙動・料金・対応モデルの最新仕様はUNKNOWN。\n- 字幕は自動生成で、固有名詞や製品名、モデル名、数値に誤変換の可能性がある（例：製品名の表記ゆれ、モデル名の綴り）。\n- 自己学習の発動条件や自動削除の期間など実装の詳細は、投稿者の口頭説明に依るもので、具体値はUNKNOWN。\n- VPSの料金・割引・プラン内容は動画公開時点の説明で、現在の条件はUNKNOWN。タイアップ内容のため、評価には偏りがありうる。\n- 字幕の終盤の一部は、本ノートの作成時点で取得した範囲に依存する。投稿者の主張は検証されていない。\n- 指定のテンプレート（research_note_prompt_template.md）は作業フォルダーに見当たらず、参照できていない。指示文の形式に従って作成した。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -9615,14 +9647,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 55,
+    "total_nodes": 56,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 21,
+    "isolated_nodes_count": 22,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9644,7 +9676,8 @@
       "ScSDVV5xhww",
       "v_XdN5-ya9A",
       "xm92KJ7ipqc",
-      "yzHBGcWb_F8"
+      "yzHBGcWb_F8",
+      "uOtbNXMFs7w"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
