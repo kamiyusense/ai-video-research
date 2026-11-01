@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 60,
-  "total_video_records": 57,
+  "total_records": 61,
+  "total_video_records": 58,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9712,6 +9712,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-rEPhMGcmciM-subtitle-switch.md",
+      "video_id": "rEPhMGcmciM",
+      "title": "研究ノート：Skills vs MCP vs CLAUDE.md の読み込みタイミングとコスト",
+      "canonical_url": "https://www.youtube.com/watch?v=rEPhMGcmciM",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:rEPhMGcmciM:research",
+      "transcript_logical_id": "youtube:rEPhMGcmciM:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Codeの文脈コスト（CLAUDE.md・スキル・MCP）"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "CLAUDE.mdは毎リクエストで文脈に載る常時型、スキルは名前と説明だけが起動時に載り本文は使用時に読まれるオンデマンド型、MCPはツール名だけが先に載り定義は必要時に読まれる。MCPは指示ではなく新しい行為能力を与える。CLAUDE.mdやスキルの指示は強制ではなく、必ず実行させたい処理はフックに置く。長い手順はCLAUDE.mdからスキルへ移すのが安価とされる。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕のみに基づく。画面上の図表は把握していない。\n- 公式資料は未照合。数値（行数、文字数、割合、トークン上限など）は動画内の発言であり、現行仕様かは UNKNOWN。動画自身も版により変わると述べている。\n- 字幕の種別は manual と記録されているが、固有名詞や数値に誤変換が残る可能性がある。transcript_status は UNVERIFIED。\n- 外部仕様（Claude Codeの内部挙動、ツール検索の既定、圧縮時の挙動）は UNKNOWN。\n- 「最も安価な改善」は話者の意見であり、実測根拠は動画中に示されていない。\n- 末尾の「正しいスキルが選ばれたかをどう確かめるか」は未解決として残されている。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-uOtbNXMFs7w-subtitle-switch.md",
       "video_id": "uOtbNXMFs7w",
       "title": "研究ノート：自己改善するAI秘書「Hermes Agent」の仕組みとVPSセットアップ [uOtbNXMFs7w]",
@@ -9773,14 +9803,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 60,
+    "total_nodes": 61,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 26,
+    "isolated_nodes_count": 27,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9807,6 +9837,7 @@
       "4y4I6xiY9zk",
       "abQJU2pS59I",
       "eoS-q5gr9-Q",
+      "rEPhMGcmciM",
       "uOtbNXMFs7w"
     ],
     "bidirectional_links_count": 54,
