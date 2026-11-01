@@ -140,6 +140,12 @@ def test_serves_only_allowlisted_assets_and_never_logs_secret(server):
         assert 'frame-ancestors' in headers['Content-Security-Policy']
         assert headers['Referrer-Policy'] == 'no-referrer'
         assert request(server, '/assets/fonts/ZenMaruGothic-Black-title.ttf')[0] == 200
+        icon_path = '/assets/app_icon/icon_v3_2_512.png'
+        status, headers, content = request(server, icon_path)
+        assert status == 200 and headers['Content-Type'] == 'image/png'
+        assert content == (APP / icon_path.lstrip('/')).read_bytes()
+        assert "img-src 'self' data:;" in headers['Content-Security-Policy']
+        assert request(server, icon_path, key=False)[0] == 403
         assert request(server, '/assets/../web_server.py')[0] == 404
         assert request(server, '/assets/fonts/%2e%2e/%2e%2e/web_server.py')[0] == 404
         assert request(server, '/assets/fonts/README.md')[0] == 404

@@ -468,7 +468,7 @@ class Handler(BaseHTTPRequestHandler):
             relative = Path(path[len('/assets/'):])
             target = (ROOT / 'assets' / relative).resolve()
             # Compare to lexical allowlisted directories, rejecting symlink escapes.
-            allowed = any(target.is_relative_to(ROOT / 'assets' / k) for k in ('fonts', 'cat_sprites', 'cat_play'))
+            allowed = any(target.is_relative_to(ROOT / 'assets' / k) for k in ('fonts', 'cat_sprites', 'cat_play', 'app_icon'))
             if not allowed or not target.is_relative_to((ROOT / 'assets').resolve()) or target.suffix.lower() not in ('.ttf', '.png') or not target.is_file():
                 self._reply(404)
             else:

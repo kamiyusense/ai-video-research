@@ -19,11 +19,12 @@
   function setFont() { $('title').style.fontFamily = `title${font}, sans-serif`; }
   setFont();
   $('title').addEventListener('click', () => { font = (font + 1) % BOOT.fonts.length; setFont(); });
-  // SVG favicon uses the same original book and pen symbol as the masthead.
-  const symbol = document.getElementById('icon-app');
+  // Browser app windows use this favicon for the window and taskbar icon.
   const favicon = document.createElement('link');
   favicon.rel = 'icon';
-  favicon.href = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">${symbol.innerHTML}</svg>`);
+  favicon.type = 'image/png';
+  favicon.sizes = '512x512';
+  favicon.href = asset('app_icon/icon_v3_2_512.png');
   document.head.append(favicon);
 
   function updateImage(img, path) {
