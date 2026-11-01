@@ -211,10 +211,19 @@ class Controller:
                             self.publish()
                     # Channel/date lookups can take minutes; run them beside the worker so
                     # 弾く, filters and saves stay usable meanwhile (one lookup run at a time).
+                    # Rows added by 手動URL are not in any inbox file; look them up too, or their
+                    # title/channel/date would show 「取得中…」 forever (owner report 2026-11-01).
+                    inbox_ids = {row['video_id'] for row in rows}
+                    lookup_rows = rows + [
+                        {'video_id': row['video_id'], 'url': row.get('url') or 'https://www.youtube.com/watch?v=' + row['video_id'],
+                         **{key: row.get(key) or '' for key in ('title', 'channel', 'published_at', 'lang')}}
+                        for row in self.inventory.visible(True, True)
+                        if row['video_id'] not in inbox_ids
+                        and not all(row.get(key) for key in ('title', 'channel', 'published_at', 'lang'))]
                     def lookup():
                         with self.metadata_lock:
                             try:
-                                self.metadata(rows, self.state_dir / 'metadata_cache.json', command,
+                                self.metadata(lookup_rows, self.state_dir / 'metadata_cache.json', command,
                                               notify=received, failures=self.metadata_failures)
                             except Exception:
                                 pass  # metadata is display-only; rows keep their inbox values

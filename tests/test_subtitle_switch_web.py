@@ -688,3 +688,24 @@ def test_attention_rows_are_checked_in_one_press_and_counted(controller):
     assert c.checked == set() and 'チェックを外しました' in c.notice
     assert c.summary() == '2本（未処理1・要確認1）'
     assert c.snapshot()['loading'] is False
+
+
+def test_refresh_also_looks_up_manual_url_rows_missing_from_inbox(controller):
+    c = controller
+    inbox = c.locations['inbox']
+    inbox.mkdir()
+    (inbox / 'fixture.json').write_text(json.dumps({'videos': [{'url': 'https://youtu.be/ccccccccccc', 'title': '受け箱の動画'}]}), encoding='utf-8')
+    c.inventory.data['videos']['fffffffffff'] = {
+        'video_id': 'fffffffffff', 'url': 'https://www.youtube.com/watch?v=fffffffffff', 'title': '', 'channel': '',
+        'published_at': '', 'lang': '', 'theme': '', 'reason': '', 'kind': '', 'rejected': False, 'rejection_reason': '',
+        'stage': 'intake', 'status': 'pending', 'completed_stages': []}
+    seen = []
+    def fake(rows, cache, runner, **kw):
+        seen.extend(row['video_id'] for row in rows)
+        kw['notify']('fffffffffff', {'title': '手動の動画', 'channel': '手動チャンネル'})
+    c.metadata = fake
+    c.operate({'action': 'refresh'})
+    c.worker.join(5)
+    c.metadata_thread.join(5)
+    assert 'ccccccccccc' in seen and 'fffffffffff' in seen
+    assert any(row['cells'][0]['full'] == '手動の動画' for row in c.snapshot()['rows'])
