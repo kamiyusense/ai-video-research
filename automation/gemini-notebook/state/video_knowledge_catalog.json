@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 57,
-  "total_video_records": 54,
+  "total_records": 58,
+  "total_video_records": 55,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9619,6 +9619,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-abQJU2pS59I-subtitle-switch.md",
+      "video_id": "abQJU2pS59I",
+      "title": "研究ノート：Hermes Agentの使い方（使うほど育つAIエージェント入門）",
+      "canonical_url": "https://www.youtube.com/watch?v=abQJU2pS59I",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:abQJU2pS59I:research",
+      "transcript_logical_id": "youtube:abQJU2pS59I:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes Agent",
+        "AIエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Hermes Agentは、利用者のPCやサーバー上でファイル操作やコマンド実行を行うオープンソースのエージェントとして紹介される。頭脳となるモデルは選べ、窓口はアプリやLINEなどのチャットである。好みを記憶し、成功した手順をスキルとして再利用し、時刻指定の定期実行もできる。成長の中心はスキルの仕組みだと説明される。一方、承認なしの実行モード、PC上での直接実行、モデル料金、小型モデルの記憶漏れなどに注意が必要とされる。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 本ノートは自動字幕（transcript_status: UNVERIFIED）のみに基づく。映像は未確認で、画面表示や操作の実在は確認していない。\n- 公式資料・公式ドキュメント・リポジトリは未照合。星数、開始時期、ライセンス、対応チャット、トークン条件などの外部仕様はUNKNOWNとする。\n- 自動字幕には誤変換の可能性がある（例：一部の固有名詞や用語が不自然な表記）。製品名・数値は要再確認。\n- 動画末尾に自社公式LINEへの案内があり、宣伝要素を含む点に留意する。\n- 機能は頻繁に更新されると述べられており、現行の画面・仕様と異なる可能性がある。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-uOtbNXMFs7w-subtitle-switch.md",
       "video_id": "uOtbNXMFs7w",
       "title": "研究ノート：自己改善するAI秘書「Hermes Agent」の仕組みとVPSセットアップ [uOtbNXMFs7w]",
@@ -9680,14 +9711,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 57,
+    "total_nodes": 58,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 23,
+    "isolated_nodes_count": 24,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9711,6 +9742,7 @@
       "xm92KJ7ipqc",
       "yzHBGcWb_F8",
       "4y4I6xiY9zk",
+      "abQJU2pS59I",
       "uOtbNXMFs7w"
     ],
     "bidirectional_links_count": 54,
