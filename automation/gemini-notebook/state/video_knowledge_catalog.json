@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 62,
-  "total_video_records": 59,
+  "total_records": 63,
+  "total_video_records": 60,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9742,6 +9742,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-PYjCf84y068-subtitle-switch.md",
+      "video_id": "PYjCf84y068",
+      "title": "研究ノート：Claude Code のサブエージェントの仕組み・書き方・使い分け",
+      "canonical_url": "https://www.youtube.com/watch?v=PYjCf84y068",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:PYjCf84y068:research",
+      "transcript_logical_id": "youtube:PYjCf84y068:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Code サブエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "サブエージェントは、検索結果やログなどで会話が散らかる作業を別の文脈で処理し、要点だけを返す仕組みと説明されている。Markdownファイル1つで定義でき、置き場所で適用範囲が決まる。道具は許可・除外で絞る。任せ方は3段階。対話が多い作業や速さ重視の作業はメイン会話向きとされる。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕のみに基づく。\n- 公式資料とは未照合。数値の既定値（同時実行数、ネスト深さ、スキル数、説明の長さ上限など）や設定名、環境変数名は UNKNOWN。\n- 自動字幕のため誤変換の可能性が高い（例：「係り」「ようやく」等の表記揺れ、設定名のカタカナ化）。項目名・コマンド名は原文で確認が必要。\n- 外部仕様（Claude Codeの現行挙動、バージョン差）は UNKNOWN。\n- 動画内で言及される10月24日回のフォーク解説は未参照。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-rEPhMGcmciM-subtitle-switch.md",
       "video_id": "rEPhMGcmciM",
       "title": "研究ノート：Skills vs MCP vs CLAUDE.md の読み込みタイミングとコスト",
@@ -9833,14 +9863,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 62,
+    "total_nodes": 63,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 28,
+    "isolated_nodes_count": 29,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9868,6 +9898,7 @@
       "abQJU2pS59I",
       "eoS-q5gr9-Q",
       "LUZCvHzSmxw",
+      "PYjCf84y068",
       "rEPhMGcmciM",
       "uOtbNXMFs7w"
     ],

@@ -829,6 +829,15 @@
       "research_date": "2026-11-02",
       "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
       "transcript_sha256": "80209a23abe3812288ac08ed1affa5e31dff16d89bdc35e5c7259f14cc751e8e"
+    },
+    {
+      "record_id": "youtube:PYjCf84y068",
+      "video_id": "PYjCf84y068",
+      "canonical_url": "https://www.youtube.com/watch?v=PYjCf84y068",
+      "research_path": "research/2026-11-02-PYjCf84y068-subtitle-switch.md",
+      "research_date": "2026-11-02",
+      "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
+      "transcript_sha256": "5b1fab7cd5e87f6139ac644750d90064c602a87e1a7ee7750ed0c3965286dfb1"
     }
   ]
 }
