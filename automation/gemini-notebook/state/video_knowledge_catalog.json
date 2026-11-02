@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 64,
-  "total_video_records": 61,
+  "total_records": 65,
+  "total_video_records": 62,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9743,6 +9743,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-HIMJwpFiYGw-subtitle-switch.md",
+      "video_id": "HIMJwpFiYGw",
+      "title": "研究ノート：Build an MCP Server in 15 Minutes (2026 Spec)",
+      "canonical_url": "https://www.youtube.com/watch?v=HIMJwpFiYGw",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:HIMJwpFiYGw:research",
+      "transcript_logical_id": "youtube:HIMJwpFiYGw:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "MCPサーバー構築",
+        "動画研究"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "新しいMCP仕様（2026-07-28）では初期化ハンドシェイクが廃止され、ステートレス化された。動画はPython公式SDKでTODOコメント検索ツールを1ファイルで実装し、AI不要のInspector CLIで検証したうえで、3種のエージェントに同じサーバーを登録する流れを示す。stdoutへの出力禁止、絶対パス、承認確認、ツール説明を信用しない姿勢が要点。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕テキストのみに基づく。画面内の表示やコードの内容は確認していない。\n- 公式資料（仕様の変更履歴、SDK文書、各エージェントの文書）とは未照合。\n- 字幕の取得区分は手動だが、正確性は未検証で、固有名詞や数値の誤変換の可能性がある。\n- 仕様の正式な必須要件、SDKの版番号と挙動、各製品のコマンド仕様、非推奨化の詳細：UNKNOWN。\n- 動画内の「本人の環境で取得した」という主張や、チャット画面が再現だという説明は、そのまま検証できていない。\n- 概要欄のコードと出典は参照していない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-LUZCvHzSmxw-subtitle-switch.md",
       "video_id": "LUZCvHzSmxw",
       "title": "研究ノート：Claude Codeの指示はどこに書くか（CLAUDE.md・ルール・スキル・フック・Mods）",
@@ -9894,14 +9925,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 64,
+    "total_nodes": 65,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 30,
+    "isolated_nodes_count": 31,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9929,6 +9960,7 @@
       "abQJU2pS59I",
       "eoS-q5gr9-Q",
       "gcQCedWUHkE",
+      "HIMJwpFiYGw",
       "LUZCvHzSmxw",
       "PYjCf84y068",
       "rEPhMGcmciM",
