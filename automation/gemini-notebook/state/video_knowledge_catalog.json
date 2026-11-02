@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 61,
-  "total_video_records": 58,
+  "total_records": 62,
+  "total_video_records": 59,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9712,6 +9712,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-LUZCvHzSmxw-subtitle-switch.md",
+      "video_id": "LUZCvHzSmxw",
+      "title": "研究ノート：Claude Codeの指示はどこに書くか（CLAUDE.md・ルール・スキル・フック・Mods）",
+      "canonical_url": "https://www.youtube.com/watch?v=LUZCvHzSmxw",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:LUZCvHzSmxw:research",
+      "transcript_logical_id": "youtube:LUZCvHzSmxw:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Code指示の使い分け"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "動画は、CLAUDE.mdに書いても守られない場面があるのは「書き場所」が合っていないからだ、という問題から始まる。指示の置き場を、読み込まれる時機・圧縮後の残り方・重みの3点で比べ、常時必要な事実はCLAUDE.md、特定ファイル向けはパス付きルール、手順はスキル、横道の作業はサブエージェントに分ける。必ず行う/絶対にしないことは、お願いではなくフックと権限設定に移す。画面表示が必要な場合のみ新しいModsを検討する。最初はCLAUDE.mdだけで始め、困ったら足す。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕テキストのみを根拠とした。\n- 公式記事・公式ドキュメントとは未照合。動画内の「公式」の言及は、そのまま裏付けられていない。\n- 字幕は自動生成で、誤変換の可能性がある。例：「ゾ」（入力検証ライブラリ名か）、「プリティア」（整形ツール名か）、「塩部」（保護対象のファイル名か）、「スラッシュユニット」（初期化コマンドか）は、いずれも推測で、確定していない。\n- 設定ファイルの正確な名称・フィールド名・コマンド名・各機能の仕様・導入時期（公式記事の日付、Modsの追加日）：UNKNOWN。\n- 「重み」の強弱の順序や、圧縮後の挙動の詳細は動画の説明であり、検証していない：UNKNOWN。\n- 動画内の他回（サブエージェント、Mods）の内容は未確認。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-rEPhMGcmciM-subtitle-switch.md",
       "video_id": "rEPhMGcmciM",
       "title": "研究ノート：Skills vs MCP vs CLAUDE.md の読み込みタイミングとコスト",
@@ -9803,14 +9833,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 61,
+    "total_nodes": 62,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 27,
+    "isolated_nodes_count": 28,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9837,6 +9867,7 @@
       "4y4I6xiY9zk",
       "abQJU2pS59I",
       "eoS-q5gr9-Q",
+      "LUZCvHzSmxw",
       "rEPhMGcmciM",
       "uOtbNXMFs7w"
     ],
