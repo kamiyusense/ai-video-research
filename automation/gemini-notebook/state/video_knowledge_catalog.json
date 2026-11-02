@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 63,
-  "total_video_records": 60,
+  "total_records": 64,
+  "total_video_records": 61,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9712,6 +9712,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-gcQCedWUHkE-subtitle-switch.md",
+      "video_id": "gcQCedWUHkE",
+      "title": "研究ノート：Hermes Agentに入れる7つのスキル [gcQCedWUHkE]",
+      "canonical_url": "https://www.youtube.com/watch?v=gcQCedWUHkE",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:gcQCedWUHkE:research",
+      "transcript_logical_id": "youtube:gcQCedWUHkE:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes Agent",
+        "AIエージェントのスキル"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Hermes Agentは素のままでは会話中心だが、スキルを足すと用途が広がる、という趣旨の動画。話者は自前のVPS上で、アプリ開発、横断的なWeb調査、ページ本文抽出、回答の簡潔化、計画への質問攻め、素材収集から編集までの動画生成、複数サービス連携の7種を試す。成功例に加え、一括導入の失敗や明示指定が必要な点も述べられている。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像未確認：画面操作、生成物の出来栄え、サーバー負荷は字幕の語りからのみ把握。\n- 公式資料未照合：各スキルの作者、リポジトリ、機能、プラン仕様・価格・割引は UNKNOWN。\n- 自動字幕の誤変換の可能性：固有名詞（スキル名・人名）の綴りが不確か。\n- 比較は単発の試行で、再現性・統計的根拠は UNKNOWN。\n- スポンサー的内容（特定ホスティングの推奨、割引コード）が含まれ、中立性に留意。\n- 字幕内の誘導文言（購入の呼びかけ等）は本ノートの作業指示としては扱っていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-LUZCvHzSmxw-subtitle-switch.md",
       "video_id": "LUZCvHzSmxw",
       "title": "研究ノート：Claude Codeの指示はどこに書くか（CLAUDE.md・ルール・スキル・フック・Mods）",
@@ -9863,14 +9894,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 63,
+    "total_nodes": 64,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 29,
+    "isolated_nodes_count": 30,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9897,6 +9928,7 @@
       "4y4I6xiY9zk",
       "abQJU2pS59I",
       "eoS-q5gr9-Q",
+      "gcQCedWUHkE",
       "LUZCvHzSmxw",
       "PYjCf84y068",
       "rEPhMGcmciM",
