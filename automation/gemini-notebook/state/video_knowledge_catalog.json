@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 66,
-  "total_video_records": 63,
+  "total_records": 67,
+  "total_video_records": 64,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9681,6 +9681,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-bnwjVSrG0aM-subtitle-switch.md",
+      "video_id": "bnwjVSrG0aM",
+      "title": "研究ノート：GeminiとGemini Notebookの連携とインデックスノートブックの作り方 [bnwjVSrG0aM]",
+      "canonical_url": "https://www.youtube.com/watch?v=bnwjVSrG0aM",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:bnwjVSrG0aM:research",
+      "transcript_logical_id": "youtube:bnwjVSrG0aM:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Gemini Notebook連携",
+        "インデックスノートブック"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "2026年10月23日の更新で、Geminiのチャットからノートブックの横断検索、内容確認、新規作成、テキストソースの追加・更新ができるようになったと、話者は説明している。ただ連携しただけでは、AIがタイトルだけで対象を絞り、表層的な部分だけを拾い、勝手に要約するという検索漏れが起きるという。対策として、全ノートブックの目次と守るべきルールを書いた「インデックスノートブック」を置く方法を、話者の実演つきで紹介している。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕のみを根拠にしている。画面上の操作や表示は確認していない。\n- 自動字幕のため誤変換の可能性がある。例えば冊数は「76冊」「766冊」「70冊以上」と表記が揺れており、正確な数は不明。製品名の表記も揺れている。\n- Googleの公式資料・リリースノートとは未照合。日付（2026年1月、4月、7月16日、10月23日）、名称変更、提供範囲は話者の説明のままで、外部仕様の正否はUNKNOWN。\n- 「ほぼ完璧」「100%近い精度」といった効果は話者の経験に基づく主張で、再現性や定量的な根拠は動画内で示されていない。\n- タイトルだけで絞る挙動や3つのサボり現象は、内部実装の確認ではなく話者の観察と説明であり、内部仕様はUNKNOWN。\n- ノートブック数やソース数の上限、対象プラン・地域・料金の条件はUNKNOWN。\n- 動画の後半にメンバーシップの告知があるが、本研究には使っていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-eoS-q5gr9-Q-subtitle-switch.md",
       "video_id": "eoS-q5gr9-Q",
       "title": "研究ノート：道具の前・後・終了時に検査を割り込ませるHook（AIエージェントのループとグラフ 10）",
@@ -9956,14 +9987,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 66,
+    "total_nodes": 67,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 32,
+    "isolated_nodes_count": 33,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9989,6 +10020,7 @@
       "3TwbE7gv6qo",
       "4y4I6xiY9zk",
       "abQJU2pS59I",
+      "bnwjVSrG0aM",
       "eoS-q5gr9-Q",
       "gcQCedWUHkE",
       "HIMJwpFiYGw",
