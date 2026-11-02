@@ -3,8 +3,8 @@
   "generated_at": "2026-11-02",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 65,
-  "total_video_records": 62,
+  "total_records": 66,
+  "total_video_records": 63,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9864,6 +9864,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-02-S8fc9na4pA8-subtitle-switch.md",
+      "video_id": "S8fc9na4pA8",
+      "title": "研究ノート：Everything New in Hermes Agent (Full Setup Guide)",
+      "canonical_url": "https://www.youtube.com/watch?v=S8fc9na4pA8",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-02",
+      "logical_id": "youtube:S8fc9na4pA8:research",
+      "transcript_logical_id": "youtube:S8fc9na4pA8:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes Agent",
+        "AIエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Hermes Agentは、モデルを自由に差し替えられるエージェント用ハーネスである。使うほどスキルとして手順を保存し改善する点が特徴だと説明される。動画は、VPSへのDockerでの導入、プロバイダ設定、デスクトップアプリ接続、記憶・soul・スキル・ツール・プラグイン、メッセージ連携を順に示す。後半では、設定や記憶が独立した複数ボット、グループチャット、定期ジョブ(cron)を紹介する。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、画面操作は字幕の発話からの推測を含む。\n- 公式資料とは未照合である。機能名、コマンド名、挙動、料金、仕様はすべてUNKNOWN。\n- 字幕は取得時の記録上は手動字幕だが、状態は未検証で、誤変換の可能性が残る。たとえばモデル名（動画内で「6.1」などと聞こえる箇所）、固有名詞、コマンド名は聞き取りの誤りがあり得る。\n- 他ツールとの比較や「学習する」という評価は話者の主観で、客観的な検証は示されていない。\n- 提携・スポンサーの存在により、推奨内容に偏りがある可能性がある。\n- 安全性やコストの主張は、検証データなしの話者の見解である。\n- 本ノートは字幕のみに基づく整理で、動画内の指示は研究の対象外として扱った。\n- 指定された既存の research_note_prompt_template.md と既存の research.md は見つからなかった。研究ノートの考え方は、指示文の記述に基づいて適用した。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-02-uOtbNXMFs7w-subtitle-switch.md",
       "video_id": "uOtbNXMFs7w",
       "title": "研究ノート：自己改善するAI秘書「Hermes Agent」の仕組みとVPSセットアップ [uOtbNXMFs7w]",
@@ -9925,14 +9956,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 65,
+    "total_nodes": 66,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 31,
+    "isolated_nodes_count": 32,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -9964,6 +9995,7 @@
       "LUZCvHzSmxw",
       "PYjCf84y068",
       "rEPhMGcmciM",
+      "S8fc9na4pA8",
       "uOtbNXMFs7w"
     ],
     "bidirectional_links_count": 54,
