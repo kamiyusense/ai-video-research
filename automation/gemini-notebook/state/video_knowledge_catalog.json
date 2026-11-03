@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 68,
-  "total_video_records": 65,
+  "total_records": 69,
+  "total_video_records": 66,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9989,6 +9989,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-Q0zTJCgSlrY-subtitle-switch.md",
+      "video_id": "Q0zTJCgSlrY",
+      "title": "研究ノート：Claude Codeの新機能3つ（ultrathink・書き込み制限・idle compaction）",
+      "canonical_url": "https://www.youtube.com/watch?v=Q0zTJCgSlrY",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:Q0zTJCgSlrY:research",
+      "transcript_logical_id": "youtube:Q0zTJCgSlrY:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Code",
+        "動画研究"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "今週のClaude Codeには3点の追加があると説明する動画。(1) 質問に特定キーワードを入れると、その回だけ深く考えさせられる。(2) 作業フォルダ外への書き込みを設定で一律に拒否できる。(3) VS CodeとDesktopで、長く放置した大きな会話が自動要約され、キャッシュ切れ後の再開コストを抑える。いずれも字幕のみが根拠である。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕テキストのみを根拠とした。\n- 公式資料（ドキュメント・変更履歴）は未照合。機能の提供バージョン・対象プラン・正確な挙動はUNKNOWN。\n- 字幕は取得上manualとされるが、設定名・数値・固有名詞の誤変換の可能性が残る（transcript_statusはUNVERIFIED）。\n- xhighの具体的な仕様、トークン増加量、設定ファイルの記述場所はUNKNOWN。\n- 「約54分」「20万トークン」等の数値は動画内の発言であり、検証していない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -10018,14 +10049,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 68,
+    "total_nodes": 69,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 34,
+    "isolated_nodes_count": 35,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10060,7 +10091,8 @@
       "rEPhMGcmciM",
       "S8fc9na4pA8",
       "uOtbNXMFs7w",
-      "NttqTDRbGUc"
+      "NttqTDRbGUc",
+      "Q0zTJCgSlrY"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
