@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 70,
-  "total_video_records": 67,
+  "total_records": 71,
+  "total_video_records": 68,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9958,6 +9958,39 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-jgGdqcnt2Yo-subtitle-switch.md",
+      "video_id": "jgGdqcnt2Yo",
+      "title": "Orca使い方ガイド研究ノート：Claude Code/Codex併用・ワークツリー・スマホ操作",
+      "canonical_url": "https://www.youtube.com/watch?v=jgGdqcnt2Yo",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:jgGdqcnt2Yo:research",
+      "transcript_logical_id": "youtube:jgGdqcnt2Yo:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Orca",
+        "Claude Code",
+        "Codex",
+        "ワークツリー"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Orcaは、Claude CodeとCodexを一つの画面で動かせる無料アプリとして紹介されている。動画は、導入と初期設定、三分割の画面構成、二つのAIの並走、ブラウザ上で箇所を指して修正を依頼する機能、Gitのワークツリーによる三作業の同時進行、iPhoneからの続き操作の順に進む。実演は喫茶店サイトの作成と修正が題材。初心者向けの注意点も随所にある。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみを根拠にしており、画面上の表示や操作は確認していない。\n- 字幕は自動生成で、誤変換の可能性が高い（製品名、Git関連の語、コマンド、数字など）。\n- 公式資料とは未照合。機能の有無、対応OS、料金、最新の仕様は UNKNOWN。\n- 「無料」「安全」などの主張は動画内の説明であり、独立した検証はしていない。\n- 動画の実演結果（修正時間など）の再現性は UNKNOWN。\n- Android対応、リレーの通信経路やデータ保護の詳細は UNKNOWN。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-NttqTDRbGUc-subtitle-switch.md",
       "video_id": "NttqTDRbGUc",
       "title": "研究ノート：文章を捨てて値と確率だけ返す高速モデル「ジェブ」の解説動画 [NttqTDRbGUc]",
@@ -10081,14 +10114,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 70,
+    "total_nodes": 71,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 36,
+    "isolated_nodes_count": 37,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10123,6 +10156,7 @@
       "rEPhMGcmciM",
       "S8fc9na4pA8",
       "uOtbNXMFs7w",
+      "jgGdqcnt2Yo",
       "NttqTDRbGUc",
       "Q0zTJCgSlrY",
       "SH_hXcuzmVo"
