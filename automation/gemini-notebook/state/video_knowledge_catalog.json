@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 80,
-  "total_video_records": 77,
+  "total_records": 81,
+  "total_video_records": 78,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10367,6 +10367,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-wpwnuAwI1Bg-subtitle-switch.md",
+      "video_id": "wpwnuAwI1Bg",
+      "title": "研究ノート：Claude Code総合講座（TaskFlow題材・32章）[wpwnuAwI1Bg]",
+      "canonical_url": "https://www.youtube.com/watch?v=wpwnuAwI1Bg",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:wpwnuAwI1Bg:research",
+      "transcript_logical_id": "youtube:wpwnuAwI1Bg:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Code",
+        "動画研究"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "動画は、小さなNode製タスクAPI「TaskFlow」を題材に、Claude Codeを「文脈・制御・検証」の3原則で使う方法を7部32章で説明する。指示書(CLAUDE.md)を短く保ち、計画→失敗するテスト→最小修正→テスト結果の確認という手順を回し、権限・サンドボックス・フックで安全を確保する。規模拡大時はサブエージェント、並列作業、CI連携へ進む。最後にモデルの限界と30日学習計画を示す。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕テキストのみを根拠にしており、画面上の「実機キャプチャ」表示の真偽や内容は確認していない。\n- 公式資料は未照合。版番号、コマンド名、設定名、機能の有無、モデル名、数値（トークン数や行数など）は動画内の主張として記録しただけで、正確性はUNKNOWNとする。\n- 字幕は取得メタデータ上は手動字幕だが、`transcript_status` は未検証（UNVERIFIED）。固有名詞や数字に誤変換が含まれる可能性がある。\n- 外部仕様（Claude Codeの現行仕様、料金、対応プラン、GitHub連携の詳細など）はUNKNOWN。使用前に自分の環境と公式資料で確認が必要。\n- 動画内の「公式文書に基づく」という説明は、動画側の主張であり、本ノートでは検証していない。\n- 章の開始秒は字幕の開始秒の切り捨てで、実際の章見出しの表示位置とずれる場合がある。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -10396,14 +10427,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 80,
+    "total_nodes": 81,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 46,
+    "isolated_nodes_count": 47,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10450,7 +10481,8 @@
       "Q0zTJCgSlrY",
       "SH_hXcuzmVo",
       "V7tbia_t9yA",
-      "W5qwlYBnWa4"
+      "W5qwlYBnWa4",
+      "wpwnuAwI1Bg"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
