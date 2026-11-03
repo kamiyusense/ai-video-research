@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 81,
-  "total_video_records": 78,
+  "total_records": 82,
+  "total_video_records": 79,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10305,6 +10305,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-UGoacAkoLlc-subtitle-switch.md",
+      "video_id": "UGoacAkoLlc",
+      "title": "研究ノート：Hermes Agentでローカル無料AIエージェントを作る手順",
+      "canonical_url": "https://www.youtube.com/watch?v=UGoacAkoLlc",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:UGoacAkoLlc:research",
+      "transcript_logical_id": "youtube:UGoacAkoLlc:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Hermes Agent",
+        "ローカルLLM"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "ミニPC上でローカルモデルをllama.cppで動かし、Hermes Agentを接続して無料のエージェントを構築する手順を5段階で示す動画。領収書の仕分け、文書のみに基づくQ&Aシート作成、毎朝7時の自動ブリーフという3つの作業を、投稿者が用意した非公開の採点で全て満点としている。一方で思考が長く、最長で約30分かかる。初回に作業フォルダ外の採点資料を読んだ事例から、エージェントは読めるファイルを全て読めるため、専用フォルダと隔離が必要だと結論づける。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみに基づく。\n- 自動字幕に由来する誤変換の可能性がある（字幕種別は「manual」と記載されるが、正確性は未検証）。モデル名・版番号・数値は聞き取り表記のため要照合。\n- 公式資料（Hermes Agent、llama.cpp、モデル配布元）との照合は未実施。\n- 外部仕様（ライセンス、パラメータ数、ファイルサイズ、導入コマンド、設定項目名、ゲートウェイの確認間隔など）：UNKNOWN。\n- 採点基準と「外部通信ゼロ」の計測方法は動画内で詳細が不明で、再現性はUNKNOWN。\n- 成績は投稿者環境・3件の事例に限られ、一般化できない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-V7tbia_t9yA-subtitle-switch.md",
       "video_id": "V7tbia_t9yA",
       "title": "研究ノート：Claude CodeからCodexを呼び出す方法と使いどころ [V7tbia_t9yA]",
@@ -10427,14 +10458,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 81,
+    "total_nodes": 82,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 47,
+    "isolated_nodes_count": 48,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10480,6 +10511,7 @@
       "Pzmv0-lABmU",
       "Q0zTJCgSlrY",
       "SH_hXcuzmVo",
+      "UGoacAkoLlc",
       "V7tbia_t9yA",
       "W5qwlYBnWa4",
       "wpwnuAwI1Bg"

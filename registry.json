@@ -1000,6 +1000,15 @@
       "research_date": "2026-11-03",
       "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
       "transcript_sha256": "bbbe9c252c498093445f2979775a103aa0e3beec4e1e96fd12710202f01a5e7c"
+    },
+    {
+      "record_id": "youtube:UGoacAkoLlc",
+      "video_id": "UGoacAkoLlc",
+      "canonical_url": "https://www.youtube.com/watch?v=UGoacAkoLlc",
+      "research_path": "research/2026-11-03-UGoacAkoLlc-subtitle-switch.md",
+      "research_date": "2026-11-03",
+      "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
+      "transcript_sha256": "b65f6fbbb2c991b54e9a8f4f6d6829caff7afc4d475a6c837991c81fcde39558"
     }
   ]
 }
