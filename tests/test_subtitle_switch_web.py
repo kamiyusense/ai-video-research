@@ -40,6 +40,7 @@ def controller(tmp_path):
     control = web.Controller(config, inventory, tmp_path, service_factory=lambda _: object(),
                              session=session, question=lambda *a: '偽の回答', metadata=lambda *a, **kw: None)
     control.calls = calls
+    control.login_wait = (0, 0)  # never wait for a sign-in in tests unless a test asks for it
     yield control
     if control.worker:
         control.worker.join(timeout=5)
@@ -745,3 +746,38 @@ def test_services_claude_login_check_reads_status_only(tmp_path):
     answer = 'not json'
     assert s.claude_login_ok() is True  # unreadable: the research step reports instead
     assert all(args == ['claude', 'auth', 'status'] for args in seen)
+
+
+class SignsInWhileWaiting(LoginService):
+    """The login check fails once, then the owner finishes signing in."""
+    def __init__(self):
+        super().__init__(False)
+        self.checks = 0
+    def notebook_login_ok(self):
+        self.checks += 1
+        return self.checks > 1
+
+
+def test_manual_save_continues_by_itself_after_the_owner_signs_in(controller):
+    # Owner 2026-11-03: one press of 手動保存 should save, even when the login had expired.
+    c = controller
+    service = SignsInWhileWaiting()
+    c.service_factory = lambda _: service
+    c.login_wait = (5, 0)
+    c.operate({'action': 'manual', 'urls': 'https://youtu.be/ggggggggggg', 'correction': ''})
+    c.worker.join(5)
+    assert service.opened == 1
+    assert c.calls == [({'ggggggggggg'}, '')]
+    row = c.inventory.data['videos']['ggggggggggg']
+    assert row['status'] == 'complete' and not row.get('failed')
+
+
+def test_login_timeout_leaves_rows_waiting_for_login_not_unprocessed(controller):
+    c = controller
+    c.service_factory = lambda _: LoginService(False)
+    c.operate({'action': 'manual', 'urls': 'https://youtu.be/hhhhhhhhhhh', 'correction': ''})
+    c.worker.join(5)
+    assert not c.calls and 'ログイン' in c.notice
+    row = c.inventory.data['videos']['hhhhhhhhhhh']
+    assert row['status'] == 'waiting' and row['status_reason'] == 'NOTEBOOK_LOGIN_EXPIRED'
+    assert web.table_row(row)['cells'][7]['text'] == '待ち'

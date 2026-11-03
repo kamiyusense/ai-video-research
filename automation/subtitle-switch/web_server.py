@@ -76,6 +76,7 @@ class Controller:
         self.question, self.metadata = question, metadata
         self.guard = threading.RLock()
         self.login_opened_at = float('-inf')
+        self.login_wait = (600, 5)  # seconds to wait for the owner's NotebookLM sign-in, poll interval
         self.checked = set()
         self.show_rejected = self.show_processed = False
         self.busy = False
@@ -260,9 +261,13 @@ class Controller:
                             if time.monotonic() - self.login_opened_at > LOGIN_WINDOW_SECONDS:
                                 service.open_notebook_login()
                                 self.login_opened_at = time.monotonic()
-                            # notebooklm-py 0.8.5 saves the login and closes its window by itself (no Enter).
-                            raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインしてください'
-                                             '（覚えている場合は自動で済み、画面は勝手に閉じます）。閉じたら、もう一度保存を押してください。')
+                            # Owner (2026-11-03): one press should be enough. Show the rows as waiting for
+                            # the login (not 未処理) and continue by itself once the owner has signed in.
+                            self.mark_login_wait(targets)
+                            if not self.wait_for_notebook_login(service):
+                                # notebooklm-py 0.8.5 saves the login and closes its window by itself (no Enter).
+                                raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインしてください'
+                                                 '（覚えている場合は自動で済み、画面は勝手に閉じます）。閉じたら、もう一度保存を押してください。')
                         if getattr(service, 'claude_login_ok', None) and not service.claude_login_ok():
                             # The owner signs in; the app never logs in by itself (owner, 2026-11-01).
                             raise ValueError('PCのClaude Codeのログインが切れています。ターミナルで「claude auth login」を実行し、'
@@ -299,6 +304,29 @@ class Controller:
             else:
                 raise ValueError('未対応の操作です')
             return self.snapshot()
+
+    def mark_login_wait(self, targets):
+        with self.guard:
+            for vid in targets:
+                row = self.inventory.data['videos'].get(vid)
+                if row and row['status'] not in ('complete', 'ALREADY_REGISTERED'):
+                    row.update(status='waiting', status_reason='NOTEBOOK_LOGIN_EXPIRED', failed=True)
+            self.inventory.save()
+            self.notice = ('NotebookLMのログイン待ち：開いた黒い画面でGoogleにログインしてください。'
+                           f'ログインが済むと自動で保存を続けます（最大{self.login_wait[0] // 60}分待ちます）。')
+            self.publish()
+
+    def wait_for_notebook_login(self, service):
+        """Poll the read-only login check; True as soon as the owner has signed in."""
+        limit, interval = self.login_wait
+        deadline = time.monotonic() + limit
+        while time.monotonic() < deadline:
+            time.sleep(interval)
+            if service.notebook_login_ok():
+                with self.guard:
+                    self.notice = 'ログインを確認しました。保存を続けます…'
+                return True
+        return False
 
     def login_verified(self, targets):
         """A passing login check lifts the login wait: no 再開 choice is needed for that cause."""
