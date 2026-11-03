@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 75,
-  "total_video_records": 72,
+  "total_records": 76,
+  "total_video_records": 73,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10085,6 +10085,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-oL-5pi1AFC4-subtitle-switch.md",
+      "video_id": "oL-5pi1AFC4",
+      "title": "研究ノート：thirdshiftはGitHub issueからレビュー済みPRまでをどう自動化するか",
+      "canonical_url": "https://www.youtube.com/watch?v=oL-5pi1AFC4",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:oL-5pi1AFC4:research",
+      "transcript_logical_id": "youtube:oL-5pi1AFC4:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "thirdshift",
+        "自律型コーディングエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "人間が目的・成功条件・対象外をissueに書いて実行すると、thirdshiftはissueを検証して着手の印を付け、専用worktreeで無人のエージェントに実装させる。その後、規約とissueの二系統のレビューを経てPRを開く。以降は決定論的なコードがベースのマージ、push、CI監視を行い、競合や失敗には修復セッションを回す。予算で反復は有限になる。大きな仕事はSpecとしてサブissueに分け、定期実行で自ら課題も探す。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕テキストのみを根拠にしている。画面上の図や操作は把握していない。\n- 公式資料やリポジトリとは未照合。実際の挙動、設定、予算の値、対応環境は UNKNOWN。\n- 字幕の種別は取得情報上「manual」だが、正確性は UNVERIFIED で、誤変換の可能性が残る。固有名詞（Pickup、Architect等）の定義は動画内で説明がなく UNKNOWN。\n- 外部仕様（GitHub APIやCI連携の詳細、ライセンス、提供形態）は UNKNOWN。\n- 参照テンプレート research_note_prompt_template.md は作業ディレクトリに存在せず読めなかったため、指示文の形式に従って作成した。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-Pzmv0-lABmU-subtitle-switch.md",
       "video_id": "Pzmv0-lABmU",
       "title": "研究ノート：Grok Bot masterclass（ボット作成・グループチャット・Webhook・制約）",
@@ -10241,14 +10272,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 75,
+    "total_nodes": 76,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 41,
+    "isolated_nodes_count": 42,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10287,6 +10318,7 @@
       "2ugU8nltQUo",
       "jgGdqcnt2Yo",
       "NttqTDRbGUc",
+      "oL-5pi1AFC4",
       "Pzmv0-lABmU",
       "Q0zTJCgSlrY",
       "SH_hXcuzmVo",
