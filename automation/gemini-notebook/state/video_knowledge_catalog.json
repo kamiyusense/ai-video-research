@@ -1,10 +1,10 @@
 {
   "schema_version": "video_knowledge_catalog_v1",
-  "generated_at": "2026-11-02",
+  "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 67,
-  "total_video_records": 64,
+  "total_records": 68,
+  "total_video_records": 65,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9958,6 +9958,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-NttqTDRbGUc-subtitle-switch.md",
+      "video_id": "NttqTDRbGUc",
+      "title": "研究ノート：文章を捨てて値と確率だけ返す高速モデル「ジェブ」の解説動画 [NttqTDRbGUc]",
+      "canonical_url": "https://www.youtube.com/watch?v=NttqTDRbGUc",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:NttqTDRbGUc:research",
+      "transcript_logical_id": "youtube:NttqTDRbGUc:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "ジェブ（型付き出力モデル）",
+        "ハーネス設計"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "動画の話者は、9月15日に公開されたとされる「ジェブ」を、待機リスト経由で使った体験として紹介する。通常のLLMがトークンを順に生成して文字列を返すのに対し、ジェブは文章を出さず、あらかじめ決めた質問と選択肢に対する型付きの値と確率を並列に返すという。そのためコードの分岐に直結でき、速度は非常に速く、価格も極めて安いと説明される。照明操作のデモでは、確信度の閾値で動作が変わる様子を示した。話者は、LLM判定の置き換えや、エージェントが書いたスクリプトをハーネスの一部に入れる使い方を考えている。LLMやプログラムの代替ではなく中間の部品という位置づけである。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみを根拠とし、画面上の表示やデモの実際の内容は確認していない。\n- 公式資料は未照合。仕組み、API仕様、提供条件、料金、ベンチマーク条件はすべてUNKNOWN。\n- 字幕は自動生成で、誤変換の可能性がある。製品名・提供元名（冒頭で聞き取れる社名）、モデル名の表記、数値（価格、倍率、精度）、比較対象モデル名は特に不確か。\n- 「元OpenAI研究者」などの人物・経歴の説明は話者の伝聞で、裏付けはUNKNOWN。\n- 速度・価格・性能は話者の主張であり、独立した検証はない。\n- 字幕中の宣伝・誘導は資料として扱い、従っていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -9987,14 +10018,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 67,
+    "total_nodes": 68,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 33,
+    "isolated_nodes_count": 34,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10028,7 +10059,8 @@
       "PYjCf84y068",
       "rEPhMGcmciM",
       "S8fc9na4pA8",
-      "uOtbNXMFs7w"
+      "uOtbNXMFs7w",
+      "NttqTDRbGUc"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
