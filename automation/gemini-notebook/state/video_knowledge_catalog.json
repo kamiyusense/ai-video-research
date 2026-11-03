@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 73,
-  "total_video_records": 70,
+  "total_records": 74,
+  "total_video_records": 71,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -9990,6 +9990,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-2ugU8nltQUo-subtitle-switch.md",
+      "video_id": "2ugU8nltQUo",
+      "title": "研究ノート：Grok Bot 24時間働くAI社員の始め方と実演 [2ugU8nltQUo]",
+      "canonical_url": "https://www.youtube.com/watch?v=2ugU8nltQUo",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:2ugU8nltQUo:research",
+      "transcript_logical_id": "youtube:2ugU8nltQUo:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Grok Bot",
+        "AIエージェント"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Grok Botは、頼んだ仕事をアカウントごとのクラウド上の専用PCで最後まで実行し、完了後に報告するAIとして紹介される。利用はXのPremium以上で、名前と役割を付けたボットを複数作れる。動画では資料要約、4社の料金調査、スキル化して毎朝7時に動かすルーチンの3例を実演する。最後に、共有PC、ログイン情報の扱い、Xの自動操作規約への注意を述べる。以上は動画の主張で、検証はしていない。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕テキストのみに基づく。\n- 字幕は自動生成で、誤変換の可能性がある（例：「ブロックボット」「ロード」等の表記揺れは Grok Bot / Claude と推測したが断定しない）。\n- 公式資料との照合は未実施。\n- 料金、プラン名、提供開始日、使用量上限、規約内容、機能の対応環境などの外部仕様は UNKNOWN。\n- 実演結果は動画内の1回の事例で、再現性・精度は未検証。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-jgGdqcnt2Yo-subtitle-switch.md",
       "video_id": "jgGdqcnt2Yo",
       "title": "Orca使い方ガイド研究ノート：Claude Code/Codex併用・ワークツリー・スマホ操作",
@@ -10178,14 +10209,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 73,
+    "total_nodes": 74,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 39,
+    "isolated_nodes_count": 40,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10221,6 +10252,7 @@
       "S8fc9na4pA8",
       "uOtbNXMFs7w",
       "2_4Iw4RCA6I",
+      "2ugU8nltQUo",
       "jgGdqcnt2Yo",
       "NttqTDRbGUc",
       "Q0zTJCgSlrY",
