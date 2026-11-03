@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 69,
-  "total_video_records": 66,
+  "total_records": 70,
+  "total_video_records": 67,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10020,6 +10020,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-SH_hXcuzmVo-subtitle-switch.md",
+      "video_id": "SH_hXcuzmVo",
+      "title": "研究ノート：Orcaで複数のClaude Codeを並行実行する（worktreeで衝突回避）",
+      "canonical_url": "https://www.youtube.com/watch?v=SH_hXcuzmVo",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:SH_hXcuzmVo:research",
+      "transcript_logical_id": "youtube:SH_hXcuzmVo:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Orca",
+        "git worktree",
+        "Claude Code"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "OrcaはCLI型AIエージェントを並べて動かすデスクトップアプリで、作業ごとにgit worktreeとブランチを作るため、同じファイルを触っても衝突しにくい。動画は複数Issueの同時処理、モデル比較、差分への行メモ、ブラウザ要素の受け渡し、使用量確認を示す。一方で権限は分離されず、統合は人が担う点を注意として挙げる。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみを資料としたため、画面内容は字幕の記述に依存する。\n- 公式資料は未照合。動画の主張（公式の推奨、ライセンス等）は未検証。\n- 字幕は取得上UNVERIFIED。自動字幕ではないとされるが、誤変換の可能性は残る。\n- 動画内のバージョン（1.4.239）以降の仕様変更は UNKNOWN。\n- 外部仕様（Orcaの設定項目・CLIの詳細・スマホアプリの現状・各サービスの使用量枠）は UNKNOWN。\n- 実演は小規模な例であり、大規模リポジトリでの効果は未確認。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -10049,14 +10081,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 69,
+    "total_nodes": 70,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 35,
+    "isolated_nodes_count": 36,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10092,7 +10124,8 @@
       "S8fc9na4pA8",
       "uOtbNXMFs7w",
       "NttqTDRbGUc",
-      "Q0zTJCgSlrY"
+      "Q0zTJCgSlrY",
+      "SH_hXcuzmVo"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
