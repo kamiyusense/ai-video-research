@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 77,
-  "total_video_records": 74,
+  "total_records": 78,
+  "total_video_records": 75,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10241,6 +10241,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-V7tbia_t9yA-subtitle-switch.md",
+      "video_id": "V7tbia_t9yA",
+      "title": "研究ノート：Claude CodeからCodexを呼び出す方法と使いどころ [V7tbia_t9yA]",
+      "canonical_url": "https://www.youtube.com/watch?v=V7tbia_t9yA",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:V7tbia_t9yA:research",
+      "transcript_logical_id": "youtube:V7tbia_t9yA:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude CodeとCodexの連携"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "Claude Codeを主に使う話者が、Codexを併用する理由と手順を実演する動画。理由は、別モデルによる確認、Claude Codeにない機能やプラグインの利用、使用上限が近い時の作業分担の3つ。最も簡単な方法はClaude Codeにコマンドを実行させること。例として、家計分析をCodex側のプラグインで行い、結果を画像生成して返させた。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみを根拠としており、画面上の操作や画像の中身は確認していない。\n- 公式資料は未照合。インストール手順、各CLIの仕様、プラグインの有無や上限条件は UNKNOWN。\n- 自動字幕のため誤変換の可能性が高い。特にコマンド名は「コデx」などと崩れており、正確なコマンド綴りとオプションは UNKNOWN。\n- 「50件以上」「Codexの方が優秀だった時期」などは話者の主張で、裏付けなし。\n- 動画後半の雑談部分は主題外のため、知見から除外した。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-W5qwlYBnWa4-subtitle-switch.md",
       "video_id": "W5qwlYBnWa4",
       "title": "研究ノート：Claude Code Desktop・Orca・Herdrの使い分け [W5qwlYBnWa4]",
@@ -10302,14 +10332,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 77,
+    "total_nodes": 78,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 43,
+    "isolated_nodes_count": 44,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10353,6 +10383,7 @@
       "Pzmv0-lABmU",
       "Q0zTJCgSlrY",
       "SH_hXcuzmVo",
+      "V7tbia_t9yA",
       "W5qwlYBnWa4"
     ],
     "bidirectional_links_count": 54,
