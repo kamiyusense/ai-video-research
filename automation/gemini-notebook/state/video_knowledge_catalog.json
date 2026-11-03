@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 71,
-  "total_video_records": 68,
+  "total_records": 72,
+  "total_video_records": 69,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10085,6 +10085,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-W5qwlYBnWa4-subtitle-switch.md",
+      "video_id": "W5qwlYBnWa4",
+      "title": "研究ノート：Claude Code Desktop・Orca・Herdrの使い分け [W5qwlYBnWa4]",
+      "canonical_url": "https://www.youtube.com/watch?v=W5qwlYBnWa4",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:W5qwlYBnWa4:research",
+      "transcript_logical_id": "youtube:W5qwlYBnWa4:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Code Desktop",
+        "Orca",
+        "Herdr"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "AIコーディングエージェントを扱う3つのツールの棲み分けを説明する動画。Claude Code DesktopはClaude専用で、並列セッション、レビュー、PR管理まで一通り揃う。Orcaは複数のエージェントに同じ課題を競わせて差分を比較するIDE。Herdrはターミナル内で動く軽量な管理ツールで、状態一覧と常駐が強みだが、レビューやPRの機能は持たない。結論は、Claudeだけなら現状維持、他社エージェントも契約していれば比較用にOrca、キーボード中心の運用ならHerdr、という使い分けである。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕のみに基づく。画面上の操作や表示は確認していない。\n- 公式資料は未照合。機能名、初期設定、挙動の正確さは動画の主張のままである。\n- 字幕は取得元で手動扱いだが、転記誤りや固有名詞の誤変換の可能性は残る（transcript_statusはUNVERIFIED）。\n- 各ツールの価格、対応OS、最新バージョン、セキュリティ仕様などの外部仕様：UNKNOWN。\n- 動画は説明欄のドキュメントを参照するとしているが、そのリンク先は未確認。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -10114,14 +10146,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 71,
+    "total_nodes": 72,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 37,
+    "isolated_nodes_count": 38,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10159,7 +10191,8 @@
       "jgGdqcnt2Yo",
       "NttqTDRbGUc",
       "Q0zTJCgSlrY",
-      "SH_hXcuzmVo"
+      "SH_hXcuzmVo",
+      "W5qwlYBnWa4"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
