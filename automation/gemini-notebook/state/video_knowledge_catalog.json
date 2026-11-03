@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 76,
-  "total_video_records": 73,
+  "total_records": 77,
+  "total_video_records": 74,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10116,6 +10116,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-pTrCy0n58xM-subtitle-switch.md",
+      "video_id": "pTrCy0n58xM",
+      "title": "研究ノート：Claude Code ヘッドレス実行で exit 0 は成功を意味しない",
+      "canonical_url": "https://www.youtube.com/watch?v=pTrCy0n58xM",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:pTrCy0n58xM:research",
+      "transcript_logical_id": "youtube:pTrCy0n58xM:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Claude Code ヘッドレス実行"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "無人の `claude -p` 実行は既定モードで始まり、テスト実行などに必要な承認が得られない。その呼び出しは黙って拒否され、モデルはテストを読むだけで「失敗なし」と報告し、終了コードは0になる。つまり0は「実行が終わった」ことしか示さない。実際の結論はJSON出力のresultフィールドにあり、失敗報告でも終了コードは0のままである。そのためresultの内容で分岐し、パイプラインではpipefailを設定し、空の結果を成功と見なさないことが勧められている。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認で、字幕のみに基づく。画面上のコマンド例や表示は把握していない。\n- 字幕は自動生成で、誤変換の可能性がある（例：「npm test ill」や「clawed」は誤認識と思われる。「{dash} p」は `-p` と解釈した）。\n- 公式資料との照合は未実施。オプション名（出力形式指定の正確なフラグ）、権限モードの仕様、resultフィールドの構造などの外部仕様はUNKNOWN。\n- 動画内の「リンク先の詳しい講座」の内容は未確認。\n- 公開日は字幕ファイルのメタデータの記載をそのまま写した。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-Pzmv0-lABmU-subtitle-switch.md",
       "video_id": "Pzmv0-lABmU",
       "title": "研究ノート：Grok Bot masterclass（ボット作成・グループチャット・Webhook・制約）",
@@ -10272,14 +10302,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 76,
+    "total_nodes": 77,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 42,
+    "isolated_nodes_count": 43,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10319,6 +10349,7 @@
       "jgGdqcnt2Yo",
       "NttqTDRbGUc",
       "oL-5pi1AFC4",
+      "pTrCy0n58xM",
       "Pzmv0-lABmU",
       "Q0zTJCgSlrY",
       "SH_hXcuzmVo",
