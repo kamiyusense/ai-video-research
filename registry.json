@@ -937,6 +937,15 @@
       "research_date": "2026-11-03",
       "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
       "transcript_sha256": "968f2de84cae913df436070c7b5898fa6864f06c05c2213a42cd292194a94e45"
+    },
+    {
+      "record_id": "youtube:Pzmv0-lABmU",
+      "video_id": "Pzmv0-lABmU",
+      "canonical_url": "https://www.youtube.com/watch?v=Pzmv0-lABmU",
+      "research_path": "research/2026-11-03-Pzmv0-lABmU-subtitle-switch.md",
+      "research_date": "2026-11-03",
+      "status": "RESEARCH_RECORDED; NOTEBOOK_PENDING",
+      "transcript_sha256": "46b291afe41b55c942bbf252ba9522b483a3d02b12b21068da57c1f1cb260990"
     }
   ]
 }

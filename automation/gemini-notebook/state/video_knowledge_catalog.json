@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 74,
-  "total_video_records": 71,
+  "total_records": 75,
+  "total_video_records": 72,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10085,6 +10085,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-Pzmv0-lABmU-subtitle-switch.md",
+      "video_id": "Pzmv0-lABmU",
+      "title": "研究ノート：Grok Bot masterclass（ボット作成・グループチャット・Webhook・制約）",
+      "canonical_url": "https://www.youtube.com/watch?v=Pzmv0-lABmU",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:Pzmv0-lABmU:research",
+      "transcript_logical_id": "youtube:Pzmv0-lABmU:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Grok Bot",
+        "AIエージェント",
+        "Webhook"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "話者は、クラウド上の仮想マシンで動くパーソナルエージェント「Grok Bot」を、メール確認や会議メモの要約など実例で紹介する。プラグイン連携と定期ルーティンでボットを作り、画面操作の録画で手順を教える方法、3〜4体のグループチャット、Webhookでの外部起動を説明する。最後にセキュリティ、ローカルファイル不可やモデル固定などの制約、Hermesとの比較を述べる。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 本ノートは字幕テキストのみに基づく。映像は未確認で、画面上の表示や操作は話者の説明を通した推測を含む。\n- 字幕は未検証（transcript_status: UNVERIFIED）で、自動字幕に準じた誤変換の可能性がある。製品名・固有名詞（Grok Bot、運営組織名など）の表記は特に要注意。\n- 公式資料との照合は未実施。価格・提供地域・対応OS・モバイルアプリの対応状況・プラン内容・Webhookの正確な仕様・モデル制限などの外部仕様は UNKNOWN。\n- 比較対象（Hermes、OpenClaw）の機能や費用についての話者の説明も未照合で、UNKNOWN。\n- 話者の経験則（ボット数、運用効果）は個人の実践談であり、一般化はできない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-Q0zTJCgSlrY-subtitle-switch.md",
       "video_id": "Q0zTJCgSlrY",
       "title": "研究ノート：Claude Codeの新機能3つ（ultrathink・書き込み制限・idle compaction）",
@@ -10209,14 +10241,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 74,
+    "total_nodes": 75,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 40,
+    "isolated_nodes_count": 41,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10255,6 +10287,7 @@
       "2ugU8nltQUo",
       "jgGdqcnt2Yo",
       "NttqTDRbGUc",
+      "Pzmv0-lABmU",
       "Q0zTJCgSlrY",
       "SH_hXcuzmVo",
       "W5qwlYBnWa4"
