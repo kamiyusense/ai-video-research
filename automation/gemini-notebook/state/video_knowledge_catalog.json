@@ -3,8 +3,8 @@
   "generated_at": "2026-11-03",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 82,
-  "total_video_records": 79,
+  "total_records": 83,
+  "total_video_records": 80,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10053,6 +10053,37 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-03-iDwSqXC8sBQ-subtitle-switch.md",
+      "video_id": "iDwSqXC8sBQ",
+      "title": "研究ノート：Grok Bot・Orca CLI・ZernioでLinkedIn投稿を自動化する [iDwSqXC8sBQ]",
+      "canonical_url": "https://www.youtube.com/watch?v=iDwSqXC8sBQ",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-03",
+      "logical_id": "youtube:iDwSqXC8sBQ:research",
+      "transcript_logical_id": "youtube:iDwSqXC8sBQ:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Grok Bot / Orca CLI / Zernio によるLinkedIn投稿自動化",
+        "エージェント開発環境"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "話者はOrca（複数のコーディングエージェントを一画面で管理するADE）と、チャットで指示できる個人アシスタント型のGrok Botを組み合わせる。Grok BotがOrca CLIを通じてClaudeセッションを起動し、LinkedInカルーセル用のスライドPDFと本文を生成させる。結果は非同期に報告され、外出先からでも操作できる。最後にZernioで下書きを作り、レビューを挟んでから投稿する流れを示す。全体は単一デモで、定量的な評価は語られない。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。本ノートは字幕のみに基づき、画面上の操作や表示内容は確認していない。\n- 公式資料は未照合。Orca・Grok Bot・Zernioの仕様、料金、対応機能、提供状況はすべてUNKNOWN。\n- 字幕は取得上「manual」とされるが、正確性は未検証。固有名詞（Grok Bot、OpenClaw、Zernio等）に自動字幕由来の誤変換が残る可能性がある。字幕内の表記ゆれ（例：Gropbot、Zeneo、OrCAD）は同一対象と推測したにすぎない。\n- 使用モデル名や所要時間の詳細、生成物の品質評価は客観的に確認できない。\n- 実際にLinkedInへ投稿したかどうかは字幕から不明。\n- 話者による個人的な比較（Android／iPhoneの比喩など）は主観であり、検証されていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "research/2026-11-03-IkVQ9mwEC8s-subtitle-switch.md",
       "video_id": "IkVQ9mwEC8s",
       "title": "研究ノート：ポーリング・ハートビート・バックオフの確認設計（AIエージェントのループとグラフ 08）",
@@ -10458,14 +10489,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 82,
+    "total_nodes": 83,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 48,
+    "isolated_nodes_count": 49,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10503,6 +10534,7 @@
       "2_4Iw4RCA6I",
       "2ugU8nltQUo",
       "exyQn8Rfos4",
+      "iDwSqXC8sBQ",
       "IkVQ9mwEC8s",
       "jgGdqcnt2Yo",
       "NttqTDRbGUc",
