@@ -1,10 +1,10 @@
 {
   "schema_version": "video_knowledge_catalog_v1",
-  "generated_at": "2026-11-03",
+  "generated_at": "2026-11-04",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 83,
-  "total_video_records": 80,
+  "total_records": 84,
+  "total_video_records": 81,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10460,6 +10460,38 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-04-vpvW7I968RQ-subtitle-switch.md",
+      "video_id": "vpvW7I968RQ",
+      "title": "研究ノート：AIコーディング環境Orca（ADE）の6つの魅力",
+      "canonical_url": "https://www.youtube.com/watch?v=vpvW7I968RQ",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-04",
+      "logical_id": "youtube:vpvW7I968RQ:research",
+      "transcript_logical_id": "youtube:vpvW7I968RQ:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "Orca",
+        "ADE",
+        "AIコーディング"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "OrcaはClaude CodeやCodexなど複数のAIエージェントを、プロジェクト・セッション単位で並列運用するためのオープンソースのデスクトップ環境として紹介される。セッション作成時にworktreeとブランチが自動で作られ、状態表示、Git操作、Issue起点の開始、内蔵ブラウザ、常駐プロセス、定期タスク、スマホ操作までを一つにまとめる。動画は投稿者の実体験に基づく推奨で、教育事業の特典案内も含む。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 字幕は自動生成（transcript_status は UNVERIFIED）で、固有名詞や機能名に誤変換の可能性がある（例：製品・コマンド名の表記ゆれ）。\n- 映像は未確認。画面操作の説明は音声字幕のみに基づく。\n- 公式資料（ドキュメント、リポジトリ、ライセンス表記）とは未照合。\n- 外部仕様（スター数、対応OS・アプリの提供状況、ライセンス、対応エージェント、リレーの仕様、モデル名など）の正確性は UNKNOWN。\n- 投稿者は教育事業者で、特典・告知を含む。評価は主観的で、第三者検証や比較はない。\n- 公開日以降の更新による機能変更は未確認。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -10489,14 +10521,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 83,
+    "total_nodes": 84,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 49,
+    "isolated_nodes_count": 50,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10546,7 +10578,8 @@
       "UGoacAkoLlc",
       "V7tbia_t9yA",
       "W5qwlYBnWa4",
-      "wpwnuAwI1Bg"
+      "wpwnuAwI1Bg",
+      "vpvW7I968RQ"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
