@@ -8,7 +8,18 @@ from switch_state import atomic_json
 
 SHOWN = ('channel', 'published_at', 'lang')
 # title: inbox rows bring their own; manual-URL rows only get one from this lookup.
-KEYS = SHOWN + ('ja_dub', 'title')
+KEYS = SHOWN + ('ja_dub', 'title', 'views')
+
+
+def views_text(count):
+    """Short play count; '不明' (not empty) so a video without one is not looked up again."""
+    if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+        return '不明'
+    if count >= 10 ** 8:
+        return f'{count / 10 ** 8:.1f}億回'
+    if count >= 10 ** 6:
+        return f'{count // 10 ** 4}万回'
+    return f'{count / 10 ** 4:.1f}万回' if count >= 10 ** 4 else f'{count:,}回'
 
 
 def japanese_dub(data):
@@ -29,7 +40,7 @@ def _known(row, values, key):
 
 
 def _extra(row, values):
-    return {key: _known(row, values, key) or '' for key in ('ja_dub', 'title')}
+    return {key: _known(row, values, key) or '' for key in ('ja_dub', 'title', 'views')}
 
 
 def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: None, failures=None):
@@ -73,7 +84,8 @@ def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: 
                     published = ''
                 fetched = {'channel': data.get('channel') or data.get('uploader') or '',
                            'published_at': published, 'lang': data.get('language') or '',
-                           'ja_dub': japanese_dub(data), 'title': data.get('title') or ''}
+                           'ja_dub': japanese_dub(data), 'title': data.get('title') or '',
+                           'views': views_text(data.get('view_count'))}
                 values = {key: values.get(key) or fetched[key] for key in keys}
                 cache[vid] = values
                 atomic_json(path, cache)

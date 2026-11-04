@@ -113,7 +113,7 @@
             if (row.translate) { td.removeAttribute('title'); attachTranslation(span, row); }
           }
           // Gemini's recommendation can be a few hundred characters: a wrapped card reads better than a native tooltip.
-          if ((i === 5 && value.full.length > value.text.length) || (i === 7 && row.help)) { td.removeAttribute('title'); attachNote(td, value.full); }
+          if ((i === 6 && value.full.length > value.text.length) || (i === 8 && row.help)) { td.removeAttribute('title'); attachNote(td, value.full); }
           td.append(span); tr.append(td);
         });
         fragment.append(tr);

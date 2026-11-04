@@ -22,7 +22,7 @@ from app_activation import ActivationService, ActivationUnavailable, request_act
 from app_window import AppWindow
 from ask_research import MAX_QUESTION, ask
 from metadata import refresh_metadata
-from pipeline import InstanceLock, StageFailure
+from pipeline import InstanceLock, StageFailure, TERMINAL
 from services import Services, command
 from switch_state import Inventory, flush_preferences, read_inbox, write_preferences
 from translate_title import TitleTranslator, needs_translation
@@ -62,6 +62,8 @@ def table_row(row, metadata=None):
         cells[3] = {'text': (cells[3]['full'][:5] + '・吹替'), 'full': cells[3]['full'] + '（日本語の自動吹き替え音声あり）'}
     elif dub == 'なし':
         cells[3]['full'] += '（日本語の吹き替え音声なし）'
+    # Owner (2026-11-05): play count right after the title. Later cell numbers move by one here.
+    cells.insert(1, short_cell((metadata or {}).get('views') or row.get('views') or '', 8))
     return {'id': row['video_id'], 'cells': cells, 'rejected': row['rejected'], 'status': row['status'], 'help': help_text,
             'url': 'https://www.youtube.com/watch?v=' + row['video_id'], 'translate': needs_translation(lang)}
 
@@ -110,7 +112,7 @@ class Controller:
         """Owner (2026-10-29): after a refresh, say how many rows are in each state."""
         counts = {}
         for row in self.rows:
-            label = row['cells'][7]['text']
+            label = row['cells'][8]['text']
             counts[label] = counts.get(label, 0) + 1
         order = ['未処理', '処理中', '要確認', '待ち', '完了', '弾いた']
         parts = [f'{label}{counts.pop(label)}' for label in order if label in counts]
@@ -215,12 +217,17 @@ class Controller:
                     # Rows added by 手動URL are not in any inbox file; look them up too, or their
                     # title/channel/date would show 「取得中…」 forever (owner report 2026-11-01).
                     inbox_ids = {row['video_id'] for row in rows}
-                    lookup_rows = rows + [
+                    # Play counts are for choosing what to save, so finished and rejected rows
+                    # are not looked up just for one (over 100 YouTube requests otherwise).
+                    closed = {row['video_id'] for row in self.inventory.data['videos'].values()
+                              if row['rejected'] or row['status'] in TERMINAL}
+                    lookup_rows = [{**row, 'views': '－'} if row['video_id'] in closed else row for row in rows] + [
                         {'video_id': row['video_id'], 'url': row.get('url') or 'https://www.youtube.com/watch?v=' + row['video_id'],
                          **{key: row.get(key) or '' for key in ('title', 'channel', 'published_at', 'lang')}}
                         for row in self.inventory.visible(True, True)
                         if row['video_id'] not in inbox_ids
-                        and not all(row.get(key) for key in ('title', 'channel', 'published_at', 'lang'))]
+                        and (row['video_id'] not in closed
+                             or not all(row.get(key) for key in ('title', 'channel', 'published_at', 'lang')))]
                     def lookup():
                         with self.metadata_lock:
                             try:

@@ -264,7 +264,7 @@ def test_refresh_metadata_and_persistent_inventory(controller):
     c.operate({'action': 'refresh'})
     c.worker.join(5)
     c.metadata_thread.join(5)
-    assert any(row['cells'][1]['full'] == '偽チャンネル' for row in c.snapshot()['rows'])
+    assert any(row['cells'][2]['full'] == '偽チャンネル' for row in c.snapshot()['rows'])
     assert 'ccccccccccc' in Inventory(c.inventory.path).data['videos']
 
 
@@ -280,11 +280,11 @@ def test_short_status_retains_full_reason_and_notebook(controller):
     row = controller.inventory.data['videos']['aaaaaaaaaaa']
     row.update(status='waiting', status_reason='NOTEBOOK_LOGIN_EXPIRED', reason='長い説明' * 20)
     result = web.table_row(row)
-    assert result['cells'][7]['text'] == '待ち'
-    assert 'ログイン画面が開く' in result['cells'][7]['full']
-    assert len(result['cells'][5]['text']) <= 9
-    assert result['cells'][5]['full'] == row['reason']
-    assert result['cells'][8]['text'] == '未接続'
+    assert result['cells'][8]['text'] == '待ち'
+    assert 'ログイン画面が開く' in result['cells'][8]['full']
+    assert len(result['cells'][6]['text']) <= 9
+    assert result['cells'][6]['full'] == row['reason']
+    assert result['cells'][9]['text'] == '未接続'
 
 
 def test_heartbeat_and_close_grace(server):
@@ -590,7 +590,7 @@ def test_stopped_row_hover_says_cause_next_step_and_error():
            'status_reason': 'YOUTUBE_RATE_LIMIT', 'rejection_reason': '', 'completed_stages': ['intake'],
            'status_detail': pipeline.error_tail('WARNING: x\nERROR: Unable to download https://www.youtube.com/api/timedtext?v=a&key=SECRET: HTTP Error 429: Too Many Requests')}
     result = web.table_row(row)
-    full = result['cells'][7]['full']
+    full = result['cells'][8]['full']
     assert '断られました' in full and '時間をおいた' in full and 'HTTP Error 429' in full and 'YOUTUBE_RATE_LIMIT' in full
     assert 'SECRET' not in full and result['help'] == full
     unknown = dict(row, status='attention', status_reason='SOMETHING_NEW', status_detail='')
@@ -780,4 +780,24 @@ def test_login_timeout_leaves_rows_waiting_for_login_not_unprocessed(controller)
     assert not c.calls and 'ログイン' in c.notice
     row = c.inventory.data['videos']['hhhhhhhhhhh']
     assert row['status'] == 'waiting' and row['status_reason'] == 'NOTEBOOK_LOGIN_EXPIRED'
-    assert web.table_row(row)['cells'][7]['text'] == '待ち'
+    assert web.table_row(row)['cells'][8]['text'] == '待ち'
+
+
+def test_play_counts_are_only_looked_up_for_rows_still_to_save(controller):
+    # Owner (2026-11-05): play count beside the title; finished rows must not cost a YouTube request each.
+    c = controller
+    inbox = c.locations['inbox']
+    inbox.mkdir()
+    (inbox / 'fixture.json').write_text(json.dumps({'videos': [{'url': 'https://youtu.be/aaaaaaaaaaa', 'title': '済'},
+                                                               {'url': 'https://youtu.be/bbbbbbbbbbb', 'title': '未'}]}), encoding='utf-8')
+    c.inventory.data['videos']['aaaaaaaaaaa']['status'] = 'complete'
+    seen = {}
+    def fake(rows, cache, runner, **kw):
+        seen.update({row['video_id']: row.get('views') for row in rows})
+        kw['notify']('bbbbbbbbbbb', {'views': '1.2万回'})
+    c.metadata = fake
+    c.operate({'action': 'refresh'})
+    c.worker.join(5)
+    c.metadata_thread.join(5)
+    assert seen == {'aaaaaaaaaaa': '－', 'bbbbbbbbbbb': None}
+    assert any(row['cells'][1]['text'] == '1.2万回' for row in c.snapshot()['rows'])
