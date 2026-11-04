@@ -15,11 +15,12 @@ def views_text(count):
     """Short play count; '不明' (not empty) so a video without one is not looked up again."""
     if not isinstance(count, int) or isinstance(count, bool) or count < 0:
         return '不明'
-    if count >= 10 ** 8:
-        return f'{count / 10 ** 8:.1f}億回'
-    if count >= 10 ** 6:
-        return f'{count // 10 ** 4}万回'
-    return f'{count / 10 ** 4:.1f}万回' if count >= 10 ** 4 else f'{count:,}回'
+    if count < 10 ** 4:
+        return f'{count:,}回'
+    # Like YouTube (owner 2026-11-05): 4.5万回, 12万回, 3.5億回 — one decimal below 10, rounded down.
+    unit, size = ('億', 10 ** 8) if count >= 10 ** 8 else ('万', 10 ** 4)
+    tenths = count * 10 // size
+    return (f'{tenths // 10}.{tenths % 10}'.removesuffix('.0') if tenths < 100 else str(count // size)) + unit + '回'
 
 
 def japanese_dub(data):

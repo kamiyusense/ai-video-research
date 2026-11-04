@@ -119,8 +119,8 @@ def test_failed_metadata_is_not_retried_in_same_session(tmp_path):
 
 
 def test_play_count_is_short_and_a_video_without_one_is_not_looked_up_again(tmp_path):
-    assert [metadata.views_text(n) for n in (0, 9999, 12345, 1234567, 123456789, None, True)] == [
-        '0回', '9,999回', '1.2万回', '123万回', '1.2億回', '不明', '不明']
+    assert [metadata.views_text(n) for n in (0, 9999, 12345, 45999, 120000, 123456, 1234567, 123456789, None, True)] == [
+        '0回', '9,999回', '1.2万回', '4.5万回', '12万回', '12万回', '123万回', '1.2億回', '不明', '不明']
     calls, updates = [], []
     def fake(args):
         calls.append(args)
