@@ -95,7 +95,7 @@ col.views-col{width:74px}col.channel-col{width:105px}col.theme-col{width:76px}co
         <button class="secondary orange" data-action="reject"><svg class="icon"><use href="#icon-skip"/></svg>弾く</button>
         <button class="secondary blue" data-action="restore"><svg class="icon"><use href="#icon-back"/></svg>戻す</button><button class="secondary orange" data-action="check_attention" title="一覧の要確認の動画をまとめてチェックします。もう一度押すと外します">要確認を全て選択</button><button class="secondary gray" id="copy-failures" type="button" title="止まっている動画の原因をまとめてコピーします（字幕本文や鍵は含みません）">失敗の記録をコピー</button>
         <button class="secondary green" data-action="refresh"><svg class="icon"><use href="#icon-refresh"/></svg>一覧を更新</button>
-        <div class="filters"><label><input type="checkbox" id="show-rejected">弾いた動画も表示</label><label><input type="checkbox" id="show-processed">完了・登録済みも表示</label></div>
+        <div class="filters"><label><input type="checkbox" id="show-rejected">弾いた動画も表示</label><label><input type="checkbox" id="show-processed">完了・登録済みも表示</label><label><input type="checkbox" id="show-low"><span id="show-low-label">再生100回未満も表示</span></label></div>
       </div>
       <div class="input-grid"><label class="correction-label">失敗からの再開<span class="hint">直した原因を選択</span><select id="correction"><option value="">初回／再開しない</option><option>手動ログインを復旧</option><option>設定を修正</option><option>利用枠の回復を確認</option><option>字幕取得条件を修正</option><option>アプリの修正を反映</option><option>時間をおいた</option></select></label>
         <label class="url-label">手動URL<span class="hint">1行に1本・短縮URLや時刻つきも使えます</span><textarea id="urls" rows="2" maxlength="32000" placeholder="https://www.youtube.com/watch?v=…"></textarea></label>
@@ -241,6 +241,8 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
     state = next;
     $('notice').textContent = state.notice;
     $('row-count').textContent = `${state.rows.length}本`;
+    $('show-low').checked = !!state.show_low;
+    $('show-low-label').textContent = `再生100回未満も表示${state.hidden_low ? `（${state.hidden_low}本）` : ''}`;
     const checked = new Set(state.checked);
     const count = state.rows.filter(r => checked.has(r.id)).length;
     $('selection-count').textContent = `チェック ${count}本`;
@@ -332,7 +334,7 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
     link.addEventListener('blur', () => { tip.hidden = true; });
   }
   function lockControls() {
-    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #send-question, #web-check, #rows input').forEach(el => { el.disabled = state.busy || sending; });
+    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #show-low, #send-question, #web-check, #rows input').forEach(el => { el.disabled = state.busy || sending; });
   }
   async function request(path, data) {
     const response = await fetch(path + BOOT.auth, {
@@ -372,7 +374,7 @@ if (typeof module !== 'undefined') module.exports = CatMotion;
     action: button.dataset.action, reason: $('reject-reason').value, urls: $('urls').value, correction: $('correction').value
   })));
   $('check-all').addEventListener('change', () => operate({action: 'check_all'}));
-  for (const id of ['show-rejected', 'show-processed']) $(id).addEventListener('change', () => operate({action: 'filters', rejected: $('show-rejected').checked, processed: $('show-processed').checked}));
+  for (const id of ['show-rejected', 'show-processed', 'show-low']) $(id).addEventListener('change', () => operate({action: 'filters', rejected: $('show-rejected').checked, processed: $('show-processed').checked, low: $('show-low').checked}));
   $('open-question').addEventListener('click', () => { $('question-panel').showModal(); $('question').focus(); });
   $('close-question').addEventListener('click', () => $('question-panel').close());
   // A plain summary of stopped rows (ids, titles, stages, causes; no captions or keys) to paste to Claude.

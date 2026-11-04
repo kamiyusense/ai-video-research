@@ -78,6 +78,8 @@
     state = next;
     $('notice').textContent = state.notice;
     $('row-count').textContent = `${state.rows.length}本`;
+    $('show-low').checked = !!state.show_low;
+    $('show-low-label').textContent = `再生100回未満も表示${state.hidden_low ? `（${state.hidden_low}本）` : ''}`;
     const checked = new Set(state.checked);
     const count = state.rows.filter(r => checked.has(r.id)).length;
     $('selection-count').textContent = `チェック ${count}本`;
@@ -169,7 +171,7 @@
     link.addEventListener('blur', () => { tip.hidden = true; });
   }
   function lockControls() {
-    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #send-question, #web-check, #rows input').forEach(el => { el.disabled = state.busy || sending; });
+    document.querySelectorAll('[data-action], #check-all, #show-rejected, #show-processed, #show-low, #send-question, #web-check, #rows input').forEach(el => { el.disabled = state.busy || sending; });
   }
   async function request(path, data) {
     const response = await fetch(path + BOOT.auth, {
@@ -209,7 +211,7 @@
     action: button.dataset.action, reason: $('reject-reason').value, urls: $('urls').value, correction: $('correction').value
   })));
   $('check-all').addEventListener('change', () => operate({action: 'check_all'}));
-  for (const id of ['show-rejected', 'show-processed']) $(id).addEventListener('change', () => operate({action: 'filters', rejected: $('show-rejected').checked, processed: $('show-processed').checked}));
+  for (const id of ['show-rejected', 'show-processed', 'show-low']) $(id).addEventListener('change', () => operate({action: 'filters', rejected: $('show-rejected').checked, processed: $('show-processed').checked, low: $('show-low').checked}));
   $('open-question').addEventListener('click', () => { $('question-panel').showModal(); $('question').focus(); });
   $('close-question').addEventListener('click', () => $('question-panel').close());
   // A plain summary of stopped rows (ids, titles, stages, causes; no captions or keys) to paste to Claude.

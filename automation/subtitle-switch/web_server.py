@@ -6,12 +6,13 @@ import hashlib
 import json
 import mimetypes
 import os
+import re
 import secrets
 import subprocess
 import threading
 import time
 from contextlib import ExitStack
-from datetime import date
+from datetime import date, timedelta
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -39,6 +40,23 @@ FAILURE_LABELS = {
 CORRECTIONS = ('', '手動ログインを復旧', '設定を修正', '利用枠の回復を確認', '字幕取得条件を修正', 'アプリの修正を反映', '時間をおいた')
 # The owner signs in within this time; a repeated 保存 meanwhile does not open a second window.
 LOGIN_WINDOW_SECONDS = 180
+
+
+# Owner (2026-11-05): near-zero-view picks are noise. Hide unprocessed rows under this many plays
+# once they are at least two days old (younger videos may simply not have grown yet).
+LOW_VIEWS = 100
+
+
+def low_demand(row, metadata=None, today=None):
+    metadata = metadata or {}
+    if row['rejected'] or row['status'] != 'pending':
+        return False
+    match = re.fullmatch(r'([\d,]+)回', metadata.get('views') or row.get('views') or '')
+    try:
+        published = date.fromisoformat((metadata.get('published_at') or row.get('published_at') or '')[:10])
+    except ValueError:
+        return False  # age unknown: keep it visible
+    return bool(match) and int(match[1].replace(',', '')) < LOW_VIEWS and (today or date.today()) - published >= timedelta(days=2)
 
 
 def short_cell(text, limit=12):
@@ -80,7 +98,8 @@ class Controller:
         self.login_opened_at = float('-inf')
         self.login_wait = (600, 5)  # seconds to wait for the owner's NotebookLM sign-in, poll interval
         self.checked = set()
-        self.show_rejected = self.show_processed = False
+        self.show_rejected = self.show_processed = self.show_low = False
+        self.hidden_low = 0
         self.busy = False
         self.cat = 'idle'
         self.notice = '手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。'
@@ -95,14 +114,20 @@ class Controller:
 
     def publish(self):
         with self.guard:
-            self.rows = [table_row(row, self.metadata_values.get(row['video_id']))
-                         for row in self.inventory.visible(self.show_rejected, self.show_processed)]
+            rows = [(row, self.metadata_values.get(row['video_id']))
+                    for row in self.inventory.visible(self.show_rejected, self.show_processed)]
+            low = {row['video_id'] for row, values in rows
+                   if row['video_id'] not in self.checked and low_demand(row, values)}
+            self.hidden_low = len(low)
+            self.rows = [table_row(row, values) for row, values in rows
+                         if self.show_low or row['video_id'] not in low]
 
     def snapshot(self):
         with self.guard:
             return copy.deepcopy({'rows': self.rows, 'checked': sorted(self.checked),
                                   'busy': self.busy, 'cat': self.cat, 'notice': self.notice,
-                                  'answer': self.answer, 'loading': self.loading()})
+                                  'answer': self.answer, 'loading': self.loading(),
+                                  'hidden_low': self.hidden_low, 'show_low': self.show_low})
 
     def loading(self):
         thread = getattr(self, 'metadata_thread', None)
@@ -168,7 +193,10 @@ class Controller:
             if action == 'filters':
                 if any(type(data.get(k)) is not bool for k in ('rejected', 'processed')):
                     raise ValueError('表示指定を確認してください')
+                if type(data.get('low', self.show_low)) is not bool:
+                    raise ValueError('表示指定を確認してください')
                 self.show_rejected, self.show_processed = data['rejected'], data['processed']
+                self.show_low = data.get('low', self.show_low)
                 self.publish()
             elif action == 'check_attention':
                 attention = {r['id'] for r in self.rows if r['status'] == 'attention' and not r['rejected']}
