@@ -79,7 +79,7 @@
     $('notice').textContent = state.notice;
     $('row-count').textContent = `${state.rows.length}本`;
     $('show-low').checked = !!state.show_low;
-    $('show-low-label').textContent = `再生100回未満も表示${state.hidden_low ? `（${state.hidden_low}本）` : ''}`;
+    $('show-low-label').textContent = `再生が少ない動画も表示${state.hidden_low ? `（${state.hidden_low}本）` : ''}`;
     const checked = new Set(state.checked);
     const count = state.rows.filter(r => checked.has(r.id)).length;
     $('selection-count').textContent = `チェック ${count}本`;

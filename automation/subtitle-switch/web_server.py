@@ -12,7 +12,7 @@ import subprocess
 import threading
 import time
 from contextlib import ExitStack
-from datetime import date, timedelta
+from datetime import date
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -42,9 +42,9 @@ CORRECTIONS = ('', '手動ログインを復旧', '設定を修正', '利用枠�
 LOGIN_WINDOW_SECONDS = 180
 
 
-# Owner (2026-11-05): near-zero-view picks are noise. Hide unprocessed rows under this many plays
-# once they are at least two days old (younger videos may simply not have grown yet).
-LOW_VIEWS = 100
+# Owner (2026-11-05): near-zero-view picks are noise. Hide unprocessed rows with fewer plays than
+# this many per day since publication (published today: never hidden; 3 days old: under 150).
+VIEWS_PER_DAY = 50
 
 
 def low_demand(row, metadata=None, today=None):
@@ -56,7 +56,7 @@ def low_demand(row, metadata=None, today=None):
         published = date.fromisoformat((metadata.get('published_at') or row.get('published_at') or '')[:10])
     except ValueError:
         return False  # age unknown: keep it visible
-    return bool(match) and int(match[1].replace(',', '')) < LOW_VIEWS and (today or date.today()) - published >= timedelta(days=2)
+    return bool(match) and int(match[1].replace(',', '')) < VIEWS_PER_DAY * ((today or date.today()) - published).days
 
 
 def short_cell(text, limit=12):

@@ -824,13 +824,16 @@ def test_low_view_rows_are_hidden_unless_asked(controller):
         c.operate({'action': 'filters', 'rejected': False, 'processed': False, 'low': 'yes'})
 
 
-def test_low_demand_spares_young_unknown_and_handled_rows():
+def test_low_demand_scales_with_days_since_publication():
     today = date(2026, 11, 5)
-    row = {'rejected': False, 'status': 'pending', 'views': '99回', 'published_at': '2026-11-03'}
-    assert web.low_demand(row, today=today)
-    assert not web.low_demand({**row, 'published_at': '2026-11-04'}, today=today)  # may still grow
+    row = {'rejected': False, 'status': 'pending', 'views': '149回', 'published_at': '2026-11-02'}
+    assert web.low_demand(row, today=today)  # 3 days: needs 150
+    assert not web.low_demand({**row, 'views': '150回'}, today=today)
+    assert not web.low_demand({**row, 'views': '1回', 'published_at': '2026-11-05'}, today=today)  # today
+    assert web.low_demand({**row, 'views': '49回', 'published_at': '2026-11-04'}, today=today)
+    assert not web.low_demand({**row, 'views': '1,000回', 'published_at': '2026-10-20'}, today=today)  # 16 days: needs 800
     assert not web.low_demand({**row, 'published_at': ''}, today=today)  # age unknown
-    assert not web.low_demand({**row, 'views': '100回'}, today=today)
     assert not web.low_demand({**row, 'views': '不明'}, today=today)
+    assert not web.low_demand({**row, 'views': '1.2万回'}, today=today)
     assert not web.low_demand({**row, 'status': 'attention'}, today=today)
     assert web.low_demand({**row, 'views': ''}, {'views': '10回', 'published_at': '2026-11-01'}, today=today)
