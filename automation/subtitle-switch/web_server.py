@@ -6,6 +6,7 @@ import hashlib
 import json
 import mimetypes
 import os
+import re
 import secrets
 import subprocess
 import threading
@@ -22,7 +23,7 @@ from app_activation import ActivationService, ActivationUnavailable, request_act
 from app_window import AppWindow
 from ask_research import MAX_QUESTION, ask
 from metadata import refresh_metadata
-from pipeline import InstanceLock, StageFailure
+from pipeline import InstanceLock, StageFailure, TERMINAL
 from services import Services, command
 from switch_state import Inventory, flush_preferences, read_inbox, write_preferences
 from translate_title import TitleTranslator, needs_translation
@@ -39,6 +40,23 @@ FAILURE_LABELS = {
 CORRECTIONS = ('', '手動ログインを復旧', '設定を修正', '利用枠の回復を確認', '字幕取得条件を修正', 'アプリの修正を反映', '時間をおいた')
 # The owner signs in within this time; a repeated 保存 meanwhile does not open a second window.
 LOGIN_WINDOW_SECONDS = 180
+
+
+# Owner (2026-11-05): near-zero-view picks are noise. Hide unprocessed rows with fewer plays than
+# this many per day since publication (published today: never hidden; 3 days old: under 150).
+VIEWS_PER_DAY = 50
+
+
+def low_demand(row, metadata=None, today=None):
+    metadata = metadata or {}
+    if row['rejected'] or row['status'] != 'pending':
+        return False
+    match = re.fullmatch(r'([\d,]+)回', metadata.get('views') or row.get('views') or '')
+    try:
+        published = date.fromisoformat((metadata.get('published_at') or row.get('published_at') or '')[:10])
+    except ValueError:
+        return False  # age unknown: keep it visible
+    return bool(match) and int(match[1].replace(',', '')) < VIEWS_PER_DAY * ((today or date.today()) - published).days
 
 
 def short_cell(text, limit=12):
@@ -62,6 +80,8 @@ def table_row(row, metadata=None):
         cells[3] = {'text': (cells[3]['full'][:5] + '・吹替'), 'full': cells[3]['full'] + '（日本語の自動吹き替え音声あり）'}
     elif dub == 'なし':
         cells[3]['full'] += '（日本語の吹き替え音声なし）'
+    # Owner (2026-11-05): play count right after the title. Later cell numbers move by one here.
+    cells.insert(1, short_cell((metadata or {}).get('views') or row.get('views') or '', 8))
     return {'id': row['video_id'], 'cells': cells, 'rejected': row['rejected'], 'status': row['status'], 'help': help_text,
             'url': 'https://www.youtube.com/watch?v=' + row['video_id'], 'translate': needs_translation(lang)}
 
@@ -76,8 +96,10 @@ class Controller:
         self.question, self.metadata = question, metadata
         self.guard = threading.RLock()
         self.login_opened_at = float('-inf')
+        self.login_wait = (600, 5)  # seconds to wait for the owner's NotebookLM sign-in, poll interval
         self.checked = set()
-        self.show_rejected = self.show_processed = False
+        self.show_rejected = self.show_processed = self.show_low = False
+        self.hidden_low = 0
         self.busy = False
         self.cat = 'idle'
         self.notice = '手動保存は入力URLだけ、選択保存はチェックした行だけを保存します。'
@@ -92,14 +114,20 @@ class Controller:
 
     def publish(self):
         with self.guard:
-            self.rows = [table_row(row, self.metadata_values.get(row['video_id']))
-                         for row in self.inventory.visible(self.show_rejected, self.show_processed)]
+            rows = [(row, self.metadata_values.get(row['video_id']))
+                    for row in self.inventory.visible(self.show_rejected, self.show_processed)]
+            low = {row['video_id'] for row, values in rows
+                   if row['video_id'] not in self.checked and low_demand(row, values)}
+            self.hidden_low = len(low)
+            self.rows = [table_row(row, values) for row, values in rows
+                         if self.show_low or row['video_id'] not in low]
 
     def snapshot(self):
         with self.guard:
             return copy.deepcopy({'rows': self.rows, 'checked': sorted(self.checked),
                                   'busy': self.busy, 'cat': self.cat, 'notice': self.notice,
-                                  'answer': self.answer, 'loading': self.loading()})
+                                  'answer': self.answer, 'loading': self.loading(),
+                                  'hidden_low': self.hidden_low, 'show_low': self.show_low})
 
     def loading(self):
         thread = getattr(self, 'metadata_thread', None)
@@ -109,7 +137,7 @@ class Controller:
         """Owner (2026-10-29): after a refresh, say how many rows are in each state."""
         counts = {}
         for row in self.rows:
-            label = row['cells'][7]['text']
+            label = row['cells'][8]['text']
             counts[label] = counts.get(label, 0) + 1
         order = ['未処理', '処理中', '要確認', '待ち', '完了', '弾いた']
         parts = [f'{label}{counts.pop(label)}' for label in order if label in counts]
@@ -165,7 +193,10 @@ class Controller:
             if action == 'filters':
                 if any(type(data.get(k)) is not bool for k in ('rejected', 'processed')):
                     raise ValueError('表示指定を確認してください')
+                if type(data.get('low', self.show_low)) is not bool:
+                    raise ValueError('表示指定を確認してください')
                 self.show_rejected, self.show_processed = data['rejected'], data['processed']
+                self.show_low = data.get('low', self.show_low)
                 self.publish()
             elif action == 'check_attention':
                 attention = {r['id'] for r in self.rows if r['status'] == 'attention' and not r['rejected']}
@@ -211,10 +242,24 @@ class Controller:
                             self.publish()
                     # Channel/date lookups can take minutes; run them beside the worker so
                     # 弾く, filters and saves stay usable meanwhile (one lookup run at a time).
+                    # Rows added by 手動URL are not in any inbox file; look them up too, or their
+                    # title/channel/date would show 「取得中…」 forever (owner report 2026-11-01).
+                    inbox_ids = {row['video_id'] for row in rows}
+                    # Play counts are for choosing what to save, so finished and rejected rows
+                    # are not looked up just for one (over 100 YouTube requests otherwise).
+                    closed = {row['video_id'] for row in self.inventory.data['videos'].values()
+                              if row['rejected'] or row['status'] in TERMINAL}
+                    lookup_rows = [{**row, 'views': '－'} if row['video_id'] in closed else row for row in rows] + [
+                        {'video_id': row['video_id'], 'url': row.get('url') or 'https://www.youtube.com/watch?v=' + row['video_id'],
+                         **{key: row.get(key) or '' for key in ('title', 'channel', 'published_at', 'lang')}}
+                        for row in self.inventory.visible(True, True)
+                        if row['video_id'] not in inbox_ids
+                        and (row['video_id'] not in closed
+                             or not all(row.get(key) for key in ('title', 'channel', 'published_at', 'lang')))]
                     def lookup():
                         with self.metadata_lock:
                             try:
-                                self.metadata(rows, self.state_dir / 'metadata_cache.json', command,
+                                self.metadata(lookup_rows, self.state_dir / 'metadata_cache.json', command,
                                               notify=received, failures=self.metadata_failures)
                             except Exception:
                                 pass  # metadata is display-only; rows keep their inbox values
@@ -251,9 +296,17 @@ class Controller:
                             if time.monotonic() - self.login_opened_at > LOGIN_WINDOW_SECONDS:
                                 service.open_notebook_login()
                                 self.login_opened_at = time.monotonic()
-                            # notebooklm-py 0.8.5 saves the login and closes its window by itself (no Enter).
-                            raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインしてください'
-                                             '（覚えている場合は自動で済み、画面は勝手に閉じます）。閉じたら、もう一度保存を押してください。')
+                            # Owner (2026-11-03): one press should be enough. Show the rows as waiting for
+                            # the login (not 未処理) and continue by itself once the owner has signed in.
+                            self.mark_login_wait(targets)
+                            if not self.wait_for_notebook_login(service):
+                                # notebooklm-py 0.8.5 saves the login and closes its window by itself (no Enter).
+                                raise ValueError('NotebookLMのログインが切れています。開いた画面でGoogleにログインしてください'
+                                                 '（覚えている場合は自動で済み、画面は勝手に閉じます）。閉じたら、もう一度保存を押してください。')
+                        if getattr(service, 'claude_login_ok', None) and not service.claude_login_ok():
+                            # The owner signs in; the app never logs in by itself (owner, 2026-11-01).
+                            raise ValueError('PCのClaude Codeのログインが切れています。ターミナルで「claude auth login」を実行し、'
+                                             'ブラウザで許可してから、もう一度保存を押してください。')
                         if getattr(service, 'notebook_login_ok', None):
                             self.login_verified(targets)
                         self.session(self.inventory, service,
@@ -286,6 +339,29 @@ class Controller:
             else:
                 raise ValueError('未対応の操作です')
             return self.snapshot()
+
+    def mark_login_wait(self, targets):
+        with self.guard:
+            for vid in targets:
+                row = self.inventory.data['videos'].get(vid)
+                if row and row['status'] not in ('complete', 'ALREADY_REGISTERED'):
+                    row.update(status='waiting', status_reason='NOTEBOOK_LOGIN_EXPIRED', failed=True)
+            self.inventory.save()
+            self.notice = ('NotebookLMのログイン待ち：開いた黒い画面でGoogleにログインしてください。'
+                           f'ログインが済むと自動で保存を続けます（最大{self.login_wait[0] // 60}分待ちます）。')
+            self.publish()
+
+    def wait_for_notebook_login(self, service):
+        """Poll the read-only login check; True as soon as the owner has signed in."""
+        limit, interval = self.login_wait
+        deadline = time.monotonic() + limit
+        while time.monotonic() < deadline:
+            time.sleep(interval)
+            if service.notebook_login_ok():
+                with self.guard:
+                    self.notice = 'ログインを確認しました。保存を続けます…'
+                return True
+        return False
 
     def login_verified(self, targets):
         """A passing login check lifts the login wait: no 再開 choice is needed for that cause."""

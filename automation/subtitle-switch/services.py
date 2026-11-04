@@ -11,6 +11,7 @@ import re
 import subprocess
 import shutil
 import sys
+import unicodedata
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -64,8 +65,10 @@ def without_rules(text):
     - The OKF front-matter fences (---) come back as 40-dash rules (+74 characters per transcript).
     - Bare links <https://...> lose their angle brackets, and a link whose text is its own URL
       may come back as [url](url) or as the URL printed twice; all are reduced to one plain URL.
-    - A numbered heading loses its number (observed on 7si7ZFFCZyg)."""
+    - A numbered heading loses its number (observed on 7si7ZFFCZyg).
+    - A Markdown table loses its delimiter row |---|---| (observed on 3TwbE7gv6qo, 2026-11-02)."""
     text = re.sub(r'(?m)^[ \t]*-{3,}[ \t]*$', '', text or '')
+    text = re.sub(r'(?m)^[ \t]*\|?(?:[ \t]*:?-{3,}:?[ \t]*\|)+(?:[ \t]*:?-{3,}:?[ \t]*)?$', '', text)
     # A numbered heading, bold or bullet item ("### 1. Title", "**1. Title**", "- 1. Title")
     # comes back without its number.
     text = re.sub(r'(?m)^([ \t]*[-+#*_>]*[ \t]*)\d+[.)][ \t]+', r'\1', text)
@@ -73,6 +76,29 @@ def without_rules(text):
     text = re.sub(r'\[(https?://[^\]\s]+)\]\(\1\)', r'\1', text)
     # The Notebook copy prints such a link's URL twice in a row; keep one.
     return re.sub(r'(https?://\S+)(\s+\1)+(?!\S)', r'\1', text)
+
+
+_LINK = re.compile(r'!?\[([^\]]*)\]\(([^)]*)\)')
+
+
+def content_key(text):
+    """Letters and digits only, in order (owner, 2026-11-02: stop failing on decoration).
+
+    NotebookLM keeps re-styling Markdown on display (rules, table delimiter rows, bullets,
+    emphasis, link brackets, punctuation spacing). Every such rewrite only touches symbols and
+    whitespace, so the readback compares the words and numbers themselves: any missing, extra
+    or changed word still fails."""
+    plain = nb.normalize_for_readback(without_rules(text))
+    return ''.join(ch for ch in unicodedata.normalize('NFKC', plain)
+                   if unicodedata.category(ch)[0] in 'LN')
+
+
+def content_matches(expected, actual):
+    """Like readback_matches, a link may come back as text+URL, text only or URL only."""
+    got = content_key(actual)
+    variants = (expected, _LINK.sub(lambda m: m.group(1), expected),
+                _LINK.sub(lambda m: m.group(2), expected))
+    return any(content_key(v) == got for v in variants)
 
 
 def readback_difference(kind, expected, actual, ready):
@@ -130,6 +156,20 @@ class Services:
     def notebook_login_ok(self):
         """Read-only check, run before a save starts (owner, 2026-10-29)."""
         return self.nb_client.auth_check_passive()
+
+    def claude_login_ok(self):
+        """Zero-model check that the PC's Claude Code CLI is signed in (owner, 2026-11-01).
+
+        A logged-out CLI made every research step fail with an empty reason. Only a clear
+        'loggedIn: false' blocks the save; an unreadable answer lets the research step report."""
+        try:
+            cp = self.run(['claude', 'auth', 'status'], timeout=30)
+            status = json.loads(cp.stdout)
+        except StageFailure:
+            raise
+        except Exception:
+            return True
+        return not (isinstance(status, dict) and status.get('loggedIn') is False)
 
     def open_notebook_login(self, popen=subprocess.Popen):
         """Open notebooklm-py's own login window; the owner signs in. Never types or stores credentials."""
@@ -244,7 +284,12 @@ class Services:
             details.append(cp.stderr)
             quota = bool(re.search(r'quota|rate[_ -]?limit|usage[_ -]?limit|limit[_ -]?reached|'
                                    r'out of (?:credits|usage)|utilization limit', ' '.join(details), re.I))
-            raise StageFailure('CLAUDE_QUOTA' if quota else 'RESEARCH_FAILED', waiting=quota, detail=cp.stderr)
+            # stderr is often empty when the CLI reports the error in its JSON; keep the
+            # error kind (not the result body) so the hover text says why (owner 2026-11-01).
+            summary = ' '.join(f'{key}={response.get(key)}' for key in ('subtype', 'error', 'errors')
+                               if isinstance(response, dict) and response.get(key))
+            detail = cp.stderr if (cp.stderr or '').strip() else (summary or f'exit={cp.returncode}')
+            raise StageFailure('CLAUDE_QUOTA' if quota else 'RESEARCH_FAILED', waiting=quota, detail=detail)
         if not (folder / 'research.md').is_file():
             raise StageFailure('RESEARCH_FILE_MISSING')
         return {'created': True}
@@ -518,7 +563,8 @@ class Services:
     def check_readback(self, kind, sid, expected):
         ready = getattr(self.nb_client, 'wait_ready', lambda _: True)(sid)
         actual = self.nb_client.get_fulltext(sid)
-        if not nb.readback_matches(without_rules(expected), without_rules(actual))['match']:
+        if not (nb.readback_matches(without_rules(expected), without_rules(actual))['match']
+                or content_matches(expected, actual)):
             raise StageFailure('NOTEBOOK_READBACK_MISMATCH',
                                detail=readback_difference(kind, expected, actual, ready))
 

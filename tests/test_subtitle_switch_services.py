@@ -272,6 +272,32 @@ class AdapterTests(unittest.TestCase):
         shown = 'REAとは何か — https://x.test/a\n本文\n使い方\n例 — https://x.test/b'
         self.assertTrue(services.nb.readback_matches(services.without_rules(note), services.without_rules(shown))['match'])
 
+    def test_table_without_delimiter_row_still_matches(self):
+        # Observed on 3TwbE7gv6qo (2026-11-02): NotebookLM drops the |---|---| row of a table.
+        import services
+        note = '## チャプター\n| 時刻 | 内容 |\n|---|---|\n| [0s](https://www.youtube.com/watch?v=abcdefghijk&t=0s) | 導入 |\n'
+        shown = '## チャプター\n| 時刻 | 内容 |\n| [0s](https://www.youtube.com/watch?v=abcdefghijk&t=0s) | 導入 |\n'
+        aligned = note.replace('|---|---|', '| :--- | ---: |')
+        for expected in (note, aligned):
+            self.assertTrue(services.nb.readback_matches(services.without_rules(expected), services.without_rules(shown))['match'])
+        # Real content differences are still caught.
+        self.assertFalse(services.nb.readback_matches(services.without_rules(note), services.without_rules(shown.replace('導入', '別物')))['match'])
+
+    def test_decoration_only_rewrites_match_but_word_changes_do_not(self):
+        # Owner 2026-11-02: fix the whole family of symbol-only NotebookLM rewrites at once.
+        import services
+        note = ('---\ntitle: 研究ノート\n---\n## 1. 要点\n> **重要**：`Claude Code` の *Skill* は ~~旧~~ 新方式。\n'
+                '| 時刻 | 内容 |\n| :--- | ---: |\n| [0s](https://www.youtube.com/watch?v=abcdefghijk&t=0s) | 導入 |\n'
+                '- 項目A\n* 項目B\n1) 手順\n「引用」…（補足）——終わり。\n')
+        shown = ('----------------------------------------\ntitle: 研究ノート\n'
+                 '----------------------------------------\n要点\n重要： Claude Code の Skill は 旧 新方式。\n'
+                 '時刻 内容\n0s https://www.youtube.com/watch?v=abcdefghijk&t=0s 導入\n'
+                 '• 項目A\n• 項目B\n手順\n"引用"...(補足)--終わり.\n')
+        self.assertTrue(services.content_matches(note, shown))
+        for changed in (shown.replace('導入', '導人'), shown.replace('項目B\n', ''), shown + '追加の文\n',
+                        shown.replace('t=0s', 't=9s')):
+            self.assertFalse(services.content_matches(note, changed))
+
     def test_readback_waits_for_processing_before_reading(self):
         self.prepare()
         order = []
@@ -348,6 +374,8 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(StageFailure, '^RESEARCH_FAILED$') as error:
             self.services.research(self.row)
         self.assertFalse(error.exception.waiting)
+        # Empty stderr: the hover detail carries the JSON error kind, not the result body.
+        self.assertEqual(error.exception.detail, 'subtype=error_during_execution')
 
     def test_definite_push_failure_retries_only_saved_commit_after_correction(self):
         inventory = Inventory(self.root / 'retry.json')

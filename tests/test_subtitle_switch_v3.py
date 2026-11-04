@@ -36,7 +36,7 @@ def test_metadata_cache_and_failures(tmp_path):
     for _ in range(2):
         metadata.refresh_metadata(rows, tmp_path / 'cache.json', fake, sleep=lambda _: None, notify=lambda *args: updates.append(args))
     assert len(calls) == 1
-    assert updates[-1][1] == {'channel': 'A', 'lang': 'ja', 'published_at': '2026-10-27', 'ja_dub': '日本語'}
+    assert updates[-1][1] == {'channel': 'A', 'lang': 'ja', 'published_at': '2026-10-27', 'ja_dub': '日本語', 'title': '', 'views': '不明'}
     metadata.refresh_metadata([{'video_id': 'bbbbbbbbbbb', 'url': 'bad'}], tmp_path / 'cache.json', lambda _: SimpleNamespace(returncode=1), notify=lambda *args: updates.append(args))
     assert '取得失敗' in updates[-1][1]['channel']
 
@@ -118,9 +118,22 @@ def test_failed_metadata_is_not_retried_in_same_session(tmp_path):
     assert '原因を直して' in values[-1][1]['channel']
 
 
+def test_play_count_is_short_and_a_video_without_one_is_not_looked_up_again(tmp_path):
+    assert [metadata.views_text(n) for n in (0, 9999, 12345, 45999, 120000, 123456, 1234567, 123456789, None, True)] == [
+        '0回', '9,999回', '1.2万回', '4.5万回', '12万回', '12万回', '123万回', '1.2億回', '不明', '不明']
+    calls, updates = [], []
+    def fake(args):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout=json.dumps({'id': 'aaaaaaaaaaa', 'channel': 'A', 'language': 'ja', 'upload_date': '20261027'}))
+    row = {'video_id': 'aaaaaaaaaaa', 'url': 'u'}
+    for _ in range(2):
+        metadata.refresh_metadata([row], tmp_path / 'cache.json', fake, sleep=lambda _: None, notify=lambda *args: updates.append(args))
+    assert len(calls) == 1 and updates[-1][1]['views'] == '不明'
+
+
 def test_inbox_metadata_avoids_lookup_and_partial_values_show_progress(tmp_path):
     complete = {'video_id': 'aaaaaaaaaaa', 'url': 'unused', 'channel': '受け箱',
-                'published_at': '2026-01-01', 'lang': 'ja', 'theme': '研究', 'reason': '理由'}
+                'published_at': '2026-01-01', 'lang': 'ja', 'theme': '研究', 'reason': '理由', 'views': '－'}
     calls, updates = [], []
     def fake(args):
         calls.append(args)
@@ -130,9 +143,9 @@ def test_inbox_metadata_avoids_lookup_and_partial_values_show_progress(tmp_path)
     metadata.refresh_metadata([complete, partial], tmp_path / 'cache.json', fake,
                               notify=lambda *args: updates.append(args))
     assert len(calls) == 1
-    assert updates[0][1] == {**{key: complete[key] for key in ('channel', 'published_at', 'lang')}, 'ja_dub': '日本語'}
+    assert updates[0][1] == {**{key: complete[key] for key in ('channel', 'published_at', 'lang')}, 'ja_dub': '日本語', 'title': '', 'views': '－'}
     assert updates[1][1]['published_at'] == '取得中…'
-    assert updates[-1][1] == {'channel': '既存', 'published_at': '2026-10-27', 'lang': 'en', 'ja_dub': 'なし'}
+    assert updates[-1][1] == {'channel': '既存', 'published_at': '2026-10-27', 'lang': 'en', 'ja_dub': 'なし', 'title': '', 'views': '不明'}
 
 
 def test_japanese_dub_track_is_detected_from_audio_formats():
@@ -150,8 +163,9 @@ def test_japanese_dub_track_is_detected_from_audio_formats():
     row = {'video_id': 'ccccccccccc', 'title': 'T', 'rejected': False, 'status': 'pending', 'stage': 'intake',
            'rejection_reason': '', 'completed_stages': []}
     cells = web_server.table_row(row, {'lang': 'en-US', 'ja_dub': 'あり'})['cells']
-    assert cells[3]['text'] == 'en-US・吹替' and '自動吹き替え音声あり' in cells[3]['full']
-    assert '吹き替え音声なし' in web_server.table_row(row, {'lang': 'en', 'ja_dub': 'なし'})['cells'][3]['full']
+    assert cells[1]['text'] == '' and cells[4]['text'] == 'en-US・吹替' and '自動吹き替え音声あり' in cells[4]['full']
+    assert '吹き替え音声なし' in web_server.table_row(row, {'lang': 'en', 'ja_dub': 'なし'})['cells'][4]['full']
+    assert web_server.table_row(row, {'views': '1.2万回'})['cells'][1]['text'] == '1.2万回'
 
 
 def test_common_command_uses_windows_no_window_flag():
@@ -192,3 +206,22 @@ def test_icon_png_export(tmp_path):
     data = output.read_bytes()
     assert data[:8] == b'\x89PNG\r\n\x1a\n'
     assert data[12:16] == b'IHDR' and data[-8:-4] == b'IEND'
+
+
+def test_manual_url_row_gets_title_from_lookup(tmp_path):
+    # Owner report 2026-11-01: rows added by 手動URL had no title and stayed 「取得中…」.
+    rows = [{'video_id': 'ddddddddddd', 'url': 'https://www.youtube.com/watch?v=ddddddddddd'}]
+    calls, updates = [], []
+    def fake(args):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout=json.dumps({'id': 'ddddddddddd', 'title': '手動の動画', 'channel': 'C', 'language': 'ja', 'upload_date': '20261020'}))
+    for _ in range(2):
+        metadata.refresh_metadata(rows, tmp_path / 'cache.json', fake, sleep=lambda _: None, notify=lambda *args: updates.append(args))
+    assert len(calls) == 1
+    assert updates[-1][1]['title'] == '手動の動画'
+    assert updates[-1][1]['channel'] == 'C'
+    # An inbox row keeps its own title and is not looked up just for a title.
+    inbox_row = [{'video_id': 'eeeeeeeeeee', 'url': 'u', 'title': '受け箱の題', 'channel': 'E', 'published_at': '2026-10-30', 'lang': 'ja', 'views': '1回'}]
+    metadata.refresh_metadata(inbox_row, tmp_path / 'cache.json', fake, sleep=lambda _: None, notify=lambda *args: updates.append(args))
+    assert len(calls) == 1
+    assert updates[-1][1]['title'] == '受け箱の題'

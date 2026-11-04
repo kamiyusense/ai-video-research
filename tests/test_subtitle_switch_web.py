@@ -9,6 +9,7 @@ import subprocess
 import sys
 import threading
 import time
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
@@ -40,6 +41,7 @@ def controller(tmp_path):
     control = web.Controller(config, inventory, tmp_path, service_factory=lambda _: object(),
                              session=session, question=lambda *a: '偽の回答', metadata=lambda *a, **kw: None)
     control.calls = calls
+    control.login_wait = (0, 0)  # never wait for a sign-in in tests unless a test asks for it
     yield control
     if control.worker:
         control.worker.join(timeout=5)
@@ -263,7 +265,7 @@ def test_refresh_metadata_and_persistent_inventory(controller):
     c.operate({'action': 'refresh'})
     c.worker.join(5)
     c.metadata_thread.join(5)
-    assert any(row['cells'][1]['full'] == '偽チャンネル' for row in c.snapshot()['rows'])
+    assert any(row['cells'][2]['full'] == '偽チャンネル' for row in c.snapshot()['rows'])
     assert 'ccccccccccc' in Inventory(c.inventory.path).data['videos']
 
 
@@ -279,11 +281,11 @@ def test_short_status_retains_full_reason_and_notebook(controller):
     row = controller.inventory.data['videos']['aaaaaaaaaaa']
     row.update(status='waiting', status_reason='NOTEBOOK_LOGIN_EXPIRED', reason='長い説明' * 20)
     result = web.table_row(row)
-    assert result['cells'][7]['text'] == '待ち'
-    assert 'ログイン画面が開く' in result['cells'][7]['full']
-    assert len(result['cells'][5]['text']) <= 9
-    assert result['cells'][5]['full'] == row['reason']
-    assert result['cells'][8]['text'] == '未接続'
+    assert result['cells'][8]['text'] == '待ち'
+    assert 'ログイン画面が開く' in result['cells'][8]['full']
+    assert len(result['cells'][6]['text']) <= 9
+    assert result['cells'][6]['full'] == row['reason']
+    assert result['cells'][9]['text'] == '未接続'
 
 
 def test_heartbeat_and_close_grace(server):
@@ -589,7 +591,7 @@ def test_stopped_row_hover_says_cause_next_step_and_error():
            'status_reason': 'YOUTUBE_RATE_LIMIT', 'rejection_reason': '', 'completed_stages': ['intake'],
            'status_detail': pipeline.error_tail('WARNING: x\nERROR: Unable to download https://www.youtube.com/api/timedtext?v=a&key=SECRET: HTTP Error 429: Too Many Requests')}
     result = web.table_row(row)
-    full = result['cells'][7]['full']
+    full = result['cells'][8]['full']
     assert '断られました' in full and '時間をおいた' in full and 'HTTP Error 429' in full and 'YOUTUBE_RATE_LIMIT' in full
     assert 'SECRET' not in full and result['help'] == full
     unknown = dict(row, status='attention', status_reason='SOMETHING_NEW', status_detail='')
@@ -688,3 +690,150 @@ def test_attention_rows_are_checked_in_one_press_and_counted(controller):
     assert c.checked == set() and 'チェックを外しました' in c.notice
     assert c.summary() == '2本（未処理1・要確認1）'
     assert c.snapshot()['loading'] is False
+
+
+def test_refresh_also_looks_up_manual_url_rows_missing_from_inbox(controller):
+    c = controller
+    inbox = c.locations['inbox']
+    inbox.mkdir()
+    (inbox / 'fixture.json').write_text(json.dumps({'videos': [{'url': 'https://youtu.be/ccccccccccc', 'title': '受け箱の動画'}]}), encoding='utf-8')
+    c.inventory.data['videos']['fffffffffff'] = {
+        'video_id': 'fffffffffff', 'url': 'https://www.youtube.com/watch?v=fffffffffff', 'title': '', 'channel': '',
+        'published_at': '', 'lang': '', 'theme': '', 'reason': '', 'kind': '', 'rejected': False, 'rejection_reason': '',
+        'stage': 'intake', 'status': 'pending', 'completed_stages': []}
+    seen = []
+    def fake(rows, cache, runner, **kw):
+        seen.extend(row['video_id'] for row in rows)
+        kw['notify']('fffffffffff', {'title': '手動の動画', 'channel': '手動チャンネル'})
+    c.metadata = fake
+    c.operate({'action': 'refresh'})
+    c.worker.join(5)
+    c.metadata_thread.join(5)
+    assert 'ccccccccccc' in seen and 'fffffffffff' in seen
+    assert any(row['cells'][0]['full'] == '手動の動画' for row in c.snapshot()['rows'])
+
+
+class ClaudeLoggedOut(LoginService):
+    def claude_login_ok(self):
+        return False
+
+
+def test_save_stops_before_work_when_claude_cli_is_logged_out(controller):
+    # Owner report 2026-11-01: a logged-out CLI failed every research step with no reason.
+    c = controller
+    service = ClaudeLoggedOut(True)
+    c.service_factory = lambda _: service
+    c.operate({'action': 'check', 'id': 'aaaaaaaaaaa'})
+    c.operate({'action': 'selected'})
+    c.worker.join(5)
+    assert not c.calls
+    assert 'claude auth login' in c.notice and c.cat == 'error'
+    assert service.opened == 0  # the app never starts a Claude login by itself
+
+
+def test_services_claude_login_check_reads_status_only(tmp_path):
+    import services
+    from types import SimpleNamespace
+    config = {'repository': str(tmp_path / 'r'), 'vault': str(tmp_path / 'v'), 'notebook_id': 'x'}
+    seen = []
+    def runner(args, **kw):
+        seen.append(args)
+        return SimpleNamespace(returncode=0, stdout=answer, stderr='')
+    s = services.Services(config, runner=runner, notebook=object())
+    answer = json.dumps({'loggedIn': False, 'authMethod': 'none'})
+    assert s.claude_login_ok() is False
+    answer = json.dumps({'loggedIn': True, 'authMethod': 'claude.ai'})
+    assert s.claude_login_ok() is True
+    answer = 'not json'
+    assert s.claude_login_ok() is True  # unreadable: the research step reports instead
+    assert all(args == ['claude', 'auth', 'status'] for args in seen)
+
+
+class SignsInWhileWaiting(LoginService):
+    """The login check fails once, then the owner finishes signing in."""
+    def __init__(self):
+        super().__init__(False)
+        self.checks = 0
+    def notebook_login_ok(self):
+        self.checks += 1
+        return self.checks > 1
+
+
+def test_manual_save_continues_by_itself_after_the_owner_signs_in(controller):
+    # Owner 2026-11-03: one press of 手動保存 should save, even when the login had expired.
+    c = controller
+    service = SignsInWhileWaiting()
+    c.service_factory = lambda _: service
+    c.login_wait = (5, 0)
+    c.operate({'action': 'manual', 'urls': 'https://youtu.be/ggggggggggg', 'correction': ''})
+    c.worker.join(5)
+    assert service.opened == 1
+    assert c.calls == [({'ggggggggggg'}, '')]
+    row = c.inventory.data['videos']['ggggggggggg']
+    assert row['status'] == 'complete' and not row.get('failed')
+
+
+def test_login_timeout_leaves_rows_waiting_for_login_not_unprocessed(controller):
+    c = controller
+    c.service_factory = lambda _: LoginService(False)
+    c.operate({'action': 'manual', 'urls': 'https://youtu.be/hhhhhhhhhhh', 'correction': ''})
+    c.worker.join(5)
+    assert not c.calls and 'ログイン' in c.notice
+    row = c.inventory.data['videos']['hhhhhhhhhhh']
+    assert row['status'] == 'waiting' and row['status_reason'] == 'NOTEBOOK_LOGIN_EXPIRED'
+    assert web.table_row(row)['cells'][8]['text'] == '待ち'
+
+
+def test_play_counts_are_only_looked_up_for_rows_still_to_save(controller):
+    # Owner (2026-11-05): play count beside the title; finished rows must not cost a YouTube request each.
+    c = controller
+    inbox = c.locations['inbox']
+    inbox.mkdir()
+    (inbox / 'fixture.json').write_text(json.dumps({'videos': [{'url': 'https://youtu.be/aaaaaaaaaaa', 'title': '済'},
+                                                               {'url': 'https://youtu.be/bbbbbbbbbbb', 'title': '未'}]}), encoding='utf-8')
+    c.inventory.data['videos']['aaaaaaaaaaa']['status'] = 'complete'
+    seen = {}
+    def fake(rows, cache, runner, **kw):
+        seen.update({row['video_id']: row.get('views') for row in rows})
+        kw['notify']('bbbbbbbbbbb', {'views': '1.2万回'})
+    c.metadata = fake
+    c.operate({'action': 'refresh'})
+    c.worker.join(5)
+    c.metadata_thread.join(5)
+    assert seen == {'aaaaaaaaaaa': '－', 'bbbbbbbbbbb': None}
+    assert any(row['cells'][1]['text'] == '1.2万回' for row in c.snapshot()['rows'])
+
+
+def test_low_view_rows_are_hidden_unless_asked(controller):
+    c = controller
+    old = (date.today() - timedelta(days=3)).isoformat()
+    c.metadata_values['aaaaaaaaaaa'] = {'views': '1回', 'published_at': old}
+    c.metadata_values['bbbbbbbbbbb'] = {'views': '4.5万回', 'published_at': old}
+    c.publish()
+    snap = c.snapshot()
+    assert [r['id'] for r in snap['rows']] == ['bbbbbbbbbbb'] and snap['hidden_low'] == 1
+    c.checked.add('aaaaaaaaaaa')
+    c.publish()
+    assert len(c.snapshot()['rows']) == 2  # a checked row never disappears under the owner
+    c.checked.clear()
+    c.operate({'action': 'filters', 'rejected': False, 'processed': False, 'low': True})
+    assert {r['id'] for r in c.snapshot()['rows']} == {'aaaaaaaaaaa', 'bbbbbbbbbbb'}
+    c.operate({'action': 'filters', 'rejected': False, 'processed': False})  # older pages: keeps the choice
+    assert c.snapshot()['show_low'] is True
+    with pytest.raises(ValueError):
+        c.operate({'action': 'filters', 'rejected': False, 'processed': False, 'low': 'yes'})
+
+
+def test_low_demand_scales_with_days_since_publication():
+    today = date(2026, 11, 5)
+    row = {'rejected': False, 'status': 'pending', 'views': '149回', 'published_at': '2026-11-02'}
+    assert web.low_demand(row, today=today)  # 3 days: needs 150
+    assert not web.low_demand({**row, 'views': '150回'}, today=today)
+    assert not web.low_demand({**row, 'views': '1回', 'published_at': '2026-11-05'}, today=today)  # today
+    assert web.low_demand({**row, 'views': '49回', 'published_at': '2026-11-04'}, today=today)
+    assert not web.low_demand({**row, 'views': '1,000回', 'published_at': '2026-10-20'}, today=today)  # 16 days: needs 800
+    assert not web.low_demand({**row, 'published_at': ''}, today=today)  # age unknown
+    assert not web.low_demand({**row, 'views': '不明'}, today=today)
+    assert not web.low_demand({**row, 'views': '1.2万回'}, today=today)
+    assert not web.low_demand({**row, 'status': 'attention'}, today=today)
+    assert web.low_demand({**row, 'views': ''}, {'views': '10回', 'published_at': '2026-11-01'}, today=today)

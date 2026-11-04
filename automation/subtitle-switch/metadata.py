@@ -7,7 +7,20 @@ from pathlib import Path
 from switch_state import atomic_json
 
 SHOWN = ('channel', 'published_at', 'lang')
-KEYS = SHOWN + ('ja_dub',)
+# title: inbox rows bring their own; manual-URL rows only get one from this lookup.
+KEYS = SHOWN + ('ja_dub', 'title', 'views')
+
+
+def views_text(count):
+    """Short play count; '不明' (not empty) so a video without one is not looked up again."""
+    if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+        return '不明'
+    if count < 10 ** 4:
+        return f'{count:,}回'
+    # Like YouTube (owner 2026-11-05): 4.5万回, 12万回, 3.5億回 — one decimal below 10, rounded down.
+    unit, size = ('億', 10 ** 8) if count >= 10 ** 8 else ('万', 10 ** 4)
+    tenths = count * 10 // size
+    return (f'{tenths // 10}.{tenths % 10}'.removesuffix('.0') if tenths < 100 else str(count // size)) + unit + '回'
 
 
 def japanese_dub(data):
@@ -27,6 +40,10 @@ def _known(row, values, key):
     return row.get(key) or values.get(key)
 
 
+def _extra(row, values):
+    return {key: _known(row, values, key) or '' for key in ('ja_dub', 'title', 'views')}
+
+
 def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: None, failures=None):
     failures = failures if failures is not None else set()
     path = Path(cache_path)
@@ -39,15 +56,17 @@ def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: 
         vid = row['video_id']
         values = cache.get(vid) or {}
         keys = KEYS
-        missing = [key for key in keys if not _known(row, values, key)]
+        # A missing title alone never starts a lookup (inbox rows may omit it); a manual-URL
+        # row lacks channel/date/lang too, so its lookup runs and brings the title along.
+        missing = [key for key in keys if key != 'title' and not _known(row, values, key)]
         if not missing:
-            notify(vid, {key: _known(row, values, key) for key in keys})
+            notify(vid, {key: _known(row, values, key) or '' for key in keys})
             continue
         if vid in failures:
-            notify(vid, {**{key: _known(row, values, key) or '取得失敗：原因を直してから再起動' for key in SHOWN}, 'ja_dub': _known(row, values, 'ja_dub') or ''})
+            notify(vid, {**{key: _known(row, values, key) or '取得失敗：原因を直してから再起動' for key in SHOWN}, **_extra(row, values)})
             continue
         if missing:
-            notify(vid, {**{key: _known(row, values, key) or '取得中…' for key in SHOWN}, 'ja_dub': _known(row, values, 'ja_dub') or ''})
+            notify(vid, {**{key: _known(row, values, key) or '取得中…' for key in SHOWN}, **_extra(row, values)})
             if not first:
                 sleep(2)
             first = False
@@ -66,7 +85,8 @@ def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: 
                     published = ''
                 fetched = {'channel': data.get('channel') or data.get('uploader') or '',
                            'published_at': published, 'lang': data.get('language') or '',
-                           'ja_dub': japanese_dub(data)}
+                           'ja_dub': japanese_dub(data), 'title': data.get('title') or '',
+                           'views': views_text(data.get('view_count'))}
                 values = {key: values.get(key) or fetched[key] for key in keys}
                 cache[vid] = values
                 atomic_json(path, cache)
@@ -74,4 +94,4 @@ def refresh_metadata(rows, cache_path, run, sleep=time.sleep, notify=lambda *_: 
                     failures.add(vid)
             except Exception:
                 failures.add(vid)
-        notify(vid, {**{key: _known(row, values, key) or '取得失敗：情報なし・接続を確認' for key in SHOWN}, 'ja_dub': _known(row, values, 'ja_dub') or ''})
+        notify(vid, {**{key: _known(row, values, key) or '取得失敗：情報なし・接続を確認' for key in SHOWN}, **_extra(row, values)})
