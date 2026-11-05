@@ -1,10 +1,10 @@
 {
   "schema_version": "video_knowledge_catalog_v1",
-  "generated_at": "2026-11-05",
+  "generated_at": "2026-11-06",
   "repository": "kamiyusense/ai-video-research",
   "notebook_url": "https://gemini.google.com/notebook/e87a1d89-15b8-49cf-9adc-bbe7a7fc91c7",
-  "total_records": 85,
-  "total_video_records": 82,
+  "total_records": 86,
+  "total_video_records": 83,
   "total_verified_chapters": 134,
   "records": [
     {
@@ -10523,6 +10523,36 @@
       "backlinks": []
     },
     {
+      "record_path": "research/2026-11-06-RzE2chSYAN4-subtitle-switch.md",
+      "video_id": "RzE2chSYAN4",
+      "title": "開ループ・閉ループ、内ループ・外ループによるAI自動化の研究ノート [RzE2chSYAN4]",
+      "canonical_url": "https://www.youtube.com/watch?v=RzE2chSYAN4",
+      "publication_date": "UNKNOWN",
+      "checked_at": "2026-11-06",
+      "logical_id": "youtube:RzE2chSYAN4:research",
+      "transcript_logical_id": "youtube:RzE2chSYAN4:transcript",
+      "transcript_status": "UNKNOWN",
+      "okf_version": "0.2",
+      "okf_type": "RESEARCH_NOTE",
+      "is_okf_valid": true,
+      "okf_validation_errors": [],
+      "notebook_readback": "UNKNOWN",
+      "tags": [
+        "AI技術研究室",
+        "AI自動化のループ設計"
+      ],
+      "notebook_source_id": "UNKNOWN",
+      "source_scope": "",
+      "summary_ja": "AIに毎回指示を出す運用から、AIが自律的に動く仕組みの設計へ移る考え方を扱う。結果を次の行動へ反映するか(開ループ/閉ループ)と、AI自身の反復か外部からの起動か(内ループ/外ループ)の2軸で整理し、4通りの組み合わせを示す。どれが優れるかではなくタスク性質で選ぶ点が主張。外ループは起動・停止・引き継ぎの3点で設計する。",
+      "detailed_findings_ja": "",
+      "failure_and_limits_ja": "[限界・未確認]\n- 映像は未確認。字幕のみを根拠としており、画面上の図や資料は反映していない。\n- 字幕は自動生成で、誤変換の可能性がある(例：用語や固有名詞の一部が不明瞭)。transcript_statusはUNVERIFIED。\n- 公式資料との照合は未実施。\n- 外部サービス・各ツールの機能名や仕様(定期実行機能、Webhook連携、エラー監視ツール)：UNKNOWN。\n- 「8つの原則」の全項目は字幕から特定できず、UNKNOWN。\n- 話者の事例や数値(採点基準など)は自己申告で、検証していない。\n- 特典・勉強会などの宣伝要素は知見として扱っていない。",
+      "official_verification_ja": "",
+      "chapters": [],
+      "claims": [],
+      "related_records": [],
+      "backlinks": []
+    },
+    {
       "record_path": "notes/verified-tooling.md",
       "video_id": null,
       "title": "初期技術ノート: 研究室の接続と指示ファイル",
@@ -10552,14 +10582,14 @@
   ],
   "knowledge_network": {
     "schema_version": "okf_knowledge_network_v1",
-    "total_nodes": 85,
+    "total_nodes": 86,
     "total_links": 108,
     "confirmed_links": 2,
     "candidate_links": 106,
     "unknown_links": 0,
     "unresolved_links": 0,
     "self_link_warnings": [],
-    "isolated_nodes_count": 51,
+    "isolated_nodes_count": 52,
     "isolated_video_ids": [
       "8QgBcI40VC8",
       "_P3YqBzHvSs",
@@ -10611,7 +10641,8 @@
       "W5qwlYBnWa4",
       "wpwnuAwI1Bg",
       "vpvW7I968RQ",
-      "d9VAUCWnPkg"
+      "d9VAUCWnPkg",
+      "RzE2chSYAN4"
     ],
     "bidirectional_links_count": 54,
     "unidirectional_links_count": 0,
